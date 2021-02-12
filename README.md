@@ -55,10 +55,12 @@ standard library. Therefore, we should use
 to download the correct version of the dependencies.
 
 The final thing to know about Conan is that it installs the requested versions
-of the libraries in one local folder. Thereby building a little repository of
-installed libraries. Additionally, it will create a couple of files in the
-current working directory. These files are needed to instruct CMake which
-libraries where it can find the dependencies listed in the `conanfile.txt`.
+of the libraries in a local folder. Thereby building a little repository of
+installed libraries. On a cluster it might be important to reconfigure where it
+installs libraries. Additionally, it will create a couple of files in the
+current working directory. These files are needed to instruct CMake where the
+dependencies listed in the `conanfile.txt` can be found. Inside CMake we use the
+traditional `find_package` mechanism.
 
 ### Internal dependencies
 azeban reuses code from zisa. This repository does not directly include these
@@ -77,7 +79,7 @@ An alternate option of organizing code is to use a super build. Which has the
 advantage of combining the source of some or all internal dependencies. An
 implementation of this is available at
 
-&emsp;github.com/1uc/azeban-dev.git
+&emsp;https://github.com/1uc/azeban-dev.git
 
 ## Using CMake
 Since important improvements specifically concerning CUDA where made in version
