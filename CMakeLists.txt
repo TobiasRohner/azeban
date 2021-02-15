@@ -26,12 +26,13 @@ endif()
 
 if(ZISA_HAS_CUDA)
   find_package(CUDAToolkit REQUIRED)
-  target_compile_definitions(azeban_dependencies INTERFACE _HAS_CUDA=1)
+  target_compile_definitions(azeban_dependencies INTERFACE ZISA_HAS_CUDA=1)
 
   target_compile_options(azeban_dependencies INTERFACE
     $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>>
   )
   target_link_libraries(azeban_dependencies INTERFACE CUDA::cudart)
+  target_link_libraries(azeban_dependencies INTERFACE CUDA::cufft)
 endif()
 
 # -- internal ----------------------------------------------------------------------
@@ -66,20 +67,26 @@ if(ZISA_HAS_CUDA)
   target_link_libraries(azeban_cuda_obj PRIVATE azeban_warning_flags)
 endif()
 
-add_executable(azeban)
-target_sources(azeban PRIVATE $<TARGET_OBJECTS:azeban_generic_obj>)
+add_library(azeban_lib STATIC)
+set_target_properties(azeban_lib PROPERTIES OUTPUT_NAME azeban)
+target_sources(azeban_lib PRIVATE $<TARGET_OBJECTS:azeban_generic_obj>)
 
 if(ZISA_HAS_CUDA)
-  target_sources(azeban PRIVATE $<TARGET_OBJECTS:azeban_cuda_obj>)
-  set_target_properties(azeban PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+  target_sources(azeban_lib PRIVATE $<TARGET_OBJECTS:azeban_cuda_obj>)
+  set_target_properties(azeban_lib PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 endif()
 
-target_include_directories(azeban PUBLIC
-  $<BUILD_INTERFACE:${azeban_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-target_link_libraries(azeban PUBLIC azeban_dependencies)
+target_include_directories(azeban_lib PUBLIC
+        $<BUILD_INTERFACE:${azeban_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+        )
+target_link_libraries(azeban_lib PUBLIC azeban_dependencies)
+target_link_libraries(azeban_lib PRIVATE azeban_warning_flags)
+
+add_executable(azeban)
+target_link_libraries(azeban PRIVATE azeban_lib)
 target_link_libraries(azeban PRIVATE azeban_warning_flags)
+
 
 # -- Tests ---------------------------------------------------------------------
 find_package(Catch2 REQUIRED)
@@ -87,16 +94,37 @@ find_package(Catch2 REQUIRED)
 add_executable(azeban_unit_tests "")
 set_target_properties(azeban_unit_tests PROPERTIES OUTPUT_NAME unit_tests)
 set_target_properties(azeban_unit_tests PROPERTIES CXX_STANDARD 17)
-if(_HAS_CUDA)
+if(ZISA_HAS_CUDA)
   set_target_properties(azeban_unit_tests PROPERTIES CUDA_STANDARD 11)
 endif()
 target_link_libraries(azeban_unit_tests PUBLIC Catch2::Catch2)
+target_link_libraries(azeban_unit_tests PUBLIC azeban_lib)
 target_include_directories(azeban_unit_tests PRIVATE test)
 target_link_libraries(azeban_unit_tests PRIVATE azeban_warning_flags)
 
 enable_testing()
 add_test(NAME AzebanUnitTests COMMAND unit_tests)
 
+# -- Micro benchmarks ----------------------------------------------------------
+if(AZEBAN_HAS_BENCHMARK)
+  find_package(benchmark REQUIRED)
+
+  add_executable(azeban_benchmarks "")
+  set_target_properties(azeban_benchmarks PROPERTIES OUTPUT_NAME micro_benchmarks)
+  set_target_properties(azeban_benchmarks PROPERTIES CXX_STANDARD 17)
+  if(ZISA_HAS_CUDA)
+    set_target_properties(azeban_benchmarks PROPERTIES CUDA_STANDARD 11)
+  endif()
+  target_include_directories(azeban_benchmarks PRIVATE
+      $<BUILD_INTERFACE:${azeban_SOURCE_DIR}/benchmarks>
+  )
+  target_link_libraries(azeban_benchmarks PRIVATE azeban_lib benchmark::benchmark)
+endif()
+
 # -- Subdirectories ------------------------------------------------------------
 add_subdirectory(src)
 add_subdirectory(test)
+
+if(AZEBAN_HAS_BENCHMARK)
+  add_subdirectory(benchmarks)
+endif()

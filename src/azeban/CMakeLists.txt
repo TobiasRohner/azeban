@@ -1,5 +1,5 @@
 target_sources(azeban_generic_obj
-  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/some_source_file.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/fft.cpp
 )
 
 if(ZISA_HAS_CUDA)
