@@ -133,6 +133,6 @@ if __name__ == "__main__":
         append_to_file(cmake_file, add_subdirectory(base_directory + d))
 
     recurse("test/", {"generic": "azeban_unit_tests"})
-    # recurse("benchmarks/", {"generic": "micro_benchmarks"})
+    recurse("benchmarks/", {"generic": "azeban_benchmarks", "cuda": "azeban_benchmarks"})
 
     add_executable(cmake_file, "azeban", "azeban.cpp")
