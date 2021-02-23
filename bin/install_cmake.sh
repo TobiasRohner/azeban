@@ -8,7 +8,7 @@ if [[ $# -ne 1 ]]; then
   exit -1
 fi
 
-INSTALL_PREFIX=$1
+INSTALL_PREFIX=$(realpath $1)
 
 CMAKE_MAJOR_VERSION=3
 CMAKE_MINOR_VERSION=19
