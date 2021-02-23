@@ -5,6 +5,8 @@ set -e
 if [[ "$#" -lt 2 ]]
 then
     echo "Usage: $0 COMPILER DESTINATION [--zisa_has_cuda=ZISA_HAS_CUDA]"
+    echo "                               [--cmake=CUSTOM_CMAKE_BINARY]"
+    exit -1
 fi
 
 for arg in "$@"
