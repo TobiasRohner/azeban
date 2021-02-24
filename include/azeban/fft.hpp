@@ -1,14 +1,20 @@
-#ifndef FFT_H_WIQBB
-#define FFT_H_WIQBB
+#ifndef FFT_H_
+#define FFT_H_
 
-#include <azeban/config.hpp>
-#include <zisa/memory/array.hpp>
+#include "fft_base.hpp"
+//#include "fftwfft.hpp"
+#ifdef ZISA_HAS_CUDA
+#include "cuda/cufft.hpp"
+#endif
 
 namespace azeban {
 
-void fft(const zisa::array_view<complex_t, 3> &u_hat, const zisa::array_const_view<real_t, 3> &u);
+
 
 
 }
+
+
+
 
 #endif

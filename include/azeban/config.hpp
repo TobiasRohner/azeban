@@ -9,7 +9,7 @@ namespace azeban {
 
 using zisa::int_t;
 using real_t = double;
-using complex_t = cufftComplex;
+struct complex_t { real_t x, y; };
 
 
 
