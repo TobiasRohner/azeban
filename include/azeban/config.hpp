@@ -2,16 +2,13 @@
 #define CONFIG_HPP_ENIWQ
 
 #include <zisa/config.hpp>
-
-#include <cufft.h>
+#include <azeban/complex.hpp>
 
 namespace azeban {
 
 using zisa::int_t;
 using real_t = double;
-struct complex_t { real_t x, y; };
-
-
+using complex_t = Complex<real_t>;
 
 }
 

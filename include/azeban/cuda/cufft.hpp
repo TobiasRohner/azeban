@@ -2,6 +2,7 @@
 #define CUFFT_H_
 
 #include <azeban/fft_base.hpp>
+#include <cufft.h>
 
 namespace azeban {
 

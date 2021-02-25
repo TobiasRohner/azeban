@@ -36,7 +36,8 @@ public:
   virtual void forward() = 0;
   virtual void backward() = 0;
 
-  const auto& shape() const { return u_.shape(); }
+  decltype(auto) shape() const { return u_.shape(); }
+  decltype(auto) shape(zisa::int_t i) const { return u_.shape(i); }
 
   const zisa::array_view<complex_t, dim_v+1> &u_hat() { return u_hat_; }
   const zisa::array_const_view<complex_t, dim_v+1> u_hat() const { return u_hat_; }
