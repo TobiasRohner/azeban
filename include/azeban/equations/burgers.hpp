@@ -47,7 +47,8 @@ public:
 		   zisa::array_const_view<complex_t, 1>(u_hat),
 		   complex_t(0));
     fft_->backward();
-    detail::square_and_scale(zisa::array_view<real_t, 1>(u_), fft_->u().shape(1));
+    real_t norm = fft_->u().shape(1);
+    detail::square_and_scale(zisa::array_view<real_t, 1>(u_), real_t(1.0/norm));
     fft_->forward();
     if (device_ == zisa::device_type::cpu) {
       assert(false && "Not implemented yet");

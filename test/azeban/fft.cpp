@@ -99,17 +99,6 @@ TEST_CASE("cuFFT 1D scalar valued data", "[cufft]") {
   fft->backward();
   zisa::copy(h_u, d_u);
 
-  std::cout << "u_hat = [";
-  for (zisa::int_t i = 0 ; i < cshape[0]-1 ; ++i) {
-    std::cout << '(' << h_u_hat[i].x << ", " << h_u_hat[i].y << "), ";
-  }
-  std::cout << '(' << h_u_hat[cshape[0]-1].x << ", " << h_u_hat[cshape[0]-1].y << ")]" << std::endl;
-  std::cout << "u = [";
-  for (zisa::int_t i = 0 ; i < rshape[0]-1 ; ++i) {
-    std::cout << h_u[i] << ", ";
-  }
-  std::cout << h_u[rshape[0]-1] << "]" << std::endl;
-
   for (zisa::int_t i = 0 ; i < cshape[0] ; ++i) {
     azeban::complex_t expected;
     expected.x = i == 1 ? n/2.0 : 0.0;

@@ -4,6 +4,7 @@
 #include <zisa/config.hpp>
 #include <zisa/memory/array.hpp>
 #include <zisa/memory/array_view.hpp>
+#include <azeban/config.hpp>
 
 
 namespace azeban {

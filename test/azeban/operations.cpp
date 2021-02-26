@@ -28,25 +28,9 @@ TEST_CASE("Convolution in Fourier Domain", "[operations]") {
   h_u_hat[1] = 1;
   h_u_hat[2] = 2;
 
-  std::cout << "u_hat = [";
-  for (zisa::int_t i = 0 ; i < cshape[0]-1 ; ++i) {
-    std::cout << '(' << clamp_to_zero(h_u_hat[i].x) << ", "
-		     << clamp_to_zero(h_u_hat[i].y) << "), ";
-  }
-  std::cout << '(' << clamp_to_zero(h_u_hat[cshape[0]-1].x) << ", "
-		   << clamp_to_zero(h_u_hat[cshape[0]-1].y) << ")]" << std::endl;
-
   zisa::copy(d_u_hat, h_u_hat);
   azeban::convolve_freq_domain(fft.get(), zisa::array_view<azeban::complex_t, 1>(d_u_hat));
   zisa::copy(h_u_hat, d_u_hat);
-
-  std::cout << "u_hat = [";
-  for (zisa::int_t i = 0 ; i < cshape[0]-1 ; ++i) {
-    std::cout << '(' << clamp_to_zero(h_u_hat[i].x) << ", "
-		     << clamp_to_zero(h_u_hat[i].y) << "), ";
-  }
-  std::cout << '(' << clamp_to_zero(h_u_hat[cshape[0]-1].x) << ", "
-		   << clamp_to_zero(h_u_hat[cshape[0]-1].y) << ")]" << std::endl;
 
   for (zisa::int_t i = 0 ; i < cshape[0] ; ++i) {
     azeban::real_t expected = 0;

@@ -3,6 +3,7 @@
 
 #include <zisa/config.hpp>
 #include <zisa/math/basic_functions.hpp>
+#include <iostream>
 
 
 namespace azeban {
@@ -175,6 +176,12 @@ ANY_DEVICE_INLINE Scalar abs2(const Complex<Scalar>& c) {
 template<typename Scalar>
 ANY_DEVICE_INLINE Scalar abs(const Complex<Scalar>& c) {
   return zisa::sqrt(abs2(c));
+}
+
+
+template<typename Scalar>
+std::ostream& operator<<(std::ostream &os, const Complex<Scalar> &c) {
+  return os <<'(' << c.x << ", " << c.y << ')';
 }
 
 

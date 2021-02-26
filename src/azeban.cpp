@@ -30,7 +30,7 @@ int main() {
   fft->forward();
 
   auto timestepper = std::make_shared<azeban::ForwardEuler<azeban::complex_t, 1>>();
-  auto equation = std::make_shared<azeban::Burgers<Step1D>>(N_phys, azeban::Step1D(1, 20), zisa::device_type::cuda);
+  auto equation = std::make_shared<azeban::Burgers<Step1D>>(N_phys, azeban::Step1D(0.1, 20), zisa::device_type::cuda);
   auto simulation = azeban::Simulation<complex_t, 1>(zisa::array_const_view<complex_t, 1>(u_hat_device),
 						     equation,
 						     timestepper);
@@ -48,7 +48,7 @@ int main() {
 		       N_phys);
 
   for (zisa::int_t i = 0 ; i < N_phys ; ++i) {
-    std::cout << u_host[i] << " ";
+    std::cout << u_host[i]/N_phys << " ";
   }
   std::cout << std::endl;
 
