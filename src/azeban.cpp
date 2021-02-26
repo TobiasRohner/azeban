@@ -13,7 +13,7 @@ using namespace azeban;
 
 
 int main() {
-  zisa::int_t N_phys = 128;
+  zisa::int_t N_phys = 128*2;
   zisa::int_t N_fourier = N_phys/2 + 1;
 
   auto u_host = zisa::array<real_t, 1>(zisa::shape_t<1>{N_phys});
@@ -30,12 +30,12 @@ int main() {
   fft->forward();
 
   auto timestepper = std::make_shared<azeban::ForwardEuler<azeban::complex_t, 1>>();
-  auto equation = std::make_shared<azeban::Burgers<Step1D>>(N_phys, azeban::Step1D(1, 0), zisa::device_type::cuda);
+  auto equation = std::make_shared<azeban::Burgers<Step1D>>(N_phys, azeban::Step1D(100, 0.1), zisa::device_type::cuda);
   auto simulation = azeban::Simulation<complex_t, 1>(zisa::array_const_view<complex_t, 1>(u_hat_device),
 						     equation,
 						     timestepper);
 
-  simulation.simulate_until(0.001, 0.0001);
+  simulation.simulate_until(1, 0.001);
 
   // Ugly, but normal copy doesn't work for some reason
   zisa::internal::copy(u_hat_device.raw(), u_hat_device.device(),

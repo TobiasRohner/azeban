@@ -21,7 +21,7 @@ struct SpectralViscosityBase {
 };
 
 
-struct Step1D : public SpectralViscosityBase<Step1D>{
+struct Step1D final : public SpectralViscosityBase<Step1D>{
   using super = SpectralViscosityBase<Step1D>;
 
   Step1D(real_t _eps, real_t _mN) : super(_eps), mN(_mN) { }
