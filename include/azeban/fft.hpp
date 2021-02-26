@@ -6,6 +6,7 @@
 #ifdef ZISA_HAS_CUDA
 #include "cuda/cufft.hpp"
 #endif
+#include "fft_factory.hpp"
 
 namespace azeban {
 

@@ -86,6 +86,7 @@ target_link_libraries(azeban_lib PRIVATE azeban_warning_flags)
 add_executable(azeban)
 target_link_libraries(azeban PRIVATE azeban_lib)
 target_link_libraries(azeban PRIVATE azeban_warning_flags)
+set_target_properties(azeban PROPERTIES CXX_STANDARD 17)
 
 
 # -- Tests ---------------------------------------------------------------------

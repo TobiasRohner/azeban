@@ -3,6 +3,7 @@
 
 
 #include "convolve.hpp"
+#include "axpy.hpp"
 
 
 #endif
