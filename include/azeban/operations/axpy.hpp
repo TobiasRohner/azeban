@@ -21,7 +21,7 @@ void axpy(const Scalar &a, const zisa::array_const_view<Scalar, Dim> &x, const z
 
   if (x_flat.memory_location() == zisa::device_type::cpu && y_flat.memory_location() == zisa::device_type::cpu) {
     for (zisa::int_t i = 0 ; i < x_flat.shape(0) ; ++i) {
-      y[i] = a * x[i] + y[i];
+      y[i] += a * x[i];
     }
   }
 #ifdef ZISA_HAS_CUDA

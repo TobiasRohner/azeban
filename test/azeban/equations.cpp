@@ -17,8 +17,10 @@ TEST_CASE("Burgers CUDA", "[equations]") {
   azeban::Burgers<azeban::Step1D> burgers(2*(n-1), azeban::Step1D(1, 20), zisa::device_type::cuda);
 
   for (zisa::int_t i = 0 ; i < n ; ++i) {
-    h_u[i] = zisa::cos(2*10*zisa::pi * i / n);
+    //h_u[i] = zisa::cos(2*10*zisa::pi * i / n);
+    h_u[i] = 0;
   }
+  h_u[1] = 0.5;
 
   zisa::copy(d_dudt, h_u);
   burgers.dudt(d_dudt);

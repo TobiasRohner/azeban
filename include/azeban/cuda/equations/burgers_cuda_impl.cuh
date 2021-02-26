@@ -5,6 +5,7 @@
 #include <azeban/config.hpp>
 #include <zisa/math/basic_functions.hpp>
 #include <zisa/math/comparison.hpp>
+#include <zisa/config.hpp>
 
 
 
@@ -17,9 +18,10 @@ __global__ void burgers_cuda_kernel(zisa::array_view<complex_t, 1> u,
 				    SpectralViscosity visc) {
   const int k = blockIdx.x * blockDim.x + threadIdx.x;
   if (k < u.shape(0)) {
-    const real_t v = visc.eval(k);
-    u[k].x = k*u_squared[k].y - v*u[k].x;
-    u[k].y = -k * u_squared[k].x - v*u[k].y;
+    const real_t k_ = k * zisa::pi / u.shape(0);
+    const real_t v = visc.eval(k_);
+    u[k].x = k_*u_squared[k].y + v*u[k].x;
+    u[k].y = -k_*u_squared[k].x + v*u[k].y;
   }
 }
 

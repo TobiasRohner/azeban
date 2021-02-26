@@ -70,8 +70,9 @@ struct Complex {
   }
 
   ANY_DEVICE_INLINE Complex& operator*=(const Complex& other) {
+    const scalar_t x_ = x;
     x = x * other.x - y * other.y;
-    y = x * other.y + y * other.x;
+    y = x_ * other.y + y * other.x;
     return *this;
   }
 
@@ -83,8 +84,9 @@ struct Complex {
 
   ANY_DEVICE_INLINE Complex& operator/=(const Complex& other) {
     const Scalar norm = other.x * other.x + other.y * other.y;
+    const scalar_t x_ = x;
     x = (x * other.x + y * other.y) / norm;
-    y = (y * other.x - x * other.y) / norm;
+    y = (y * other.x - x_ * other.y) / norm;
     return *this;
   }
 

@@ -13,7 +13,7 @@ template<typename Scalar>
 __global__ void axpy_cuda_kernel(Scalar a, zisa::array_const_view<Scalar, 1> x, zisa::array_view<Scalar, 1> y) {
   const int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < x.shape(0)) {
-    y[i] = a * x[i] + y[i];
+    y[i] += a * x[i];
   }
 }
 

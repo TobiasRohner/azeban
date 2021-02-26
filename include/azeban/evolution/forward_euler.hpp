@@ -10,7 +10,7 @@ namespace azeban {
 
 
 template<typename Scalar, int Dim>
-class ForwardEuler : public TimeIntegrator<Scalar, Dim> {
+class ForwardEuler final : public TimeIntegrator<Scalar, Dim> {
   using super = TimeIntegrator<Scalar, Dim>;
 
 public:
