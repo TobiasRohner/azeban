@@ -19,23 +19,17 @@ public:
   Simulation() = delete;
   Simulation(const zisa::shape_t<dim_v> &shape,
 	     const CFL &cfl,
-	     const std::shared_ptr<Equation<scalar_t, dim_v>> &equation,
 	     const std::shared_ptr<TimeIntegrator<scalar_t, dim_v>> &timestepper,
 	     zisa::device_type device = zisa::device_type::cpu)
       : u_(shape, device),
-	dudt_(shape, device),
 	cfl_(cfl),
-	equation_(equation),
 	timestepper_(timestepper),
 	time_(0) { }
   Simulation(const zisa::array_const_view<scalar_t, dim_v> &u,
 	     const CFL cfl,
-	     const std::shared_ptr<Equation<scalar_t, dim_v>> &equation,
 	     const std::shared_ptr<TimeIntegrator<scalar_t, dim_v>> &timestepper)
       : u_(u.shape(), u.memory_location()),
-	dudt_(u.shape(), u.memory_location()),
 	cfl_(cfl),
-	equation_(equation),
 	timestepper_(timestepper),
 	time_(0) {
     // Ugly, but normal copy doesn't work for some reason
@@ -52,15 +46,11 @@ public:
   void simulate_until(real_t t) {
     real_t dt = cfl_.dt(zisa::array_const_view<scalar_t, Dim>(u_));
     while (time_ < t-dt) {
-      zisa::copy(dudt_, u_);
-      equation_->dudt(dudt_);
-      timestepper_->integrate(dt, u_, dudt_);
+      timestepper_->integrate(dt, u_);
       time_ += dt;
       dt = cfl_.dt(zisa::array_const_view<scalar_t, Dim>(u_));
     }
-    zisa::copy(dudt_, u_);
-    equation_->dudt(dudt_);
-    timestepper_->integrate(t-time_, u_, dudt_);
+    timestepper_->integrate(t-time_, u_);
     time_ = t;
   }
 
@@ -74,9 +64,7 @@ public:
 
 private:
   zisa::array<scalar_t, dim_v> u_;
-  zisa::array<scalar_t, dim_v> dudt_;
   CFL cfl_;
-  std::shared_ptr<Equation<scalar_t, dim_v>> equation_;
   std::shared_ptr<TimeIntegrator<scalar_t, dim_v>> timestepper_;
   real_t time_;
 };

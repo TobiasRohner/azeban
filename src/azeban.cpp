@@ -2,7 +2,7 @@
 #include <azeban/fft.hpp>
 #include <azeban/simulation.hpp>
 #include <azeban/equations/burgers.hpp>
-#include <azeban/evolution/forward_euler.hpp>
+#include <azeban/evolution/evolution.hpp>
 #include <zisa/config.hpp>
 #include <zisa/memory/array.hpp>
 #include <zisa/cuda/memory/cuda_array.hpp>
@@ -29,11 +29,11 @@ int main() {
   zisa::copy(u_device, u_host);
   fft->forward();
 
-  CFL cfl(0.01);
-  auto timestepper = std::make_shared<ForwardEuler<complex_t, 1>>();
+  CFL cfl(0.5);
   auto equation = std::make_shared<Burgers<SmoothCutoff1D>>(N_phys, SmoothCutoff1D(0.05/N_phys, 2*zisa::pi*0.125*N_phys), zisa::device_type::cuda);
+  auto timestepper = std::make_shared<SSP_RK2<complex_t, 1>>(zisa::device_type::cuda, zisa::shape_t<1>(N_fourier), equation);
   auto simulation = Simulation<complex_t, 1>(zisa::array_const_view<complex_t, 1>(u_hat_device),
-					     cfl, equation, timestepper);
+					     cfl, timestepper);
 
   for (int i = 0 ; i < 1000 ; ++i) {
     std::cerr << i << std::endl;

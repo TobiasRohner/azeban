@@ -5,6 +5,7 @@
 #include <zisa/memory/array.hpp>
 #include <zisa/memory/array_view.hpp>
 #include <azeban/config.hpp>
+#include <azeban/equations/equation.hpp>
 
 
 namespace azeban {
@@ -16,7 +17,11 @@ public:
   using scalar_t = Scalar;
   static constexpr int dim_v = Dim;
 
-  TimeIntegrator() { }
+  TimeIntegrator() = delete;
+  TimeIntegrator(zisa::device_type device,
+		 const std::shared_ptr<Equation<scalar_t, dim_v>> &equation)
+      : device_(device),
+	equation_(equation) { }
   TimeIntegrator(const TimeIntegrator&) = default;
   TimeIntegrator(TimeIntegrator&&) = default;
 
@@ -26,8 +31,14 @@ public:
   TimeIntegrator& operator=(TimeIntegrator&&) = default;
 
   virtual void integrate(real_t dt,
-			 const zisa::array_view<scalar_t, dim_v> &u,
-			 const zisa::array_const_view<scalar_t, dim_v> &du) = 0;
+			 const zisa::array_view<scalar_t, dim_v> &u) = 0;
+
+  zisa::device_type memory_location() const { return device_; }
+  const auto &equation() const { return equation_; }
+
+protected:
+  std::shared_ptr<Equation<scalar_t, dim_v>> equation_;
+  zisa::device_type device_;
 };
 
 
