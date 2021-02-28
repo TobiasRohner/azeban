@@ -4,6 +4,7 @@
 
 #include "convolve.hpp"
 #include "axpy.hpp"
+#include "norm.hpp"
 
 
 #endif

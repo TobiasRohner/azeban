@@ -26,11 +26,9 @@ public:
   ForwardEuler& operator=(const ForwardEuler&) = default;
   ForwardEuler& operator=(ForwardEuler&&) = default;
 
-protected:
-
-  virtual void integrate_impl(real_t dt,
-			      const zisa::array_view<scalar_t, dim_v> &u,
-			      const zisa::array_const_view<scalar_t, dim_v> &du) override {
+  virtual void integrate(real_t dt,
+			 const zisa::array_view<scalar_t, dim_v> &u,
+			 const zisa::array_const_view<scalar_t, dim_v> &du) override {
     axpy(scalar_t(dt), du, u);
   }
 };

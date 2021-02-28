@@ -24,18 +24,20 @@ int main() {
 			         zisa::array_view<real_t, 1>(u_device));
 
   for (zisa::int_t i = 0 ; i < N_phys ; ++i) {
-    u_host[i] = i < N_phys/4 ? 1 : 0;
+    u_host[i] = zisa::sin(2*zisa::pi/N_phys * i);
   }
   zisa::copy(u_device, u_host);
   fft->forward();
 
+  CFL cfl(1./N_phys, 0.5);
   auto timestepper = std::make_shared<azeban::ForwardEuler<azeban::complex_t, 1>>();
-  auto equation = std::make_shared<azeban::Burgers<Step1D>>(N_phys, azeban::Step1D(100, 0.1), zisa::device_type::cuda);
+  auto equation = std::make_shared<azeban::Burgers<Step1D>>(N_phys, azeban::Step1D(0, 0.0), zisa::device_type::cuda);
   auto simulation = azeban::Simulation<complex_t, 1>(zisa::array_const_view<complex_t, 1>(u_hat_device),
+						     cfl,
 						     equation,
 						     timestepper);
 
-  simulation.simulate_until(1, 0.001);
+  simulation.simulate_until(0.125);
 
   // Ugly, but normal copy doesn't work for some reason
   zisa::internal::copy(u_hat_device.raw(), u_hat_device.device(),
