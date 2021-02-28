@@ -64,6 +64,10 @@ public:
     time_ = t;
   }
 
+  void simulate_for(real_t t) {
+    simulate_until(time_ + t);
+  }
+
   real_t time() const { return time_; }
   zisa::array_view<scalar_t, dim_v> u() { return u_; }
   zisa::array_const_view<scalar_t, dim_v> u() const { return u_; }

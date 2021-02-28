@@ -13,15 +13,15 @@ using namespace azeban;
 
 
 int main() {
-  zisa::int_t N_phys = 128*2;
+  zisa::int_t N_phys = 1024;
   zisa::int_t N_fourier = N_phys/2 + 1;
 
   auto u_host = zisa::array<real_t, 1>(zisa::shape_t<1>{N_phys});
   auto u_device = zisa::cuda_array<real_t, 1>(zisa::shape_t<1>{N_phys});
   auto u_hat_device = zisa::cuda_array<complex_t, 1>(zisa::shape_t<1>{N_fourier});
 
-  auto fft = azeban::make_fft<1>(zisa::array_view<complex_t, 1>(u_hat_device),
-			         zisa::array_view<real_t, 1>(u_device));
+  auto fft = make_fft<1>(zisa::array_view<complex_t, 1>(u_hat_device),
+			 zisa::array_view<real_t, 1>(u_device));
 
   for (zisa::int_t i = 0 ; i < N_phys ; ++i) {
     u_host[i] = zisa::sin(2*zisa::pi/N_phys * i);
@@ -29,28 +29,30 @@ int main() {
   zisa::copy(u_device, u_host);
   fft->forward();
 
-  CFL cfl(1./N_phys, 0.5);
-  auto timestepper = std::make_shared<azeban::ForwardEuler<azeban::complex_t, 1>>();
-  auto equation = std::make_shared<azeban::Burgers<Step1D>>(N_phys, azeban::Step1D(0, 0.0), zisa::device_type::cuda);
-  auto simulation = azeban::Simulation<complex_t, 1>(zisa::array_const_view<complex_t, 1>(u_hat_device),
-						     cfl,
-						     equation,
-						     timestepper);
+  CFL cfl(0.01);
+  auto timestepper = std::make_shared<ForwardEuler<complex_t, 1>>();
+  auto equation = std::make_shared<Burgers<SmoothCutoff1D>>(N_phys, SmoothCutoff1D(0.05/N_phys, 2*zisa::pi*0.125*N_phys), zisa::device_type::cuda);
+  auto simulation = Simulation<complex_t, 1>(zisa::array_const_view<complex_t, 1>(u_hat_device),
+					     cfl, equation, timestepper);
 
-  simulation.simulate_until(0.125);
+  for (int i = 0 ; i < 1000 ; ++i) {
+    std::cerr << i << std::endl;
+    simulation.simulate_for(1./1000);
 
-  // Ugly, but normal copy doesn't work for some reason
-  zisa::internal::copy(u_hat_device.raw(), u_hat_device.device(),
-		       simulation.u().raw(), simulation.u().memory_location(),
-		       N_fourier);
-  fft->backward();
-  zisa::copy(u_host, u_device);
-  zisa::internal::copy(u_host.raw(), u_host.device(),
-		       u_device.raw(), u_device.device(),
-		       N_phys);
+    // Ugly, but normal copy doesn't work for some reason
+    zisa::internal::copy(u_hat_device.raw(), u_hat_device.device(),
+			 simulation.u().raw(), simulation.u().memory_location(),
+			 N_fourier);
+    fft->backward();
+    zisa::copy(u_host, u_device);
+    zisa::internal::copy(u_host.raw(), u_host.device(),
+			 u_device.raw(), u_device.device(),
+			 N_phys);
 
-  for (zisa::int_t i = 0 ; i < N_phys ; ++i) {
-    std::cout << u_host[i]/N_phys << "\n";
+    for (zisa::int_t i = 0 ; i < N_phys ; ++i) {
+      std::cout << u_host[i]/N_phys << "\n";
+    }
+    std::cout << "\n\n";
   }
 
   return EXIT_SUCCESS;

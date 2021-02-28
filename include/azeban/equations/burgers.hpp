@@ -48,6 +48,7 @@ public:
 		   complex_t(0));
     fft_->backward();
     real_t norm = fft_->u().shape(1);
+    norm *= norm;
     detail::square_and_scale(zisa::array_view<real_t, 1>(u_), real_t(1.0/norm));
     fft_->forward();
     if (device_ == zisa::device_type::cpu) {

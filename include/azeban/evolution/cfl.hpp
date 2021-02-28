@@ -12,7 +12,7 @@ namespace azeban {
 
 class CFL {
 public:
-  CFL(real_t h, real_t C) : h_(h), C_(C) { }
+  CFL(real_t C) : C_(C) { }
   CFL() = default;
   CFL(const CFL&) = default;
   CFL(CFL&&) = default;
@@ -24,11 +24,10 @@ public:
   template<int Dim>
   real_t dt(const zisa::array_const_view<complex_t, Dim> &u) const {
     const real_t sup = norm(u, 1);
-    return h_ / sup * C_;
+    return C_ / sup;
   }
 
 private:
-  real_t h_;
   real_t C_;
 };
 

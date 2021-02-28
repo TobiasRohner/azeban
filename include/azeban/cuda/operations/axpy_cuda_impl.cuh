@@ -23,7 +23,7 @@ void axpy_cuda(const Scalar &a, const zisa::array_const_view<Scalar, 1> &x, cons
   assert(x.shape() == y.shape());
   const int thread_dims = 1024;
   const int block_dims = zisa::min(zisa::div_up(static_cast<int>(x.shape(0)), thread_dims), 1024);
-  axpy_cuda_kernel<<<thread_dims, block_dims>>>(a, x, y);
+  axpy_cuda_kernel<<<block_dims, thread_dims>>>(a, x, y);
 }
 
 

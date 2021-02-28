@@ -18,7 +18,7 @@ __global__ void burgers_cuda_kernel(zisa::array_view<complex_t, 1> u,
 				    SpectralViscosity visc) {
   const int k = blockIdx.x * blockDim.x + threadIdx.x;
   if (k < u.shape(0)) {
-    const real_t k_ = static_cast<real_t>(k) * zisa::pi / u.shape(0);
+    const real_t k_ = 2 * zisa::pi * k;
     const real_t v = visc.eval(k_);
     u[k] = complex_t(0,-k_/2)*u_squared[k] + v*u[k];
   }
@@ -31,7 +31,7 @@ void burgers_cuda(const zisa::array_view<complex_t, 1> &u,
 		  const SpectralViscosity &visc) {
   const int thread_dims = 1024;
   const int block_dims = zisa::min(zisa::div_up(static_cast<int>(u.shape(0)), thread_dims), 1024);
-  burgers_cuda_kernel<<<thread_dims, block_dims>>>(u, u_squared, visc);
+  burgers_cuda_kernel<<<block_dims, thread_dims>>>(u, u_squared, visc);
 }
 
 
