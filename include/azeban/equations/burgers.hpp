@@ -12,7 +12,7 @@
 namespace azeban {
 
 template <typename SpectralViscosity>
-class Burgers : public Equation<complex_t, 1> {
+class Burgers final : public Equation<complex_t, 1> {
   using super = Equation<complex_t, 1>;
 
 public:
@@ -32,10 +32,10 @@ public:
     fft_ = make_fft(zisa::array_view<complex_t, 1>(u_hat_),
                     zisa::array_view<real_t, 1>(u_));
   }
-  Burgers(const Burgers &) = default;
+  Burgers(const Burgers &) = delete;
   Burgers(Burgers &&) = default;
   virtual ~Burgers() override = default;
-  Burgers &operator=(const Burgers &) = default;
+  Burgers &operator=(const Burgers &) = delete;
   Burgers &operator=(Burgers &&) = default;
 
   virtual void dudt(const zisa::array_view<scalar_t, dim_v> &u_hat) override {

@@ -2,6 +2,7 @@
 #define CUFFT_H_
 
 #include <azeban/fft_base.hpp>
+#include <azeban/cuda/cuda_check_error.hpp>
 #include <cufft.h>
 
 namespace azeban {
@@ -38,13 +39,17 @@ public:
     }
     auto status = cufftPlanMany(
         &plan_forward_, dim_v, n, n, 1, rdist, n, 1, cdist, type_forward, 1);
-    assert(status == CUFFT_SUCCESS);
+    cudaCheckError(status);
     // Create a plan for the backward operation
     status = cufftPlanMany(
         &plan_backward_, dim_v, n, n, 1, cdist, n, 1, rdist, type_backward, 1);
+    cudaCheckError(status);
   }
 
-  virtual ~CUFFT() override {}
+  virtual ~CUFFT() override {
+    cufftDestroy(plan_forward_);
+    cufftDestroy(plan_backward_);
+  }
 
   virtual void forward() override {
     if constexpr (std::is_same_v<float, real_t>) {
@@ -52,13 +57,13 @@ public:
           = cufftExecR2C(plan_forward_,
                          u_.raw(),
                          reinterpret_cast<cufftComplex *>(u_hat_.raw()));
-      assert(status == CUFFT_SUCCESS);
+      cudaCheckError(status);
     } else {
       auto status
           = cufftExecD2Z(plan_forward_,
                          u_.raw(),
                          reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()));
-      assert(status == CUFFT_SUCCESS);
+      cudaCheckError(status);
     }
   }
 
@@ -67,13 +72,13 @@ public:
       auto status = cufftExecC2R(plan_backward_,
                                  reinterpret_cast<cufftComplex *>(u_hat_.raw()),
                                  u_.raw());
-      assert(status == CUFFT_SUCCESS);
+      cudaCheckError(status);
     } else {
       auto status
           = cufftExecZ2D(plan_backward_,
                          reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()),
                          u_.raw());
-      assert(status == CUFFT_SUCCESS);
+      cudaCheckError(status);
     }
   }
 
