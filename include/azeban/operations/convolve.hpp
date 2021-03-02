@@ -12,18 +12,19 @@ namespace azeban {
 namespace detail {
 
 template <int Dim>
-void square_and_scale(const zisa::array_view<real_t, Dim> &u, real_t scale) {
+void scale_and_square(const zisa::array_view<real_t, Dim> &u, real_t scale) {
   const zisa::shape_t<1> flat_shape{zisa::product(u.shape())};
   const zisa::array_view<real_t, 1> flat(
       flat_shape, u.raw(), u.memory_location());
   if (flat.memory_location() == zisa::device_type::cpu) {
     for (zisa::int_t i = 0; i < flat.shape(0); ++i) {
-      flat[i] = scale * u[i] * u[i];
+      const real_t ui_scaled = scale * u[i];
+      flat[i] = ui_scaled * ui_scaled;
     }
   }
 #ifdef ZISA_HAS_CUDA
   else if (flat.memory_location() == zisa::device_type::cuda) {
-    square_and_scale_cuda(flat, scale);
+    scale_and_square_cuda(flat, scale);
   }
 #endif
   else {
@@ -31,54 +32,63 @@ void square_and_scale(const zisa::array_view<real_t, Dim> &u, real_t scale) {
   }
 }
 
+template <int Dim>
+zisa::array_view<complex_t, Dim>
+component(const zisa::array_view<complex_t, Dim + 1> &arr, int dim) {
+  zisa::shape_t<Dim> shape;
+  for (int i = 0; i < Dim; ++i) {
+    shape[i] = arr.shape(i + 1);
+  }
+  return {shape, arr.raw() + dim * zisa::product(shape), arr.memory_location()};
 }
 
-template <typename Scalar,
-          int Dim1,
-          int... Dims,
-          typename = std::enable_if_t<(... && (Dims == Dim1))>>
-void convolve_freq_domain(FFT<Dim1> *fft,
-                          const zisa::array_view<Scalar, Dim1> &u_hat1,
-                          const zisa::array_view<Scalar, Dims> &... u_hats) {
-  static_assert(Dim1 == 1,
-                "convolve_freq_domain is only implemented for 1 dimension");
-  assert(1 + sizeof...(u_hats) == fft->shape(0));
+template <int Dim>
+zisa::array_const_view<complex_t, Dim>
+component(const zisa::array_const_view<complex_t, Dim + 1> &arr, int dim) {
+  zisa::shape_t<Dim> shape;
+  for (int i = 0; i < Dim; ++i) {
+    shape[i] = arr.shape(i + 1);
+  }
+  return {shape, arr.raw() + dim * zisa::product(shape), arr.memory_location()};
+}
+
+}
+
+template <int Dim>
+void convolve_freq_domain(FFT<Dim> *fft,
+                          const zisa::array_view<complex_t, Dim + 1> &u_hat) {
   const auto &u_hat_fft = fft->u_hat();
 
-  zisa::shape_t<Dim1> new_shape;
-  for (zisa::int_t j = 0; j < Dim1; ++j) {
-    new_shape[j] = u_hat_fft.shape(j + 1);
+  for (int i = 0; i < Dim; ++i) {
+    copy_to_padded(detail::component<Dim>(u_hat_fft, i),
+                   zisa::array_const_view<complex_t, Dim>(
+                       detail::component<Dim>(u_hat, i)),
+                   complex_t(0));
   }
 
-  const auto copy_to_fft
-      = [&](const zisa::array_const_view<Scalar, Dim1> &arr, zisa::int_t i) {
-          zisa::array_view<Scalar, Dim1> slice_fft(
-              new_shape,
-              u_hat_fft.raw() + i * zisa::product(new_shape),
-              u_hat_fft.memory_location());
-          copy_to_padded(slice_fft, arr, Scalar(0));
-        };
-  zisa::int_t i = 0;
-  copy_to_fft(u_hat1, 0);
-  (..., copy_to_fft(u_hats, ++i));
-
   fft->backward();
-  // TODO: Compute this for arbitrary dimensions
-  real_t norm = fft->u().shape(1);
-  detail::square_and_scale(fft->u(), real_t(1.0 / norm));
+  real_t norm = zisa::product(fft->u().shape()) / fft->u().shape(0);
+  detail::scale_and_square(fft->u(), real_t(1.0 / zisa::sqrt(norm)));
   fft->forward();
 
-  const auto copy_from_fft
-      = [&](const zisa::array_view<Scalar, Dim1> &arr, zisa::int_t i) {
-          zisa::array_const_view<Scalar, Dim1> slice_fft(
-              new_shape,
-              u_hat_fft.raw() + i * zisa::product(new_shape),
-              u_hat_fft.memory_location());
-          copy_from_padded(arr, slice_fft);
-        };
-  i = 0;
-  copy_from_fft(u_hat1, 0);
-  (..., copy_from_fft(u_hats, ++i));
+  for (int i = 0; i < Dim; ++i) {
+    copy_from_padded(detail::component<Dim>(u_hat, i),
+                     zisa::array_const_view<complex_t, Dim>(
+                         detail::component<Dim>(u_hat_fft, i)));
+  }
+}
+
+template <int Dim>
+void convolve_freq_domain(FFT<Dim> *fft,
+                          const zisa::array_view<complex_t, Dim> &u_hat) {
+  zisa::shape_t<Dim + 1> shape;
+  shape[0] = 1;
+  for (zisa::int_t i = 0; i < Dim; ++i) {
+    shape[i + 1] = u_hat.shape(i);
+  }
+  zisa::array_view<complex_t, Dim + 1> u_hat_new(
+      shape, u_hat.raw(), u_hat.memory_location());
+  convolve_freq_domain(fft, u_hat_new);
 }
 
 }

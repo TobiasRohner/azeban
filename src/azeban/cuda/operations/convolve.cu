@@ -2,20 +2,20 @@
 
 namespace azeban {
 
-__global__ void square_and_scale_kernel(zisa::array_view<real_t, 1> u,
+__global__ void scale_and_square_kernel(zisa::array_view<real_t, 1> u,
                                         real_t scale) {
   const int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < u.shape(0)) {
-    const real_t ui = u[i];
-    u[i] = scale * ui * ui;
+    const real_t ui_scaled = scale * u[i];
+    u[i] = ui_scaled * ui_scaled;
   }
 }
 
-void square_and_scale_cuda(const zisa::array_view<real_t, 1> &u, real_t scale) {
+void scale_and_square_cuda(const zisa::array_view<real_t, 1> &u, real_t scale) {
   const int thread_dims = 1024;
   const int block_dims = zisa::min(
       zisa::div_up(static_cast<int>(u.shape(0)), thread_dims), 1024);
-  square_and_scale_kernel<<<block_dims, thread_dims>>>(u, scale);
+  scale_and_square_kernel<<<block_dims, thread_dims>>>(u, scale);
 }
 
 }

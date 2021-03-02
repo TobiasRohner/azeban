@@ -6,7 +6,7 @@
 
 namespace azeban {
 
-void square_and_scale_cuda(const zisa::array_view<real_t, 1> &u, real_t scale);
+void scale_and_square_cuda(const zisa::array_view<real_t, 1> &u, real_t scale);
 
 }
 

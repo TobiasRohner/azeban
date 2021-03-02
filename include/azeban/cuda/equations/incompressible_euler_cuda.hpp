@@ -1,0 +1,44 @@
+#ifndef INCOMPRESSIBLE_EULER_CUDA_H_
+#define INCOMPRESSIBLE_EULER_CUDA_H_
+
+#include <azeban/config.hpp>
+#include <azeban/equations/spectral_viscosity.hpp>
+#include <zisa/memory/array_view.hpp>
+
+namespace azeban {
+
+template <int Dim>
+void incompressible_euler_compute_B_cuda(
+    const zisa::array_view<real_t, Dim + 1> &B,
+    const zisa::array_const_view<real_t, Dim + 1> &u);
+
+template <typename SpectralViscosity>
+void incompressible_euler_2d_cuda(
+    const zisa::array_const_view<complex_t, 3> &B_hat,
+    const zisa::array_view<complex_t, 3> &u_hat,
+    const SpectralViscosity &visc);
+
+template <typename SpectralViscosity>
+void incompressible_euler_3d_cuda(
+    const zisa::array_const_view<complex_t, 4> &B_hat,
+    const zisa::array_view<complex_t, 4> &u_hat,
+    const SpectralViscosity &visc);
+
+#define AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(TYPE)                     \
+  extern template void incompressible_euler_2d_cuda<TYPE>(                     \
+      const zisa::array_const_view<complex_t, 3> &,                            \
+      const zisa::array_view<complex_t, 3> &,                                  \
+      const TYPE &);                                                           \
+  extern template void incompressible_euler_3d_cuda<TYPE>(                     \
+      const zisa::array_const_view<complex_t, 4> &,                            \
+      const zisa::array_view<complex_t, 4> &,                                  \
+      const TYPE &);
+
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Step1D)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(SmoothCutoff1D)
+
+#undef AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA
+
+}
+
+#endif

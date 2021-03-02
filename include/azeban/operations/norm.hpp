@@ -9,11 +9,11 @@
 
 namespace azeban {
 
-template <typename Scalar>
-real_t norm(const zisa::array_const_view<Scalar, 1> &data, real_t p) {
+template <int Dim, typename Scalar>
+real_t norm(const zisa::array_const_view<Scalar, Dim> &data, real_t p) {
   if (data.memory_location() == zisa::device_type::cpu) {
     real_t val = 0;
-    for (zisa::int_t i = 0; i < data.shape(0); ++i) {
+    for (zisa::int_t i = 0; i < zisa::product(data.shape()); ++i) {
       using zisa::abs;
       val += zisa::pow(abs(data[i]), p);
     }
@@ -21,7 +21,11 @@ real_t norm(const zisa::array_const_view<Scalar, 1> &data, real_t p) {
   }
 #if ZISA_HAS_CUDA
   else if (data.memory_location() == zisa::device_type::cuda) {
-    return norm_cuda(data, p);
+    zisa::array_const_view<Scalar, 1> view(
+        zisa::shape_t<1>(zisa::product(data.shape())),
+        data.raw(),
+        data.memory_location());
+    return norm_cuda(view, p);
   }
 #endif
   else {

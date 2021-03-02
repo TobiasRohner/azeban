@@ -15,9 +15,9 @@ void axpy(const Scalar &a,
   assert(x.shape() == y.shape());
 
   const zisa::shape_t<1> flat_shape{zisa::product(x.shape())};
-  const zisa::array_const_view<Scalar, Dim> x_flat(
+  const zisa::array_const_view<Scalar, 1> x_flat(
       flat_shape, x.raw(), x.memory_location());
-  const zisa::array_view<Scalar, Dim> y_flat(
+  const zisa::array_view<Scalar, 1> y_flat(
       flat_shape, y.raw(), y.memory_location());
 
   if (x_flat.memory_location() == zisa::device_type::cpu

@@ -1,8 +1,8 @@
 #ifndef CUFFT_H_
 #define CUFFT_H_
 
-#include <azeban/fft_base.hpp>
 #include <azeban/cuda/cuda_check_error.hpp>
+#include <azeban/fft_base.hpp>
 #include <cufft.h>
 
 namespace azeban {
