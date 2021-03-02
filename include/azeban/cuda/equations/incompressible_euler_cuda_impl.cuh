@@ -18,13 +18,15 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<2>(
   const unsigned stride = u.shape(1) * u.shape(2);
   const unsigned idx = i * u.shape(1) + j;
 
+  const real_t n = u.shape(1) * u.shape(2);
+  const real_t norm = 1.0 / (n * n);
   if (i < u.shape(1) && j < u.shape(2)) {
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
-    B[0 * stride + idx] = u1 * u1;
-    B[1 * stride + idx] = u1 * u2;
-    B[2 * stride + idx] = u2 * u1;
-    B[3 * stride + idx] = u2 * u2;
+    B[0 * stride + idx] = norm * u1 * u1;
+    B[1 * stride + idx] = norm * u1 * u2;
+    B[2 * stride + idx] = norm * u2 * u1;
+    B[3 * stride + idx] = norm * u2 * u2;
   }
 }
 
@@ -37,19 +39,21 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<3>(
   const unsigned stride = u.shape(1) * u.shape(2) * u.shape(3);
   const unsigned idx = i * u.shape(1) * u.shape(2) + j * u.shape(1) + k;
 
+  const real_t n = u.shape(1) * u.shape(2) * u.shape(3);
+  const real_t norm = 1.0 / (n * n);
   if (i < u.shape(1) && j < u.shape(2) && k < u.shape(3)) {
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
     const real_t u3 = u[2 * stride + idx];
-    B[0 * stride + idx] = u1 * u1;
-    B[1 * stride + idx] = u1 * u2;
-    B[2 * stride + idx] = u1 * u3;
-    B[3 * stride + idx] = u2 * u1;
-    B[4 * stride + idx] = u2 * u2;
-    B[5 * stride + idx] = u2 * u3;
-    B[6 * stride + idx] = u3 * u1;
-    B[7 * stride + idx] = u3 * u2;
-    B[8 * stride + idx] = u3 * u3;
+    B[0 * stride + idx] = norm * u1 * u1;
+    B[1 * stride + idx] = norm * u1 * u2;
+    B[2 * stride + idx] = norm * u1 * u3;
+    B[3 * stride + idx] = norm * u2 * u1;
+    B[4 * stride + idx] = norm * u2 * u2;
+    B[5 * stride + idx] = norm * u2 * u3;
+    B[6 * stride + idx] = norm * u3 * u1;
+    B[7 * stride + idx] = norm * u3 * u2;
+    B[8 * stride + idx] = norm * u3 * u3;
   }
 }
 
@@ -78,9 +82,9 @@ incompressible_euler_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
 
     const real_t absk2 = k1 * k1 + k2 * k2;
     const complex_t L1_hat
-        = (1. - (k1 * k1) / absk2) * b1_hat - (0. - (k1 * k2) / absk2) * b2_hat;
+        = (1. - (k1 * k1) / absk2) * b1_hat + (0. - (k1 * k2) / absk2) * b2_hat;
     const complex_t L2_hat
-        = (0. - (k2 * k1) / absk2) * b1_hat - (1. - (k2 * k2) / absk2) * b2_hat;
+        = (0. - (k2 * k1) / absk2) * b1_hat + (1. - (k2 * k2) / absk2) * b2_hat;
 
     const real_t v = visc.eval(zisa::sqrt(absk2));
     u_hat[0 * stride + idx] = -L1_hat + v * u_hat[0 * stride + idx];

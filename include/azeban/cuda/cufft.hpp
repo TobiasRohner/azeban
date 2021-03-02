@@ -37,12 +37,30 @@ public:
       cdist *= u_hat_.shape()[i + 1];
       n[i] = u_.shape()[i + 1];
     }
-    auto status = cufftPlanMany(
-        &plan_forward_, dim_v, n, n, 1, rdist, n, 1, cdist, type_forward, 1);
+    auto status = cufftPlanMany(&plan_forward_,
+                                dim_v,
+                                n,
+                                n,
+                                1,
+                                rdist,
+                                n,
+                                1,
+                                cdist,
+                                type_forward,
+                                u.shape(0));
     cudaCheckError(status);
     // Create a plan for the backward operation
-    status = cufftPlanMany(
-        &plan_backward_, dim_v, n, n, 1, cdist, n, 1, rdist, type_backward, 1);
+    status = cufftPlanMany(&plan_backward_,
+                           dim_v,
+                           n,
+                           n,
+                           1,
+                           cdist,
+                           n,
+                           1,
+                           rdist,
+                           type_backward,
+                           u.shape(0));
     cudaCheckError(status);
   }
 

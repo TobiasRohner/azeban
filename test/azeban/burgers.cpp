@@ -12,41 +12,39 @@
 #include <zisa/math/mathematical_constants.hpp>
 #include <zisa/memory/array.hpp>
 
+static void solveBurgers(const zisa::array_view<azeban::real_t, 1> &h_u,
+                         azeban::real_t visc,
+                         azeban::real_t t) {
+  auto d_u = zisa::cuda_array<azeban::real_t, 1>(h_u.shape());
+  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 1>(
+      zisa::shape_t<1>(h_u.shape(0) / 2 + 1));
+
+  auto fft
+      = azeban::make_fft<1>(zisa::array_view<azeban::complex_t, 1>(d_u_hat),
+                            zisa::array_view<azeban::real_t, 1>(d_u));
+
+  zisa::copy(d_u, h_u);
+  fft->forward();
+
+  azeban::CFL cfl(0.1);
+  auto equation = std::make_shared<azeban::Burgers<azeban::SmoothCutoff1D>>(
+      h_u.shape(0), azeban::SmoothCutoff1D(visc, 1), zisa::device_type::cuda);
+  auto timestepper = std::make_shared<azeban::SSP_RK2<azeban::complex_t, 1>>(
+      zisa::device_type::cuda, d_u_hat.shape(), equation);
+  auto simulation = azeban::Simulation<azeban::complex_t, 1>(
+      zisa::array_const_view<azeban::complex_t, 1>(d_u_hat), cfl, timestepper);
+
+  simulation.simulate_until(t);
+
+  zisa::copy(d_u_hat, simulation.u());
+  fft->backward();
+  zisa::copy(h_u, d_u);
+  for (zisa::int_t i = 0; i < h_u.shape(0); ++i) {
+    h_u[i] /= h_u.shape(0);
+  }
+}
+
 TEST_CASE("Burgers Convergence") {
-  const auto solve_burgers = [&](const zisa::array_view<azeban::real_t, 1> &h_u,
-                                 azeban::real_t visc,
-                                 azeban::real_t t) {
-    auto d_u = zisa::cuda_array<azeban::real_t, 1>(h_u.shape());
-    auto d_u_hat = zisa::cuda_array<azeban::complex_t, 1>(
-        zisa::shape_t<1>(h_u.shape(0) / 2 + 1));
-
-    auto fft
-        = azeban::make_fft<1>(zisa::array_view<azeban::complex_t, 1>(d_u_hat),
-                              zisa::array_view<azeban::real_t, 1>(d_u));
-
-    zisa::copy(d_u, h_u);
-    fft->forward();
-
-    azeban::CFL cfl(0.1);
-    auto equation = std::make_shared<azeban::Burgers<azeban::SmoothCutoff1D>>(
-        h_u.shape(0), azeban::SmoothCutoff1D(visc, 1), zisa::device_type::cuda);
-    auto timestepper = std::make_shared<azeban::SSP_RK2<azeban::complex_t, 1>>(
-        zisa::device_type::cuda, d_u_hat.shape(), equation);
-    auto simulation = azeban::Simulation<azeban::complex_t, 1>(
-        zisa::array_const_view<azeban::complex_t, 1>(d_u_hat),
-        cfl,
-        timestepper);
-
-    simulation.simulate_until(t);
-
-    zisa::copy(d_u_hat, simulation.u());
-    fft->backward();
-    zisa::copy(h_u, d_u);
-    for (zisa::int_t i = 0; i < h_u.shape(0); ++i) {
-      h_u[i] /= h_u.shape(0);
-    }
-  };
-
   const auto compute_error
       = [&](const zisa::array_const_view<azeban::real_t, 1> &u_ref,
             const zisa::array_const_view<azeban::real_t, 1> &u) {
@@ -68,7 +66,7 @@ TEST_CASE("Burgers Convergence") {
   for (zisa::int_t i = 0; i < N_max; ++i) {
     u_ref[i] = zisa::sin(2 * zisa::pi / N_max * i);
   }
-  solve_burgers(u_ref, visc, t_final);
+  solveBurgers(u_ref, visc, t_final);
 
   std::vector<zisa::int_t> n;
   std::vector<azeban::real_t> err;
@@ -77,7 +75,7 @@ TEST_CASE("Burgers Convergence") {
     for (zisa::int_t i = 0; i < N; ++i) {
       u[i] = zisa::sin(2 * zisa::pi / N * i);
     }
-    solve_burgers(u, visc, t_final);
+    solveBurgers(u, visc, t_final);
     n.push_back(N);
     err.push_back(compute_error(u_ref, u));
   }
@@ -92,4 +90,20 @@ TEST_CASE("Burgers Convergence") {
       = (zisa::log(err[0]) - zisa::log(err[err.size() - 1]))
         / zisa::log(n[n.size() - 1] / n[0]);
   std::cout << "Estimated convergence rate: " << conv_rate << std::endl;
+}
+
+TEST_CASE("Burgers Shock Speed") {
+  const zisa::int_t N = 1024;
+  const azeban::real_t visc = 0.05 / N;
+  const azeban::real_t t_final = 0.5;
+
+  auto u = zisa::array<azeban::real_t, 1>(zisa::shape_t<1>{N});
+  for (zisa::int_t i = 0; i < N; ++i) {
+    u[i] = i < N / 4 ? 1 : 0;
+  }
+
+  solveBurgers(u, visc, t_final);
+
+  REQUIRE(u[2 * N / 4 + N / 100] <= 0.01);
+  REQUIRE(u[2 * N / 4 - N / 100] >= 0.9);
 }

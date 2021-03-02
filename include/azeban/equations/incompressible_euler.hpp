@@ -36,8 +36,8 @@ public:
     zisa::shape_t<dim_v + 1> B_shape;
     u_hat_shape[0] = dim_v;
     u_shape[0] = dim_v;
-    u_hat_shape[0] = dim_v * dim_v;
-    u_shape[0] = dim_v * dim_v;
+    B_hat_shape[0] = dim_v * dim_v;
+    B_shape[0] = dim_v * dim_v;
     for (int i = 0; i < dim_v - 1; ++i) {
       u_hat_shape[i + 1] = N_phys_pad;
       u_shape[i + 1] = N_phys_pad;
