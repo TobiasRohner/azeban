@@ -8,14 +8,6 @@
 #endif
 #include "fft_factory.hpp"
 
-namespace azeban {
-
-
-
-
-}
-
-
-
+namespace azeban {}
 
 #endif

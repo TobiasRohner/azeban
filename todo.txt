@@ -1,0 +1,2 @@
+cuFFT performance dependent on system size
+incompressible euler

@@ -1,20 +1,17 @@
 #ifndef BURGERS_H_
 #define BURGERS_H_
 
-#include <azeban/config.hpp>
 #include "equation.hpp"
+#include <azeban/config.hpp>
 #include <azeban/fft.hpp>
 #include <azeban/operations/convolve.hpp>
 #ifdef ZISA_HAS_CUDA
 #include <azeban/cuda/equations/burgers_cuda.hpp>
 #endif
 
-
-
 namespace azeban {
 
-
-template<typename SpectralViscosity>
+template <typename SpectralViscosity>
 class Burgers : public Equation<complex_t, 1> {
   using super = Equation<complex_t, 1>;
 
@@ -23,42 +20,40 @@ public:
   static constexpr int dim_v = 1;
 
   Burgers(zisa::int_t n,
-	  const SpectralViscosity &visc,
-	  zisa::device_type device = zisa::device_type::cpu)
-      : device_(device),
-	visc_(visc) {
+          const SpectralViscosity &visc,
+          zisa::device_type device = zisa::device_type::cpu)
+      : device_(device), visc_(visc) {
     const zisa::int_t N_phys = n;
     const zisa::int_t N_fourier = N_phys / 2 + 1;
-    const zisa::int_t N_phys_pad = 3./2 * N_phys + 1;
+    const zisa::int_t N_phys_pad = 3. / 2 * N_phys + 1;
     const zisa::int_t N_fourier_pad = N_phys_pad / 2 + 1;
     u_hat_ = zisa::array<complex_t, 1>(zisa::shape_t<1>{N_fourier_pad}, device);
     u_ = zisa::array<real_t, 1>(zisa::shape_t<1>{N_phys_pad}, device);
     fft_ = make_fft(zisa::array_view<complex_t, 1>(u_hat_),
-		    zisa::array_view<real_t, 1>(u_));
+                    zisa::array_view<real_t, 1>(u_));
   }
-  Burgers(const Burgers&) = default;
-  Burgers(Burgers&&) = default;
+  Burgers(const Burgers &) = default;
+  Burgers(Burgers &&) = default;
   virtual ~Burgers() override = default;
-  Burgers& operator=(const Burgers&) = default;
-  Burgers& operator=(Burgers&&) = default;
+  Burgers &operator=(const Burgers &) = default;
+  Burgers &operator=(Burgers &&) = default;
 
   virtual void dudt(const zisa::array_view<scalar_t, dim_v> &u_hat) override {
     copy_to_padded(zisa::array_view<complex_t, 1>(u_hat_),
-		   zisa::array_const_view<complex_t, 1>(u_hat),
-		   complex_t(0));
+                   zisa::array_const_view<complex_t, 1>(u_hat),
+                   complex_t(0));
     fft_->backward();
     real_t norm = fft_->u().shape(1);
     norm *= norm;
-    detail::square_and_scale(zisa::array_view<real_t, 1>(u_), real_t(1.0/norm));
+    detail::square_and_scale(zisa::array_view<real_t, 1>(u_),
+                             real_t(1.0 / norm));
     fft_->forward();
     if (device_ == zisa::device_type::cpu) {
       assert(false && "Not implemented yet");
     }
 #ifdef ZISA_HAS_CUDA
     else if (device_ == zisa::device_type::cuda) {
-      burgers_cuda(u_hat,
-		   zisa::array_const_view<complex_t, 1>(u_hat_),
-		   visc_);
+      burgers_cuda(u_hat, zisa::array_const_view<complex_t, 1>(u_hat_), visc_);
     }
 #endif
     else {
@@ -74,9 +69,6 @@ private:
   SpectralViscosity visc_;
 };
 
-
 }
-
-
 
 #endif

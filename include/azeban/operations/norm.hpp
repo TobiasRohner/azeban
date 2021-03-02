@@ -7,20 +7,17 @@
 #include <azeban/cuda/operations/norm_cuda.hpp>
 #endif
 
-
-
 namespace azeban {
 
-
-template<typename Scalar>
+template <typename Scalar>
 real_t norm(const zisa::array_const_view<Scalar, 1> &data, real_t p) {
   if (data.memory_location() == zisa::device_type::cpu) {
     real_t val = 0;
-    for (zisa::int_t i = 0 ; i < data.shape(0) ; ++i) {
+    for (zisa::int_t i = 0; i < data.shape(0); ++i) {
       using zisa::abs;
       val += zisa::pow(abs(data[i]), p);
     }
-    return zisa::pow(val, real_t(1./p));
+    return zisa::pow(val, real_t(1. / p));
   }
 #if ZISA_HAS_CUDA
   else if (data.memory_location() == zisa::device_type::cuda) {
@@ -32,8 +29,6 @@ real_t norm(const zisa::array_const_view<Scalar, 1> &data, real_t p) {
   }
 }
 
-
 }
-
 
 #endif
