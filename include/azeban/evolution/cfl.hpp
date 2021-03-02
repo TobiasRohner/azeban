@@ -22,8 +22,8 @@ public:
   CFL& operator=(CFL&&) = default;
 
   template<int Dim>
-  real_t dt(const zisa::array_const_view<complex_t, Dim> &u) const {
-    const real_t sup = norm(u, 1);
+  real_t dt(const zisa::array_const_view<complex_t, Dim> &u_hat) const {
+    const real_t sup = norm(u_hat, 1);
     return C_ / sup;
   }
 
