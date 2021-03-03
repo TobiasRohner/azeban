@@ -44,6 +44,34 @@ static void solveBurgers(const zisa::array_view<azeban::real_t, 1> &h_u,
   }
 }
 
+TEST_CASE("Burgers Derivative") {
+  zisa::int_t N_phys = 128;
+  zisa::int_t N_fourier = N_phys / 2 + 1;
+  zisa::shape_t<1> shape{N_fourier};
+  auto h_u = zisa::array<azeban::complex_t, 1>(shape);
+  auto h_dudt = zisa::array<azeban::complex_t, 1>(shape);
+  auto d_dudt = zisa::cuda_array<azeban::complex_t, 1>(shape);
+
+  azeban::Burgers<azeban::Step1D> burgers(
+      N_phys, azeban::Step1D(0, 0), zisa::device_type::cuda);
+
+  for (zisa::int_t i = 0; i < N_fourier; ++i) {
+    h_u[i] = 0;
+  }
+  h_u[1] = 0.5 * N_phys;
+
+  zisa::copy(d_dudt, h_u);
+  burgers.dudt(d_dudt);
+  zisa::copy(h_dudt, d_dudt);
+
+  for (zisa::int_t i = 0 ; i < N_fourier ; ++i) {
+    const azeban::real_t expected_x = 0;
+    const azeban::real_t expected_y = i == 2 ? -zisa::pi * N_phys / 2 : 0;
+    REQUIRE(std::fabs(h_dudt[i].x - expected_x) <= 1e-10);
+    REQUIRE(std::fabs(h_dudt[i].y - expected_y) <= 1e-10);
+  }
+}
+
 TEST_CASE("Burgers Convergence") {
   const auto compute_error
       = [&](const zisa::array_const_view<azeban::real_t, 1> &u_ref,
@@ -132,7 +160,7 @@ TEST_CASE("Burgers Corrctness Shock Free") {
       }
       const azeban::real_t fl = 0.5 * ul * ul;
       const azeban::real_t fr = 0.5 * ur * ur;
-      out[i] = (fr - fl) / (2 * dx);
+      out[i] = (fl - fr) / (2 * dx);
     }
   };
 
@@ -196,5 +224,5 @@ TEST_CASE("Burgers Corrctness Shock Free") {
   }
   err = zisa::sqrt(err);
   err /= N;
-  REQUIRE(err <= 1e-7);
+  REQUIRE(err <= 1e-5);
 }

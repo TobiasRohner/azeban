@@ -17,7 +17,6 @@ int main() {
 
   zisa::HDF5SerialWriter hdf5_writer("result.hdf5");
 
-  /*
   auto u_host = zisa::array<real_t, 1>(zisa::shape_t<1>{N_phys});
   auto u_device = zisa::cuda_array<real_t, 1>(zisa::shape_t<1>{N_phys});
   auto u_hat_device
@@ -32,8 +31,8 @@ int main() {
   }
   zisa::copy(u_device, u_host);
   fft->forward();
-  */
 
+  /*
   auto u_host = zisa::array<real_t, 3>(zisa::shape_t<3>{2, N_phys, N_phys});
   auto u_device
       = zisa::cuda_array<real_t, 3>(zisa::shape_t<3>{2, N_phys, N_phys});
@@ -60,8 +59,8 @@ int main() {
   }
   zisa::copy(u_device, u_host);
   fft->forward();
+  */
 
-  /*
   CFL cfl(0.5);
   auto equation = std::make_shared<Burgers<SmoothCutoff1D>>(
       N_phys, SmoothCutoff1D(0. / N_phys, 0.1), zisa::device_type::cuda);
@@ -69,8 +68,8 @@ int main() {
       zisa::device_type::cuda, zisa::shape_t<1>(N_fourier), equation);
   auto simulation = Simulation<complex_t, 1>(
       zisa::array_const_view<complex_t, 1>(u_hat_device), cfl, timestepper);
-  */
 
+  /*
   CFL cfl(0.5);
   auto equation = std::make_shared<IncompressibleEuler<2, SmoothCutoff1D>>(
       N_phys, SmoothCutoff1D(0.5 / N_phys, 1), zisa::device_type::cuda);
@@ -80,26 +79,25 @@ int main() {
       equation);
   auto simulation = Simulation<complex_t, 3>(
       zisa::array_const_view<complex_t, 3>(u_hat_device), cfl, timestepper);
+  */
 
   zisa::save(hdf5_writer, u_host, std::to_string(real_t(0)));
   for (int i = 0; i < 1000; ++i) {
     std::cerr << i << std::endl;
-    simulation.simulate_for(0.25 / 1000);
+    simulation.simulate_for(0.1 / 1000);
 
     zisa::copy(u_hat_device, simulation.u());
     fft->backward();
     zisa::copy(u_host, u_device);
     for (zisa::int_t i = 0; i < N_phys; ++i) {
-      u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
+      u_host[i] /= zisa::product(u_host.shape());// / u_host.shape(0);
     }
     zisa::save(hdf5_writer, u_host, std::to_string(simulation.time()));
 
-    /*
     for (zisa::int_t i = 0; i < N_phys; ++i) {
       std::cout << u_host[i] << "\n";
     }
     std::cout << "\n\n";
-    */
   }
 
   return EXIT_SUCCESS;
