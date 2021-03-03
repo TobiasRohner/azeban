@@ -58,7 +58,7 @@ TEST_CASE("Burgers Convergence") {
           return zisa::pow(errL1, 0.5) / u.shape(0);
         };
 
-  const zisa::int_t N_max = 8 * 1024;
+  const zisa::int_t N_max = 4 * 1024;
   const azeban::real_t visc = 0;
   const azeban::real_t t_final = 0.1; // At t=0.125 a shock develops
 
@@ -90,6 +90,9 @@ TEST_CASE("Burgers Convergence") {
       = (zisa::log(err[0]) - zisa::log(err[err.size() - 1]))
         / zisa::log(n[n.size() - 1] / n[0]);
   std::cout << "Estimated convergence rate: " << conv_rate << std::endl;
+
+  REQUIRE(conv_rate >= 1);
+  REQUIRE(conv_rate <= 2);
 }
 
 TEST_CASE("Burgers Shock Speed") {
@@ -106,4 +109,92 @@ TEST_CASE("Burgers Shock Speed") {
 
   REQUIRE(u[2 * N / 4 + N / 100] <= 0.01);
   REQUIRE(u[2 * N / 4 - N / 100] >= 0.9);
+}
+
+TEST_CASE("Burgers Corrctness Shock Free") {
+  const auto dudt = [&](const zisa::array_const_view<azeban::real_t, 1> u, zisa::array_view<azeban::real_t, 1> out) {
+    const zisa::int_t N = u.shape(0);
+    const azeban::real_t dx = 1. / N;
+    for (zisa::int_t i = 0 ; i < N ; ++i) {
+      azeban::real_t ul;
+      azeban::real_t ur;
+      if (i == 0) {
+	ul = u[N-1];
+	ur = u[1];
+      }
+      else if (i == N-1) {
+	ul = u[N-2];
+	ur = u[0];
+      }
+      else {
+	ul = u[i-1];
+	ur = u[i+1];
+      }
+      const azeban::real_t fl = 0.5 * ul * ul;
+      const azeban::real_t fr = 0.5 * ur * ur;
+      out[i] = (fr - fl) / (2 * dx);
+    }
+  };
+
+  const auto cfl =  [&](const zisa::array_const_view<azeban::real_t, 1> u, azeban::real_t C) {
+    const zisa::int_t N = u.shape(0);
+    const azeban::real_t dx = 1. / N;
+    azeban::real_t u_max = 0;
+    for (zisa::int_t i = 0 ; i < N ; ++i) {
+      if (zisa::abs(u[i]) > u_max) {
+	u_max = zisa::abs(u[i]);
+      }
+    }
+    return C * dx / u_max;
+  };
+
+  const auto ssp_rk2 = [&](const zisa::array_view<azeban::real_t, 1> u, azeban::real_t dt) {
+    const zisa::int_t N = u.shape(0);
+    zisa::array<azeban::real_t, 1> us(u.shape());
+    zisa::array<azeban::real_t, 1> uss(u.shape());
+    zisa::array<azeban::real_t, 1> diff(u.shape());
+    dudt(u, diff);
+    for (zisa::int_t i = 0 ; i < N ; ++i) {
+      us[i] = u[i] + dt * diff[i];
+    }
+    dudt(us, diff);
+    for (zisa::int_t i = 0 ; i < N ; ++i) {
+      uss[i] = us[i] + dt * diff[i];
+    }
+    for (zisa::int_t i = 0 ; i < N ; ++i) {
+      u[i] = (u[i] + uss[i]) / 2;
+    }
+  };
+
+  const auto solve_fd = [&](const zisa::array_view<azeban::real_t, 1> u, azeban::real_t t) {
+    azeban::real_t time = 0;
+    azeban::real_t dt = cfl(u, 0.1);
+    while (t - time > dt) {
+      ssp_rk2(u, dt);
+      time += dt;
+      dt = cfl(u, 0.1);
+    }
+    ssp_rk2(u, t-time);
+  };
+
+  const zisa::int_t N = 1024;
+  const azeban::real_t t_final = 0.1;
+
+  auto u_ref = zisa::array<azeban::real_t, 1>(zisa::shape_t<1>{N});
+  auto u_spectral = zisa::array<azeban::real_t, 1>(zisa::shape_t<1>{N});
+  for (zisa::int_t i = 0; i < N; ++i) {
+    u_ref[i] = zisa::sin(2 * zisa::pi / N * i);
+    u_spectral[i] = zisa::sin(2 * zisa::pi / N * i);
+  }
+
+  solve_fd(u_ref, t_final);
+  solveBurgers(u_spectral, 0, t_final);
+
+  azeban::real_t err = 0;
+  for (zisa::int_t i = 0 ; i < N ; ++i) {
+    err += zisa::pow(u_ref[i] - u_spectral[i], 2);
+  }
+  err = zisa::sqrt(err);
+  err /= N;
+  REQUIRE(err <= 1e-7);
 }

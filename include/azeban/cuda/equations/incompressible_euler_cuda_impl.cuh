@@ -8,18 +8,19 @@ namespace azeban {
 template <int Dim>
 __global__ void incompressible_euler_compute_B_cuda_kernel(
     zisa::array_view<real_t, Dim + 1> B,
-    zisa::array_const_view<real_t, Dim + 1> u) {}
+    zisa::array_const_view<real_t, Dim + 1> u,
+    zisa::int_t N_phys, zisa::int_t N_phys_pad) {}
 
 template <>
 __global__ void incompressible_euler_compute_B_cuda_kernel<2>(
-    zisa::array_view<real_t, 3> B, zisa::array_const_view<real_t, 3> u) {
+    zisa::array_view<real_t, 3> B, zisa::array_const_view<real_t, 3> u,
+    zisa::int_t N_phys, zisa::int_t N_phys_pad) {
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
   const unsigned stride = u.shape(1) * u.shape(2);
   const unsigned idx = i * u.shape(1) + j;
 
-  const real_t n = u.shape(1) * u.shape(2);
-  const real_t norm = 1.0 / (n * n);
+  const real_t norm = 1.0 / (N_phys * N_phys * N_phys_pad * N_phys_pad);
   if (i < u.shape(1) && j < u.shape(2)) {
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
@@ -32,15 +33,15 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<2>(
 
 template <>
 __global__ void incompressible_euler_compute_B_cuda_kernel<3>(
-    zisa::array_view<real_t, 4> B, zisa::array_const_view<real_t, 4> u) {
+    zisa::array_view<real_t, 4> B, zisa::array_const_view<real_t, 4> u,
+    zisa::int_t N_phys, zisa::int_t N_phys_pad) {
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
   const unsigned k = blockIdx.z * blockDim.z + threadIdx.z;
   const unsigned stride = u.shape(1) * u.shape(2) * u.shape(3);
   const unsigned idx = i * u.shape(1) * u.shape(2) + j * u.shape(1) + k;
 
-  const real_t n = u.shape(1) * u.shape(2) * u.shape(3);
-  const real_t norm = 1.0 / (n * n);
+  const real_t norm = 1.0 / (N_phys * N_phys * N_phys * N_phys_pad * N_phys_pad * N_phys_pad);
   if (i < u.shape(1) && j < u.shape(2) && k < u.shape(3)) {
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
@@ -68,7 +69,7 @@ incompressible_euler_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
   const unsigned idx = i * u_hat.shape(1) + j;
 
   if (i < u_hat.shape(1) && j < u_hat.shape(2)) {
-    unsigned i_ = i;
+    int i_ = i;
     if (i_ > u_hat.shape(1) / 2 + 1) {
       i_ -= u_hat.shape(1);
     }
@@ -103,12 +104,14 @@ incompressible_euler_3d_cuda_kernel(zisa::array_const_view<complex_t, 4> B_hat,
 template <int Dim>
 void incompressible_euler_compute_B_cuda(
     const zisa::array_view<real_t, Dim + 1> &B,
-    const zisa::array_const_view<real_t, Dim + 1> &u) {}
+    const zisa::array_const_view<real_t, Dim + 1> &u,
+    zisa::int_t N_phys, zisa::int_t N_phys_pad) {}
 
 template <>
 void incompressible_euler_compute_B_cuda<2>(
     const zisa::array_view<real_t, 3> &B,
-    const zisa::array_const_view<real_t, 3> &u) {
+    const zisa::array_const_view<real_t, 3> &u,
+    zisa::int_t N_phys, zisa::int_t N_phys_pad) {
   assert(B.memory_location() == zisa::device_type::cuda);
   assert(u.memory_location() == zisa::device_type::cuda);
   assert(B.shape(1) == u.shape(1));
@@ -119,13 +122,14 @@ void incompressible_euler_compute_B_cuda<2>(
       zisa::min(zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.y), 32),
       1);
   incompressible_euler_compute_B_cuda_kernel<2>
-      <<<block_dims, thread_dims>>>(B, u);
+      <<<block_dims, thread_dims>>>(B, u, N_phys, N_phys_pad);
 }
 
 template <>
 void incompressible_euler_compute_B_cuda<3>(
     const zisa::array_view<real_t, 4> &B,
-    const zisa::array_const_view<real_t, 4> &u) {
+    const zisa::array_const_view<real_t, 4> &u,
+    zisa::int_t N_phys, zisa::int_t N_phys_pad) {
   assert(B.memory_location() == zisa::device_type::cuda);
   assert(u.memory_location() == zisa::device_type::cuda);
   assert(B.shape(1) == u.shape(1));
@@ -137,7 +141,7 @@ void incompressible_euler_compute_B_cuda<3>(
       zisa::min(zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.y), 8),
       zisa::min(zisa::div_up(static_cast<int>(u.shape(3)), thread_dims.z), 8));
   incompressible_euler_compute_B_cuda_kernel<3>
-      <<<block_dims, thread_dims>>>(B, u);
+      <<<block_dims, thread_dims>>>(B, u, N_phys, N_phys_pad);
 }
 
 template <typename SpectralViscosity>

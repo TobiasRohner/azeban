@@ -26,10 +26,10 @@ public:
                       const SpectralViscosity &visc,
                       zisa::device_type device = zisa::device_type::cpu)
       : device_(device), visc_(visc) {
-    const zisa::int_t N_phys = n;
-    const zisa::int_t N_fourier = N_phys / 2 + 1;
-    const zisa::int_t N_phys_pad = 3. / 2 * N_phys + 1;
-    const zisa::int_t N_fourier_pad = N_phys_pad / 2 + 1;
+    N_phys = n;
+    N_fourier = N_phys / 2 + 1;
+    N_phys_pad = 3. / 2 * N_phys + 1;
+    N_fourier_pad = N_phys_pad / 2 + 1;
     zisa::shape_t<dim_v + 1> u_hat_shape;
     zisa::shape_t<dim_v + 1> u_shape;
     zisa::shape_t<dim_v + 1> B_hat_shape;
@@ -92,6 +92,10 @@ public:
   }
 
 private:
+  zisa::int_t N_phys;
+  zisa::int_t N_fourier;
+  zisa::int_t N_phys_pad;
+  zisa::int_t N_fourier_pad;
   zisa::device_type device_;
   zisa::array<complex_t, dim_v + 1> u_hat_;
   zisa::array<real_t, dim_v + 1> u_;
@@ -151,7 +155,7 @@ private:
     }
 #if ZISA_HAS_CUDA
     else if (device_ == zisa::device_type::cuda) {
-      incompressible_euler_compute_B_cuda<dim_v>(fft_B_->u(), fft_u_->u());
+      incompressible_euler_compute_B_cuda<dim_v>(fft_B_->u(), fft_u_->u(), N_phys, N_phys_pad);
     }
 #endif
     else {

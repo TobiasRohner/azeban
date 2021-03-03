@@ -6,7 +6,8 @@ namespace azeban {
 #define AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_COMPUTE_B_CUDA(DIM)            \
   template void incompressible_euler_compute_B_cuda<DIM>(                      \
       const zisa::array_view<real_t, DIM + 1> &,                               \
-      const zisa::array_const_view<real_t, DIM + 1> &);
+      const zisa::array_const_view<real_t, DIM + 1> &,			       \
+      zisa::int_t, zisa::int_t);
 
 AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_COMPUTE_B_CUDA(2)
 AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_COMPUTE_B_CUDA(3)
