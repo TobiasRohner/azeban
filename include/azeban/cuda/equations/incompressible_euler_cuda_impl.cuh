@@ -115,8 +115,8 @@ void incompressible_euler_compute_B_cuda<2>(
   assert(B.shape(2) == u.shape(2));
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
-      zisa::min(zisa::div_up(static_cast<int>(u.shape(0)), thread_dims.x), 32),
-      zisa::min(zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.y), 32),
+      zisa::min(zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.x), 32),
+      zisa::min(zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.y), 32),
       1);
   incompressible_euler_compute_B_cuda_kernel<2>
       <<<block_dims, thread_dims>>>(B, u);
@@ -133,9 +133,9 @@ void incompressible_euler_compute_B_cuda<3>(
   assert(B.shape(3) == u.shape(3));
   const dim3 thread_dims(8, 8, 8);
   const dim3 block_dims(
-      zisa::min(zisa::div_up(static_cast<int>(u.shape(0)), thread_dims.x), 8),
-      zisa::min(zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.y), 8),
-      zisa::min(zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.z), 8));
+      zisa::min(zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.x), 8),
+      zisa::min(zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.y), 8),
+      zisa::min(zisa::div_up(static_cast<int>(u.shape(3)), thread_dims.z), 8));
   incompressible_euler_compute_B_cuda_kernel<3>
       <<<block_dims, thread_dims>>>(B, u);
 }
@@ -151,9 +151,9 @@ void incompressible_euler_2d_cuda(
   assert(B_hat.shape(2) == u_hat.shape(2));
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
-      zisa::min(zisa::div_up(static_cast<int>(u_hat.shape(0)), thread_dims.x),
+      zisa::min(zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.x),
                 32),
-      zisa::min(zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.y),
+      zisa::min(zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.y),
                 32),
       1);
   incompressible_euler_2d_cuda_kernel<<<block_dims, thread_dims>>>(
@@ -172,11 +172,11 @@ void incompressible_euler_3d_cuda(
   assert(B_hat.shape(3) == u_hat.shape(3));
   const dim3 thread_dims(8, 8, 8);
   const dim3 block_dims(
-      zisa::min(zisa::div_up(static_cast<int>(u_hat.shape(0)), thread_dims.x),
+      zisa::min(zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.x),
                 8),
-      zisa::min(zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.y),
+      zisa::min(zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.y),
                 8),
-      zisa::min(zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.z),
+      zisa::min(zisa::div_up(static_cast<int>(u_hat.shape(3)), thread_dims.z),
                 8));
   incompressible_euler_3d_cuda_kernel<<<block_dims, thread_dims>>>(
       B_hat, u_hat, visc);

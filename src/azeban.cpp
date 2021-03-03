@@ -12,7 +12,7 @@
 using namespace azeban;
 
 int main() {
-  zisa::int_t N_phys = 1024 * 4;
+  zisa::int_t N_phys = 1024;
   zisa::int_t N_fourier = N_phys / 2 + 1;
 
   zisa::HDF5SerialWriter hdf5_writer("result.hdf5");
@@ -26,8 +26,8 @@ int main() {
                          zisa::array_view<real_t, 1>(u_device));
 
   for (zisa::int_t i = 0; i < N_phys; ++i) {
-    // u_host[i] = zisa::sin(2 * zisa::pi / N_phys * i);
-    u_host[i] = i < N_phys / 4 ? 1 : 0;
+    u_host[i] = zisa::sin(2 * zisa::pi / N_phys * i);
+    //u_host[i] = i < N_phys / 4 ? 1 : 0;
   }
   zisa::copy(u_device, u_host);
   fft->forward();
@@ -63,7 +63,7 @@ int main() {
 
   CFL cfl(0.5);
   auto equation = std::make_shared<Burgers<SmoothCutoff1D>>(
-      N_phys, SmoothCutoff1D(0.05 / N_phys, 1), zisa::device_type::cuda);
+      N_phys, SmoothCutoff1D(0. / N_phys, 0.1), zisa::device_type::cuda);
   auto timestepper = std::make_shared<SSP_RK2<complex_t, 1>>(
       zisa::device_type::cuda, zisa::shape_t<1>(N_fourier), equation);
   auto simulation = Simulation<complex_t, 1>(
@@ -84,13 +84,13 @@ int main() {
   zisa::save(hdf5_writer, u_host, std::to_string(real_t(0)));
   for (int i = 0; i < 1000; ++i) {
     std::cerr << i << std::endl;
-    simulation.simulate_for(0.5 / 1000);
+    simulation.simulate_for(0.25 / 1000);
 
     zisa::copy(u_hat_device, simulation.u());
     fft->backward();
     zisa::copy(u_host, u_device);
     for (zisa::int_t i = 0; i < N_phys; ++i) {
-      u_host[i] /= zisa::product(u_host.shape()); // / u_host.shape(0);
+      u_host[i] /= zisa::product(u_host.shape());// / u_host.shape(0);
     }
     zisa::save(hdf5_writer, u_host, std::to_string(simulation.time()));
 
