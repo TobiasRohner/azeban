@@ -9,12 +9,15 @@ template <int Dim>
 __global__ void incompressible_euler_compute_B_cuda_kernel(
     zisa::array_view<real_t, Dim + 1> B,
     zisa::array_const_view<real_t, Dim + 1> u,
-    zisa::int_t N_phys, zisa::int_t N_phys_pad) {}
+    zisa::int_t N_phys,
+    zisa::int_t N_phys_pad) {}
 
 template <>
 __global__ void incompressible_euler_compute_B_cuda_kernel<2>(
-    zisa::array_view<real_t, 3> B, zisa::array_const_view<real_t, 3> u,
-    zisa::int_t N_phys, zisa::int_t N_phys_pad) {
+    zisa::array_view<real_t, 3> B,
+    zisa::array_const_view<real_t, 3> u,
+    zisa::int_t N_phys,
+    zisa::int_t N_phys_pad) {
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
   const unsigned stride = u.shape(1) * u.shape(2);
@@ -33,15 +36,18 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<2>(
 
 template <>
 __global__ void incompressible_euler_compute_B_cuda_kernel<3>(
-    zisa::array_view<real_t, 4> B, zisa::array_const_view<real_t, 4> u,
-    zisa::int_t N_phys, zisa::int_t N_phys_pad) {
+    zisa::array_view<real_t, 4> B,
+    zisa::array_const_view<real_t, 4> u,
+    zisa::int_t N_phys,
+    zisa::int_t N_phys_pad) {
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
   const unsigned k = blockIdx.z * blockDim.z + threadIdx.z;
   const unsigned stride = u.shape(1) * u.shape(2) * u.shape(3);
   const unsigned idx = i * u.shape(1) * u.shape(2) + j * u.shape(1) + k;
 
-  const real_t norm = 1.0 / (N_phys * N_phys * N_phys * N_phys_pad * N_phys_pad * N_phys_pad);
+  const real_t norm
+      = 1.0 / (N_phys * N_phys * N_phys * N_phys_pad * N_phys_pad * N_phys_pad);
   if (i < u.shape(1) && j < u.shape(2) && k < u.shape(3)) {
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
@@ -70,7 +76,7 @@ incompressible_euler_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
 
   if (i < u_hat.shape(1) && j < u_hat.shape(2)) {
     int i_ = i;
-    if (i_ > u_hat.shape(1) / 2 + 1) {
+    if (i_ >= u_hat.shape(1) / 2 + 1) {
       i_ -= u_hat.shape(1);
     }
     const real_t k1 = 2 * zisa::pi * i_;
@@ -105,13 +111,15 @@ template <int Dim>
 void incompressible_euler_compute_B_cuda(
     const zisa::array_view<real_t, Dim + 1> &B,
     const zisa::array_const_view<real_t, Dim + 1> &u,
-    zisa::int_t N_phys, zisa::int_t N_phys_pad) {}
+    zisa::int_t N_phys,
+    zisa::int_t N_phys_pad) {}
 
 template <>
 void incompressible_euler_compute_B_cuda<2>(
     const zisa::array_view<real_t, 3> &B,
     const zisa::array_const_view<real_t, 3> &u,
-    zisa::int_t N_phys, zisa::int_t N_phys_pad) {
+    zisa::int_t N_phys,
+    zisa::int_t N_phys_pad) {
   assert(B.memory_location() == zisa::device_type::cuda);
   assert(u.memory_location() == zisa::device_type::cuda);
   assert(B.shape(1) == u.shape(1));
@@ -129,7 +137,8 @@ template <>
 void incompressible_euler_compute_B_cuda<3>(
     const zisa::array_view<real_t, 4> &B,
     const zisa::array_const_view<real_t, 4> &u,
-    zisa::int_t N_phys, zisa::int_t N_phys_pad) {
+    zisa::int_t N_phys,
+    zisa::int_t N_phys_pad) {
   assert(B.memory_location() == zisa::device_type::cuda);
   assert(u.memory_location() == zisa::device_type::cuda);
   assert(B.shape(1) == u.shape(1));

@@ -155,7 +155,8 @@ private:
     }
 #if ZISA_HAS_CUDA
     else if (device_ == zisa::device_type::cuda) {
-      incompressible_euler_compute_B_cuda<dim_v>(fft_B_->u(), fft_u_->u(), N_phys, N_phys_pad);
+      incompressible_euler_compute_B_cuda<dim_v>(
+          fft_B_->u(), fft_u_->u(), N_phys, N_phys_pad);
     }
 #endif
     else {

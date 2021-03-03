@@ -11,7 +11,8 @@ template <int Dim>
 void incompressible_euler_compute_B_cuda(
     const zisa::array_view<real_t, Dim + 1> &B,
     const zisa::array_const_view<real_t, Dim + 1> &u,
-    zisa::int_t N_phys, zisa::int_t N_phys_pad);
+    zisa::int_t N_phys,
+    zisa::int_t N_phys_pad);
 
 template <typename SpectralViscosity>
 void incompressible_euler_2d_cuda(

@@ -33,34 +33,44 @@ public:
     int cdist = 1;
     int n[dim_v];
     for (int i = 0; i < dim_v; ++i) {
-      rdist *= u_.shape()[i + 1];
-      cdist *= u_hat_.shape()[i + 1];
-      n[i] = u_.shape()[i + 1];
+      rdist *= u_.shape(i + 1);
+      cdist *= u_hat_.shape(i + 1);
+      n[i] = u_.shape(i + 1);
     }
-    auto status = cufftPlanMany(&plan_forward_,
-                                dim_v,
-                                n,
-                                n,
-                                1,
-                                rdist,
-                                n,
-                                1,
-                                cdist,
-                                type_forward,
-                                u.shape(0));
+    int rn[dim_v];
+    int cn[dim_v];
+    for (int i = 0; i < dim_v; ++i) {
+      rn[i] = 1;
+      cn[i] = 1;
+      for (int j = i; j < dim_v; ++j) {
+        rn[i] *= u_.shape(j + 1);
+        cn[i] *= u_hat_.shape(j + 1);
+      }
+    }
+    auto status = cufftPlanMany(&plan_forward_, // plan
+                                dim_v,          // rank
+                                n,              // n
+                                rn,             // inembed
+                                1,              // istride
+                                rdist,          // idist
+                                cn,             // onembed
+                                1,              // ostride
+                                cdist,          // odist
+                                type_forward,   // type
+                                u.shape(0));    // batch
     cudaCheckError(status);
     // Create a plan for the backward operation
-    status = cufftPlanMany(&plan_backward_,
-                           dim_v,
-                           n,
-                           n,
-                           1,
-                           cdist,
-                           n,
-                           1,
-                           rdist,
-                           type_backward,
-                           u.shape(0));
+    status = cufftPlanMany(&plan_backward_, // plan
+                           dim_v,           // rank
+                           n,               // n
+                           cn,              // inembed
+                           1,               // istride
+                           cdist,           // idist
+                           rn,              // onembed
+                           1,               // ostride
+                           rdist,           // odist
+                           type_backward,   // type
+                           u.shape(0));     // batch
     cudaCheckError(status);
   }
 
