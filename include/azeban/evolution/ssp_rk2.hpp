@@ -29,16 +29,8 @@ public:
 
   virtual void integrate(real_t dt,
                          const zisa::array_view<scalar_t, dim_v> &u) override {
-    zisa::internal::copy(dudt_.raw(),
-                         dudt_.device(),
-                         u.raw(),
-                         u.memory_location(),
-                         zisa::product(dudt_.shape()));
-    zisa::internal::copy(u_star_.raw(),
-                         u_star_.device(),
-                         u.raw(),
-                         u.memory_location(),
-                         zisa::product(dudt_.shape()));
+    zisa::copy(dudt_, u);
+    zisa::copy(u_star_, u);
     equation_->dudt(dudt_);
     axpy(scalar_t(0.5 * dt), zisa::array_const_view<scalar_t, dim_v>(dudt_), u);
     axpy(scalar_t(dt),

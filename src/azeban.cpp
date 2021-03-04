@@ -81,10 +81,10 @@ int main() {
   auto simulation = Simulation<complex_t, 3>(
       zisa::array_const_view<complex_t, 3>(u_hat_device), cfl, timestepper);
 
-  zisa::save(hdf5_writer, u_host, std::to_string(real_t(0)));
+  zisa::save(hdf5_writer, u_host, std::to_string(0));
   for (int i = 0; i < 1000; ++i) {
     std::cerr << i << std::endl;
-    simulation.simulate_for(0.1 / 1000);
+    simulation.simulate_for(10. / 1000);
 
     zisa::copy(u_hat_device, simulation.u());
     fft->backward();
@@ -92,7 +92,7 @@ int main() {
     for (zisa::int_t i = 0; i < N_phys; ++i) {
       u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
     }
-    zisa::save(hdf5_writer, u_host, std::to_string(simulation.time()));
+    zisa::save(hdf5_writer, u_host, std::to_string(i + 1));
 
     /*
     for (zisa::int_t i = 0; i < N_phys; ++i) {

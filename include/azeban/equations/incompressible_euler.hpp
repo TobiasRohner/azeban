@@ -50,8 +50,8 @@ public:
     B_shape[dim_v] = N_phys_pad;
     u_hat_ = zisa::array<complex_t, dim_v + 1>(u_hat_shape, device);
     u_ = zisa::array<real_t, dim_v + 1>(u_shape, device);
-    B_hat_ = zisa::array<complex_t, dim_v + 1>(u_hat_shape, device);
-    B_ = zisa::array<real_t, dim_v + 1>(u_shape, device);
+    B_hat_ = zisa::array<complex_t, dim_v + 1>(B_hat_shape, device);
+    B_ = zisa::array<real_t, dim_v + 1>(B_shape, device);
     fft_u_ = make_fft<dim_v>(zisa::array_view<complex_t, dim_v + 1>(u_hat_),
                              zisa::array_view<real_t, dim_v + 1>(u_));
     fft_B_ = make_fft<dim_v>(zisa::array_view<complex_t, dim_v + 1>(B_hat_),
@@ -80,9 +80,9 @@ public:
 #if ZISA_HAS_CUDA
     else if (device_ == zisa::device_type::cuda) {
       if constexpr (dim_v == 2) {
-        incompressible_euler_2d_cuda(B_hat_, u_hat_, visc_);
+        incompressible_euler_2d_cuda(B_hat_, u_hat, visc_);
       } else {
-        incompressible_euler_3d_cuda(B_hat_, u_hat_, visc_);
+        incompressible_euler_3d_cuda(B_hat_, u_hat, visc_);
       }
     }
 #endif

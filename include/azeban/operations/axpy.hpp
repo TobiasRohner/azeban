@@ -26,7 +26,7 @@ void axpy(const Scalar &a,
       y[i] += a * x[i];
     }
   }
-#ifdef ZISA_HAS_CUDA
+#if ZISA_HAS_CUDA
   else if (x_flat.memory_location() == zisa::device_type::cuda
            && y_flat.memory_location() == zisa::device_type::cuda) {
     axpy_cuda(a, x_flat, y_flat);

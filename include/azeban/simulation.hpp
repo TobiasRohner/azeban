@@ -54,6 +54,13 @@ public:
 
   void simulate_for(real_t t) { simulate_until(time_ + t); }
 
+  real_t step() {
+    const real_t dt = cfl_.dt(zisa::array_const_view<scalar_t, Dim>(u_));
+    timestepper_->integrate(dt, u_);
+    time_ += dt;
+    return dt;
+  }
+
   real_t time() const { return time_; }
   zisa::array_view<scalar_t, dim_v> u() { return u_; }
   zisa::array_const_view<scalar_t, dim_v> u() const { return u_; }
