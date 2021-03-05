@@ -1,10 +1,10 @@
 #include <azeban/catch.hpp>
 
-#include <azeban/grid.hpp>
 #include <azeban/equations/burgers.hpp>
 #include <azeban/equations/spectral_viscosity.hpp>
 #include <azeban/evolution/ssp_rk2.hpp>
 #include <azeban/fft.hpp>
+#include <azeban/grid.hpp>
 #include <azeban/operations/operations.hpp>
 #include <azeban/simulation.hpp>
 #include <vector>
@@ -14,10 +14,11 @@
 #include <zisa/memory/array.hpp>
 
 static void solveBurgers(const azeban::Grid<1> &grid,
-			 const zisa::array_view<azeban::real_t, 2> &h_u,
+                         const zisa::array_view<azeban::real_t, 2> &h_u,
                          azeban::real_t visc,
                          azeban::real_t t) {
-  auto d_u = zisa::cuda_array<azeban::real_t, 2>(zisa::shape_t<2>(1, grid.N_phys));
+  auto d_u
+      = zisa::cuda_array<azeban::real_t, 2>(zisa::shape_t<2>(1, grid.N_phys));
   auto d_u_hat = zisa::cuda_array<azeban::complex_t, 2>(
       zisa::shape_t<2>(1, grid.N_fourier));
 

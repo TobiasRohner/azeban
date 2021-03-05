@@ -24,10 +24,9 @@ public:
           const SpectralViscosity &visc,
           zisa::device_type device = zisa::device_type::cpu)
       : super(grid), device_(device), visc_(visc) {
-    u_hat_ = zisa::array<complex_t, 2>(zisa::shape_t<2>{1, grid.N_fourier_pad}, device);
-    u_ = zisa::array<real_t, 2>(zisa::shape_t<2>{1, grid.N_phys_pad}, device);
-    fft_ = make_fft<1>(zisa::array_view<complex_t, 2>(u_hat_),
-                       zisa::array_view<real_t, 2>(u_));
+    u_hat_ = grid.make_array_fourier_pad(1, device);
+    u_ = grid.make_array_phys_pad(1, device);
+    fft_ = make_fft<1>(u_hat_, u_);
   }
   Burgers(const Burgers &) = delete;
   Burgers(Burgers &&) = default;
@@ -35,10 +34,15 @@ public:
   Burgers &operator=(const Burgers &) = delete;
   Burgers &operator=(Burgers &&) = default;
 
-  virtual void dudt(const zisa::array_view<scalar_t, dim_v+1> &u_hat) override {
-    copy_to_padded(zisa::array_view<complex_t, 2>(u_hat_),
-                   zisa::array_const_view<complex_t, 2>(u_hat),
-                   complex_t(0));
+  virtual void
+  dudt(const zisa::array_view<scalar_t, dim_v + 1> &u_hat) override {
+    copy_to_padded(
+        zisa::array_view<complex_t, 1>(
+            zisa::shape_t<1>(u_hat_.shape(1)), u_hat_.raw(), u_hat_.device()),
+        zisa::array_const_view<complex_t, 1>(zisa::shape_t<1>(u_hat.shape(1)),
+                                             u_hat.raw(),
+                                             u_hat.memory_location()),
+        complex_t(0));
     fft_->backward();
     real_t norm = grid_.N_phys_pad * grid_.N_phys;
     detail::scale_and_square(zisa::array_view<real_t, 2>(u_),

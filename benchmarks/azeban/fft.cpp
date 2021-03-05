@@ -15,11 +15,11 @@ static void cufft_1d_sizes(benchmark::internal::Benchmark *bm) {
 
 static void bm_cufft_forward_1d(benchmark::State &state) {
   const zisa::int_t n = state.range(0);
-  const zisa::shape_t<1> rshape(n);
-  const zisa::shape_t<1> cshape(n / 2 + 1);
-  auto h_u = zisa::array<azeban::real_t, 1>(rshape);
-  auto d_u = zisa::cuda_array<azeban::real_t, 1>(rshape);
-  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 1>(cshape);
+  const zisa::shape_t<2> rshape(1, n);
+  const zisa::shape_t<2> cshape(1, n / 2 + 1);
+  auto h_u = zisa::array<azeban::real_t, 2>(rshape);
+  auto d_u = zisa::cuda_array<azeban::real_t, 2>(rshape);
+  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 2>(cshape);
 
   for (zisa::int_t i = 0; i < n; ++i) {
     h_u[i] = i < n / 2 ? 1 : 0;
@@ -27,8 +27,8 @@ static void bm_cufft_forward_1d(benchmark::State &state) {
   zisa::copy(d_u, h_u);
 
   const auto fft
-      = azeban::make_fft(zisa::array_view<azeban::complex_t, 1>(d_u_hat),
-                         zisa::array_view<azeban::real_t, 1>(d_u));
+      = azeban::make_fft<1>(zisa::array_view<azeban::complex_t, 2>(d_u_hat),
+                            zisa::array_view<azeban::real_t, 2>(d_u));
 
   for (auto _ : state) {
     fft->forward();

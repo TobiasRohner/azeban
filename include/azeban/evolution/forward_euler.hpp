@@ -27,15 +27,16 @@ public:
   ForwardEuler &operator=(const ForwardEuler &) = delete;
   ForwardEuler &operator=(ForwardEuler &&) = default;
 
-  virtual void integrate(real_t dt,
-                         const zisa::array_view<scalar_t, dim_v+1> &u) override {
+  virtual void
+  integrate(real_t dt,
+            const zisa::array_view<scalar_t, dim_v + 1> &u) override {
     zisa::internal::copy(dudt_.raw(),
                          dudt_.device(),
                          u.raw(),
                          u.memory_location(),
                          zisa::product(dudt_.shape()));
     equation_->dudt(dudt_);
-    axpy(scalar_t(dt), zisa::array_const_view<scalar_t, dim_v+1>(dudt_), u);
+    axpy(scalar_t(dt), zisa::array_const_view<scalar_t, dim_v + 1>(dudt_), u);
   }
 
   using super::equation;
@@ -46,7 +47,7 @@ protected:
   using super::equation_;
 
 private:
-  zisa::array<scalar_t, dim_v+1> dudt_;
+  zisa::array<scalar_t, dim_v + 1> dudt_;
 };
 
 }

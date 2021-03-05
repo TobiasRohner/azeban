@@ -13,7 +13,7 @@ public:
   static constexpr int dim_v = Dim;
 
   Equation() = delete;
-  Equation(const Grid<Dim> &grid) : grid_(grid) { }
+  Equation(const Grid<Dim> &grid) : grid_(grid) {}
   Equation(const Equation &) = default;
   Equation(Equation &&) = default;
   virtual ~Equation() = default;
@@ -21,7 +21,7 @@ public:
   Equation &operator=(Equation &&) = default;
 
   // Replaces the contents of u with its time derivative
-  virtual void dudt(const zisa::array_view<scalar_t, dim_v+1> &u) = 0;
+  virtual void dudt(const zisa::array_view<scalar_t, dim_v + 1> &u) = 0;
 
   const Grid<Dim> &grid() const { return grid_; }
 

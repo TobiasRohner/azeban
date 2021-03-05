@@ -27,7 +27,8 @@ public:
   TimeIntegrator &operator=(const TimeIntegrator &) = default;
   TimeIntegrator &operator=(TimeIntegrator &&) = default;
 
-  virtual void integrate(real_t dt, const zisa::array_view<scalar_t, dim_v+1> &u)
+  virtual void integrate(real_t dt,
+                         const zisa::array_view<scalar_t, dim_v + 1> &u)
       = 0;
 
   zisa::device_type memory_location() const { return device_; }

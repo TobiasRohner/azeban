@@ -17,10 +17,6 @@ class CUFFT final : public FFT<Dim> {
 public:
   static constexpr int dim_v = Dim;
 
-  CUFFT(const zisa::array_view<complex_t, dim_v> &u_hat,
-        const zisa::array_view<real_t, dim_v> &u)
-      : CUFFT(increase_array_view_rank(u_hat), increase_array_view_rank(u)) {}
-
   CUFFT(const zisa::array_view<complex_t, dim_v + 1> &u_hat,
         const zisa::array_view<real_t, dim_v + 1> &u)
       : super(u_hat, u) {
@@ -112,7 +108,6 @@ public:
 
 protected:
   using super::data_dim_;
-  using super::increase_array_view_rank;
   using super::u_;
   using super::u_hat_;
 

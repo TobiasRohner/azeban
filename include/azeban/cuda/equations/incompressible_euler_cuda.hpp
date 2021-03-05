@@ -2,8 +2,8 @@
 #define INCOMPRESSIBLE_EULER_CUDA_H_
 
 #include <azeban/config.hpp>
-#include <azeban/grid.hpp>
 #include <azeban/equations/spectral_viscosity.hpp>
+#include <azeban/grid.hpp>
 #include <zisa/memory/array_view.hpp>
 
 namespace azeban {

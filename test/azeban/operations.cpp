@@ -13,16 +13,16 @@ TEST_CASE("Convolution in Fourier Domain", "[operations]") {
   };
 
   zisa::int_t n = 128;
-  zisa::shape_t<1> rshape{n};
-  zisa::shape_t<1> cshape{n / 2 + 1};
-  auto h_u_hat = zisa::array<azeban::complex_t, 1>(cshape);
-  auto d_u = zisa::cuda_array<azeban::real_t, 1>(rshape);
-  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 1>(cshape);
+  zisa::shape_t<2> rshape{1, n};
+  zisa::shape_t<2> cshape{1, n / 2 + 1};
+  auto h_u_hat = zisa::array<azeban::complex_t, 2>(cshape);
+  auto d_u = zisa::cuda_array<azeban::real_t, 2>(rshape);
+  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 2>(cshape);
 
   std::shared_ptr<azeban::FFT<1>> fft
       = std::make_shared<azeban::CUFFT<1>>(d_u_hat, d_u);
 
-  for (zisa::int_t i = 0; i < cshape[0]; ++i) {
+  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
     h_u_hat[i] = 0;
   }
   h_u_hat[1] = 1;
@@ -30,10 +30,10 @@ TEST_CASE("Convolution in Fourier Domain", "[operations]") {
 
   zisa::copy(d_u_hat, h_u_hat);
   azeban::convolve_freq_domain(fft.get(),
-                               zisa::array_view<azeban::complex_t, 1>(d_u_hat));
+                               zisa::array_view<azeban::complex_t, 2>(d_u_hat));
   zisa::copy(h_u_hat, d_u_hat);
 
-  for (zisa::int_t i = 0; i < cshape[0]; ++i) {
+  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
     azeban::real_t expected = 0;
     switch (i) {
     case 0:

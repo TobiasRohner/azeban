@@ -3,8 +3,8 @@
 
 #include "equation.hpp"
 #include <azeban/config.hpp>
-#include <azeban/grid.hpp>
 #include <azeban/fft.hpp>
+#include <azeban/grid.hpp>
 #include <azeban/operations/convolve.hpp>
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
@@ -27,32 +27,12 @@ public:
                       const SpectralViscosity &visc,
                       zisa::device_type device = zisa::device_type::cpu)
       : super(grid), device_(device), visc_(visc) {
-    zisa::shape_t<dim_v + 1> u_hat_shape;
-    zisa::shape_t<dim_v + 1> u_shape;
-    zisa::shape_t<dim_v + 1> B_hat_shape;
-    zisa::shape_t<dim_v + 1> B_shape;
-    u_hat_shape[0] = dim_v;
-    u_shape[0] = dim_v;
-    B_hat_shape[0] = dim_v * dim_v;
-    B_shape[0] = dim_v * dim_v;
-    for (int i = 0; i < dim_v - 1; ++i) {
-      u_hat_shape[i + 1] = grid.N_phys_pad;
-      u_shape[i + 1] = grid.N_phys_pad;
-      B_hat_shape[i + 1] = grid.N_phys_pad;
-      B_shape[i + 1] = grid.N_phys_pad;
-    }
-    u_hat_shape[dim_v] = grid.N_fourier_pad;
-    u_shape[dim_v] = grid.N_phys_pad;
-    B_hat_shape[dim_v] = grid.N_fourier_pad;
-    B_shape[dim_v] = grid.N_phys_pad;
-    u_hat_ = zisa::array<complex_t, dim_v + 1>(u_hat_shape, device);
-    u_ = zisa::array<real_t, dim_v + 1>(u_shape, device);
-    B_hat_ = zisa::array<complex_t, dim_v + 1>(B_hat_shape, device);
-    B_ = zisa::array<real_t, dim_v + 1>(B_shape, device);
-    fft_u_ = make_fft<dim_v>(zisa::array_view<complex_t, dim_v + 1>(u_hat_),
-                             zisa::array_view<real_t, dim_v + 1>(u_));
-    fft_B_ = make_fft<dim_v>(zisa::array_view<complex_t, dim_v + 1>(B_hat_),
-                             zisa::array_view<real_t, dim_v + 1>(B_));
+    u_hat_ = grid.make_array_fourier_pad(dim_v, device);
+    u_ = grid.make_array_phys_pad(dim_v, device);
+    B_hat_ = grid.make_array_fourier_pad(dim_v * dim_v, device);
+    B_ = grid.make_array_phys_pad(dim_v * dim_v, device);
+    fft_u_ = make_fft<dim_v>(u_hat_, u_);
+    fft_B_ = make_fft<dim_v>(B_hat_, B_);
   }
   IncompressibleEuler(const IncompressibleEuler &) = delete;
   IncompressibleEuler(IncompressibleEuler &&) = default;

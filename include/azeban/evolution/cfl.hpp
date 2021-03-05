@@ -8,7 +8,7 @@
 
 namespace azeban {
 
-template<int Dim>
+template <int Dim>
 class CFL {
 public:
   static constexpr int dim_v = Dim;
@@ -22,9 +22,9 @@ public:
   CFL &operator=(const CFL &) = default;
   CFL &operator=(CFL &&) = default;
 
-  real_t dt(const zisa::array_const_view<complex_t, dim_v+1> &u_hat) const {
+  real_t dt(const zisa::array_const_view<complex_t, dim_v + 1> &u_hat) const {
     const real_t sup = norm(u_hat, 1);
-    return std::pow(grid_.N_phys, dim_v-1) * C_ / sup;
+    return std::pow(grid_.N_phys, dim_v - 1) * C_ / sup;
   }
 
 private:

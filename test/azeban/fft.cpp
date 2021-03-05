@@ -81,12 +81,12 @@ std::make_shared<azeban::FFTWFFT<1>>(u_hat, u);
 
 TEST_CASE("cuFFT 1D scalar valued data", "[cufft]") {
   zisa::int_t n = 128;
-  zisa::shape_t<1> rshape{n};
-  zisa::shape_t<1> cshape{n / 2 + 1};
-  auto h_u = zisa::array<azeban::real_t, 1>(rshape);
-  auto h_u_hat = zisa::array<azeban::complex_t, 1>(cshape);
-  auto d_u = zisa::cuda_array<azeban::real_t, 1>(rshape);
-  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 1>(cshape);
+  zisa::shape_t<2> rshape{1, n};
+  zisa::shape_t<2> cshape{1, n / 2 + 1};
+  auto h_u = zisa::array<azeban::real_t, 2>(rshape);
+  auto h_u_hat = zisa::array<azeban::complex_t, 2>(cshape);
+  auto d_u = zisa::cuda_array<azeban::real_t, 2>(rshape);
+  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 2>(cshape);
 
   std::shared_ptr<azeban::FFT<1>> fft
       = std::make_shared<azeban::CUFFT<1>>(d_u_hat, d_u);
@@ -101,14 +101,14 @@ TEST_CASE("cuFFT 1D scalar valued data", "[cufft]") {
   fft->backward();
   zisa::copy(h_u, d_u);
 
-  for (zisa::int_t i = 0; i < cshape[0]; ++i) {
+  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
     azeban::complex_t expected;
     expected.x = i == 1 ? n / 2.0 : 0.0;
     expected.y = 0;
     REQUIRE(std::fabs(h_u_hat[i].x - expected.x) <= 1e-10);
     REQUIRE(std::fabs(h_u_hat[i].y - expected.y) <= 1e-10);
   }
-  for (zisa::int_t i = 0; i < rshape[0]; ++i) {
+  for (zisa::int_t i = 0; i < rshape[1]; ++i) {
     azeban::real_t expected = n * zisa::cos(2.0 * zisa::pi * i / n);
     REQUIRE(std::fabs(h_u[i] - expected) <= 1e-10);
   }
