@@ -2,14 +2,18 @@
 #define CFL_H_
 
 #include <azeban/config.hpp>
+#include <azeban/grid.hpp>
 #include <azeban/operations/norm.hpp>
 #include <zisa/memory/array_view.hpp>
 
 namespace azeban {
 
+template<int Dim>
 class CFL {
 public:
-  CFL(real_t C) : C_(C) {}
+  static constexpr int dim_v = Dim;
+
+  CFL(const Grid<Dim> &grid, real_t C) : grid_(grid), C_(C) {}
   CFL() = default;
   CFL(const CFL &) = default;
   CFL(CFL &&) = default;
@@ -18,13 +22,13 @@ public:
   CFL &operator=(const CFL &) = default;
   CFL &operator=(CFL &&) = default;
 
-  template <int Dim>
-  real_t dt(const zisa::array_const_view<complex_t, Dim> &u_hat) const {
+  real_t dt(const zisa::array_const_view<complex_t, dim_v+1> &u_hat) const {
     const real_t sup = norm(u_hat, 1);
-    return C_ / sup;
+    return std::pow(grid_.N_phys, dim_v-1) * C_ / sup;
   }
 
 private:
+  Grid<dim_v> grid_;
   real_t C_;
 };
 

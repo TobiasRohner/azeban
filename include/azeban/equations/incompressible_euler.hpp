@@ -3,6 +3,7 @@
 
 #include "equation.hpp"
 #include <azeban/config.hpp>
+#include <azeban/grid.hpp>
 #include <azeban/fft.hpp>
 #include <azeban/operations/convolve.hpp>
 #if ZISA_HAS_CUDA
@@ -12,8 +13,8 @@
 namespace azeban {
 
 template <int Dim, typename SpectralViscosity>
-class IncompressibleEuler final : public Equation<complex_t, Dim + 1> {
-  using super = Equation<complex_t, Dim + 1>;
+class IncompressibleEuler final : public Equation<complex_t, Dim> {
+  using super = Equation<complex_t, Dim>;
   static_assert(Dim == 2 || Dim == 3,
                 "Incompressible Euler is only implemented for 2D and 3D");
   static_assert(Dim == 2, "Only 2D Incompressible Euler supportet ATM");
@@ -22,14 +23,10 @@ public:
   using scalar_t = complex_t;
   static constexpr int dim_v = Dim;
 
-  IncompressibleEuler(zisa::int_t n,
+  IncompressibleEuler(const Grid<dim_v> &grid,
                       const SpectralViscosity &visc,
                       zisa::device_type device = zisa::device_type::cpu)
-      : device_(device), visc_(visc) {
-    N_phys = n;
-    N_fourier = N_phys / 2 + 1;
-    N_phys_pad = 3. / 2 * N_phys + 1;
-    N_fourier_pad = N_phys_pad / 2 + 1;
+      : super(grid), device_(device), visc_(visc) {
     zisa::shape_t<dim_v + 1> u_hat_shape;
     zisa::shape_t<dim_v + 1> u_shape;
     zisa::shape_t<dim_v + 1> B_hat_shape;
@@ -39,15 +36,15 @@ public:
     B_hat_shape[0] = dim_v * dim_v;
     B_shape[0] = dim_v * dim_v;
     for (int i = 0; i < dim_v - 1; ++i) {
-      u_hat_shape[i + 1] = N_phys_pad;
-      u_shape[i + 1] = N_phys_pad;
-      B_hat_shape[i + 1] = N_phys_pad;
-      B_shape[i + 1] = N_phys_pad;
+      u_hat_shape[i + 1] = grid.N_phys_pad;
+      u_shape[i + 1] = grid.N_phys_pad;
+      B_hat_shape[i + 1] = grid.N_phys_pad;
+      B_shape[i + 1] = grid.N_phys_pad;
     }
-    u_hat_shape[dim_v] = N_fourier_pad;
-    u_shape[dim_v] = N_phys_pad;
-    B_hat_shape[dim_v] = N_fourier_pad;
-    B_shape[dim_v] = N_phys_pad;
+    u_hat_shape[dim_v] = grid.N_fourier_pad;
+    u_shape[dim_v] = grid.N_phys_pad;
+    B_hat_shape[dim_v] = grid.N_fourier_pad;
+    B_shape[dim_v] = grid.N_phys_pad;
     u_hat_ = zisa::array<complex_t, dim_v + 1>(u_hat_shape, device);
     u_ = zisa::array<real_t, dim_v + 1>(u_shape, device);
     B_hat_ = zisa::array<complex_t, dim_v + 1>(B_hat_shape, device);
@@ -90,6 +87,11 @@ public:
       LOG_ERR("Unsupported memory_location");
     }
   }
+
+  using super::grid;
+
+protected:
+  using super::grid_;
 
 private:
   zisa::int_t N_phys;
@@ -156,7 +158,7 @@ private:
 #if ZISA_HAS_CUDA
     else if (device_ == zisa::device_type::cuda) {
       incompressible_euler_compute_B_cuda<dim_v>(
-          fft_B_->u(), fft_u_->u(), N_phys, N_phys_pad);
+          fft_B_->u(), fft_u_->u(), grid_);
     }
 #endif
     else {

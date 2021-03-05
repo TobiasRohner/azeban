@@ -2,6 +2,7 @@
 #define INCOMPRESSIBLE_EULER_CUDA_H_
 
 #include <azeban/config.hpp>
+#include <azeban/grid.hpp>
 #include <azeban/equations/spectral_viscosity.hpp>
 #include <zisa/memory/array_view.hpp>
 
@@ -11,8 +12,7 @@ template <int Dim>
 void incompressible_euler_compute_B_cuda(
     const zisa::array_view<real_t, Dim + 1> &B,
     const zisa::array_const_view<real_t, Dim + 1> &u,
-    zisa::int_t N_phys,
-    zisa::int_t N_phys_pad);
+    const Grid<Dim> &grid);
 
 template <typename SpectralViscosity>
 void incompressible_euler_2d_cuda(

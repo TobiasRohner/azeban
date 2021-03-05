@@ -16,7 +16,7 @@ public:
 
   SSP_RK2() = delete;
   SSP_RK2(zisa::device_type device,
-          const zisa::shape_t<dim_v> &shape,
+          const zisa::shape_t<dim_v+1> &shape,
           const std::shared_ptr<Equation<scalar_t, dim_v>> &equation)
       : super(device, equation), u_star_(shape, device), dudt_(shape, device) {}
   SSP_RK2(const SSP_RK2 &) = delete;
@@ -28,17 +28,17 @@ public:
   SSP_RK2 &operator=(SSP_RK2 &&) = default;
 
   virtual void integrate(real_t dt,
-                         const zisa::array_view<scalar_t, dim_v> &u) override {
+                         const zisa::array_view<scalar_t, dim_v+1> &u) override {
     zisa::copy(dudt_, u);
     zisa::copy(u_star_, u);
     equation_->dudt(dudt_);
-    axpy(scalar_t(0.5 * dt), zisa::array_const_view<scalar_t, dim_v>(dudt_), u);
+    axpy(scalar_t(0.5 * dt), zisa::array_const_view<scalar_t, dim_v+1>(dudt_), u);
     axpy(scalar_t(dt),
-         zisa::array_const_view<scalar_t, dim_v>(dudt_),
-         zisa::array_view<scalar_t, dim_v>(u_star_));
+         zisa::array_const_view<scalar_t, dim_v+1>(dudt_),
+         zisa::array_view<scalar_t, dim_v+1>(u_star_));
     equation_->dudt(u_star_);
     axpy(scalar_t(0.5 * dt),
-         zisa::array_const_view<scalar_t, dim_v>(u_star_),
+         zisa::array_const_view<scalar_t, dim_v+1>(u_star_),
          u);
   }
 
@@ -49,8 +49,8 @@ protected:
 private:
   using super::device_;
   using super::equation_;
-  zisa::array<scalar_t, dim_v> u_star_;
-  zisa::array<scalar_t, dim_v> dudt_;
+  zisa::array<scalar_t, dim_v+1> u_star_;
+  zisa::array<scalar_t, dim_v+1> dudt_;
 };
 
 }

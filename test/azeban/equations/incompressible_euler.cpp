@@ -13,8 +13,9 @@
 #include <zisa/memory/array.hpp>
 
 TEST_CASE("2D Euler Compute B") {
-  const zisa::int_t N_phys = 4;
-  const zisa::int_t N_fourier = N_phys / 2 + 1;
+  const azeban::Grid<2> grid(4);
+  const zisa::int_t N_phys = grid.N_phys;
+  const zisa::int_t N_fourier = grid.N_fourier;
 
   auto h_u_hat = zisa::array<azeban::complex_t, 3>(
       zisa::shape_t<3>(2, N_phys, N_fourier));
@@ -44,12 +45,12 @@ TEST_CASE("2D Euler Compute B") {
   }
   h_u_hat(0, 0, 1) = 0.5 * N_phys * N_phys;
   h_u_hat(1, 1, 0) = 0.5 * N_phys * N_phys;
-  h_u_hat(1, 5, 0) = 0.5 * N_phys * N_phys;
+  h_u_hat(1, N_fourier, 0) = 0.5 * N_phys * N_phys;
   zisa::copy(d_u_hat, h_u_hat);
 
   fft_u->backward();
   azeban::incompressible_euler_compute_B_cuda<2>(
-      fft_B->u(), fft_u->u(), N_phys, N_phys);
+      fft_B->u(), fft_u->u(), grid);
   fft_B->forward();
   zisa::copy(h_B_hat, d_B_hat);
 
@@ -74,8 +75,9 @@ TEST_CASE("2D Euler Compute B") {
 }
 
 TEST_CASE("2D Euler Derivative") {
-  const zisa::int_t N_phys = 4;
-  const zisa::int_t N_fourier = N_phys / 2 + 1;
+  const azeban::Grid<2> grid(4);
+  const zisa::int_t N_phys = grid.N_phys;
+  const zisa::int_t N_fourier = grid.N_fourier;
 
   auto h_u_hat = zisa::array<azeban::complex_t, 3>(
       zisa::shape_t<3>(2, N_phys, N_fourier));
@@ -85,7 +87,7 @@ TEST_CASE("2D Euler Derivative") {
       zisa::shape_t<3>(2, N_phys, N_fourier));
 
   azeban::IncompressibleEuler<2, azeban::Step1D> euler(
-      N_phys, azeban::Step1D(0, 0), zisa::device_type::cuda);
+      grid, azeban::Step1D(0, 0), zisa::device_type::cuda);
 
   for (zisa::int_t i = 0; i < N_phys; ++i) {
     for (zisa::int_t j = 0; j < N_fourier; ++j) {

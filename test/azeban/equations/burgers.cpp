@@ -1,5 +1,6 @@
 #include <azeban/catch.hpp>
 
+#include <azeban/grid.hpp>
 #include <azeban/equations/burgers.hpp>
 #include <azeban/equations/spectral_viscosity.hpp>
 #include <azeban/evolution/ssp_rk2.hpp>
@@ -12,48 +13,50 @@
 #include <zisa/math/mathematical_constants.hpp>
 #include <zisa/memory/array.hpp>
 
-static void solveBurgers(const zisa::array_view<azeban::real_t, 1> &h_u,
+static void solveBurgers(const azeban::Grid<1> &grid,
+			 const zisa::array_view<azeban::real_t, 2> &h_u,
                          azeban::real_t visc,
                          azeban::real_t t) {
-  auto d_u = zisa::cuda_array<azeban::real_t, 1>(h_u.shape());
-  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 1>(
-      zisa::shape_t<1>(h_u.shape(0) / 2 + 1));
+  auto d_u = zisa::cuda_array<azeban::real_t, 2>(zisa::shape_t<2>(1, grid.N_phys));
+  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 2>(
+      zisa::shape_t<2>(1, grid.N_fourier));
 
   auto fft
-      = azeban::make_fft<1>(zisa::array_view<azeban::complex_t, 1>(d_u_hat),
-                            zisa::array_view<azeban::real_t, 1>(d_u));
+      = azeban::make_fft<1>(zisa::array_view<azeban::complex_t, 2>(d_u_hat),
+                            zisa::array_view<azeban::real_t, 2>(d_u));
 
   zisa::copy(d_u, h_u);
   fft->forward();
 
-  azeban::CFL cfl(0.1);
+  azeban::CFL<1> cfl(grid, 0.1);
   auto equation = std::make_shared<azeban::Burgers<azeban::SmoothCutoff1D>>(
-      h_u.shape(0), azeban::SmoothCutoff1D(visc, 1), zisa::device_type::cuda);
+      grid, azeban::SmoothCutoff1D(visc, 1), zisa::device_type::cuda);
   auto timestepper = std::make_shared<azeban::SSP_RK2<azeban::complex_t, 1>>(
       zisa::device_type::cuda, d_u_hat.shape(), equation);
   auto simulation = azeban::Simulation<azeban::complex_t, 1>(
-      zisa::array_const_view<azeban::complex_t, 1>(d_u_hat), cfl, timestepper);
+      zisa::array_const_view<azeban::complex_t, 2>(d_u_hat), cfl, timestepper);
 
   simulation.simulate_until(t);
 
   zisa::copy(d_u_hat, simulation.u());
   fft->backward();
   zisa::copy(h_u, d_u);
-  for (zisa::int_t i = 0; i < h_u.shape(0); ++i) {
-    h_u[i] /= h_u.shape(0);
+  for (zisa::int_t i = 0; i < grid.N_phys; ++i) {
+    h_u[i] /= grid.N_phys;
   }
 }
 
 TEST_CASE("Burgers Derivative") {
-  zisa::int_t N_phys = 128;
-  zisa::int_t N_fourier = N_phys / 2 + 1;
-  zisa::shape_t<1> shape{N_fourier};
-  auto h_u = zisa::array<azeban::complex_t, 1>(shape);
-  auto h_dudt = zisa::array<azeban::complex_t, 1>(shape);
-  auto d_dudt = zisa::cuda_array<azeban::complex_t, 1>(shape);
+  azeban::Grid<1> grid(128);
+  zisa::int_t N_phys = grid.N_phys;
+  zisa::int_t N_fourier = grid.N_fourier;
+  zisa::shape_t<2> shape{1, grid.N_fourier};
+  auto h_u = zisa::array<azeban::complex_t, 2>(shape);
+  auto h_dudt = zisa::array<azeban::complex_t, 2>(shape);
+  auto d_dudt = zisa::cuda_array<azeban::complex_t, 2>(shape);
 
   azeban::Burgers<azeban::Step1D> burgers(
-      N_phys, azeban::Step1D(0, 0), zisa::device_type::cuda);
+      grid, azeban::Step1D(0, 0), zisa::device_type::cuda);
 
   for (zisa::int_t i = 0; i < N_fourier; ++i) {
     h_u[i] = 0;
@@ -74,36 +77,38 @@ TEST_CASE("Burgers Derivative") {
 
 TEST_CASE("Burgers Convergence") {
   const auto compute_error
-      = [&](const zisa::array_const_view<azeban::real_t, 1> &u_ref,
-            const zisa::array_const_view<azeban::real_t, 1> &u) {
+      = [&](const zisa::array_const_view<azeban::real_t, 2> &u_ref,
+            const zisa::array_const_view<azeban::real_t, 2> &u) {
           using zisa::abs;
           azeban::real_t errL1 = 0;
-          const zisa::int_t delta = u_ref.shape(0) / u.shape(0);
-          for (zisa::int_t i = 0; i < u.shape(0); ++i) {
+          const zisa::int_t delta = u_ref.shape(1) / u.shape(1);
+          for (zisa::int_t i = 0; i < u.shape(1); ++i) {
             const zisa::int_t i_ref = i * delta;
             errL1 += zisa::pow(abs(u[i] - u_ref[i_ref]), 2);
           }
-          return zisa::pow(errL1, 0.5) / u.shape(0);
+          return zisa::pow(errL1, 0.5) / u.shape(1);
         };
 
-  const zisa::int_t N_max = 4 * 1024;
+  const azeban::Grid<1> grid_max(4 * 1024);
+  const zisa::int_t N_max = grid_max.N_phys;
   const azeban::real_t visc = 0;
   const azeban::real_t t_final = 0.1; // At t=0.125 a shock develops
 
-  auto u_ref = zisa::array<azeban::real_t, 1>(zisa::shape_t<1>{N_max});
+  auto u_ref = zisa::array<azeban::real_t, 2>(zisa::shape_t<2>{1, N_max});
   for (zisa::int_t i = 0; i < N_max; ++i) {
     u_ref[i] = zisa::sin(2 * zisa::pi / N_max * i);
   }
-  solveBurgers(u_ref, visc, t_final);
+  solveBurgers(grid_max, u_ref, visc, t_final);
 
   std::vector<zisa::int_t> n;
   std::vector<azeban::real_t> err;
   for (zisa::int_t N = 128; N < N_max; N <<= 1) {
-    auto u = zisa::array<azeban::real_t, 1>(zisa::shape_t<1>{N});
+    azeban::Grid<1> grid(N);
+    auto u = zisa::array<azeban::real_t, 2>(zisa::shape_t<2>{1, N});
     for (zisa::int_t i = 0; i < N; ++i) {
       u[i] = zisa::sin(2 * zisa::pi / N * i);
     }
-    solveBurgers(u, visc, t_final);
+    solveBurgers(grid, u, visc, t_final);
     n.push_back(N);
     err.push_back(compute_error(u_ref, u));
   }
@@ -124,16 +129,17 @@ TEST_CASE("Burgers Convergence") {
 }
 
 TEST_CASE("Burgers Shock Speed") {
-  const zisa::int_t N = 1024;
+  const azeban::Grid<1> grid(1024);
+  const zisa::int_t N = grid.N_phys;
   const azeban::real_t visc = 0.05 / N;
   const azeban::real_t t_final = 0.5;
 
-  auto u = zisa::array<azeban::real_t, 1>(zisa::shape_t<1>{N});
+  auto u = zisa::array<azeban::real_t, 2>(zisa::shape_t<2>{1, N});
   for (zisa::int_t i = 0; i < N; ++i) {
     u[i] = i < N / 4 ? 1 : 0;
   }
 
-  solveBurgers(u, visc, t_final);
+  solveBurgers(grid, u, visc, t_final);
 
   REQUIRE(u[2 * N / 4 + N / 100] <= 0.01);
   REQUIRE(u[2 * N / 4 - N / 100] >= 0.9);
@@ -207,18 +213,19 @@ TEST_CASE("Burgers Corrctness Shock Free") {
           ssp_rk2(u, t - time);
         };
 
-  const zisa::int_t N = 1024;
+  const azeban::Grid<1> grid(1024);
+  const zisa::int_t N = grid.N_phys;
   const azeban::real_t t_final = 0.1;
 
   auto u_ref = zisa::array<azeban::real_t, 1>(zisa::shape_t<1>{N});
-  auto u_spectral = zisa::array<azeban::real_t, 1>(zisa::shape_t<1>{N});
+  auto u_spectral = zisa::array<azeban::real_t, 2>(zisa::shape_t<2>{1, N});
   for (zisa::int_t i = 0; i < N; ++i) {
     u_ref[i] = zisa::sin(2 * zisa::pi / N * i);
     u_spectral[i] = zisa::sin(2 * zisa::pi / N * i);
   }
 
   solve_fd(u_ref, t_final);
-  solveBurgers(u_spectral, 0, t_final);
+  solveBurgers(grid, u_spectral, 0, t_final);
 
   azeban::real_t err = 0;
   for (zisa::int_t i = 0; i < N; ++i) {
