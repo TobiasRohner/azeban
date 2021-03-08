@@ -13,29 +13,20 @@
 #include <zisa/memory/array.hpp>
 
 TEST_CASE("2D Euler Compute B") {
-  const azeban::Grid<2> grid(4);
+  azeban::Grid<2> grid(4);
   const zisa::int_t N_phys = grid.N_phys;
   const zisa::int_t N_fourier = grid.N_fourier;
 
-  auto h_u_hat = zisa::array<azeban::complex_t, 3>(
-      zisa::shape_t<3>(2, N_phys, N_fourier));
-  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 3>(
-      zisa::shape_t<3>(2, N_phys, N_fourier));
-  auto d_u = zisa::cuda_array<azeban::real_t, 3>(
-      zisa::shape_t<3>(2, N_phys, N_phys));
-  auto d_B = zisa::cuda_array<azeban::real_t, 3>(
-      zisa::shape_t<3>(4, N_phys, N_phys));
-  auto d_B_hat = zisa::cuda_array<azeban::complex_t, 3>(
-      zisa::shape_t<3>(4, N_phys, N_fourier));
-  auto h_B_hat = zisa::array<azeban::complex_t, 3>(
-      zisa::shape_t<3>(4, N_phys, N_fourier));
+  auto h_u_hat = grid.make_array_fourier(2, zisa::device_type::cpu);
+  auto d_u_hat = grid.make_array_fourier(2, zisa::device_type::cuda);
+  ;
+  auto d_u = grid.make_array_phys(2, zisa::device_type::cuda);
+  auto d_B = grid.make_array_phys(4, zisa::device_type::cuda);
+  auto d_B_hat = grid.make_array_fourier(4, zisa::device_type::cuda);
+  auto h_B_hat = grid.make_array_fourier(4, zisa::device_type::cpu);
 
-  auto fft_u
-      = azeban::make_fft<2>(zisa::array_view<azeban::complex_t, 3>(d_u_hat),
-                            zisa::array_view<azeban::real_t, 3>(d_u));
-  auto fft_B
-      = azeban::make_fft<2>(zisa::array_view<azeban::complex_t, 3>(d_B_hat),
-                            zisa::array_view<azeban::real_t, 3>(d_B));
+  auto fft_u = azeban::make_fft<2>(d_u_hat, d_u);
+  auto fft_B = azeban::make_fft<2>(d_B_hat, d_B);
 
   for (zisa::int_t i = 0; i < N_phys; ++i) {
     for (zisa::int_t j = 0; j < N_fourier; ++j) {
@@ -53,22 +44,18 @@ TEST_CASE("2D Euler Compute B") {
   fft_B->forward();
   zisa::copy(h_B_hat, d_B_hat);
 
-  for (zisa::int_t dim = 0; dim < 2; ++dim) {
-    std::cout << "u_hat_" << dim << std::endl;
-    for (zisa::int_t i = 0; i < N_phys; ++i) {
-      for (zisa::int_t j = 0; j < N_fourier; ++j) {
-        std::cout << h_u_hat(dim, i, j) << "\t";
-      }
-      std::cout << std::endl;
+  for (zisa::int_t i = 0; i < N_phys; ++i) {
+    for (zisa::int_t j = 0; j < N_fourier; ++j) {
+      const azeban::complex_t expected = i == 0 && j == 1 ? 8 : 0;
+      REQUIRE(std::fabs(h_u_hat(0, i, j).x - expected.x) <= 1e-10);
+      REQUIRE(std::fabs(h_u_hat(0, i, j).y - expected.y) <= 1e-10);
     }
   }
-  for (zisa::int_t dim = 0; dim < 4; ++dim) {
-    std::cout << "B_hat_" << dim << std::endl;
-    for (zisa::int_t i = 0; i < N_phys; ++i) {
-      for (zisa::int_t j = 0; j < N_fourier; ++j) {
-        std::cout << h_B_hat(dim, i, j) << "\t";
-      }
-      std::cout << std::endl;
+  for (zisa::int_t i = 0; i < N_phys; ++i) {
+    for (zisa::int_t j = 0; j < N_fourier; ++j) {
+      const azeban::complex_t expected = (i == 1 || i == 3) && j == 0 ? 8 : 0;
+      REQUIRE(std::fabs(h_u_hat(1, i, j).x - expected.x) <= 1e-10);
+      REQUIRE(std::fabs(h_u_hat(1, i, j).y - expected.y) <= 1e-10);
     }
   }
 }

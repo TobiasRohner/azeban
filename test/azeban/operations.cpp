@@ -7,58 +7,6 @@
 #include <zisa/math/mathematical_constants.hpp>
 #include <zisa/memory/array.hpp>
 
-TEST_CASE("Convolution in Fourier Domain", "[operations]") {
-  const auto clamp_to_zero = [](azeban::real_t value) {
-    return std::fabs(value) <= 1e-10 ? azeban::real_t(0) : value;
-  };
-
-  zisa::int_t n = 128;
-  zisa::shape_t<2> rshape{1, n};
-  zisa::shape_t<2> cshape{1, n / 2 + 1};
-  auto h_u_hat = zisa::array<azeban::complex_t, 2>(cshape);
-  auto d_u = zisa::cuda_array<azeban::real_t, 2>(rshape);
-  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 2>(cshape);
-
-  std::shared_ptr<azeban::FFT<1>> fft
-      = std::make_shared<azeban::CUFFT<1>>(d_u_hat, d_u);
-
-  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
-    h_u_hat[i] = 0;
-  }
-  h_u_hat[1] = 1;
-  h_u_hat[2] = 2;
-
-  zisa::copy(d_u_hat, h_u_hat);
-  azeban::convolve_freq_domain(fft.get(),
-                               zisa::array_view<azeban::complex_t, 2>(d_u_hat));
-  zisa::copy(h_u_hat, d_u_hat);
-
-  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
-    azeban::real_t expected = 0;
-    switch (i) {
-    case 0:
-      expected = 10;
-      break;
-    case 1:
-      expected = 4;
-      break;
-    case 2:
-      expected = 1;
-      break;
-    case 3:
-      expected = 4;
-      break;
-    case 4:
-      expected = 4;
-      break;
-    default:
-      expected = 0;
-      break;
-    }
-    REQUIRE(azeban::abs(h_u_hat[i] - expected) <= 1e-10);
-  }
-}
-
 TEST_CASE("axpy", "[operations]") {
   zisa::int_t n = 128;
   zisa::shape_t<1> shape{n};
