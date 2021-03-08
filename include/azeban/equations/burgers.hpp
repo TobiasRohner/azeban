@@ -22,7 +22,7 @@ public:
 
   Burgers(const Grid<1> &grid,
           const SpectralViscosity &visc,
-          zisa::device_type device = zisa::device_type::cpu)
+          zisa::device_type device)
       : super(grid), device_(device), visc_(visc) {
     u_hat_ = grid.make_array_fourier_pad(1, device);
     u_ = grid.make_array_phys_pad(1, device);
@@ -60,6 +60,8 @@ public:
       LOG_ERR("Unsupported memory_location");
     }
   }
+
+  virtual int n_vars() const override { return 1; }
 
 private:
   zisa::device_type device_;

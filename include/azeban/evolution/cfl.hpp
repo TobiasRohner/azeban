@@ -27,6 +27,8 @@ public:
     return std::pow(grid_.N_phys, dim_v - 1) * C_ / sup;
   }
 
+  const Grid<dim_v> &grid() const { return grid_; }
+
 private:
   Grid<dim_v> grid_;
   real_t C_;

@@ -24,6 +24,7 @@ public:
   virtual void dudt(const zisa::array_view<scalar_t, dim_v + 1> &u) = 0;
 
   const Grid<Dim> &grid() const { return grid_; }
+  virtual int n_vars() const = 0;
 
 protected:
   Grid<Dim> grid_;

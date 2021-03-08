@@ -12,6 +12,12 @@ include("cmake/fast_debug.cmake")
 # -- Dependencies --------------------------------------------------------------
 add_library(azeban_dependencies INTERFACE)
 
+find_package(nlohmann_json 3.9.1 REQUIRED)
+target_link_libraries(azeban_dependencies INTERFACE nlohmann_json::nlohmann_json)
+
+find_package(fmt REQUIRED)
+target_link_libraries(azeban_dependencies INTERFACE fmt::fmt)
+
 find_package(HDF5 REQUIRED)
 target_include_directories(azeban_dependencies INTERFACE ${HDF5_INCLUDE_DIRS})
 target_link_libraries(azeban_dependencies INTERFACE ${HDF5_LIBRARIES})

@@ -1,5 +1,5 @@
 #ifndef INCOMPRESSIBLE_EULER_H_
-#define INCOMPRESSIBLe_EULER_H_
+#define INCOMPRESSIBLE_EULER_H_
 
 #include "equation.hpp"
 #include <azeban/config.hpp>
@@ -25,7 +25,7 @@ public:
 
   IncompressibleEuler(const Grid<dim_v> &grid,
                       const SpectralViscosity &visc,
-                      zisa::device_type device = zisa::device_type::cpu)
+                      zisa::device_type device)
       : super(grid), device_(device), visc_(visc) {
     u_hat_ = grid.make_array_fourier_pad(dim_v, device);
     u_ = grid.make_array_phys_pad(dim_v, device);
@@ -69,6 +69,7 @@ public:
   }
 
   using super::grid;
+  virtual int n_vars() const override { return dim_v; }
 
 protected:
   using super::grid_;

@@ -16,6 +16,8 @@ struct Grid {
   zisa::int_t N_fourier;
   zisa::int_t N_fourier_pad;
 
+  Grid() = default;
+
   explicit Grid(zisa::int_t _N_phys) {
     N_phys = _N_phys;
     N_phys_pad = 3. / 2 * N_phys + 1;

@@ -39,9 +39,10 @@ with h5py.File(DATA_FILE, 'r') as f:
     def update(frame):
         print(frame)
         img = curl(f[frame][0], f[frame][1])
+        print(img)
         ln.set_array(img)
         plt.clim(np.min(img), np.max(img))
         return ln,
 
-    anim = FuncAnimation(fig, update, frames=keys, init_func=init, blit=True, interval=1000./10)
+    anim = FuncAnimation(fig, update, frames=keys, init_func=init, blit=True, interval=1000./2)
     plt.show()

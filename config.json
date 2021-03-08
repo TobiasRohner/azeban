@@ -1,0 +1,18 @@
+{
+  "device": "cuda",
+  "grid": {
+    "N_phys": 256
+  },
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "type": "Smooth Cutoff",
+      "eps": 0.05,
+      "k0": 1
+    }
+  },
+  "timestepper": {
+    "type": "SSP RK3",
+    "C": 0.2
+  }
+}

@@ -52,7 +52,8 @@ then
    mkdir -p "${install_dir}/conan" && cd "${install_dir}/conan"
    conan install "$conan_file" \
          -s compiler=$(basename "${CC}") \
-         -s compiler.libcxx=libstdc++11
+         -s compiler.libcxx=libstdc++11 \
+	 --build=fmt
 fi
 
 mkdir -p "${source_dir}"

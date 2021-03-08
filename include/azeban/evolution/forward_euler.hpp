@@ -16,7 +16,7 @@ public:
 
   ForwardEuler() = delete;
   ForwardEuler(zisa::device_type device,
-               const zisa::shape_t<dim_v> &shape,
+               const zisa::shape_t<dim_v + 1> &shape,
                const std::shared_ptr<Equation<scalar_t, dim_v>> &equation)
       : super(device, equation), dudt_(shape, device) {}
   ForwardEuler(const ForwardEuler &) = delete;

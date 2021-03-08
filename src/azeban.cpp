@@ -1,10 +1,9 @@
-#include <azeban/equations/burgers.hpp>
-#include <azeban/equations/incompressible_euler.hpp>
-#include <azeban/evolution/evolution.hpp>
 #include <azeban/fft.hpp>
-#include <azeban/grid.hpp>
-#include <azeban/simulation.hpp>
+#include <azeban/simulation_factory.hpp>
 #include <cstdlib>
+#include <fmt/core.h>
+#include <fstream>
+#include <nlohmann/json.hpp>
 #include <zisa/config.hpp>
 #include <zisa/cuda/memory/cuda_array.hpp>
 #include <zisa/io/hdf5_serial_writer.hpp>
@@ -12,23 +11,34 @@
 
 using namespace azeban;
 
-int main() {
+int main(int argc, const char *argv[]) {
   static constexpr int dim_v = 2;
-  static constexpr int n_vars = 2;
-  static constexpr azeban::real_t t_final = 5;
+  static constexpr azeban::real_t t_final = 1;
   static constexpr int n_frames = 600;
 
-  azeban::Grid<dim_v> grid(256);
+  if (argc != 2) {
+    fmt::print(stderr, "Usage: {} <config>\n", argv[0]);
+    exit(1);
+  }
+
+  std::ifstream config_file(argv[1]);
+  nlohmann::json config;
+  config_file >> config;
+
+  auto simulation = make_simulation<azeban::complex_t, dim_v>(config);
+
+  const auto &grid = simulation.grid();
   const zisa::int_t N_phys = grid.N_phys;
   const zisa::int_t N_fourier = grid.N_fourier;
 
   zisa::HDF5SerialWriter hdf5_writer("result.hdf5");
 
-  auto u_host = grid.make_array_phys(n_vars, zisa::device_type::cpu);
-  auto u_device = grid.make_array_phys(n_vars, zisa::device_type::cuda);
-  auto u_hat_device = grid.make_array_fourier(n_vars, zisa::device_type::cuda);
+  auto u_host
+      = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
+  auto u_device
+      = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cuda);
 
-  auto fft = make_fft<dim_v>(u_hat_device, u_device);
+  auto fft = make_fft<dim_v>(simulation.u(), u_device);
 
   /*
   for (zisa::int_t i = 0; i < N_phys; ++i) {
@@ -36,9 +46,6 @@ int main() {
   }
   zisa::copy(u_device, u_host);
   fft->forward();
-
-  auto equation = std::make_shared<Burgers<SmoothCutoff1D>>(
-      grid, SmoothCutoff1D(0.0 / N_phys, 1), zisa::device_type::cuda);
   */
 
   // Periodic shear layer
@@ -61,21 +68,11 @@ int main() {
   zisa::copy(u_device, u_host);
   fft->forward();
 
-  auto equation = std::make_shared<IncompressibleEuler<2, SmoothCutoff1D>>(
-      grid, SmoothCutoff1D(0.05 / N_phys, 1), zisa::device_type::cuda);
-
-  CFL cfl(grid, 0.1);
-  auto timestepper = std::make_shared<SSP_RK3<complex_t, dim_v>>(
-      zisa::device_type::cuda, grid.shape_fourier(n_vars), equation);
-  auto simulation
-      = Simulation<complex_t, dim_v>(u_hat_device, cfl, timestepper);
-
   zisa::save(hdf5_writer, u_host, std::to_string(0));
   for (int i = 0; i < n_frames; ++i) {
     std::cerr << i << std::endl;
     simulation.simulate_for(t_final / n_frames);
 
-    zisa::copy(u_hat_device, simulation.u());
     fft->backward();
     zisa::copy(u_host, u_device);
     for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
