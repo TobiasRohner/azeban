@@ -15,7 +15,7 @@ using namespace azeban;
 int main() {
   static constexpr int dim_v = 2;
   static constexpr int n_vars = 2;
-  static constexpr azeban::real_t t_final = 1;
+  static constexpr azeban::real_t t_final = 5;
   static constexpr int n_frames = 600;
 
   azeban::Grid<dim_v> grid(256);
@@ -42,28 +42,30 @@ int main() {
   */
 
   // Periodic shear layer
-  const azeban::real_t u0 = 1;
-  const azeban::real_t delta = 0.5;
+  const azeban::real_t rho = zisa::pi / 15;
+  const azeban::real_t delta = 0.05;
   for (zisa::int_t i = 0; i < N_phys; ++i) {
     for (zisa::int_t j = 0; j < N_phys; ++j) {
-      const azeban::real_t x = static_cast<azeban::real_t>(i) / N_phys;
-      const azeban::real_t y = static_cast<azeban::real_t>(j) / N_phys;
-      if (y <= 0.5) {
-        u_host(0, i, j) = u0 * std::tanh(10 * (y - 0.25));
+      const azeban::real_t x
+          = 2 * zisa::pi * static_cast<azeban::real_t>(i) / N_phys;
+      const azeban::real_t y
+          = 2 * zisa::pi * static_cast<azeban::real_t>(j) / N_phys;
+      if (y <= zisa::pi) {
+        u_host(0, i, j) = std::tanh((y - zisa::pi / 2) / rho);
       } else {
-        u_host(0, i, j) = u0 * std::tanh(10 * (0.75 - y));
+        u_host(0, i, j) = std::tanh((3 * zisa::pi / 2 - y) / rho);
       }
-      u_host(1, i, j) = delta * u0 * zisa::sin(2 * zisa::pi * (x + 0.25));
+      u_host(1, i, j) = delta * zisa::sin(x);
     }
   }
   zisa::copy(u_device, u_host);
   fft->forward();
 
   auto equation = std::make_shared<IncompressibleEuler<2, SmoothCutoff1D>>(
-      grid, SmoothCutoff1D(0.5 / N_phys, 1), zisa::device_type::cuda);
+      grid, SmoothCutoff1D(0.05 / N_phys, 1), zisa::device_type::cuda);
 
   CFL cfl(grid, 0.1);
-  auto timestepper = std::make_shared<SSP_RK2<complex_t, dim_v>>(
+  auto timestepper = std::make_shared<SSP_RK3<complex_t, dim_v>>(
       zisa::device_type::cuda, grid.shape_fourier(n_vars), equation);
   auto simulation
       = Simulation<complex_t, dim_v>(u_hat_device, cfl, timestepper);
@@ -76,7 +78,7 @@ int main() {
     zisa::copy(u_hat_device, simulation.u());
     fft->backward();
     zisa::copy(u_host, u_device);
-    for (zisa::int_t i = 0; i < N_phys; ++i) {
+    for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
       u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
     }
     zisa::save(hdf5_writer, u_host, std::to_string(i + 1));

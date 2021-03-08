@@ -77,13 +77,13 @@ TEST_CASE("2D Euler Derivative") {
 
   for (zisa::int_t i = 0; i < N_phys; ++i) {
     for (zisa::int_t j = 0; j < N_fourier; ++j) {
-      h_u_hat(0, i, j) = 0;
-      h_u_hat(1, i, j) = 0;
+      h_u_hat(0, i, j) = i; // 0;
+      h_u_hat(1, i, j) = j; // 0;
     }
   }
-  h_u_hat(0, 0, 1) = 0.5 * N_phys * N_phys;
-  h_u_hat(1, 1, 0) = 0.5 * N_phys * N_phys;
-  h_u_hat(1, N_fourier, 0) = 0.5 * N_phys * N_phys;
+  // h_u_hat(0, 0, 1) = 0.5 * N_phys * N_phys;
+  // h_u_hat(1, 1, 0) = 0.5 * N_phys * N_phys;
+  // h_u_hat(1, N_fourier, 0) = 0.5 * N_phys * N_phys;
 
   zisa::copy(d_dudt_hat, h_u_hat);
   euler.dudt(d_dudt_hat);
