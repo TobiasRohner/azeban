@@ -3,6 +3,7 @@
 #include <azeban/equations/burgers.hpp>
 #include <azeban/equations/spectral_viscosity.hpp>
 #include <azeban/evolution/ssp_rk2.hpp>
+#include <azeban/evolution/ssp_rk3.hpp>
 #include <azeban/fft.hpp>
 #include <azeban/grid.hpp>
 #include <azeban/operations/operations.hpp>
@@ -32,7 +33,7 @@ static void solveBurgers(const azeban::Grid<1> &grid,
   azeban::CFL<1> cfl(grid, 0.1);
   auto equation = std::make_shared<azeban::Burgers<azeban::SmoothCutoff1D>>(
       grid, azeban::SmoothCutoff1D(visc, 1), zisa::device_type::cuda);
-  auto timestepper = std::make_shared<azeban::SSP_RK2<azeban::complex_t, 1>>(
+  auto timestepper = std::make_shared<azeban::SSP_RK3<azeban::complex_t, 1>>(
       zisa::device_type::cuda, d_u_hat.shape(), equation);
   auto simulation = azeban::Simulation<azeban::complex_t, 1>(
       zisa::array_const_view<azeban::complex_t, 2>(d_u_hat), cfl, timestepper);
@@ -126,7 +127,6 @@ TEST_CASE("Burgers Convergence") {
   std::cout << "Estimated convergence rate: " << conv_rate << std::endl;
 
   REQUIRE(conv_rate >= 1);
-  REQUIRE(conv_rate <= 2);
 }
 
 TEST_CASE("Burgers Shock Speed") {

@@ -45,13 +45,14 @@ public:
          u);
   }
 
-protected:
   using super::equation;
   using super::memory_location;
 
-private:
+protected:
   using super::device_;
   using super::equation_;
+
+private:
   zisa::array<scalar_t, dim_v + 1> u_star_;
   zisa::array<scalar_t, dim_v + 1> dudt_;
 };
