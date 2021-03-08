@@ -1,4 +1,5 @@
 #include <azeban/fft.hpp>
+#include <azeban/init/initializer_factory.hpp>
 #include <azeban/simulation_factory.hpp>
 #include <cstdlib>
 #include <fmt/core.h>
@@ -14,7 +15,7 @@ using namespace azeban;
 int main(int argc, const char *argv[]) {
   static constexpr int dim_v = 2;
   static constexpr azeban::real_t t_final = 1;
-  static constexpr int n_frames = 600;
+  static constexpr int n_frames = 60;
 
   if (argc != 2) {
     fmt::print(stderr, "Usage: {} <config>\n", argv[0]);
@@ -26,6 +27,9 @@ int main(int argc, const char *argv[]) {
   config_file >> config;
 
   auto simulation = make_simulation<azeban::complex_t, dim_v>(config);
+  auto initializer = make_initializer<dim_v>(config);
+
+  initializer->initialize(simulation.u());
 
   const auto &grid = simulation.grid();
   const zisa::int_t N_phys = grid.N_phys;
@@ -40,34 +44,8 @@ int main(int argc, const char *argv[]) {
 
   auto fft = make_fft<dim_v>(simulation.u(), u_device);
 
-  /*
-  for (zisa::int_t i = 0; i < N_phys; ++i) {
-    u_host[i] = zisa::sin(2 * zisa::pi * i / N_phys);
-  }
-  zisa::copy(u_device, u_host);
-  fft->forward();
-  */
-
-  // Periodic shear layer
-  const azeban::real_t rho = zisa::pi / 15;
-  const azeban::real_t delta = 0.05;
-  for (zisa::int_t i = 0; i < N_phys; ++i) {
-    for (zisa::int_t j = 0; j < N_phys; ++j) {
-      const azeban::real_t x
-          = 2 * zisa::pi * static_cast<azeban::real_t>(i) / N_phys;
-      const azeban::real_t y
-          = 2 * zisa::pi * static_cast<azeban::real_t>(j) / N_phys;
-      if (y <= zisa::pi) {
-        u_host(0, i, j) = std::tanh((y - zisa::pi / 2) / rho);
-      } else {
-        u_host(0, i, j) = std::tanh((3 * zisa::pi / 2 - y) / rho);
-      }
-      u_host(1, i, j) = delta * zisa::sin(x);
-    }
-  }
-  zisa::copy(u_device, u_host);
-  fft->forward();
-
+  fft->backward();
+  zisa::copy(u_host, u_device);
   zisa::save(hdf5_writer, u_host, std::to_string(0));
   for (int i = 0; i < n_frames; ++i) {
     std::cerr << i << std::endl;

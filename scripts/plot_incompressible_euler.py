@@ -44,5 +44,5 @@ with h5py.File(DATA_FILE, 'r') as f:
         plt.clim(np.min(img), np.max(img))
         return ln,
 
-    anim = FuncAnimation(fig, update, frames=keys, init_func=init, blit=True, interval=1000./2)
+    anim = FuncAnimation(fig, update, frames=keys, init_func=init, blit=True, interval=1000./1)
     plt.show()

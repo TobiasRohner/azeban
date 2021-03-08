@@ -14,5 +14,10 @@
   "timestepper": {
     "type": "SSP RK3",
     "C": 0.2
+  },
+  "init": {
+    "name": "Double Shear Layer",
+    "rho": 0.2,
+    "delta": 0.05
   }
 }
