@@ -19,7 +19,7 @@ if(NOT TARGET warning_flags)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     host_compiler_flags(-Wall)
     host_compiler_flags(-Wextra)
-    host_compiler_flags(-Wconversion)
+    # host_compiler_flags(-Wconversion)
   endif()
 
   if(ZISA_MAX_ERRORS)
