@@ -24,7 +24,7 @@ def curl(x, y):
 
 
 with h5py.File(DATA_FILE, 'r') as f:
-    keys = list(sorted(f.keys(), key = lambda n : int(n)))
+    keys = list(sorted(f.keys(), key = lambda n : float(n)))
     dim, Nx, Ny = f[keys[0]].shape
     assert dim == 2
 

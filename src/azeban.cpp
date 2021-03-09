@@ -13,9 +13,7 @@
 using namespace azeban;
 
 int main(int argc, const char *argv[]) {
-  static constexpr int dim_v = 2;
-  static constexpr azeban::real_t t_final = 1;
-  static constexpr int n_frames = 60;
+  static constexpr int dim_v = 1;
 
   if (argc != 2) {
     fmt::print(stderr, "Usage: {} <config>\n", argv[0]);
@@ -26,6 +24,25 @@ int main(int argc, const char *argv[]) {
   nlohmann::json config;
   config_file >> config;
 
+  if (!config.contains("time")) {
+    fmt::print(stderr, "Config file does not contain \"time\"\n");
+    exit(1);
+  }
+  const azeban::real_t t_final = config["time"];
+
+  std::vector<azeban::real_t> snapshots;
+  if (config.contains("snapshots")) {
+    snapshots = config["snapshots"].get<std::vector<azeban::real_t>>();
+  }
+  if (!(snapshots.size() > 0 && snapshots.back() == t_final)) {
+    snapshots.push_back(t_final);
+  }
+
+  std::string output = "result.h5";
+  if (config.contains("output")) {
+    output = config["output"];
+  }
+
   auto simulation = make_simulation<azeban::complex_t, dim_v>(config);
   auto initializer = make_initializer<dim_v>(config);
 
@@ -33,7 +50,7 @@ int main(int argc, const char *argv[]) {
 
   const auto &grid = simulation.grid();
 
-  zisa::HDF5SerialWriter hdf5_writer("result.hdf5");
+  zisa::HDF5SerialWriter hdf5_writer(output);
 
   auto u_host
       = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
@@ -44,17 +61,20 @@ int main(int argc, const char *argv[]) {
 
   fft->backward();
   zisa::copy(u_host, u_device);
-  zisa::save(hdf5_writer, u_host, std::to_string(0));
-  for (int i = 0; i < n_frames; ++i) {
-    std::cerr << i << std::endl;
-    simulation.simulate_for(t_final / n_frames);
+  for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
+    u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
+  }
+  zisa::save(hdf5_writer, u_host, std::to_string(azeban::real_t(0)));
+  for (azeban::real_t t : snapshots) {
+    simulation.simulate_until(t);
+    fmt::print("Time: {}\n", t);
 
     fft->backward();
     zisa::copy(u_host, u_device);
     for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
       u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
     }
-    zisa::save(hdf5_writer, u_host, std::to_string(i + 1));
+    zisa::save(hdf5_writer, u_host, std::to_string(t));
   }
 
   return EXIT_SUCCESS;
