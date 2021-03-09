@@ -1,3 +1,0 @@
-cuFFT performance dependent on system size
-CFL condition can multiply timestep by N_phys^(Dim-1)
-incompressible euler
