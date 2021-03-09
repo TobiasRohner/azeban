@@ -12,9 +12,9 @@
 
 namespace azeban {
 
-template <typename Scalar, int Dim>
+template <typename Scalar, int Dim, typename Json>
 std::shared_ptr<TimeIntegrator<Scalar, Dim>>
-make_timestepper(const auto &config,
+make_timestepper(Json &&config,
                  const Grid<Dim> &grid,
                  const std::shared_ptr<Equation<Scalar, Dim>> &equation,
                  zisa::device_type device) {

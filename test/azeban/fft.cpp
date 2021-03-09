@@ -5,12 +5,6 @@
 #include <zisa/math/basic_functions.hpp>
 #include <zisa/memory/array_view.hpp>
 
-TEST_CASE("Learn the cufft API; cufftComplex", "[cufft]") {
-  cufftComplex z;
-  z.x = 2.0;  // the real part
-  z.y = -1.0; // the imaginary part
-}
-
 TEST_CASE("Learn the cufft API", "[cufft]") {
 
   zisa::int_t n = 128;

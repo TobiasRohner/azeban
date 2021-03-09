@@ -8,7 +8,7 @@ static void cufft_1d_sizes(benchmark::internal::Benchmark *bm) {
   for (zisa::int_t i = 128; i < zisa::int_t(128) << 8; i <<= 1) {
     const zisa::int_t n = 3. / 2 * i;
     for (zisa::int_t j = n; j <= 2 * i; ++j) {
-      bm->Args({j});
+      bm->Args({static_cast<long>(j)});
     }
   }
 }

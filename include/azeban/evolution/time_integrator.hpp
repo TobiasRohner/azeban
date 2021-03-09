@@ -35,8 +35,8 @@ public:
   const auto &equation() const { return equation_; }
 
 protected:
-  std::shared_ptr<Equation<scalar_t, dim_v>> equation_;
   zisa::device_type device_;
+  std::shared_ptr<Equation<scalar_t, dim_v>> equation_;
 };
 
 }

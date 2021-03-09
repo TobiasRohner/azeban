@@ -6,8 +6,8 @@
 
 namespace azeban {
 
-template <int Dim>
-Grid<Dim> make_grid(const auto &config) {
+template <int Dim, typename Json>
+Grid<Dim> make_grid(Json &&config) {
   Grid<Dim> grid;
   if (config.contains("N_phys") && !config.contains("N_fourier")) {
     grid.N_phys = config["N_phys"];

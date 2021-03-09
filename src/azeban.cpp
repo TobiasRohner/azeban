@@ -32,8 +32,6 @@ int main(int argc, const char *argv[]) {
   initializer->initialize(simulation.u());
 
   const auto &grid = simulation.grid();
-  const zisa::int_t N_phys = grid.N_phys;
-  const zisa::int_t N_fourier = grid.N_fourier;
 
   zisa::HDF5SerialWriter hdf5_writer("result.hdf5");
 

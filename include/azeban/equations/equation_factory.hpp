@@ -11,10 +11,9 @@
 
 namespace azeban {
 
-template <typename Scalar, int Dim>
-std::shared_ptr<Equation<Scalar, Dim>> make_equation(const auto &config,
-                                                     const Grid<Dim> &grid,
-                                                     zisa::device_type device) {
+template <typename Scalar, int Dim, typename Json>
+std::shared_ptr<Equation<Scalar, Dim>>
+make_equation(Json &&config, const Grid<Dim> &grid, zisa::device_type device) {
   if (!config.contains("name")) {
     fmt::print(stderr, "Equation config must contain key \"name\"\n");
     exit(1);
@@ -100,6 +99,8 @@ std::shared_ptr<Equation<Scalar, Dim>> make_equation(const auto &config,
     fmt::print(stderr, "Unknown Spectral Viscosity type\n");
     exit(1);
   }
+  // Make compiler happy
+  return nullptr;
 }
 
 }

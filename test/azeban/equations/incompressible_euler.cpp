@@ -116,6 +116,7 @@ TEST_CASE("2D Euler Derivative") {
 }
 
 TEST_CASE("Taylor Vortex") {
+  /*
   // Lagrange Polynomials for interpolation
   const auto L0 = [](azeban::real_t x) {
     return (x - 1) * (x - 2) * (x - 3) / (0 - 1) / (0 - 2) / (0 - 3);
@@ -129,6 +130,7 @@ TEST_CASE("Taylor Vortex") {
   const auto L3 = [](azeban::real_t x) {
     return (x - 0) * (x - 1) * (x - 2) / (3 - 0) / (3 - 1) / (3 - 2);
   };
+  */
 
   // Load reference solution
   // TODO: Get std::filesystem to not segfault
@@ -180,11 +182,11 @@ TEST_CASE("Taylor Vortex") {
       for (zisa::int_t j = 0; j < N; ++j) {
         const zisa::int_t i_ref = i * N_ref / N;
         const zisa::int_t j_ref = j * N_ref / N;
+        /*
         const azeban::real_t i_offset
             = static_cast<azeban::real_t>(i) * N_ref / N - i_ref;
         const azeban::real_t j_offset
             = static_cast<azeban::real_t>(j) * N_ref / N - j_ref;
-        /*
         const zisa::int_t i_ref_m2 = (i_ref + N_ref - 1) % N_ref;
         const zisa::int_t i_ref_m1 = i_ref;
         const zisa::int_t i_ref_p1 = (i_ref + 1) % N_ref;
