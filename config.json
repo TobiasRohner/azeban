@@ -16,6 +16,8 @@
     "C": 0.1
   },
   "init": {
-    "name": "Taylor Vortex"
+    "name": "Double Shear Layer",
+    "rho": 0.2,
+    "delta": 0.05
   }
 }

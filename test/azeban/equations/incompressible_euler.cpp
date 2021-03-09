@@ -5,6 +5,7 @@
 #include <azeban/evolution/ssp_rk2.hpp>
 #include <azeban/evolution/ssp_rk3.hpp>
 #include <azeban/fft.hpp>
+#include <azeban/init/double_shear_layer.hpp>
 #include <azeban/init/taylor_vortex.hpp>
 #include <azeban/operations/operations.hpp>
 #include <azeban/simulation.hpp>
@@ -165,7 +166,6 @@ TEST_CASE("Taylor Vortex") {
 
     auto d_u = zisa::cuda_array<azeban::real_t, 3>(grid.shape_phys(2));
     auto h_u = zisa::array<azeban::real_t, 3>(grid.shape_phys(2));
-    auto u_diff = zisa::array<azeban::real_t, 3>(grid.shape_phys(2));
     const auto fft = azeban::make_fft<2>(simulation.u(), d_u);
 
     simulation.simulate_until(0.01);
@@ -215,16 +215,84 @@ TEST_CASE("Taylor Vortex") {
         const azeban::real_t du = h_u(0, i, j) - u_ref_interp;
         const azeban::real_t dv = h_u(1, i, j) - v_ref_interp;
         errL2 += zisa::pow<2>(du) + zisa::pow<2>(dv);
-        u_diff(0, i, j) = du;
-        u_diff(1, i, j) = dv;
       }
     }
     errL2 = zisa::sqrt(errL2) / (N * N);
     Ns.push_back(N);
     errs.push_back(errL2);
+  }
 
-    zisa::HDF5SerialWriter writer("result_" + std::to_string(N) + ".hdf5");
-    zisa::save(writer, u_diff, "u_diff");
+  std::cout << "L2 errors = [" << errs[0];
+  for (zisa::int_t i = 1; i < errs.size(); ++i) {
+    std::cout << ", " << errs[i];
+  }
+  std::cout << "]" << std::endl;
+
+  const azeban::real_t conv_rate
+      = (zisa::log(errs[0]) - zisa::log(errs[errs.size() - 1]))
+        / zisa::log(Ns[Ns.size() - 1] / Ns[0]);
+  std::cout << "Estimated convergence rate: " << conv_rate << std::endl;
+
+  REQUIRE(conv_rate >= 1);
+}
+
+TEST_CASE("Double Shear Layer") {
+  const auto solve_euler = [](const zisa::array_view<azeban::real_t, 3> &u) {
+    const zisa::int_t N = u.shape(1);
+    azeban::Grid<2> grid(N);
+    azeban::SmoothCutoff1D visc(0.05 / N, 1);
+    const auto equation = std::make_shared<
+        azeban::IncompressibleEuler<2, azeban::SmoothCutoff1D>>(
+        grid, visc, zisa::device_type::cuda);
+    const auto timestepper
+        = std::make_shared<azeban::SSP_RK3<azeban::complex_t, 2>>(
+            zisa::device_type::cuda,
+            grid.shape_fourier(equation->n_vars()),
+            equation);
+    azeban::CFL<2> cfl(grid, 0.2);
+    azeban::Simulation<azeban::complex_t, 2> simulation(
+        grid.shape_fourier(equation->n_vars()),
+        cfl,
+        timestepper,
+        zisa::device_type::cuda);
+    const auto initializer
+        = std::make_shared<azeban::DoubleShearLayer>(0.2, 0.05);
+
+    auto d_u = zisa::cuda_array<azeban::real_t, 3>(grid.shape_phys(2));
+    const auto fft = azeban::make_fft<2>(simulation.u(), d_u);
+
+    initializer->initialize(simulation.u());
+    simulation.simulate_until(1);
+    fft->backward();
+    zisa::copy(u, d_u);
+    for (zisa::int_t i = 0; i < zisa::product(u.shape()); ++i) {
+      u[i] /= zisa::product(u.shape()) / u.shape(0);
+    }
+  };
+
+  const zisa::int_t N_ref = 512;
+  auto u_ref
+      = zisa::array<azeban::real_t, 3>(zisa::shape_t<3>(2, N_ref, N_ref));
+  solve_euler(u_ref);
+
+  std::vector<zisa::int_t> Ns;
+  std::vector<azeban::real_t> errs;
+  for (zisa::int_t N = 32; N < N_ref; N <<= 1) {
+    auto u = zisa::array<azeban::real_t, 3>(zisa::shape_t<3>(2, N, N));
+    solve_euler(u);
+    azeban::real_t errL2 = 0;
+    for (zisa::int_t i = 0; i < N; ++i) {
+      for (zisa::int_t j = 0; j < N; ++j) {
+        const zisa::int_t i_ref = i * N_ref / N;
+        const zisa::int_t j_ref = j * N_ref / N;
+        const azeban::real_t du = u(0, i, j) - u_ref(0, i_ref, j_ref);
+        const azeban::real_t dv = u(1, i, j) - u_ref(1, i_ref, j_ref);
+        errL2 += zisa::pow<2>(du) + zisa::pow<2>(dv);
+      }
+    }
+    errL2 = zisa::sqrt(errL2) / (N * N);
+    Ns.push_back(N);
+    errs.push_back(errL2);
   }
 
   std::cout << "L2 errors = [" << errs[0];

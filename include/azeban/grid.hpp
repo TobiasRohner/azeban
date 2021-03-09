@@ -20,7 +20,7 @@ struct Grid {
 
   explicit Grid(zisa::int_t _N_phys) {
     N_phys = _N_phys;
-    N_phys_pad = 3. / 2 * N_phys + 1;
+    N_phys_pad = 3 * N_phys / 2;
     N_fourier = N_phys / 2 + 1;
     N_fourier_pad = N_phys_pad / 2 + 1;
   }
