@@ -14,7 +14,7 @@ using namespace azeban;
 
 int main(int argc, const char *argv[]) {
   static constexpr int dim_v = 2;
-  static constexpr azeban::real_t t_final = 1;
+  static constexpr azeban::real_t t_final = 0.01;
   static constexpr int n_frames = 60;
 
   if (argc != 2) {

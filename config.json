@@ -1,23 +1,21 @@
 {
   "device": "cuda",
   "grid": {
-    "N_phys": 256
+    "N_phys": 972
   },
   "equation": {
     "name": "Euler",
     "visc": {
       "type": "Smooth Cutoff",
-      "eps": 0.05,
+      "eps": 0.5,
       "k0": 1
     }
   },
   "timestepper": {
     "type": "SSP RK3",
-    "C": 0.2
+    "C": 0.1
   },
   "init": {
-    "name": "Double Shear Layer",
-    "rho": 0.2,
-    "delta": 0.05
+    "name": "Taylor Vortex"
   }
 }

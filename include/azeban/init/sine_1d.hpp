@@ -2,7 +2,7 @@
 #define SINE_1D_H_
 
 #include "initializer.hpp"
-#include <zisa //math/basic_functions.hpp>
+#include <zisa/math/basic_functions.hpp>
 #include <zisa/memory/array.hpp>
 
 namespace azeban {

@@ -5,6 +5,8 @@
 #include "initializer.hpp"
 #include "shock.hpp"
 #include "sine_1d.hpp"
+#include "taylor_vortex.hpp"
+#include <fmt/core.h>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <zisa/config.hpp>
@@ -70,6 +72,14 @@ make_initializer(const nlohmann::json &config) {
     } else {
       fmt::print(stderr,
                  "Double Shear Layer is only available for 2D simulations\n");
+      exit(1);
+    }
+  } else if (name == "Taylor Vortex") {
+    if constexpr (Dim == 2) {
+      return std::make_shared<TaylorVortex>();
+    } else {
+      fmt::print(stderr,
+                 "Taylor Vortex is only available for 2D simulations\n");
       exit(1);
     }
   } else {
