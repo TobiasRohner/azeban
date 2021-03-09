@@ -1,7 +1,7 @@
 {
   "device": "cuda",
   "grid": {
-    "N_phys": 2048
+    "N_phys": 512
   },
   "equation": {
     "name": "Euler",

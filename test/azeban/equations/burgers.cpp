@@ -115,7 +115,7 @@ TEST_CASE("Burgers Convergence") {
     err.push_back(compute_error(u_ref, u));
   }
 
-  std::cout << "L1 errors = [" << err[0];
+  std::cout << "L2 errors = [" << err[0];
   for (zisa::int_t i = 1; i < err.size(); ++i) {
     std::cout << ", " << err[i];
   }
