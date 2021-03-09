@@ -27,8 +27,8 @@ void burgers_cuda(const zisa::array_view<complex_t, 2> &u,
                   const zisa::array_const_view<complex_t, 2> &u_squared,
                   const SpectralViscosity &visc) {
   const int thread_dims = 1024;
-  const int block_dims = zisa::min(
-      zisa::div_up(static_cast<int>(u.shape(1)), thread_dims), 1024);
+  const int block_dims
+      = zisa::div_up(static_cast<int>(u.shape(1)), thread_dims);
   burgers_cuda_kernel<<<block_dims, thread_dims>>>(u, u_squared, visc);
 }
 

@@ -24,8 +24,8 @@ void axpby_cuda(const Scalar &a,
                 const zisa::array_view<Scalar, 1> &y) {
   assert(x.shape() == y.shape());
   const int thread_dims = 1024;
-  const int block_dims = zisa::min(
-      zisa::div_up(static_cast<int>(x.shape(0)), thread_dims), 1024);
+  const int block_dims
+      = zisa::div_up(static_cast<int>(x.shape(0)), thread_dims);
   axpby_cuda_kernel<<<block_dims, thread_dims>>>(a, x, b, y);
 }
 

@@ -70,9 +70,9 @@ void copy_to_padded_cuda(const zisa::array_view<complex_t, 2> &dst,
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
       zisa::min(zisa::div_up(static_cast<int>(dst.shape(0)), thread_dims.x),
-                32),
+                1024),
       zisa::min(zisa::div_up(static_cast<int>(dst.shape(1)), thread_dims.y),
-                32),
+                1024),
       1);
   copy_to_padded_cuda_kernel<<<block_dims, thread_dims>>>(dst, src, pad_value);
 }
@@ -88,10 +88,12 @@ void copy_to_padded_cuda(const zisa::array_view<complex_t, 3> &dst,
   assert(dst.shape(2) >= src.shape(2));
   const dim3 thread_dims(8, 8, 8);
   const dim3 block_dims(
-      zisa::min(zisa::div_up(static_cast<int>(dst.shape(0)), thread_dims.x), 8),
-      zisa::min(zisa::div_up(static_cast<int>(dst.shape(1)), thread_dims.y), 8),
+      zisa::min(zisa::div_up(static_cast<int>(dst.shape(0)), thread_dims.x),
+                1024),
+      zisa::min(zisa::div_up(static_cast<int>(dst.shape(1)), thread_dims.y),
+                1024),
       zisa::min(zisa::div_up(static_cast<int>(dst.shape(2)), thread_dims.z),
-                8));
+                1024));
   copy_to_padded_cuda_kernel<<<block_dims, thread_dims>>>(dst, src, pad_value);
 }
 

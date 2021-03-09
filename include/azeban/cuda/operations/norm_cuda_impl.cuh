@@ -56,14 +56,13 @@ __global__ void norm_cuda_kernel(zisa::array_const_view<Scalar, 1> in_data,
 template <typename Scalar>
 real_t norm_cuda(const zisa::array_const_view<Scalar, 1> &data, real_t p) {
   const int thread_dims = 1024;
-  int block_dims = zisa::min(
-      zisa::div_up(static_cast<int>(data.shape(0)), 2 * thread_dims), 1024);
+  int block_dims
+      = zisa::div_up(static_cast<int>(data.shape(0)), 2 * thread_dims);
   auto out_data = zisa::cuda_array<real_t, 1>(zisa::shape_t<1>(block_dims));
   norm_cuda_kernel<<<block_dims, thread_dims, thread_dims * sizeof(real_t)>>>(
       data, zisa::array_view<real_t, 1>(out_data), p);
   while (block_dims > 1) {
-    block_dims = zisa::min(
-        zisa::div_up(static_cast<int>(block_dims), 2 * thread_dims), 1024);
+    block_dims = zisa::div_up(static_cast<int>(block_dims), 2 * thread_dims);
     norm_cuda_kernel<<<block_dims, thread_dims, thread_dims * sizeof(real_t)>>>(
         zisa::array_const_view<real_t, 1>(out_data),
         zisa::array_view<real_t, 1>(out_data),

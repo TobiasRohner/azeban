@@ -1,13 +1,13 @@
 {
   "device": "cuda",
   "grid": {
-    "N_phys": 972
+    "N_phys": 2048
   },
   "equation": {
     "name": "Euler",
     "visc": {
       "type": "Smooth Cutoff",
-      "eps": 0.5,
+      "eps": 0.05,
       "k0": 1
     }
   },
