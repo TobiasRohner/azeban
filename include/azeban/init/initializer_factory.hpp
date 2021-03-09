@@ -1,6 +1,7 @@
 #ifndef INITIALIZER_FACTORY_H_
 #define INITIALIZER_FACTORY_H_
 
+#include "discontinuous_vortex_patch.hpp"
 #include "double_shear_layer.hpp"
 #include "initializer.hpp"
 #include "shock.hpp"
@@ -80,6 +81,15 @@ make_initializer(const nlohmann::json &config) {
     } else {
       fmt::print(stderr,
                  "Taylor Vortex is only available for 2D simulations\n");
+      exit(1);
+    }
+  } else if (name == "Discontinuous Vortex Patch") {
+    if constexpr (Dim == 2) {
+      return std::make_shared<DiscontinuousVortexPatch>();
+    } else {
+      fmt::print(
+          stderr,
+          "Discontinuous Vortex Patch is only available for 2D simulations\n");
       exit(1);
     }
   } else {

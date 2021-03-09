@@ -1,7 +1,7 @@
 {
   "device": "cuda",
   "grid": {
-    "N_phys": 512
+    "N_phys": 1024
   },
   "equation": {
     "name": "Euler",
@@ -16,8 +16,6 @@
     "C": 0.1
   },
   "init": {
-    "name": "Double Shear Layer",
-    "rho": 0.2,
-    "delta": 0.05
+    "name": "Discontinuous Vortex Patch"
   }
 }
