@@ -17,7 +17,6 @@ class IncompressibleEuler final : public Equation<complex_t, Dim> {
   using super = Equation<complex_t, Dim>;
   static_assert(Dim == 2 || Dim == 3,
                 "Incompressible Euler is only implemented for 2D and 3D");
-  static_assert(Dim == 2, "Only 2D Incompressible Euler supportet ATM");
 
 public:
   using scalar_t = complex_t;

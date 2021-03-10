@@ -12,27 +12,17 @@
 
 using namespace azeban;
 
-int main(int argc, const char *argv[]) {
-  static constexpr int dim_v = 1;
-
-  if (argc != 2) {
-    fmt::print(stderr, "Usage: {} <config>\n", argv[0]);
-    exit(1);
-  }
-
-  std::ifstream config_file(argv[1]);
-  nlohmann::json config;
-  config_file >> config;
-
+template<int dim_v>
+static void runFromConfig(const nlohmann::json &config) {
   if (!config.contains("time")) {
     fmt::print(stderr, "Config file does not contain \"time\"\n");
     exit(1);
   }
-  const azeban::real_t t_final = config["time"];
+  const real_t t_final = config["time"];
 
-  std::vector<azeban::real_t> snapshots;
+  std::vector<real_t> snapshots;
   if (config.contains("snapshots")) {
-    snapshots = config["snapshots"].get<std::vector<azeban::real_t>>();
+    snapshots = config["snapshots"].get<std::vector<real_t>>();
   }
   if (!(snapshots.size() > 0 && snapshots.back() == t_final)) {
     snapshots.push_back(t_final);
@@ -43,7 +33,7 @@ int main(int argc, const char *argv[]) {
     output = config["output"];
   }
 
-  auto simulation = make_simulation<azeban::complex_t, dim_v>(config);
+  auto simulation = make_simulation<complex_t, dim_v>(config);
   auto initializer = make_initializer<dim_v>(config);
 
   initializer->initialize(simulation.u());
@@ -64,8 +54,8 @@ int main(int argc, const char *argv[]) {
   for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
     u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
   }
-  zisa::save(hdf5_writer, u_host, std::to_string(azeban::real_t(0)));
-  for (azeban::real_t t : snapshots) {
+  zisa::save(hdf5_writer, u_host, std::to_string(real_t(0)));
+  for (real_t t : snapshots) {
     simulation.simulate_until(t);
     fmt::print("Time: {}\n", t);
 
@@ -75,6 +65,38 @@ int main(int argc, const char *argv[]) {
       u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
     }
     zisa::save(hdf5_writer, u_host, std::to_string(t));
+  }
+}
+
+int main(int argc, const char *argv[]) {
+  if (argc != 2) {
+    fmt::print(stderr, "Usage: {} <config>\n", argv[0]);
+    exit(1);
+  }
+
+  std::ifstream config_file(argv[1]);
+  nlohmann::json config;
+  config_file >> config;
+
+  if (!config.contains("dimension")) {
+    fmt::print(stderr, "Must provide dimension of simulation\n");
+    exit(1);
+  }
+  int dim = config["dimension"];
+
+  switch (dim) {
+    case 1:
+      runFromConfig<1>(config);
+      break;
+    case 2:
+      runFromConfig<2>(config);
+      break;
+    case 3:
+      runFromConfig<3>(config);
+      break;
+    default:
+      fmt::print(stderr, "Invalid Dimension: {}\n", dim);
+      exit(1);
   }
 
   return EXIT_SUCCESS;

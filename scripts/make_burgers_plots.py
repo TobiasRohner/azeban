@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 CONFIG_SINE = '''
 {{
   "device": "cuda",
+  "dimension": 1,
   "time": 0.1,
   "snapshots": [0.025, 0.05, 0.075],
   "output": "{output}",
@@ -40,6 +41,7 @@ CONFIG_SINE = '''
 CONFIG_SHOCK = '''
 {{
   "device": "cuda",
+  "dimension": 1,
   "time": 1,
   "snapshots": [0.25, 0.5, 0.75],
   "output": "{output}",
