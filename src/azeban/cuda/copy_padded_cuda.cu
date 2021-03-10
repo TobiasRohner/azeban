@@ -46,7 +46,46 @@ copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 2> dst,
 __global__ void
 copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 3> dst,
                            zisa::array_const_view<complex_t, 3> src,
-                           complex_t pad_value) {}
+                           complex_t pad_value) {
+  const int i = blockIdx.x * blockDim.x + threadIdx.x;
+  const int j = blockIdx.y * blockDim.y + threadIdx.y;
+  const int k = blockIdx.z * blockDim.z + threadIdx.z;
+  const auto src_shape = src.shape();
+  const auto dst_shape = dst.shape();
+  const int idx_dst = zisa::row_major<3>::linear_index(dst_shape, i, j, k);
+  int i_src, j_src;
+
+  if (i >= dst_shape[0] || j >= dst_shape[1] || k >= dst_shape[2]) {
+    return;
+  }
+
+  if (k >= dst_shape[2]) {
+    dst[idx_dst] = pad_value;
+    return;
+  }
+
+  if (j < src_shape[1] / 2 + 1) {
+    j_src = j;
+  } else if (j < src_shape[1] / 2 + 1 + dst_shape[1] - src_shape[1]) {
+    dst[idx_dst] = pad_value;
+    return;
+  } else {
+    j_src = j + src_shape[1] - dst_shape[1];
+  }
+
+  if (i < src_shape[0] / 2 + 1) {
+    i_src = i;
+  } else if (i < src_shape[0] / 2 + 1 + dst_shape[0] - src_shape[0]) {
+    dst[idx_dst] = pad_value;
+    return;
+  } else {
+    i_src = i + src_shape[0] - dst_shape[0];
+  }
+
+  const int idx_src
+      = zisa::row_major<3>::linear_index(src_shape, i_src, j_src, k);
+  dst[idx_dst] = src[idx_src];
+}
 
 void copy_to_padded_cuda(const zisa::array_view<complex_t, 1> &dst,
                          const zisa::array_const_view<complex_t, 1> &src,

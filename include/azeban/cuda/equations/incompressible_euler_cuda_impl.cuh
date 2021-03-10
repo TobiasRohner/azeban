@@ -28,8 +28,7 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<2>(
     const real_t u2 = u[1 * stride + idx];
     B[0 * stride + idx] = norm * u1 * u1;
     B[1 * stride + idx] = norm * u1 * u2;
-    B[2 * stride + idx] = norm * u2 * u1;
-    B[3 * stride + idx] = norm * u2 * u2;
+    B[2 * stride + idx] = norm * u2 * u2;
   }
 }
 
@@ -53,14 +52,11 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<3>(
     const real_t u2 = u[1 * stride + idx];
     const real_t u3 = u[2 * stride + idx];
     B[0 * stride + idx] = norm * u1 * u1;
-    B[1 * stride + idx] = norm * u1 * u2;
-    B[2 * stride + idx] = norm * u1 * u3;
-    B[3 * stride + idx] = norm * u2 * u1;
-    B[4 * stride + idx] = norm * u2 * u2;
-    B[5 * stride + idx] = norm * u2 * u3;
-    B[6 * stride + idx] = norm * u3 * u1;
-    B[7 * stride + idx] = norm * u3 * u2;
-    B[8 * stride + idx] = norm * u3 * u3;
+    B[1 * stride + idx] = norm * u2 * u1;
+    B[2 * stride + idx] = norm * u2 * u2;
+    B[3 * stride + idx] = norm * u3 * u1;
+    B[4 * stride + idx] = norm * u3 * u2;
+    B[5 * stride + idx] = norm * u3 * u3;
   }
 }
 
@@ -86,10 +82,13 @@ incompressible_euler_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
     const real_t k1 = 2 * zisa::pi * i_;
     const real_t k2 = 2 * zisa::pi * j;
 
-    const complex_t b1_hat = complex_t(0, k1) * B_hat[0 * stride_B + idx_B]
-                             + complex_t(0, k2) * B_hat[1 * stride_B + idx_B];
-    const complex_t b2_hat = complex_t(0, k1) * B_hat[2 * stride_B + idx_B]
-                             + complex_t(0, k2) * B_hat[3 * stride_B + idx_B];
+    const complex_t B11_hat = B_hat[0 * stride_B + idx_B];
+    const complex_t B12_hat = B_hat[1 * stride_B + idx_B];
+    const complex_t B22_hat = B_hat[2 * stride_B + idx_B];
+    const complex_t b1_hat
+        = complex_t(0, k1) * B11_hat + complex_t(0, k2) * B12_hat;
+    const complex_t b2_hat
+        = complex_t(0, k1) * B12_hat + complex_t(0, k2) * B22_hat;
 
     const real_t absk2 = k1 * k1 + k2 * k2;
     const complex_t L1_hat
@@ -110,7 +109,68 @@ __global__ void
 incompressible_euler_3d_cuda_kernel(zisa::array_const_view<complex_t, 4> B_hat,
                                     zisa::array_view<complex_t, 4> u_hat,
                                     SpectralViscosity visc) {
-  // TODO: Implement
+  const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned k = blockIdx.z * blockDim.z + threadIdx.z;
+  const unsigned stride_B = B_hat.shape(1) * B_hat.shape(2) * B_hat.shape(3);
+  const unsigned i_B
+      = i >= u_hat.shape(1) / 2 + 1 ? B_hat.shape(1) - u_hat.shape(1) + i : i;
+  const unsigned j_B
+      = j >= u_hat.shape(2) / 2 + 1 ? B_hat.shape(2) - u_hat.shape(2) + j : j;
+  const unsigned idx_B
+      = i_B * B_hat.shape(2) * B_hat.shape(3) + j_B * B_hat.shape(3) + k;
+  const unsigned stride_u = u_hat.shape(1) * u_hat.shape(2) * u_hat.shape(3);
+  const unsigned idx_u
+      = i * u_hat.shape(2) * u_hat.shape(3) + j * u_hat.shape(3) + k;
+
+  if (i < u_hat.shape(1) && j < u_hat.shape(2) && k < u_hat.shape(3)) {
+    int i_ = i;
+    int j_ = j;
+    if (i_ >= u_hat.shape(1) / 2 + 1) {
+      i_ -= u_hat.shape(1);
+    }
+    if (j_ >= u_hat.shape(2) / 2 + 1) {
+      i_ -= u_hat.shape(2);
+    }
+    const real_t k1 = 2 * zisa::pi * i_;
+    const real_t k2 = 2 * zisa::pi * j_;
+    const real_t k3 = 2 * zisa::pi * k;
+
+    const complex_t B11_hat = B_hat[0 * stride_B + idx_B];
+    const complex_t B21_hat = B_hat[1 * stride_B + idx_B];
+    const complex_t B22_hat = B_hat[2 * stride_B + idx_B];
+    const complex_t B31_hat = B_hat[3 * stride_B + idx_B];
+    const complex_t B32_hat = B_hat[4 * stride_B + idx_B];
+    const complex_t B33_hat = B_hat[5 * stride_B + idx_B];
+    const complex_t b1_hat = complex_t(0, k1) * B11_hat
+                             + complex_t(0, k2) * B21_hat
+                             + complex_t(0, k3) * B31_hat;
+    const complex_t b2_hat = complex_t(0, k1) * B21_hat
+                             + complex_t(0, k2) * B22_hat
+                             + complex_t(0, k3) * B32_hat;
+    const complex_t b3_hat = complex_t(0, k1) * B31_hat
+                             + complex_t(0, k2) * B32_hat
+                             + complex_t(0, k3) * B33_hat;
+
+    const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
+    const complex_t L1_hat = (1. - (k1 * k1) / absk2) * b1_hat
+                             + (0. - (k1 * k2) / absk2) * b2_hat
+                             + (0. - (k1 * k3) / absk2) * b3_hat;
+    const complex_t L2_hat = (0. - (k2 * k1) / absk2) * b1_hat
+                             + (1. - (k2 * k2) / absk2) * b2_hat
+                             + (0. - (k2 * k3) / absk2) * b3_hat;
+    const complex_t L3_hat = (0. - (k3 * k1) / absk2) * b1_hat
+                             + (0. - (k3 * k2) / absk2) * b2_hat
+                             + (1. - (k3 * k3) / absk2) * b3_hat;
+
+    const real_t v = visc.eval(zisa::sqrt(absk2));
+    u_hat[0 * stride_u + idx_u]
+        = absk2 == 0 ? 0 : -L1_hat + v * u_hat[0 * stride_u + idx_u];
+    u_hat[1 * stride_u + idx_u]
+        = absk2 == 0 ? 0 : -L2_hat + v * u_hat[1 * stride_u + idx_u];
+    u_hat[2 * stride_u + idx_u]
+        = absk2 == 0 ? 0 : -L3_hat + v * u_hat[2 * stride_u + idx_u];
+  }
 }
 
 template <int Dim>

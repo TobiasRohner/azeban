@@ -28,8 +28,8 @@ public:
       : super(grid), device_(device), visc_(visc) {
     u_hat_ = grid.make_array_fourier_pad(dim_v, device);
     u_ = grid.make_array_phys_pad(dim_v, device);
-    B_hat_ = grid.make_array_fourier_pad(dim_v * dim_v, device);
-    B_ = grid.make_array_phys_pad(dim_v * dim_v, device);
+    B_hat_ = grid.make_array_fourier_pad((dim_v * dim_v + dim_v) / 2, device);
+    B_ = grid.make_array_phys_pad((dim_v * dim_v + dim_v) / 2, device);
     fft_u_ = make_fft<dim_v>(u_hat_, u_);
     fft_B_ = make_fft<dim_v>(B_hat_, B_);
   }
@@ -81,8 +81,6 @@ private:
   zisa::device_type device_;
   zisa::array<complex_t, dim_v + 1> u_hat_;
   zisa::array<real_t, dim_v + 1> u_;
-  // B is symmetric! Exploit to reduce memory usage => increase computational
-  // intensity?
   zisa::array<complex_t, dim_v + 1> B_hat_;
   zisa::array<real_t, dim_v + 1> B_;
   std::shared_ptr<FFT<dim_v>> fft_u_;

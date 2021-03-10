@@ -12,7 +12,7 @@
 
 using namespace azeban;
 
-template<int dim_v>
+template <int dim_v>
 static void runFromConfig(const nlohmann::json &config) {
   if (!config.contains("time")) {
     fmt::print(stderr, "Config file does not contain \"time\"\n");
@@ -85,18 +85,18 @@ int main(int argc, const char *argv[]) {
   int dim = config["dimension"];
 
   switch (dim) {
-    case 1:
-      runFromConfig<1>(config);
-      break;
-    case 2:
-      runFromConfig<2>(config);
-      break;
-    case 3:
-      runFromConfig<3>(config);
-      break;
-    default:
-      fmt::print(stderr, "Invalid Dimension: {}\n", dim);
-      exit(1);
+  case 1:
+    runFromConfig<1>(config);
+    break;
+  case 2:
+    runFromConfig<2>(config);
+    break;
+  case 3:
+    runFromConfig<3>(config);
+    break;
+  default:
+    fmt::print(stderr, "Invalid Dimension: {}\n", dim);
+    exit(1);
   }
 
   return EXIT_SUCCESS;
