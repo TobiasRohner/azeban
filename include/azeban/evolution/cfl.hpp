@@ -24,7 +24,7 @@ public:
 
   real_t dt(const zisa::array_const_view<complex_t, dim_v + 1> &u_hat) const {
     const real_t sup = norm(u_hat, 1);
-    return std::pow(grid_.N_phys, dim_v - 1) * C_ / sup;
+    return zisa::pow<dim_v - 1>(grid_.N_phys) * C_ / sup;
   }
 
   const Grid<dim_v> &grid() const { return grid_; }

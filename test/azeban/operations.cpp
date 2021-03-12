@@ -37,7 +37,7 @@ TEST_CASE("axpy", "[operations]") {
 }
 
 TEST_CASE("norm complex CUDA", "[operations]") {
-  zisa::int_t n = 100 * 100;
+  zisa::int_t n = 1000 * 1000;
   zisa::shape_t<1> shape{n};
   auto h_u = zisa::array<azeban::complex_t, 1>(shape);
   auto d_u = zisa::cuda_array<azeban::complex_t, 1>(shape);
@@ -51,5 +51,5 @@ TEST_CASE("norm complex CUDA", "[operations]") {
       = azeban::norm(zisa::array_const_view<azeban::complex_t, 1>(d_u), 2);
 
   std::cout << "norm = " << d << std::endl;
-  REQUIRE(std::fabs(d - 100) <= 1e-10);
+  REQUIRE(std::fabs(d - 1000) <= 1e-10);
 }

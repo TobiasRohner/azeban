@@ -33,23 +33,13 @@ public:
       cdist *= u_hat_.shape(i + 1);
       n[i] = u_.shape(i + 1);
     }
-    int rn[dim_v];
-    int cn[dim_v];
-    for (int i = 0; i < dim_v; ++i) {
-      rn[i] = 1;
-      cn[i] = 1;
-      for (int j = i; j < dim_v; ++j) {
-        rn[i] *= u_.shape(j + 1);
-        cn[i] *= u_hat_.shape(j + 1);
-      }
-    }
     auto status = cufftPlanMany(&plan_forward_, // plan
                                 dim_v,          // rank
                                 n,              // n
-                                rn,             // inembed
+                                NULL,		// inembed
                                 1,              // istride
                                 rdist,          // idist
-                                cn,             // onembed
+                                NULL,           // onembed
                                 1,              // ostride
                                 cdist,          // odist
                                 type_forward,   // type
@@ -59,10 +49,10 @@ public:
     status = cufftPlanMany(&plan_backward_, // plan
                            dim_v,           // rank
                            n,               // n
-                           cn,              // inembed
+                           NULL,            // inembed
                            1,               // istride
                            cdist,           // idist
-                           rn,              // onembed
+                           NULL,            // onembed
                            1,               // ostride
                            rdist,           // odist
                            type_backward,   // type

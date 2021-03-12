@@ -189,7 +189,7 @@ TEST_CASE("2D Euler Derivative") {
   }
 }
 
-TEST_CASE("Taylor Vortex") {
+TEST_CASE("Taylor Vortex", "[slow]") {
   /*
   // Lagrange Polynomials for interpolation
   const auto L0 = [](azeban::real_t x) {
@@ -312,14 +312,14 @@ TEST_CASE("Taylor Vortex") {
   REQUIRE(conv_rate >= 1);
 }
 
-TEST_CASE("Double Shear Layer") {
+TEST_CASE("Double Shear Layer", "[slow]") {
   const auto initializer
       = std::make_shared<azeban::DoubleShearLayer>(0.2, 0.05);
   const azeban::real_t conv_rate = measureConvergence(initializer, 512, 1);
   REQUIRE(conv_rate >= 1);
 }
 
-TEST_CASE("Discontinous Vortex Patch") {
+TEST_CASE("Discontinous Vortex Patch", "[slow]") {
   const auto initializer = std::make_shared<azeban::DiscontinuousVortexPatch>();
   const azeban::real_t conv_rate = measureConvergence(initializer, 512, 5);
   REQUIRE(conv_rate >= 1);
