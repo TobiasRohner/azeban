@@ -57,7 +57,8 @@ Simulation<Scalar, Dim> make_simulation(const nlohmann::json &config) {
   const real_t C = config["timestepper"]["C"];
   auto cfl = CFL<Dim>(grid, C);
 
-  return {grid.shape_fourier(equation->n_vars()), cfl, timestepper, device};
+  return Simulation(
+      grid.shape_fourier(equation->n_vars()), cfl, timestepper, device);
 }
 
 }

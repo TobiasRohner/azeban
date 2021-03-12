@@ -74,10 +74,6 @@ protected:
   using super::grid_;
 
 private:
-  zisa::int_t N_phys;
-  zisa::int_t N_fourier;
-  zisa::int_t N_phys_pad;
-  zisa::int_t N_fourier_pad;
   zisa::device_type device_;
   zisa::array<complex_t, dim_v + 1> u_hat_;
   zisa::array<real_t, dim_v + 1> u_;

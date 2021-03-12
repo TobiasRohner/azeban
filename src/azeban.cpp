@@ -49,6 +49,8 @@ static void runFromConfig(const nlohmann::json &config) {
 
   auto fft = make_fft<dim_v>(simulation.u(), u_device);
 
+  std::cout << simulation.u().shape() << ", " << u_host.shape() << std::endl;
+
   fft->backward();
   zisa::copy(u_host, u_device);
   for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {

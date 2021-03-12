@@ -61,6 +61,7 @@ public:
     }
   }
 
+  using super::grid;
   virtual int n_vars() const override { return 1; }
 
 private:

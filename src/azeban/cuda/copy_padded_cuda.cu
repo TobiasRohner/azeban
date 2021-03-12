@@ -59,7 +59,7 @@ copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 3> dst,
     return;
   }
 
-  if (k >= dst_shape[2]) {
+  if (k >= src_shape[2]) {
     dst[idx_dst] = pad_value;
     return;
   }
@@ -119,7 +119,6 @@ void copy_to_padded_cuda(const zisa::array_view<complex_t, 2> &dst,
 void copy_to_padded_cuda(const zisa::array_view<complex_t, 3> &dst,
                          const zisa::array_const_view<complex_t, 3> &src,
                          const complex_t &pad_value) {
-  LOG_ERR("Not yet implemented");
   assert(src.memory_location() == zisa::device_type::cuda);
   assert(dst.memory_location() == zisa::device_type::cuda);
   assert(dst.shape(0) >= src.shape(0));
