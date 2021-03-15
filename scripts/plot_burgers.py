@@ -12,7 +12,7 @@ DATA_FILE = sys.argv[1]
 
 
 with h5py.File(DATA_FILE, 'r') as f:
-    keys = list(sorted(f.keys(), key = lambda n : int(n)))
+    keys = list(sorted(f.keys(), key = lambda n : float(n)))
     N = f[keys[0]].size
 
     fig, ax = plt.subplots()

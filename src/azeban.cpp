@@ -41,9 +41,9 @@ static void runFromConfig(const nlohmann::json &config) {
   auto u_host
       = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
   auto u_device
-      = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cuda);
-  auto u_hat_device
-      = grid.make_array_fourier(simulation.n_vars(), zisa::device_type::cuda);
+      = grid.make_array_phys(simulation.n_vars(), simulation.memory_location());
+  auto u_hat_device = grid.make_array_fourier(simulation.n_vars(),
+                                              simulation.memory_location());
   auto fft = make_fft<dim_v>(u_hat_device, u_device);
 
   auto initializer = make_initializer<dim_v>(config);

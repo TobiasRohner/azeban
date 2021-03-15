@@ -20,7 +20,11 @@ public:
       const CFL<Dim> &cfl,
       const std::shared_ptr<TimeIntegrator<scalar_t, dim_v>> &timestepper,
       zisa::device_type device = zisa::device_type::cpu)
-      : u_(shape, device), cfl_(cfl), timestepper_(timestepper), time_(0) {}
+      : u_(shape, device),
+        cfl_(cfl),
+        timestepper_(timestepper),
+        time_(0),
+        memory_location_(device) {}
   Simulation(
       const zisa::array_const_view<scalar_t, dim_v + 1> &u,
       const CFL<Dim> cfl,
@@ -28,13 +32,9 @@ public:
       : u_(u.shape(), u.memory_location()),
         cfl_(cfl),
         timestepper_(timestepper),
-        time_(0) {
-    // Ugly, but normal copy doesn't work for some reason
-    zisa::internal::copy(u_.raw(),
-                         u_.device(),
-                         u.raw(),
-                         u.memory_location(),
-                         zisa::product(u_.shape()));
+        time_(0),
+        memory_location_(u.memory_location()) {
+    zisa::copy(u_, u);
   }
   Simulation(const Simulation &) = delete;
   Simulation(Simulation &&) = default;
@@ -45,7 +45,6 @@ public:
   void simulate_until(real_t t) {
     real_t dt = cfl_.dt(u_);
     while (time_ < t - dt) {
-      // fmt::print("{}\n", dt);
       timestepper_->integrate(dt, u_);
       time_ += dt;
       dt = cfl_.dt(u_);
@@ -68,12 +67,14 @@ public:
   zisa::array_const_view<scalar_t, dim_v + 1> u() const { return u_; }
   const Grid<dim_v> &grid() const { return cfl_.grid(); }
   zisa::int_t n_vars() const { return u_.shape(0); }
+  zisa::device_type memory_location() const { return memory_location_; }
 
 private:
   zisa::array<scalar_t, dim_v + 1> u_;
   CFL<Dim> cfl_;
   std::shared_ptr<TimeIntegrator<scalar_t, dim_v>> timestepper_;
   real_t time_;
+  zisa::device_type memory_location_;
 };
 
 }

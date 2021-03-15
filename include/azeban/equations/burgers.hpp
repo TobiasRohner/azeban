@@ -49,7 +49,11 @@ public:
                              real_t(1.0 / std::sqrt(norm)));
     fft_->forward();
     if (device_ == zisa::device_type::cpu) {
-      LOG_ERR("Not implemented yet");
+      for (zisa::int_t k = 0; k < u_hat.shape(1); ++k) {
+        const real_t k_ = 2 * zisa::pi * k;
+        const real_t v = visc_.eval(k_);
+        u_hat[k] = complex_t(0, -k_ / 2) * u_hat_[k] + v * u_hat[k];
+      }
     }
 #if ZISA_HAS_CUDA
     else if (device_ == zisa::device_type::cuda) {
