@@ -34,10 +34,6 @@ static void runFromConfig(const nlohmann::json &config) {
   }
 
   auto simulation = make_simulation<complex_t, dim_v>(config);
-  auto initializer = make_initializer<dim_v>(config);
-
-  initializer->initialize(simulation.u());
-
   const auto &grid = simulation.grid();
 
   zisa::HDF5SerialWriter hdf5_writer(output);
@@ -46,11 +42,14 @@ static void runFromConfig(const nlohmann::json &config) {
       = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
   auto u_device
       = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cuda);
+  auto u_hat_device
+      = grid.make_array_fourier(simulation.n_vars(), zisa::device_type::cuda);
+  auto fft = make_fft<dim_v>(u_hat_device, u_device);
 
-  auto fft = make_fft<dim_v>(simulation.u(), u_device);
+  auto initializer = make_initializer<dim_v>(config);
+  initializer->initialize(simulation.u());
 
-  std::cout << simulation.u().shape() << ", " << u_host.shape() << std::endl;
-
+  zisa::copy(u_hat_device, simulation.u());
   fft->backward();
   zisa::copy(u_host, u_device);
   for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
@@ -61,6 +60,7 @@ static void runFromConfig(const nlohmann::json &config) {
     simulation.simulate_until(t);
     fmt::print("Time: {}\n", t);
 
+    zisa::copy(u_hat_device, simulation.u());
     fft->backward();
     zisa::copy(u_host, u_device);
     for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {

@@ -30,19 +30,19 @@ struct Complex {
     return *this;
   }
 
-  ANY_DEVICE_INLINE Complex &operator==(const Complex &other) {
+  ANY_DEVICE_INLINE bool operator==(const Complex &other) {
     return x == other.x && y == other.y;
   }
 
-  ANY_DEVICE_INLINE Complex &operator==(scalar_t real) {
+  ANY_DEVICE_INLINE bool operator==(scalar_t real) {
     return x == real && y == 0;
   }
 
-  ANY_DEVICE_INLINE Complex &operator!=(const Complex &other) {
+  ANY_DEVICE_INLINE bool operator!=(const Complex &other) {
     return x != other.x || y != other.y;
   }
 
-  ANY_DEVICE_INLINE Complex &operator!=(scalar_t real) {
+  ANY_DEVICE_INLINE bool operator!=(scalar_t real) {
     return x != real || y != 0;
   }
 

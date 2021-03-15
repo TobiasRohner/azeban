@@ -1,6 +1,5 @@
 #include <azeban/fft.hpp>
 #include <azeban/init/init_3d_from_2d.hpp>
-#include <azeban/memory/debug_array.hpp>
 #include <zisa/memory/array.hpp>
 
 namespace azeban {
@@ -8,8 +7,8 @@ namespace azeban {
 void Init3DFrom2D::initialize(const zisa::array_view<real_t, 4> &u) const {
   const auto init = [&](auto &&u_) {
     const zisa::int_t N = u_.shape(1);
-    auto u2d = azeban::debug_array<real_t, 3>(
-        zisa::shape_t<3>(2, N, N), zisa::device_type::cpu, "u2d");
+    auto u2d = zisa::array<real_t, 3>(
+        zisa::shape_t<3>(2, N, N), zisa::device_type::cpu);
     init2d_->initialize(u2d);
     for (zisa::int_t d = 0; d < u_.shape(0); ++d) {
       for (zisa::int_t i = 0; i < N; ++i) {
@@ -31,8 +30,8 @@ void Init3DFrom2D::initialize(const zisa::array_view<real_t, 4> &u) const {
   if (u.memory_location() == zisa::device_type::cpu) {
     init(u);
   } else if (u.memory_location() == zisa::device_type::cuda) {
-    auto h_u = azeban::debug_array<real_t, 4>(
-        u.shape(), zisa::device_type::cpu, "h_u");
+    auto h_u = zisa::array<real_t, 4>(
+        u.shape(), zisa::device_type::cpu);
     init(h_u);
     zisa::copy(u, h_u);
   } else {
@@ -43,8 +42,8 @@ void Init3DFrom2D::initialize(const zisa::array_view<real_t, 4> &u) const {
 void Init3DFrom2D::initialize(
     const zisa::array_view<complex_t, 4> &u_hat) const {
   const zisa::int_t N = u_hat.shape(1);
-  auto u = azeban::debug_array<real_t, 4>(
-      zisa::shape_t<4>(u_hat.shape(0), N, N, N), u_hat.memory_location(), "u");
+  auto u = zisa::array<real_t, 4>(
+      zisa::shape_t<4>(u_hat.shape(0), N, N, N), u_hat.memory_location());
   auto fft = make_fft<3>(u_hat, u);
   initialize(u);
   fft->forward();
