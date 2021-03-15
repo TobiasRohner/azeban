@@ -27,6 +27,7 @@ void axpby_cuda(const Scalar &a,
   const int block_dims
       = zisa::div_up(static_cast<int>(x.shape(0)), thread_dims);
   axpby_cuda_kernel<<<block_dims, thread_dims>>>(a, x, b, y);
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 }

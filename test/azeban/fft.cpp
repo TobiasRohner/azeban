@@ -253,7 +253,7 @@ TEST_CASE("cuFFT 3D scalar valued data", "[cufft]") {
   for (zisa::int_t i = 0; i < n; ++i) {
     for (zisa::int_t j = 0; j < n; ++j) {
       for (zisa::int_t k = 0; k < n; ++k) {
-	h_u(0, i, j, k) = zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
+        h_u(0, i, j, k) = zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
       }
     }
   }
@@ -267,17 +267,20 @@ TEST_CASE("cuFFT 3D scalar valued data", "[cufft]") {
   for (zisa::int_t i = 0; i < cshape[1]; ++i) {
     for (zisa::int_t j = 0; j < cshape[2]; ++j) {
       for (zisa::int_t k = 0; k < cshape[3]; ++k) {
-	const int i_ = i >= n / 2 + 1 ? zisa::integer_cast<int>(i) - n
-				      : zisa::integer_cast<int>(i);
-	const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
-				      : zisa::integer_cast<int>(j);
-	const int k_ = k >= n / 2 + 1 ? zisa::integer_cast<int>(k) - n
-				      : zisa::integer_cast<int>(k);
-	azeban::complex_t expected;
-	expected.x = (i_ == 1 && j_ == 1 && k_ == 1) || (i_ == -1 && j_ == -1 && k_ == -1) ? n * n * n / 2.0 : 0.0;
-	expected.y = 0;
-	REQUIRE(std::fabs(h_u_hat(0, i, j, k).x - expected.x) <= 1e-9);
-	REQUIRE(std::fabs(h_u_hat(0, i, j, k).y - expected.y) <= 1e-9);
+        const int i_ = i >= n / 2 + 1 ? zisa::integer_cast<int>(i) - n
+                                      : zisa::integer_cast<int>(i);
+        const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
+                                      : zisa::integer_cast<int>(j);
+        const int k_ = k >= n / 2 + 1 ? zisa::integer_cast<int>(k) - n
+                                      : zisa::integer_cast<int>(k);
+        azeban::complex_t expected;
+        expected.x = (i_ == 1 && j_ == 1 && k_ == 1)
+                             || (i_ == -1 && j_ == -1 && k_ == -1)
+                         ? n * n * n / 2.0
+                         : 0.0;
+        expected.y = 0;
+        REQUIRE(std::fabs(h_u_hat(0, i, j, k).x - expected.x) <= 1e-9);
+        REQUIRE(std::fabs(h_u_hat(0, i, j, k).y - expected.y) <= 1e-9);
       }
     }
   }
@@ -298,9 +301,9 @@ TEST_CASE("cuFFT 3D vector valued data", "[cufft]") {
   for (zisa::int_t i = 0; i < n; ++i) {
     for (zisa::int_t j = 0; j < n; ++j) {
       for (zisa::int_t k = 0; k < n; ++k) {
-	h_u(0, i, j, k) = zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
-	h_u(1, i, j, k) = zisa::cos(4.0 * zisa::pi * (i + j + k) / n);
-	h_u(2, i, j, k) = zisa::cos(6.0 * zisa::pi * (i + j + k) / n);
+        h_u(0, i, j, k) = zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
+        h_u(1, i, j, k) = zisa::cos(4.0 * zisa::pi * (i + j + k) / n);
+        h_u(2, i, j, k) = zisa::cos(6.0 * zisa::pi * (i + j + k) / n);
       }
     }
   }
@@ -314,27 +317,36 @@ TEST_CASE("cuFFT 3D vector valued data", "[cufft]") {
   for (zisa::int_t i = 0; i < cshape[1]; ++i) {
     for (zisa::int_t j = 0; j < cshape[2]; ++j) {
       for (zisa::int_t k = 0; k < cshape[3]; ++k) {
-	const int i_ = i >= n / 2 + 1 ? zisa::integer_cast<int>(i) - n
-				      : zisa::integer_cast<int>(i);
-	const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
-				      : zisa::integer_cast<int>(j);
-	const int k_ = k >= n / 2 + 1 ? zisa::integer_cast<int>(k) - n
-				      : zisa::integer_cast<int>(k);
-	azeban::complex_t expected_0;
-	azeban::complex_t expected_1;
-	azeban::complex_t expected_2;
-	expected_0.x = (i_ == 1 && j_ == 1 && k_ == 1) || (i_ == -1 && j_ == -1 && k_ == -1) ? n * n * n / 2.0 : 0.0;
-	expected_0.y = 0;
-	expected_1.x = (i_ == 2 && j_ == 2 && k_ == 2) || (i_ == -2 && j_ == -2 && k_ == -2) ? n * n * n / 2.0 : 0.0;
-	expected_1.y = 0;
-	expected_2.x = (i_ == 3 && j_ == 3 && k_ == 3) || (i_ == -3 && j_ == -3 && k_ == -3) ? n * n * n / 2.0 : 0.0;
-	expected_2.y = 0;
-	REQUIRE(std::fabs(h_u_hat(0, i, j, k).x - expected_0.x) <= 1e-8);
-	REQUIRE(std::fabs(h_u_hat(0, i, j, k).y - expected_0.y) <= 1e-8);
-	REQUIRE(std::fabs(h_u_hat(1, i, j, k).x - expected_1.x) <= 1e-8);
-	REQUIRE(std::fabs(h_u_hat(1, i, j, k).y - expected_1.y) <= 1e-8);
-	REQUIRE(std::fabs(h_u_hat(2, i, j, k).x - expected_2.x) <= 1e-8);
-	REQUIRE(std::fabs(h_u_hat(2, i, j, k).y - expected_2.y) <= 1e-8);
+        const int i_ = i >= n / 2 + 1 ? zisa::integer_cast<int>(i) - n
+                                      : zisa::integer_cast<int>(i);
+        const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
+                                      : zisa::integer_cast<int>(j);
+        const int k_ = k >= n / 2 + 1 ? zisa::integer_cast<int>(k) - n
+                                      : zisa::integer_cast<int>(k);
+        azeban::complex_t expected_0;
+        azeban::complex_t expected_1;
+        azeban::complex_t expected_2;
+        expected_0.x = (i_ == 1 && j_ == 1 && k_ == 1)
+                               || (i_ == -1 && j_ == -1 && k_ == -1)
+                           ? n * n * n / 2.0
+                           : 0.0;
+        expected_0.y = 0;
+        expected_1.x = (i_ == 2 && j_ == 2 && k_ == 2)
+                               || (i_ == -2 && j_ == -2 && k_ == -2)
+                           ? n * n * n / 2.0
+                           : 0.0;
+        expected_1.y = 0;
+        expected_2.x = (i_ == 3 && j_ == 3 && k_ == 3)
+                               || (i_ == -3 && j_ == -3 && k_ == -3)
+                           ? n * n * n / 2.0
+                           : 0.0;
+        expected_2.y = 0;
+        REQUIRE(std::fabs(h_u_hat(0, i, j, k).x - expected_0.x) <= 1e-8);
+        REQUIRE(std::fabs(h_u_hat(0, i, j, k).y - expected_0.y) <= 1e-8);
+        REQUIRE(std::fabs(h_u_hat(1, i, j, k).x - expected_1.x) <= 1e-8);
+        REQUIRE(std::fabs(h_u_hat(1, i, j, k).y - expected_1.y) <= 1e-8);
+        REQUIRE(std::fabs(h_u_hat(2, i, j, k).x - expected_2.x) <= 1e-8);
+        REQUIRE(std::fabs(h_u_hat(2, i, j, k).y - expected_2.y) <= 1e-8);
       }
     }
   }

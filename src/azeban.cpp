@@ -40,7 +40,7 @@ static void runFromConfig(const nlohmann::json &config) {
 
   const auto &grid = simulation.grid();
 
-  //zisa::HDF5SerialWriter hdf5_writer(output);
+  zisa::HDF5SerialWriter hdf5_writer(output);
 
   auto u_host
       = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
@@ -56,7 +56,7 @@ static void runFromConfig(const nlohmann::json &config) {
   for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
     u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
   }
-  //zisa::save(hdf5_writer, u_host, std::to_string(real_t(0)));
+  zisa::save(hdf5_writer, u_host, std::to_string(real_t(0)));
   for (real_t t : snapshots) {
     simulation.simulate_until(t);
     fmt::print("Time: {}\n", t);
@@ -66,7 +66,7 @@ static void runFromConfig(const nlohmann::json &config) {
     for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
       u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
     }
-    //zisa::save(hdf5_writer, u_host, std::to_string(t));
+    zisa::save(hdf5_writer, u_host, std::to_string(t));
   }
 }
 

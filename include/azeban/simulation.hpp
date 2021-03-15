@@ -4,6 +4,7 @@
 #include <azeban/equations/equation.hpp>
 #include <azeban/evolution/cfl.hpp>
 #include <azeban/evolution/time_integrator.hpp>
+#include <fmt/core.h>
 
 namespace azeban {
 
@@ -44,6 +45,7 @@ public:
   void simulate_until(real_t t) {
     real_t dt = cfl_.dt(u_);
     while (time_ < t - dt) {
+      fmt::print("{}\n", dt);
       timestepper_->integrate(dt, u_);
       time_ += dt;
       dt = cfl_.dt(u_);

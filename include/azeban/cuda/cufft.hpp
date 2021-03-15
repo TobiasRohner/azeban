@@ -36,7 +36,7 @@ public:
     auto status = cufftPlanMany(&plan_forward_, // plan
                                 dim_v,          // rank
                                 n,              // n
-                                NULL,		// inembed
+                                NULL,           // inembed
                                 1,              // istride
                                 rdist,          // idist
                                 NULL,           // onembed

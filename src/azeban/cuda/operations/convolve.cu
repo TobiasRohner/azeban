@@ -16,6 +16,7 @@ void scale_and_square_cuda(const zisa::array_view<real_t, 1> &u, real_t scale) {
   const int block_dims = zisa::min(
       zisa::div_up(static_cast<int>(u.shape(0)), thread_dims), 1024);
   scale_and_square_kernel<<<block_dims, thread_dims>>>(u, scale);
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 }
