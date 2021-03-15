@@ -24,7 +24,7 @@ CONFIG_SINE = '''
     "name": "Burgers",
     "visc": {{
       "type": "Smooth Cutoff",
-      "eps": 0.05,
+      "eps": 0.25,
       "k0": 1
     }}
   }},
@@ -52,7 +52,7 @@ CONFIG_SHOCK = '''
     "name": "Burgers",
     "visc": {{
       "type": "Smooth Cutoff",
-      "eps": 0.05,
+      "eps": 0.25,
       "k0": 1
     }}
   }},
@@ -80,7 +80,7 @@ def plot_all_snapshots(args, result, name):
     with h5py.File(result, 'r') as f:
         N = f[list(f.keys())[0]].shape[1]
         for time in f.keys():
-            save_to = os.path.join(folder, '%s_N%05d_T%s.svg' % (name, N, time))
+            save_to = os.path.join(folder, '%s_N%05d_T%s.png' % (name, N, time))
             plt.close()
             plt.plot(np.linspace(0, 1, N, endpoint=False), f[time][0])
             plt.title('t = %s' % time)
@@ -109,7 +109,7 @@ def plot_convergence(args, results, name):
     b, a = np.polyfit(np.log(N), np.log(errL2), 1)
     measured = np.exp(a + b * np.log(N))
 
-    save_to = os.path.join(folder, '%s_convergence.svg' % name)
+    save_to = os.path.join(folder, '%s_convergence.png' % name)
     plt.close()
     plt.loglog(N, errL2, '-o', label='L2 Error')
     plt.loglog(N, measured, '-', color='grey', label='$N^{%.2f}$' % b)

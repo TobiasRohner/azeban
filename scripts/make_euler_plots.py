@@ -122,7 +122,7 @@ def plot_all_snapshots(args, result, name):
     with h5py.File(result, 'r') as f:
         N = f[list(f.keys())[0]].shape[1]
         for time in f.keys():
-            save_to = os.path.join(folder, '%s_N%05d_T%s.svg' % (name, N, time))
+            save_to = os.path.join(folder, '%s_N%05d_T%s.png' % (name, N, time))
             plt.close()
             img = curl(f[time][0], f[time][1])
             plt.imshow(img)
@@ -153,7 +153,7 @@ def plot_convergence(args, results, name):
     b, a = np.polyfit(np.log(N), np.log(errL2), 1)
     measured = np.exp(a + b * np.log(N))
 
-    save_to = os.path.join(folder, '%s_convergence.svg' % name)
+    save_to = os.path.join(folder, '%s_convergence.png' % name)
     plt.close()
     plt.loglog(N, errL2, '-o', label='L2 Error')
     plt.loglog(N, measured, '-', color='grey', label='$N^{%.2f}$' % b)
@@ -184,7 +184,7 @@ def plot_convergence_taylor(args, results, reference, name):
                 u_diff = u - u_ref[:,ref_points,:][:,:,ref_points]
                 errL2.append(np.linalg.norm(u_diff) / N[-1]**2)
 
-                save_to = os.path.join(folder, '%s_N%05d_T%s_diff.svg' % (name, N[-1], time))
+                save_to = os.path.join(folder, '%s_N%05d_T%s_diff.png' % (name, N[-1], time))
                 plt.close()
                 img = np.linalg.norm(u_diff, axis=0)
                 plt.imshow(img)
@@ -195,7 +195,7 @@ def plot_convergence_taylor(args, results, reference, name):
     b, a = np.polyfit(np.log(N), np.log(errL2), 1)
     measured = np.exp(a + b * np.log(N))
 
-    save_to = os.path.join(folder, '%s_convergence.svg' % name)
+    save_to = os.path.join(folder, '%s_convergence.png' % name)
     plt.close()
     plt.loglog(N, errL2, '-o', label='L2 Error')
     plt.loglog(N, measured, '-', color='grey', label='$N^{%.2f}$' % b)

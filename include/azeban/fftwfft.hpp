@@ -15,7 +15,7 @@ class FFTWFFT final : public FFT<Dim> {
                      std::decay_t<decltype(std::declval<fftw_complex>()[0])>>,
       "Real type has the wrong precision for FFTW");
   static_assert(
-      std::is_same_v<std::decay_t<decltype(std::declval<complex_t>()[0])>,
+      std::is_same_v<std::decay_t<decltype(std::declval<complex_t>().x)>,
                      std::decay_t<decltype(std::declval<fftw_complex>()[0])>>,
       "Complex type has the wrong precision for FFTW");
 
@@ -38,31 +38,33 @@ public:
       cdist *= u_hat_.shape()[i + 1];
       n[i] = u_.shape()[i + 1];
     }
-    plan_forward_ = fftw_plan_many_dft_r2c(dim_v,         // rank
-                                           n,             // n
-                                           data_dim_,     // howmany
-                                           u.raw(),       // in
-                                           NULL,          // inembed
-                                           1,             // istride
-                                           rdist,         // idist
-                                           u_hat_.raw(),  // out
-                                           NULL,          // onembed
-                                           1,             // ostride
-                                           cdist,         // odist
-                                           FFTW_MEASURE); // flags
+    plan_forward_ = fftw_plan_many_dft_r2c(
+        dim_v,                                        // rank
+        n,                                            // n
+        data_dim_,                                    // howmany
+        u.raw(),                                      // in
+        NULL,                                         // inembed
+        1,                                            // istride
+        rdist,                                        // idist
+        reinterpret_cast<real_t(*)[2]>(u_hat_.raw()), // out
+        NULL,                                         // onembed
+        1,                                            // ostride
+        cdist,                                        // odist
+        FFTW_MEASURE);                                // flags
     // Create a plan for the backward operation
-    plan_backward_ = fftw_plan_many_dft_c2r(dim_v,         // rank
-                                            n,             // n
-                                            data_dim_,     // howmany
-                                            u_hat_.raw(),  // in
-                                            NULL,          // inembed
-                                            1,             // istride
-                                            cdist,         // idist
-                                            u_.raw(),      // out
-                                            NULL,          // onembed
-                                            1,             // ostride
-                                            rdist,         // odist
-                                            FFTW_MEASURE); // flags
+    plan_backward_ = fftw_plan_many_dft_c2r(
+        dim_v,                                        // rank
+        n,                                            // n
+        data_dim_,                                    // howmany
+        reinterpret_cast<real_t(*)[2]>(u_hat_.raw()), // in
+        NULL,                                         // inembed
+        1,                                            // istride
+        cdist,                                        // idist
+        u_.raw(),                                     // out
+        NULL,                                         // onembed
+        1,                                            // ostride
+        rdist,                                        // odist
+        FFTW_MEASURE);                                // flags
   }
 
   virtual ~FFTWFFT() override {
