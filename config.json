@@ -1,10 +1,10 @@
 {
   "device": "cpu",
-  "dimension": 2,
+  "dimension": 3,
   "time": 1,
   "snapshots": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
   "grid": {
-    "N_phys": 128
+    "N_phys": 32
   },
   "equation": {
     "name": "Euler",
@@ -21,6 +21,7 @@
   "init": {
     "name": "Double Shear Layer",
     "rho": 0.2,
-    "delta": 0.05
+    "delta": 0.05,
+    "dimension": 0
   }
 }
