@@ -51,7 +51,38 @@ public:
     computeB();
     fft_B_->forward();
     if (device_ == zisa::device_type::cpu) {
-      LOG_ERR("Not yet implemented");
+      if constexpr (dim_v == 2) {
+        for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
+          const int i_B = i >= u_hat.shape(1) / 2 + 1
+                              ? B_hat_.shape(1) - u_hat.shape(1) + i
+                              : i;
+          for (zisa::int_t j = 0; j < u_hat.shape(2); ++j) {
+            int i_ = i;
+            if (i >= u_hat.shape(1) / 2 + 1) {
+              i_ -= u_hat.shape(1);
+            }
+            const real_t k1 = 2 * zisa::pi * i_;
+            const real_t k2 = 2 * zisa::pi * j;
+            const complex_t B11_hat = B_hat_(0, i_B, j);
+            const complex_t B12_hat = B_hat_(1, i_B, j);
+            const complex_t B22_hat = B_hat_(2, i_B, j);
+            const complex_t b1_hat
+                = complex_t(0, k1) * B11_hat + complex_t(0, k2) * B12_hat;
+            const complex_t b2_hat
+                = complex_t(0, k1) * B12_hat + complex_t(0, k2) * B22_hat;
+            const real_t absk2 = k1 * k1 + k2 * k2;
+            const complex_t L1_hat = (1. - (k1 * k1) / absk2) * b1_hat
+                                     + (0. - (k1 * k2) / absk2) * b2_hat;
+            const complex_t L2_hat = (0. - (k2 * k1) / absk2) * b1_hat
+                                     + (1. - (k2 * k2) / absk2) * b2_hat;
+            const real_t v = visc_.eval(zisa::sqrt(absk2));
+            u_hat(0, i, j) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j);
+            u_hat(1, i, j) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j);
+          }
+        }
+      } else {
+        LOG_ERR("Not yet implemented");
+      }
     }
 #if ZISA_HAS_CUDA
     else if (device_ == zisa::device_type::cuda) {
@@ -127,7 +158,36 @@ private:
 
   void computeB() {
     if (device_ == zisa::device_type::cpu) {
-      LOG_ERR("Not yet implemented");
+      const real_t norm = 1.0
+                          / (zisa::pow<dim_v>(grid_.N_phys)
+                             * zisa::pow<dim_v>(grid_.N_phys_pad));
+      if constexpr (dim_v == 2) {
+        for (zisa::int_t i = 0; i < u_.shape(1); ++i) {
+          for (zisa::int_t j = 0; j < u_.shape(2); ++j) {
+            const real_t u1 = u_(0, i, j);
+            const real_t u2 = u_(1, i, j);
+            B_(0, i, j) = norm * u1 * u1;
+            B_(1, i, j) = norm * u1 * u2;
+            B_(2, i, j) = norm * u2 * u2;
+          }
+        }
+      } else {
+        for (zisa::int_t i = 0; i < u_.shape(1); ++i) {
+          for (zisa::int_t j = 0; j < u_.shape(2); ++j) {
+            for (zisa::int_t k = 0; k < u_.shape(3); ++k) {
+              const real_t u1 = u_(0, i, j, k);
+              const real_t u2 = u_(1, i, j, k);
+              const real_t u3 = u_(2, i, j, k);
+              B_(0, i, j, k) = norm * u1 * u1;
+              B_(1, i, j, k) = norm * u2 * u1;
+              B_(2, i, j, k) = norm * u2 * u2;
+              B_(3, i, j, k) = norm * u3 * u1;
+              B_(4, i, j, k) = norm * u3 * u2;
+              B_(5, i, j, k) = norm * u3 * u3;
+            }
+          }
+        }
+      }
     }
 #if ZISA_HAS_CUDA
     else if (device_ == zisa::device_type::cuda) {

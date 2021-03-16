@@ -30,8 +30,30 @@ void copy_to_padded(const zisa::array_view<complex_t, 2> &dst,
                     const complex_t &pad_value) {
   if (src.memory_location() == zisa::device_type::cpu
       && dst.memory_location() == zisa::device_type::cpu) {
-    // TODO: Implement
-    assert(false && "CPU to CPU padded copy not yet implemented");
+    for (zisa::int_t i = 0; i < dst.shape(0); ++i) {
+      for (zisa::int_t j = 0; j < dst.shape(1); ++j) {
+        const auto src_shape = src.shape();
+        const auto dst_shape = dst.shape();
+        const int idx_dst = zisa::row_major<2>::linear_index(dst_shape, i, j);
+        int i_src;
+        if (j >= src_shape[1]) {
+          dst[idx_dst] = pad_value;
+          continue;
+        }
+        if (i < src_shape[0] / 2 + 1) {
+          i_src = i;
+        } else if (i < src_shape[0] / 2 + 1 + dst_shape[0] - src_shape[0]) {
+          dst[idx_dst] = pad_value;
+          continue;
+        } else {
+          i_src = i + src_shape[0] - dst_shape[0];
+        }
+
+        const int idx_src
+            = zisa::row_major<2>::linear_index(src_shape, i_src, j);
+        dst[idx_dst] = src[idx_src];
+      }
+    }
   }
 #ifdef ZISA_HAS_CUDA
   else if (src.memory_location() == zisa::device_type::cuda
@@ -40,7 +62,7 @@ void copy_to_padded(const zisa::array_view<complex_t, 2> &dst,
   }
 #endif
   else {
-    assert(false && "Unsupported combination of CPU and CUDA arrays");
+    LOG_ERR("Unsupported combination of CPU and CUDA arrays");
   }
 }
 

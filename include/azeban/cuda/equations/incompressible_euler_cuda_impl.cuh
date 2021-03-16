@@ -22,7 +22,7 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<2>(
   const unsigned idx = i * grid.N_phys_pad + j;
 
   const real_t norm
-      = 1.0 / (grid.N_phys * grid.N_phys * grid.N_phys_pad * grid.N_phys_pad);
+      = 1.0 / (zisa::pow<2>(grid.N_phys) * zisa::pow<2>(grid.N_phys_pad));
   if (i < grid.N_phys_pad && j < grid.N_phys_pad) {
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
@@ -44,9 +44,8 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<3>(
   const unsigned idx
       = i * grid.N_phys_pad * grid.N_phys_pad + j * grid.N_phys_pad + k;
 
-  const real_t norm = 1.0
-                      / (grid.N_phys * grid.N_phys * grid.N_phys
-                         * grid.N_phys_pad * grid.N_phys_pad * grid.N_phys_pad);
+  const real_t norm
+      = 1.0 / (zisa::pow<3>(grid.N_phys) * zisa::pow<3>(grid.N_phys_pad));
   if (i < grid.N_phys_pad && j < grid.N_phys_pad && k < grid.N_phys_pad) {
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
