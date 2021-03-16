@@ -7,11 +7,12 @@
 \usepackage{graphicx}
 \usepackage{subcaption}
 \usepackage[margin=2cm]{geometry}
+\usepackage[section]{placeins}
 
 
 
 \newcommand{\burgerssine}[1]{%
-	\begin{figure}[ht!]
+	\begin{figure}[h!]
 		\centering
 		\begin{subfigure}{0.45\textwidth}
 			\centering
@@ -38,7 +39,7 @@
 }
 
 \newcommand{\burgersshock}[1]{%
-	\begin{figure}[ht!]
+	\begin{figure}[h!]
 		\centering
 		\begin{subfigure}{0.45\textwidth}
 			\centering
@@ -65,7 +66,7 @@
 }
 
 \newcommand{\taylorvortex}[1]{%
-	\begin{figure}[ht!]
+	\begin{figure}[h!]
 		\centering
 		\begin{subfigure}{0.45\textwidth}
 			\centering
@@ -80,7 +81,7 @@
 }
 
 \newcommand{\doubleshearlayer}[1]{%
-	\begin{figure}[ht!]
+	\begin{figure}[h!]
 		\centering
 		\begin{subfigure}{0.45\textwidth}
 			\centering
@@ -107,7 +108,7 @@
 }
 
 \newcommand{\discontinuousvortexpatch}[1]{%
-	\begin{figure}[ht!]
+	\begin{figure}[h!]
 		\centering
 		\begin{subfigure}{0.45\textwidth}
 			\centering
@@ -130,7 +131,8 @@
 \begin{document}
 	
 \section{Burgers Sine}
-	\begin{figure}[ht!]
+	This experiment has initial conditions $u_0(x) = \sin(2\pi x)$ and is simulated until $t = 0.1$ in order for the solution to stay continuous over the whole simulation time. The spectral viscosity is applied to all frequencies and is given by $\nu = \frac{0.25}{N}$.
+	\begin{figure}[h!]
 		\centering
 		\includegraphics[width=0.7\textwidth,height=\textheight,keepaspectratio]{burgers_sine/burgers_sine_convergence.png}
 		\caption{Convergence of the Burgers solver for the sine initial conditions}
@@ -145,7 +147,8 @@
 	\burgerssine{08192}
 	
 \section{Burgers Shock}
-	\begin{figure}[ht!]
+	This experiment has initial conditions $u_0(x) = \mathbb{1}_{[0.25, 0.5]}(x)$ and therefore tests Burgers equation for shocks and rarefactions. The spectral viscosity is applied to all frequencies and is given by $\nu = \frac{0.25}{N}$.
+	\begin{figure}[h!]
 		\centering
 		\includegraphics[width=0.7\textwidth,height=\textheight,keepaspectratio]{burgers_shock/burgers_shock_convergence.png}
 		\caption{Convergence of the Burgers solver for the shock initial conditions}
@@ -160,7 +163,13 @@
 	\burgersshock{08192}
 	
 \section{2D Euler Taylor Vortex}
-	\begin{figure}[ht!]
+	This experiment solves the Euler equations on the domain $[-8, 8]^2$ with initial conditions
+	\begin{align*}
+		u_0(x, y) &= -y e^{\frac{1}{2}(1 - x^2 - y^2)} + 8 \\
+		v_0(x, y) &=  x e^{\frac{1}{2}(1 - x^2 - y^2)}
+	\end{align*}
+	The spectral viscosity is applied to all frequencies and is given by $\nu = \frac{0.05}{N}$. The solution at time $t = 0.01$ is compared to a reference solution computed using a high-order WENO scheme on a 8758x8758 grid.
+	\begin{figure}[h!]
 		\centering
 		\includegraphics[width=0.7\textwidth,height=\textheight,keepaspectratio]{euler_taylor_vortex/euler_taylor_vortex_convergence.png}
 		\caption{Convergence of the 2D Euler solver for the Taylor Vortex initial conditions}
@@ -169,7 +178,8 @@
 	\taylorvortex{00128}
 	\taylorvortex{00256}
 	\taylorvortex{00512}
-	\begin{figure}[ht!]
+	\taylorvortex{01024}
+	\begin{figure}[h!]
 		\centering
 		\begin{subfigure}{0.45\textwidth}
 			\centering
@@ -191,11 +201,25 @@
 			\includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{euler_taylor_vortex/euler_taylor_vortex_N00512_T0.010000_diff.png}
 			\caption{$N = 512$}
 		\end{subfigure}
+		\begin{subfigure}{0.45\textwidth}
+			\centering
+			\includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{euler_taylor_vortex/euler_taylor_vortex_N01024_T0.010000_diff.png}
+			\caption{$N = 1024$}
+		\end{subfigure}
 		\caption{Difference between the Taylor Vortex solved using the spectral method and a reference solution computed using a high-order WENO scheme on a grid with resolution 8758x8758.}
 	\end{figure}
 
 \section{2D Euler Double Shear Layer}
-	\begin{figure}[ht!]
+	This experiment solves the Euler equations on the domain $[0, 1]^2$ with initial conditions
+	\begin{align*}
+		u_0(x, y) &= \begin{cases}
+			\tanh\left(\frac{2\pi(y-\frac{1}{4})}{\rho}\right) &\mbox{ for } y < \frac{1}{2} \\
+			\tanh\left(\frac{2\pi(\frac{3}{4}-y)}{\rho}\right) &\mbox{ for } y \geq \frac{1}{2}
+		\end{cases} \\
+		v_0(x, y) &= \delta \sin(2\pi x)
+	\end{align*}
+	with $\rho = 0.2$ and $\delta = 0.05$. The spectral viscosity is applied to all frequencies and is given by $\nu = \frac{0.05}{N}$.
+	\begin{figure}[h!]
 		\centering
 		\includegraphics[width=0.7\textwidth,height=\textheight,keepaspectratio]{euler_double_shear_layer/euler_double_shear_layer_convergence.png}
 		\caption{Convergence of the 2D Euler solver for the Double Shear Layer initial conditions}
@@ -204,9 +228,22 @@
 	\doubleshearlayer{00128}
 	\doubleshearlayer{00256}
 	\doubleshearlayer{00512}
+	\doubleshearlayer{01024}
 	
 \section{2D Euler Discontinuous Vortex Patch}
-	\begin{figure}[ht!]
+	This experiment solves the Euler equations on the domain $[0, 1]^2$ with initial conditions
+	\begin{align*}
+		u_0(x, y) &= \begin{cases}
+			-\frac{1}{2}(y-\frac{1}{2}) &\mbox{ for } \sqrt{x^2+y^2} < \frac{1}{4} \\
+			0 &\mbox{ otherwise}
+		\end{cases} \\
+		v_0(x, y) &= \begin{cases}
+			\frac{1}{2}(x-\frac{1}{2}) &\mbox{ for } \sqrt{x^2+y^2} < \frac{1}{4} \\
+			0 &\mbox{ otherwise}
+		\end{cases}
+	\end{align*}
+	The spectral viscosity is applied to all frequencies and is given by $\nu = \frac{0.05}{N}$.
+	\begin{figure}[h!]
 		\centering
 		\includegraphics[width=0.7\textwidth,height=\textheight,keepaspectratio]{euler_discontinuous_vortex_patch/euler_discontinuous_vortex_patch_convergence.png}
 		\caption{Convergence of the 2D Euler solver for the Discontinuous Vortex Patch initial conditions}
@@ -215,5 +252,6 @@
 	\discontinuousvortexpatch{00128}
 	\discontinuousvortexpatch{00256}
 	\discontinuousvortexpatch{00512}
+	\discontinuousvortexpatch{01024}
 	
 \end{document}
