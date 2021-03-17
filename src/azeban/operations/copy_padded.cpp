@@ -1,4 +1,4 @@
-#include <azeban/copy_padded.hpp>
+#include <azeban/operations/copy_padded.hpp>
 
 namespace azeban {
 

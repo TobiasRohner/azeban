@@ -2,9 +2,9 @@
 #define FFT_FACTORY_H_
 
 #include <azeban/config.hpp>
-#include <azeban/fftwfft.hpp>
+#include <azeban/operations/fftwfft.hpp>
 #ifdef ZISA_HAS_CUDA
-#include <azeban/cuda/cufft.hpp>
+#include <azeban/cuda/operations/cufft.hpp>
 #endif
 #include <zisa/config.hpp>
 #include <zisa/memory/array_view.hpp>

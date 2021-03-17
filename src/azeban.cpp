@@ -1,5 +1,5 @@
-#include <azeban/fft.hpp>
 #include <azeban/init/initializer_factory.hpp>
+#include <azeban/operations/fft.hpp>
 #include <azeban/simulation_factory.hpp>
 #include <cstdlib>
 #include <fmt/core.h>

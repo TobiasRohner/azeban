@@ -4,11 +4,11 @@
 #include <azeban/equations/spectral_viscosity.hpp>
 #include <azeban/evolution/ssp_rk2.hpp>
 #include <azeban/evolution/ssp_rk3.hpp>
-#include <azeban/fft.hpp>
 #include <azeban/init/discontinuous_vortex_patch.hpp>
 #include <azeban/init/double_shear_layer.hpp>
 #include <azeban/init/init_3d_from_2d.hpp>
 #include <azeban/init/taylor_vortex.hpp>
+#include <azeban/operations/fft.hpp>
 #include <azeban/operations/operations.hpp>
 #include <azeban/simulation.hpp>
 #include <filesystem>

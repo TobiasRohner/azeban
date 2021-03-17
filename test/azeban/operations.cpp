@@ -1,6 +1,6 @@
 #include <azeban/catch.hpp>
 
-#include <azeban/fft.hpp>
+#include <azeban/operations/fft.hpp>
 #include <azeban/operations/operations.hpp>
 #include <zisa/cuda/memory/cuda_array.hpp>
 #include <zisa/math/basic_functions.hpp>

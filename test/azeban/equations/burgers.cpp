@@ -4,8 +4,8 @@
 #include <azeban/equations/spectral_viscosity.hpp>
 #include <azeban/evolution/ssp_rk2.hpp>
 #include <azeban/evolution/ssp_rk3.hpp>
-#include <azeban/fft.hpp>
 #include <azeban/grid.hpp>
+#include <azeban/operations/fft.hpp>
 #include <azeban/operations/operations.hpp>
 #include <azeban/simulation.hpp>
 #include <vector>

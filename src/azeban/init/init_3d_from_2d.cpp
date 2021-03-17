@@ -1,5 +1,5 @@
-#include <azeban/fft.hpp>
 #include <azeban/init/init_3d_from_2d.hpp>
+#include <azeban/operations/fft.hpp>
 #include <zisa/memory/array.hpp>
 
 namespace azeban {

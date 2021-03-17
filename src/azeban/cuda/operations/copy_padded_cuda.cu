@@ -1,5 +1,5 @@
 #include <azeban/config.hpp>
-#include <azeban/copy_padded.hpp>
+#include <azeban/operations/copy_padded.hpp>
 #include <zisa/config.hpp>
 
 namespace azeban {

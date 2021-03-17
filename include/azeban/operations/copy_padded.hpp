@@ -3,7 +3,7 @@
 
 #include <zisa/memory/array_view.hpp>
 #ifdef ZISA_HAS_CUDA
-#include "cuda/copy_padded_cuda.hpp"
+#include <azeban/cuda/operations/copy_padded_cuda.hpp>
 #endif
 
 namespace azeban {

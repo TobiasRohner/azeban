@@ -1,5 +1,5 @@
-#include <azeban/fft.hpp>
 #include <azeban/init/double_shear_layer.hpp>
+#include <azeban/operations/fft.hpp>
 #include <zisa/memory/array.hpp>
 
 namespace azeban {

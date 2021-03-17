@@ -1,8 +1,8 @@
 #ifndef CONVOLVE_H_
 #define CONVOLVE_H_
 
-#include <azeban/copy_padded.hpp>
-#include <azeban/fft.hpp>
+#include <azeban/operations/copy_padded.hpp>
+#include <azeban/operations/fft.hpp>
 #ifdef ZISA_HAS_CUDA
 #include <azeban/cuda/operations/convolve_cuda.hpp>
 #endif

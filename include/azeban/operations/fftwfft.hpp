@@ -1,7 +1,7 @@
 #ifndef FFTWFFT_H_
 #define FFTWFFT_H_
 
-#include <azeban/fft_base.hpp>
+#include <azeban/operations/fft_base.hpp>
 #include <fftw3.h>
 
 namespace azeban {

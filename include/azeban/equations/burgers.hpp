@@ -4,8 +4,8 @@
 
 #include "equation.hpp"
 #include <azeban/config.hpp>
-#include <azeban/fft.hpp>
 #include <azeban/operations/convolve.hpp>
+#include <azeban/operations/fft.hpp>
 #ifdef ZISA_HAS_CUDA
 #include <azeban/cuda/equations/burgers_cuda.hpp>
 #endif

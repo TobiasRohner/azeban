@@ -1,5 +1,5 @@
-#include <azeban/fft.hpp>
 #include <azeban/init/discontinuous_vortex_patch.hpp>
+#include <azeban/operations/fft.hpp>
 #include <zisa/math/basic_functions.hpp>
 #include <zisa/memory/array.hpp>
 

@@ -4,7 +4,7 @@
 #include "fft_base.hpp"
 #include "fftwfft.hpp"
 #ifdef ZISA_HAS_CUDA
-#include "cuda/cufft.hpp"
+#include <azeban/cuda/operations/cufft.hpp>
 #endif
 #include "fft_factory.hpp"
 

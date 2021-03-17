@@ -3,9 +3,9 @@
 
 #include "equation.hpp"
 #include <azeban/config.hpp>
-#include <azeban/fft.hpp>
 #include <azeban/grid.hpp>
 #include <azeban/operations/convolve.hpp>
+#include <azeban/operations/fft.hpp>
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
 #endif
