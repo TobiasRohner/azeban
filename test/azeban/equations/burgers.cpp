@@ -33,9 +33,9 @@ static void solveBurgers(const azeban::Grid<1> &grid,
   azeban::CFL<1> cfl(grid, 0.1);
   auto equation = std::make_shared<azeban::Burgers<azeban::SmoothCutoff1D>>(
       grid, azeban::SmoothCutoff1D(visc, 1), zisa::device_type::cuda);
-  auto timestepper = std::make_shared<azeban::SSP_RK3<azeban::complex_t, 1>>(
+  auto timestepper = std::make_shared<azeban::SSP_RK3<1>>(
       zisa::device_type::cuda, d_u_hat.shape(), equation);
-  auto simulation = azeban::Simulation<azeban::complex_t, 1>(
+  auto simulation = azeban::Simulation<1>(
       zisa::array_const_view<azeban::complex_t, 2>(d_u_hat), cfl, timestepper);
 
   simulation.simulate_until(t);

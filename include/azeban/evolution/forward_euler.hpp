@@ -3,21 +3,21 @@
 
 #include "time_integrator.hpp"
 #include <azeban/operations/axpy.hpp>
+#include <azeban/profiler.hpp>
 
 namespace azeban {
 
-template <typename Scalar, int Dim>
-class ForwardEuler final : public TimeIntegrator<Scalar, Dim> {
-  using super = TimeIntegrator<Scalar, Dim>;
+template <int Dim>
+class ForwardEuler final : public TimeIntegrator<Dim> {
+  using super = TimeIntegrator<Dim>;
 
 public:
-  using scalar_t = Scalar;
   static constexpr int dim_v = Dim;
 
   ForwardEuler() = delete;
   ForwardEuler(zisa::device_type device,
                const zisa::shape_t<dim_v + 1> &shape,
-               const std::shared_ptr<Equation<scalar_t, dim_v>> &equation)
+               const std::shared_ptr<Equation<dim_v>> &equation)
       : super(device, equation), dudt_(shape, device) {}
   ForwardEuler(const ForwardEuler &) = delete;
   ForwardEuler(ForwardEuler &&) = default;
@@ -29,14 +29,16 @@ public:
 
   virtual void
   integrate(real_t dt,
-            const zisa::array_view<scalar_t, dim_v + 1> &u) override {
+            const zisa::array_view<complex_t, dim_v + 1> &u) override {
+    AZEBAN_PROFILE_START("forward_euler::integrate");
     zisa::internal::copy(dudt_.raw(),
                          dudt_.device(),
                          u.raw(),
                          u.memory_location(),
                          zisa::product(dudt_.shape()));
     equation_->dudt(dudt_);
-    axpy(scalar_t(dt), zisa::array_const_view<scalar_t, dim_v + 1>(dudt_), u);
+    axpy(complex_t(dt), zisa::array_const_view<complex_t, dim_v + 1>(dudt_), u);
+    AZEBAN_PROFILE_STOP("forward_euler::integrate");
   }
 
   using super::equation;
@@ -47,7 +49,7 @@ protected:
   using super::equation_;
 
 private:
-  zisa::array<scalar_t, dim_v + 1> dudt_;
+  zisa::array<complex_t, dim_v + 1> dudt_;
 };
 
 }

@@ -3,6 +3,7 @@
 
 #include <azeban/cuda/cuda_check_error.hpp>
 #include <azeban/operations/fft_base.hpp>
+#include <azeban/profiler.hpp>
 #include <cufft.h>
 
 namespace azeban {
@@ -66,6 +67,7 @@ public:
   }
 
   virtual void forward() override {
+    AZEBAN_PROFILE_START("CUFFT::forward");
     if constexpr (std::is_same_v<float, real_t>) {
       auto status
           = cufftExecR2C(plan_forward_,
@@ -79,9 +81,11 @@ public:
                          reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()));
       cudaCheckError(status);
     }
+    AZEBAN_PROFILE_STOP("CUFFT::forward");
   }
 
   virtual void backward() override {
+    AZEBAN_PROFILE_START("CUFFT::backward");
     if constexpr (std::is_same_v<float, real_t>) {
       auto status = cufftExecC2R(plan_backward_,
                                  reinterpret_cast<cufftComplex *>(u_hat_.raw()),
@@ -94,6 +98,7 @@ public:
                          u_.raw());
       cudaCheckError(status);
     }
+    AZEBAN_PROFILE_STOP("CUFFT::backward");
   }
 
 protected:

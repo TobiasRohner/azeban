@@ -13,8 +13,8 @@
 
 namespace azeban {
 
-template <typename Scalar, int Dim>
-Simulation<Scalar, Dim> make_simulation(const nlohmann::json &config) {
+template <int Dim>
+Simulation<Dim> make_simulation(const nlohmann::json &config) {
   zisa::device_type device;
   if (!config.contains("device")) {
     fmt::print(stderr, "Device not specified. Defaulting to CPU");
@@ -41,7 +41,7 @@ Simulation<Scalar, Dim> make_simulation(const nlohmann::json &config) {
     fmt::print(stderr, "Config must contain key \"equation\"\n");
     exit(1);
   }
-  auto equation = make_equation<Scalar, Dim>(config["equation"], grid, device);
+  auto equation = make_equation<Dim>(config["equation"], grid, device);
 
   if (!config.contains("timestepper")) {
     fmt::print("Config is missing timestepper specifications\n");

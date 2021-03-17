@@ -28,6 +28,10 @@ target_link_libraries(azeban_dependencies INTERFACE ${HDF5_LIBRARIES})
 # experimental/filesystem
 target_link_libraries(azeban_dependencies INTERFACE stdc++fs)
 
+if(AZEBAN_DO_PROFILE)
+  target_compile_definitions(azeban_dependencies INTERFACE AZEBAN_DO_PROFILE=1)
+endif()
+
 # Logging
 if(ZISA_LOG_LEVEL)
   target_compile_definitions(azeban_dependencies INTERFACE _LOG_LEVEL=${ZISA_LOG_LEVEL})

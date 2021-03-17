@@ -33,13 +33,12 @@ static azeban::real_t measureConvergence(
           const auto equation = std::make_shared<
               azeban::IncompressibleEuler<dim_v, azeban::SmoothCutoff1D>>(
               grid, visc, zisa::device_type::cuda);
-          const auto timestepper
-              = std::make_shared<azeban::SSP_RK3<azeban::complex_t, dim_v>>(
-                  zisa::device_type::cuda,
-                  grid.shape_fourier(equation->n_vars()),
-                  equation);
+          const auto timestepper = std::make_shared<azeban::SSP_RK3<dim_v>>(
+              zisa::device_type::cuda,
+              grid.shape_fourier(equation->n_vars()),
+              equation);
           azeban::CFL<dim_v> cfl(grid, 0.2);
-          azeban::Simulation<azeban::complex_t, dim_v> simulation(
+          azeban::Simulation<dim_v> simulation(
               grid.shape_fourier(equation->n_vars()),
               cfl,
               timestepper,
@@ -244,17 +243,15 @@ TEST_CASE("Taylor Vortex 2D", "[slow]") {
     const auto equation = std::make_shared<
         azeban::IncompressibleEuler<2, azeban::SmoothCutoff1D>>(
         grid, visc, zisa::device_type::cuda);
-    const auto timestepper
-        = std::make_shared<azeban::SSP_RK3<azeban::complex_t, 2>>(
-            zisa::device_type::cuda,
-            grid.shape_fourier(equation->n_vars()),
-            equation);
-    azeban::CFL<2> cfl(grid, 0.2);
-    azeban::Simulation<azeban::complex_t, 2> simulation(
+    const auto timestepper = std::make_shared<azeban::SSP_RK3<2>>(
+        zisa::device_type::cuda,
         grid.shape_fourier(equation->n_vars()),
-        cfl,
-        timestepper,
-        zisa::device_type::cuda);
+        equation);
+    azeban::CFL<2> cfl(grid, 0.2);
+    azeban::Simulation<2> simulation(grid.shape_fourier(equation->n_vars()),
+                                     cfl,
+                                     timestepper,
+                                     zisa::device_type::cuda);
     initializer->initialize(simulation.u());
 
     auto d_u = zisa::cuda_array<azeban::real_t, 3>(grid.shape_phys(2));
@@ -324,17 +321,15 @@ TEST_CASE("Taylor Vortex 3D", "[slow]") {
       const auto equation = std::make_shared<
           azeban::IncompressibleEuler<3, azeban::SmoothCutoff1D>>(
           grid, visc, zisa::device_type::cuda);
-      const auto timestepper
-          = std::make_shared<azeban::SSP_RK3<azeban::complex_t, 3>>(
-              zisa::device_type::cuda,
-              grid.shape_fourier(equation->n_vars()),
-              equation);
-      azeban::CFL<3> cfl(grid, 0.2);
-      azeban::Simulation<azeban::complex_t, 3> simulation(
+      const auto timestepper = std::make_shared<azeban::SSP_RK3<3>>(
+          zisa::device_type::cuda,
           grid.shape_fourier(equation->n_vars()),
-          cfl,
-          timestepper,
-          zisa::device_type::cuda);
+          equation);
+      azeban::CFL<3> cfl(grid, 0.2);
+      azeban::Simulation<3> simulation(grid.shape_fourier(equation->n_vars()),
+                                       cfl,
+                                       timestepper,
+                                       zisa::device_type::cuda);
       initializer->initialize(simulation.u());
 
       auto d_u = zisa::cuda_array<azeban::real_t, 4>(grid.shape_phys(3));

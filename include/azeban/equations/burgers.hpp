@@ -13,8 +13,8 @@
 namespace azeban {
 
 template <typename SpectralViscosity>
-class Burgers final : public Equation<complex_t, 1> {
-  using super = Equation<complex_t, 1>;
+class Burgers final : public Equation<1> {
+  using super = Equation<1>;
 
 public:
   using scalar_t = complex_t;

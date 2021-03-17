@@ -1,5 +1,6 @@
 #include <azeban/init/initializer_factory.hpp>
 #include <azeban/operations/fft.hpp>
+#include <azeban/profiler.hpp>
 #include <azeban/simulation_factory.hpp>
 #include <cstdlib>
 #include <fmt/core.h>
@@ -33,7 +34,7 @@ static void runFromConfig(const nlohmann::json &config) {
     output = config["output"];
   }
 
-  auto simulation = make_simulation<complex_t, dim_v>(config);
+  auto simulation = make_simulation<dim_v>(config);
   const auto &grid = simulation.grid();
 
   zisa::HDF5SerialWriter hdf5_writer(output);
@@ -86,6 +87,7 @@ int main(int argc, const char *argv[]) {
   }
   int dim = config["dimension"];
 
+  Profiler::start();
   switch (dim) {
   case 1:
     runFromConfig<1>(config);
@@ -100,6 +102,9 @@ int main(int argc, const char *argv[]) {
     fmt::print(stderr, "Invalid Dimension: {}\n", dim);
     exit(1);
   }
+  Profiler::stop();
+
+  fmt::print(Profiler::summary());
 
   return EXIT_SUCCESS;
 }

@@ -2,6 +2,7 @@
 #define FFTWFFT_H_
 
 #include <azeban/operations/fft_base.hpp>
+#include <azeban/profiler.hpp>
 #include <fftw3.h>
 
 namespace azeban {
@@ -72,9 +73,17 @@ public:
     fftw_destroy_plan(plan_backward_);
   }
 
-  virtual void forward() override { fftw_execute(plan_forward_); }
+  virtual void forward() override {
+    AZEBAN_PROFILE_START("FFTWFFT::forward");
+    fftw_execute(plan_forward_);
+    AZEBAN_PROFILE_STOP("FFTWFFT::forward");
+  }
 
-  virtual void backward() override { fftw_execute(plan_backward_); }
+  virtual void backward() override {
+    AZEBAN_PROFILE_START("FFTWFFT::backward");
+    fftw_execute(plan_backward_);
+    AZEBAN_PROFILE_STOP("FFTWFFT::backward");
+  }
 
 protected:
   using super::data_dim_;

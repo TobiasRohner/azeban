@@ -9,15 +9,14 @@
 
 namespace azeban {
 
-template <typename Scalar, int Dim>
+template <int Dim>
 class TimeIntegrator {
 public:
-  using scalar_t = Scalar;
   static constexpr int dim_v = Dim;
 
   TimeIntegrator() = delete;
   TimeIntegrator(zisa::device_type device,
-                 const std::shared_ptr<Equation<scalar_t, dim_v>> &equation)
+                 const std::shared_ptr<Equation<dim_v>> &equation)
       : device_(device), equation_(equation) {}
   TimeIntegrator(const TimeIntegrator &) = default;
   TimeIntegrator(TimeIntegrator &&) = default;
@@ -28,7 +27,7 @@ public:
   TimeIntegrator &operator=(TimeIntegrator &&) = default;
 
   virtual void integrate(real_t dt,
-                         const zisa::array_view<scalar_t, dim_v + 1> &u)
+                         const zisa::array_view<complex_t, dim_v + 1> &u)
       = 0;
 
   zisa::device_type memory_location() const { return device_; }
@@ -36,7 +35,7 @@ public:
 
 protected:
   zisa::device_type device_;
-  std::shared_ptr<Equation<scalar_t, dim_v>> equation_;
+  std::shared_ptr<Equation<dim_v>> equation_;
 };
 
 }

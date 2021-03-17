@@ -9,12 +9,13 @@
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
 #endif
+#include <azeban/profiler.hpp>
 
 namespace azeban {
 
 template <int Dim, typename SpectralViscosity>
-class IncompressibleEuler final : public Equation<complex_t, Dim> {
-  using super = Equation<complex_t, Dim>;
+class IncompressibleEuler final : public Equation<Dim> {
+  using super = Equation<Dim>;
   static_assert(Dim == 2 || Dim == 3,
                 "Incompressible Euler is only implemented for 2D and 3D");
 
@@ -41,6 +42,7 @@ public:
 
   virtual void
   dudt(const zisa::array_view<complex_t, dim_v + 1> &u_hat) override {
+    AZEBAN_PROFILE_START("IncompressibleEuler::dudt");
     for (int i = 0; i < dim_v; ++i) {
       copy_to_padded(
           component(u_hat_, i),
@@ -50,6 +52,7 @@ public:
     fft_u_->backward();
     computeB();
     fft_B_->forward();
+    AZEBAN_PROFILE_START("IncompressibleEuler::computeDudt");
     if (device_ == zisa::device_type::cpu) {
       if constexpr (dim_v == 2) {
         for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
@@ -150,6 +153,8 @@ public:
     else {
       LOG_ERR("Unsupported memory_location");
     }
+    AZEBAN_PROFILE_STOP("IncompressibleEuler::computeDudt");
+    AZEBAN_PROFILE_STOP("IncompressibleEuler::dudt");
   }
 
   using super::grid;
@@ -211,6 +216,7 @@ private:
   }
 
   void computeB() {
+    AZEBAN_PROFILE_START("IncompressibleEuler::computeB");
     if (device_ == zisa::device_type::cpu) {
       const real_t norm = 1.0
                           / (zisa::pow<dim_v>(grid_.N_phys)
@@ -252,6 +258,7 @@ private:
     else {
       LOG_ERR("Unsupported memory location");
     }
+    AZEBAN_PROFILE_STOP("IncompressibleEuler::computeB");
   }
 };
 

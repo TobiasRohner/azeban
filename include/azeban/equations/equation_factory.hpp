@@ -11,8 +11,8 @@
 
 namespace azeban {
 
-template <typename Scalar, int Dim, typename Json>
-std::shared_ptr<Equation<Scalar, Dim>>
+template <int Dim, typename Json>
+std::shared_ptr<Equation<Dim>>
 make_equation(Json &&config, const Grid<Dim> &grid, zisa::device_type device) {
   if (!config.contains("name")) {
     fmt::print(stderr, "Equation config must contain key \"name\"\n");
