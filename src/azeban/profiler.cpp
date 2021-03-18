@@ -127,4 +127,23 @@ std::string Profiler::summary() {
   return fmt::format("Total Time: {}\n{}", elapsed, summary_str);
 }
 
+nlohmann::json Profiler::json() {
+  nlohmann::json result;
+  result["timeunit"] = "ns";
+  result["elapsed"]
+      = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count();
+  std::vector<nlohmann::json> stages;
+  for (auto [name, stage] : stages_) {
+    stages.emplace_back();
+    auto &sj = stages.back();
+    sj["name"] = stage.name;
+    sj["num_calls"] = stage.num_calls;
+    sj["elapsed"]
+        = std::chrono::duration_cast<std::chrono::nanoseconds>(stage.elapsed)
+              .count();
+  }
+  result["stages"] = stages;
+  return result;
+}
+
 }

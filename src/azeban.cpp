@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <fmt/core.h>
 #include <fstream>
+#include <iomanip>
 #include <nlohmann/json.hpp>
 #include <zisa/config.hpp>
 #include <zisa/cuda/memory/cuda_array.hpp>
@@ -104,7 +105,11 @@ int main(int argc, const char *argv[]) {
   }
   Profiler::stop();
 
+#if AZEBAN_DO_PROFILE
   fmt::print(Profiler::summary());
+  std::ofstream pstream("profiling.json");
+  pstream << std::setw(2) << Profiler::json();
+#endif
 
   return EXIT_SUCCESS;
 }

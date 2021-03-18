@@ -4,6 +4,7 @@
 #include <azeban/config.hpp>
 #include <chrono>
 #include <map>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
 #include <zisa/config.hpp>
@@ -32,6 +33,7 @@ public:
   static void stop(const std::string &name);
 
   static std::string summary();
+  static nlohmann::json json();
 
 private:
   static std::map<std::string, Stage> stages_;

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <azeban/operations/fft.hpp>
+#include <cuda_runtime.h>
 #include <vector>
 #include <zisa/cuda/memory/cuda_array.hpp>
 #include <zisa/math/basic_functions.hpp>
@@ -89,7 +90,8 @@ static void fft_2d_params(benchmark::internal::Benchmark *bm) {
 }
 
 static void fft_3d_params(benchmark::internal::Benchmark *bm) {
-  const auto candidates = good_sizes(zisa::int_t(1) << 8);
+  const auto candidates
+      = good_sizes(220 /* TODO: Change this if GPU memory is larger! */);
   for (long device : {static_cast<long>(zisa::device_type::cpu),
                       static_cast<long>(zisa::device_type::cuda)}) {
     for (zisa::int_t d : {3, 6}) {
@@ -129,6 +131,7 @@ static void bm_fft_forward(benchmark::State &state) {
 
   for (auto _ : state) {
     fft->forward();
+    cudaDeviceSynchronize();
   }
 }
 
