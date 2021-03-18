@@ -70,7 +70,7 @@ def profile_all_3d(args):
     outputs = []
     profiling_infos = []
     for device in ['cpu', 'cuda']:
-        for N in [16, 32, 64, 128]:
+        for N in [16, 32, 64] + ([128] if device=='cuda' else []):
             o, p = run_simulation(args, 3, device, N)
             outputs.append('--- 3d Euler, device={}, N={}---\n{}'.format(device, N, o))
             profiling_infos.append({'dimension':3, 'device':device, 'N':N, 'profiling_info':p})
