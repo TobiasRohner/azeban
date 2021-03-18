@@ -15,7 +15,7 @@ benchmarks = data['benchmarks']
 N = []
 time = []
 for bm in benchmarks:
-    if not bm['name'].startswith('bm_cufft_forward_1d'):
+    if not bm['name'].startswith('bm_'):
         continue
     N.append(int(bm['name'].split('/')[-1]))
     time.append(float(bm['real_time']) / 1000)

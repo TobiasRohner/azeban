@@ -3,8 +3,8 @@ burgers_sine
 euler_discontinuous_vortex_patch
 euler_double_shear_layer
 euler_taylor_vortex
-cufft_benchmark.json
-cufft_benchmark.png
+*_benchmark.json
+*_benchmark.png
 *.aux
 *.log
 *.synctex.gz
