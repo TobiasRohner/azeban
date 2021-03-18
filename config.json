@@ -4,7 +4,8 @@
   "time": 1,
   "snapshots": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
   "grid": {
-    "N_phys": 512
+    "N_phys": 440,
+    "N_phys_pad": "../results/fft_benchmark.json"
   },
   "equation": {
     "name": "Euler",

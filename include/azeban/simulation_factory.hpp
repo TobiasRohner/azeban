@@ -35,7 +35,7 @@ Simulation<Dim> make_simulation(const nlohmann::json &config) {
     fmt::print(stderr, "Config must contain key \"grid\"\n");
     exit(1);
   }
-  auto grid = make_grid<Dim>(config["grid"]);
+  auto grid = make_grid<Dim>(config["grid"], device);
 
   if (!config.contains("equation")) {
     fmt::print(stderr, "Config must contain key \"equation\"\n");
