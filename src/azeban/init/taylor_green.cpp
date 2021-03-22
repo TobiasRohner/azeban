@@ -68,7 +68,7 @@ void TaylorGreen<3>::initialize(const zisa::array_view<real_t, 4> &u) const {
 void TaylorGreen<3>::initialize(
     const zisa::array_view<complex_t, 4> &u_hat) const {
   const zisa::int_t N = u_hat.shape(1);
-  auto u = zisa::array<real_t, 4>(zisa::shape_t<4>(3, N, N),
+  auto u = zisa::array<real_t, 4>(zisa::shape_t<4>(3, N, N, N),
                                   u_hat.memory_location());
   auto fft = make_fft<3>(u_hat, u);
   initialize(u);

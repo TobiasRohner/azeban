@@ -60,10 +60,10 @@ __global__ void incompressible_euler_naive_compute_B_cuda_kernel<3>(
 }
 
 template <typename SpectralViscosity>
-__global__ void
-incompressible_euler_naive_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
-                                    zisa::array_view<complex_t, 3> u_hat,
-                                    SpectralViscosity visc) {
+__global__ void incompressible_euler_naive_2d_cuda_kernel(
+    zisa::array_const_view<complex_t, 3> B_hat,
+    zisa::array_view<complex_t, 3> u_hat,
+    SpectralViscosity visc) {
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
   const unsigned stride_B = B_hat.shape(1) * B_hat.shape(2);
@@ -104,10 +104,10 @@ incompressible_euler_naive_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B
 }
 
 template <typename SpectralViscosity>
-__global__ void
-incompressible_euler_naive_3d_cuda_kernel(zisa::array_const_view<complex_t, 4> B_hat,
-                                    zisa::array_view<complex_t, 4> u_hat,
-                                    SpectralViscosity visc) {
+__global__ void incompressible_euler_naive_3d_cuda_kernel(
+    zisa::array_const_view<complex_t, 4> B_hat,
+    zisa::array_view<complex_t, 4> u_hat,
+    SpectralViscosity visc) {
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
   const unsigned k = blockIdx.z * blockDim.z + threadIdx.z;

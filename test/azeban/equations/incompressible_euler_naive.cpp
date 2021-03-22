@@ -152,7 +152,8 @@ TEST_CASE("2D Euler Naive Compute B") {
   zisa::copy(d_u_hat, h_u_hat);
 
   fft_u->backward();
-  azeban::incompressible_euler_naive_compute_B_cuda<2>(fft_B->u(), fft_u->u(), grid);
+  azeban::incompressible_euler_naive_compute_B_cuda<2>(
+      fft_B->u(), fft_u->u(), grid);
   fft_B->forward();
   zisa::copy(h_B_hat, d_B_hat);
 

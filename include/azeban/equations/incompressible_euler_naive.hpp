@@ -24,8 +24,8 @@ public:
   static constexpr int dim_v = Dim;
 
   IncompressibleEulerNaive(const Grid<dim_v> &grid,
-                      const SpectralViscosity &visc,
-                      zisa::device_type device)
+                           const SpectralViscosity &visc,
+                           zisa::device_type device)
       : super(grid), device_(device), visc_(visc) {
     u_hat_ = grid.make_array_fourier_pad(dim_v, device);
     u_ = grid.make_array_phys_pad(dim_v, device);
@@ -37,7 +37,8 @@ public:
   IncompressibleEulerNaive(const IncompressibleEulerNaive &) = delete;
   IncompressibleEulerNaive(IncompressibleEulerNaive &&) = default;
   virtual ~IncompressibleEulerNaive() = default;
-  IncompressibleEulerNaive &operator=(const IncompressibleEulerNaive &) = delete;
+  IncompressibleEulerNaive &operator=(const IncompressibleEulerNaive &)
+      = delete;
   IncompressibleEulerNaive &operator=(IncompressibleEulerNaive &&) = default;
 
   virtual void
