@@ -8,8 +8,7 @@
 namespace azeban {
 
 template <int Dim>
-std::shared_ptr<Initializer<Dim>>
-make_taylor_green(const nlohmann::json &config) {
+std::shared_ptr<Initializer<Dim>> make_taylor_green() {
   if constexpr (Dim == 2 || Dim == 3) {
     return std::make_shared<TaylorGreen<Dim>>();
   } else {

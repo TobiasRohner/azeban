@@ -2,13 +2,14 @@
 #define INCOMPRESSIBLE_EULER_FACTORY_H_
 
 #include "incompressible_euler.hpp"
+#include <fmt/core.h>
+#include <nlohmann/json.hpp>
 
 namespace azeban {
 
 template <int Dim, typename SpectralViscosity>
 std::shared_ptr<Equation<Dim>>
-make_incompressible_euler(const nlohmann::json &config,
-                          const Grid<Dim> &grid,
+make_incompressible_euler(const Grid<Dim> &grid,
                           const SpectralViscosity &visc,
                           zisa::device_type device) {
   if constexpr (Dim == 2 || Dim == 3) {

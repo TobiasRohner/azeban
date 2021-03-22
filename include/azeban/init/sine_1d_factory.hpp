@@ -8,7 +8,7 @@
 namespace azeban {
 
 template <int Dim>
-std::shared_ptr<Initializer<Dim>> make_sine_1d(const nlohmann::json &config) {
+std::shared_ptr<Initializer<Dim>> make_sine_1d() {
   if constexpr (Dim == 1) {
     return std::make_shared<Sine1D>();
   } else {

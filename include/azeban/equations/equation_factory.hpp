@@ -4,6 +4,7 @@
 #include <azeban/equations/burgers_factory.hpp>
 #include <azeban/equations/equation.hpp>
 #include <azeban/equations/incompressible_euler_factory.hpp>
+#include <azeban/equations/incompressible_euler_naive_factory.hpp>
 #include <azeban/equations/spectral_viscosity_factory.hpp>
 #include <azeban/grid.hpp>
 #include <fmt/core.h>
@@ -37,17 +38,27 @@ std::shared_ptr<Equation<Dim>> make_equation(const nlohmann::json &config,
     SmoothCutoff1D visc = make_smooth_cutoff_1d(config["visc"], grid);
 
     if (equation_name == "Burgers") {
-      return make_burgers(config, grid, visc, device);
+      return make_burgers(grid, visc, device);
     } else if (equation_name == "Euler") {
-      return make_incompressible_euler(config, grid, visc, device);
+      return make_incompressible_euler(grid, visc, device);
+    } else if (equation_name == "Euler Naive") {
+      return make_incompressible_euler_naive(grid, visc, device);
+    } else {
+      fmt::print(stderr, "Unknown Equation");
+      exit(1);
     }
   } else if (visc_type == "Step") {
     Step1D visc = make_step_1d(config["visc"], grid);
 
     if (equation_name == "Burgers") {
-      return make_burgers(config, grid, visc, device);
+      return make_burgers(grid, visc, device);
     } else if (equation_name == "Euler") {
-      return make_incompressible_euler(config, grid, visc, device);
+      return make_incompressible_euler(grid, visc, device);
+    } else if (equation_name == "Euler Naive") {
+      return make_incompressible_euler_naive(grid, visc, device);
+    } else {
+      fmt::print(stderr, "Unknown Equation");
+      exit(1);
     }
   } else {
     fmt::print(stderr, "Unknown Spectral Viscosity type\n");

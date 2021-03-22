@@ -90,7 +90,7 @@ zisa::int_t optimal_fft_size(const std::string &benchmark_file,
     zisa::device_type device_bm
         = static_cast<zisa::device_type>(device_type_bm);
     if (dim_bm == dim && n_vars == n_vars_bm && device_bm == device
-        && N_bm >= N) {
+        && zisa::integer_cast<zisa::int_t>(N_bm) >= N) {
       candidates.emplace_back(N_bm, t);
     }
   }

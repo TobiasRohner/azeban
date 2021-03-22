@@ -30,7 +30,7 @@ make_initializer(const nlohmann::json &config) {
 
   std::string name = config["init"]["name"];
   if (name == "Sine 1D") {
-    return make_sine_1d<Dim>(config["init"]);
+    return make_sine_1d<Dim>();
   } else if (name == "Shock") {
     return make_shock<Dim>(config["init"]);
   } else if (name == "Double Shear Layer") {
@@ -40,7 +40,7 @@ make_initializer(const nlohmann::json &config) {
   } else if (name == "Discontinuous Vortex Patch") {
     return make_discontinuous_vortex_patch<Dim>(config["init"]);
   } else if (name == "Taylor Green") {
-    return make_taylor_green<Dim>(config["init"]);
+    return make_taylor_green<Dim>();
   } else {
     fmt::print(stderr, "Unknown Initializer: \"{}\"\n", name);
     exit(1);

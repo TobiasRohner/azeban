@@ -6,8 +6,7 @@
 namespace azeban {
 
 template <int Dim, typename SpectralViscosity>
-std::shared_ptr<Equation<Dim>> make_burgers(const nlohmann::json &config,
-                                            const Grid<Dim> &grid,
+std::shared_ptr<Equation<Dim>> make_burgers(const Grid<Dim> &grid,
                                             const SpectralViscosity &visc,
                                             zisa::device_type device) {
   if constexpr (Dim == 1) {

@@ -29,8 +29,10 @@ real_t norm(const zisa::array_const_view<Scalar, Dim> &data, real_t p) {
   }
 #endif
   else {
-    assert(false && "Unsupported memory location");
+    LOG_ERR("Unsupported memory location");
   }
+  // Make compiler happy
+  return 0;
 }
 
 }
