@@ -7,6 +7,7 @@
 #include <azeban/init/discontinuous_vortex_patch.hpp>
 #include <azeban/init/double_shear_layer.hpp>
 #include <azeban/init/init_3d_from_2d.hpp>
+#include <azeban/init/taylor_green.hpp>
 #include <azeban/init/taylor_vortex.hpp>
 #include <azeban/operations/fft.hpp>
 #include <azeban/operations/operations.hpp>
@@ -448,5 +449,17 @@ TEST_CASE("Discontinous Vortex Patch 3D const z", "[slow]") {
   const auto initializer
       = std::make_shared<azeban::Init3DFrom2D>(2, initializer2d);
   const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 5);
+  REQUIRE(conv_rate >= 1);
+}
+
+TEST_CASE("Taylor Green 2D", "[slow]") {
+  const auto initializer = std::make_shared<azeban::TaylorGreen<2>>();
+  const azeban::real_t conv_rate = measureConvergence<2>(initializer, 512, 1);
+  REQUIRE(conv_rate >= 1);
+}
+
+TEST_CASE("Taylor Green 3D", "[slow]") {
+  const auto initializer = std::make_shared<azeban::TaylorGreen<3>>();
+  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 1);
   REQUIRE(conv_rate >= 1);
 }
