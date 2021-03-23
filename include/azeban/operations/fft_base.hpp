@@ -6,14 +6,17 @@
 
 namespace azeban {
 
+enum fft_direction { FFT_FORWARD = 1, FFT_BACKWARD = 2 };
+
 template <int Dim>
 class FFT {
 public:
   static constexpr int dim_v = Dim;
 
   FFT(const zisa::array_view<complex_t, dim_v + 1> &u_hat,
-      const zisa::array_view<real_t, dim_v + 1> &u)
-      : u_hat_(u_hat), u_(u), data_dim_(u_.shape()[0]) {
+      const zisa::array_view<real_t, dim_v + 1> &u,
+      int direction)
+      : u_hat_(u_hat), u_(u), data_dim_(u_.shape()[0]), direction_(direction) {
     assert(u_hat.shape()[0] == u.shape()[0]
            && "Dimensionality of data elements must be equal!");
   }
@@ -44,6 +47,7 @@ protected:
   zisa::array_view<complex_t, dim_v + 1> u_hat_;
   zisa::array_view<real_t, dim_v + 1> u_;
   zisa::int_t data_dim_;
+  int direction_;
 };
 
 }

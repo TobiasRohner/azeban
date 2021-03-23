@@ -29,8 +29,17 @@ Grid<Dim> make_grid(Json &&config, zisa::device_type device) {
   if (config.contains("N_phys_pad") || config.contains("N_fourier_pad")) {
     if (config.contains("N_phys_pad") && !config.contains("N_fourier_pad")) {
       if (config["N_phys_pad"].is_string()) {
-        grid.N_phys_pad = optimal_fft_size(
-            config["N_phys_pad"], 3 * grid.N_phys / 2, Dim, Dim, device);
+        grid.N_phys_pad
+            = optimal_fft_size(config["N_phys_pad"],
+                               zisa::div_up(3 * grid.N_phys, zisa::int_t(2)),
+                               Dim,
+                               Dim,
+                               device);
+        fmt::print(
+            stderr,
+            "Info: Minimal padding size is {}. Padded to {} for speed.\n",
+            zisa::div_up(3 * grid.N_phys, zisa::int_t(2)),
+            grid.N_phys_pad);
       } else {
         grid.N_phys_pad = config["N_phys_pad"];
       }
@@ -38,8 +47,17 @@ Grid<Dim> make_grid(Json &&config, zisa::device_type device) {
     } else if (config.contains("N_fourier_pad")
                && !config.contains("N_phys_pad")) {
       if (config["N_fourier_pad"].is_string()) {
-        grid.N_phys_pad = optimal_fft_size(
-            config["N_phys_pad"], 3 * grid.N_phys / 2, Dim, Dim, device);
+        grid.N_phys_pad
+            = optimal_fft_size(config["N_phys_pad"],
+                               zisa::div_up(3 * grid.N_phys, zisa::int_t(2)),
+                               Dim,
+                               Dim,
+                               device);
+        fmt::print(
+            stderr,
+            "Info: Minimal padding size is {}. Padded to {} for speed.\n",
+            zisa::div_up(3 * grid.N_phys, zisa::int_t(2)),
+            grid.N_phys_pad);
         grid.N_fourier_pad = grid.N_phys_pad / 2 + 1;
       } else {
         grid.N_fourier_pad = config["N_fourier_pad"];

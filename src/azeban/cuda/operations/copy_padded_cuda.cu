@@ -126,7 +126,7 @@ void copy_to_padded_cuda(const zisa::array_view<complex_t, 3> &dst,
   assert(dst.shape(0) >= src.shape(0));
   assert(dst.shape(1) >= src.shape(1));
   assert(dst.shape(2) >= src.shape(2));
-  const dim3 thread_dims(8, 8, 8);
+  const dim3 thread_dims(4, 4, 32);
   const dim3 block_dims(
       zisa::min(zisa::div_up(static_cast<int>(dst.shape(0)), thread_dims.x),
                 1024),

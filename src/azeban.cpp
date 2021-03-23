@@ -42,18 +42,15 @@ static void runFromConfig(const nlohmann::json &config) {
 
   auto u_host
       = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
-  auto u_device
-      = grid.make_array_phys(simulation.n_vars(), simulation.memory_location());
-  auto u_hat_device = grid.make_array_fourier(simulation.n_vars(),
-                                              simulation.memory_location());
-  auto fft = make_fft<dim_v>(u_hat_device, u_device);
+  auto u_hat_host
+      = grid.make_array_fourier(simulation.n_vars(), zisa::device_type::cpu);
+  auto fft = make_fft<dim_v>(u_hat_host, u_host);
 
   auto initializer = make_initializer<dim_v>(config);
   initializer->initialize(simulation.u());
 
-  zisa::copy(u_hat_device, simulation.u());
+  zisa::copy(u_hat_host, simulation.u());
   fft->backward();
-  zisa::copy(u_host, u_device);
   for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
     u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
   }
@@ -62,9 +59,8 @@ static void runFromConfig(const nlohmann::json &config) {
     simulation.simulate_until(t);
     fmt::print("Time: {}\n", t);
 
-    zisa::copy(u_hat_device, simulation.u());
+    zisa::copy(u_hat_host, simulation.u());
     fft->backward();
-    zisa::copy(u_host, u_device);
     for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
       u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
     }

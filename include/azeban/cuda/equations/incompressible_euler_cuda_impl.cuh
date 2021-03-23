@@ -208,7 +208,7 @@ void incompressible_euler_compute_B_cuda<3>(
   assert(B.shape(1) == u.shape(1));
   assert(B.shape(2) == u.shape(2));
   assert(B.shape(3) == u.shape(3));
-  const dim3 thread_dims(8, 8, 8);
+  const dim3 thread_dims(4, 4, 32);
   const dim3 block_dims(
       zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.x),
       zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.y),
@@ -244,7 +244,7 @@ void incompressible_euler_3d_cuda(
     const SpectralViscosity &visc) {
   assert(B_hat.memory_location() == zisa::device_type::cuda);
   assert(u_hat.memory_location() == zisa::device_type::cuda);
-  const dim3 thread_dims(8, 8, 8);
+  const dim3 thread_dims(4, 4, 32);
   const dim3 block_dims(
       zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.x),
       zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.y),

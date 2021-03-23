@@ -31,8 +31,8 @@ public:
     u_ = grid.make_array_phys_pad(dim_v, device);
     B_hat_ = grid.make_array_fourier_pad((dim_v * dim_v + dim_v) / 2, device);
     B_ = grid.make_array_phys_pad((dim_v * dim_v + dim_v) / 2, device);
-    fft_u_ = make_fft<dim_v>(u_hat_, u_);
-    fft_B_ = make_fft<dim_v>(B_hat_, B_);
+    fft_u_ = make_fft<dim_v>(u_hat_, u_, FFT_BACKWARD);
+    fft_B_ = make_fft<dim_v>(B_hat_, B_, FFT_FORWARD);
   }
   IncompressibleEuler(const IncompressibleEuler &) = delete;
   IncompressibleEuler(IncompressibleEuler &&) = default;

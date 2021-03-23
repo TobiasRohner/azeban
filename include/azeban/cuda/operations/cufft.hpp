@@ -19,8 +19,9 @@ public:
   static constexpr int dim_v = Dim;
 
   CUFFT(const zisa::array_view<complex_t, dim_v + 1> &u_hat,
-        const zisa::array_view<real_t, dim_v + 1> &u)
-      : super(u_hat, u) {
+        const zisa::array_view<real_t, dim_v + 1> &u,
+        int direction = FFT_FORWARD | FFT_BACKWARD)
+      : super(u_hat, u, direction) {
     assert(u_hat.memory_location() == zisa::device_type::cuda
            && "cuFFT is GPU only!");
     assert(u.memory_location() == zisa::device_type::cuda
@@ -34,39 +35,49 @@ public:
       cdist *= u_hat_.shape(i + 1);
       n[i] = u_.shape(i + 1);
     }
-    auto status = cufftPlanMany(&plan_forward_, // plan
-                                dim_v,          // rank
-                                n,              // n
-                                NULL,           // inembed
-                                1,              // istride
-                                rdist,          // idist
-                                NULL,           // onembed
-                                1,              // ostride
-                                cdist,          // odist
-                                type_forward,   // type
-                                u.shape(0));    // batch
-    cudaCheckError(status);
+    if (direction_ & FFT_FORWARD) {
+      auto status = cufftPlanMany(&plan_forward_, // plan
+                                  dim_v,          // rank
+                                  n,              // n
+                                  NULL,           // inembed
+                                  1,              // istride
+                                  rdist,          // idist
+                                  NULL,           // onembed
+                                  1,              // ostride
+                                  cdist,          // odist
+                                  type_forward,   // type
+                                  u.shape(0));    // batch
+      cudaCheckError(status);
+    }
     // Create a plan for the backward operation
-    status = cufftPlanMany(&plan_backward_, // plan
-                           dim_v,           // rank
-                           n,               // n
-                           NULL,            // inembed
-                           1,               // istride
-                           cdist,           // idist
-                           NULL,            // onembed
-                           1,               // ostride
-                           rdist,           // odist
-                           type_backward,   // type
-                           u.shape(0));     // batch
-    cudaCheckError(status);
+    if (direction_ & FFT_BACKWARD) {
+      auto status = cufftPlanMany(&plan_backward_, // plan
+                                  dim_v,           // rank
+                                  n,               // n
+                                  NULL,            // inembed
+                                  1,               // istride
+                                  cdist,           // idist
+                                  NULL,            // onembed
+                                  1,               // ostride
+                                  rdist,           // odist
+                                  type_backward,   // type
+                                  u.shape(0));     // batch
+      cudaCheckError(status);
+    }
   }
 
   virtual ~CUFFT() override {
-    cufftDestroy(plan_forward_);
-    cufftDestroy(plan_backward_);
+    if (direction_ & FFT_FORWARD) {
+      cufftDestroy(plan_forward_);
+    }
+    if (direction_ & FFT_BACKWARD) {
+      cufftDestroy(plan_backward_);
+    }
   }
 
   virtual void forward() override {
+    LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
+               "Forward operation was not initialized");
     AZEBAN_PROFILE_START("CUFFT::forward");
     if constexpr (std::is_same_v<float, real_t>) {
       auto status
@@ -85,6 +96,8 @@ public:
   }
 
   virtual void backward() override {
+    LOG_ERR_IF((direction_ & FFT_BACKWARD) == 0,
+               "Backward operation was not initialized");
     AZEBAN_PROFILE_START("CUFFT::backward");
     if constexpr (std::is_same_v<float, real_t>) {
       auto status = cufftExecC2R(plan_backward_,
@@ -103,6 +116,7 @@ public:
 
 protected:
   using super::data_dim_;
+  using super::direction_;
   using super::u_;
   using super::u_hat_;
 
