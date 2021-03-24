@@ -11,14 +11,48 @@ template <int Dim>
 class FFTWFFT final : public FFT<Dim> {
   using super = FFT<Dim>;
 
+  static constexpr bool is_double = std::is_same_v<real_t, double>;
+  using fftw_complex_t
+      = std::conditional_t<is_double, fftw_complex, fftwf_complex>;
+  using fftw_plan_t = std::conditional_t<is_double, fftw_plan, fftwf_plan>;
+
   static_assert(
       std::is_same_v<real_t,
-                     std::decay_t<decltype(std::declval<fftw_complex>()[0])>>,
+                     std::decay_t<decltype(std::declval<fftw_complex_t>()[0])>>,
       "Real type has the wrong precision for FFTW");
   static_assert(
       std::is_same_v<std::decay_t<decltype(std::declval<complex_t>().x)>,
-                     std::decay_t<decltype(std::declval<fftw_complex>()[0])>>,
+                     std::decay_t<decltype(std::declval<fftw_complex_t>()[0])>>,
       "Complex type has the wrong precision for FFTW");
+
+  static constexpr auto plan_many_dft_r2c = []() {
+    if constexpr (std::is_same_v<real_t, double>) {
+      return fftw_plan_many_dft_r2c;
+    } else {
+      return fftwf_plan_many_dft_r2c;
+    }
+  }();
+  static constexpr auto plan_many_dft_c2r = []() {
+    if constexpr (std::is_same_v<real_t, double>) {
+      return fftw_plan_many_dft_c2r;
+    } else {
+      return fftwf_plan_many_dft_c2r;
+    }
+  }();
+  static constexpr auto destroy_plan = []() {
+    if constexpr (std::is_same_v<real_t, double>) {
+      return fftw_destroy_plan;
+    } else {
+      return fftwf_destroy_plan;
+    }
+  }();
+  static constexpr auto execute = []() {
+    if constexpr (std::is_same_v<real_t, double>) {
+      return fftw_execute;
+    } else {
+      return fftwf_execute;
+    }
+  }();
 
 public:
   static constexpr int dim_v = Dim;
@@ -41,7 +75,7 @@ public:
       n[i] = u_.shape()[i + 1];
     }
     if (direction_ & FFT_FORWARD) {
-      plan_forward_ = fftw_plan_many_dft_r2c(
+      plan_forward_ = plan_many_dft_r2c(
           dim_v,                                        // rank
           n,                                            // n
           data_dim_,                                    // howmany
@@ -57,7 +91,7 @@ public:
     }
     if (direction_ & FFT_BACKWARD) {
       // Create a plan for the backward operation
-      plan_backward_ = fftw_plan_many_dft_c2r(
+      plan_backward_ = plan_many_dft_c2r(
           dim_v,                                        // rank
           n,                                            // n
           data_dim_,                                    // howmany
@@ -75,10 +109,10 @@ public:
 
   virtual ~FFTWFFT() override {
     if (direction_ & FFT_FORWARD) {
-      fftw_destroy_plan(plan_forward_);
+      destroy_plan(plan_forward_);
     }
     if (direction_ & FFT_BACKWARD) {
-      fftw_destroy_plan(plan_backward_);
+      destroy_plan(plan_backward_);
     }
   }
 
@@ -86,7 +120,7 @@ public:
     LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
                "Forward operation was not initialized");
     AZEBAN_PROFILE_START("FFTWFFT::forward");
-    fftw_execute(plan_forward_);
+    execute(plan_forward_);
     AZEBAN_PROFILE_STOP("FFTWFFT::forward");
   }
 
@@ -94,7 +128,7 @@ public:
     LOG_ERR_IF((direction_ & FFT_BACKWARD) == 0,
                "Backward operation was not initialized");
     AZEBAN_PROFILE_START("FFTWFFT::backward");
-    fftw_execute(plan_backward_);
+    execute(plan_backward_);
     AZEBAN_PROFILE_STOP("FFTWFFT::backward");
   }
 
@@ -105,8 +139,8 @@ protected:
   using super::u_hat_;
 
 private:
-  fftw_plan plan_forward_;
-  fftw_plan plan_backward_;
+  fftw_plan_t plan_forward_;
+  fftw_plan_t plan_backward_;
 };
 
 }

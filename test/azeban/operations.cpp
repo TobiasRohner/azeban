@@ -22,7 +22,7 @@ TEST_CASE("axpy", "[operations]") {
 
   zisa::copy(d_x, h_x);
   zisa::copy(d_y, h_y);
-  azeban::axpy(0.5,
+  azeban::axpy(azeban::real_t(0.5),
                zisa::array_const_view<azeban::real_t, 1>(d_x),
                zisa::array_view<azeban::real_t, 1>(d_y));
   zisa::copy(h_x, d_x);

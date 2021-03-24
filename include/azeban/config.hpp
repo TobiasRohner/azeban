@@ -7,7 +7,7 @@
 namespace azeban {
 
 using zisa::int_t;
-using real_t = double;
+using real_t = float;
 using complex_t = Complex<real_t>;
 
 }

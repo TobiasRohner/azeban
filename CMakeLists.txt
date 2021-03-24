@@ -13,6 +13,7 @@ include("cmake/fast_debug.cmake")
 add_library(azeban_dependencies INTERFACE)
 
 find_package(FFTW3 REQUIRED)
+target_link_libraries(azeban_dependencies INTERFACE fftw3f)
 target_link_libraries(azeban_dependencies INTERFACE fftw3)
 
 find_package(nlohmann_json 3.9.1 REQUIRED)

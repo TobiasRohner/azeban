@@ -16,80 +16,96 @@ struct Complex {
   ANY_DEVICE_INLINE Complex() = default;
   ANY_DEVICE_INLINE Complex(scalar_t real, scalar_t imag = 0)
       : x(real), y(imag) {}
-  ANY_DEVICE_INLINE Complex(const Complex &other) : x(other.x), y(other.y) {}
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE Complex(const Complex<ScalarR> &other)
+      : x(other.x), y(other.y) {}
 
-  ANY_DEVICE_INLINE Complex &operator=(scalar_t real) {
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE Complex &operator=(ScalarR real) {
     x = real;
     y = 0;
     return *this;
   }
 
-  ANY_DEVICE_INLINE Complex &operator=(const Complex &other) {
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE Complex &operator=(const Complex<ScalarR> &other) {
     x = other.x;
     y = other.y;
     return *this;
   }
 
-  ANY_DEVICE_INLINE bool operator==(const Complex &other) {
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE bool operator==(const Complex<ScalarR> &other) {
     return x == other.x && y == other.y;
   }
 
-  ANY_DEVICE_INLINE bool operator==(scalar_t real) {
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE bool operator==(ScalarR real) {
     return x == real && y == 0;
   }
 
-  ANY_DEVICE_INLINE bool operator!=(const Complex &other) {
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE bool operator!=(const Complex<ScalarR> &other) {
     return x != other.x || y != other.y;
   }
 
-  ANY_DEVICE_INLINE bool operator!=(scalar_t real) {
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE bool operator!=(ScalarR real) {
     return x != real || y != 0;
   }
 
-  ANY_DEVICE_INLINE Complex &operator+=(const Complex &other) {
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE Complex &operator+=(const Complex<ScalarR> &other) {
     x += other.x;
     y += other.y;
     return *this;
   }
 
-  ANY_DEVICE_INLINE Complex &operator+=(scalar_t real) {
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE Complex &operator+=(ScalarR real) {
     x += real;
     return *this;
   }
 
-  ANY_DEVICE_INLINE Complex &operator-=(const Complex &other) {
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE Complex &operator-=(const Complex<ScalarR> &other) {
     x -= other.x;
     y -= other.y;
     return *this;
   }
 
-  ANY_DEVICE_INLINE Complex &operator-=(scalar_t real) {
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE Complex &operator-=(ScalarR real) {
     x -= real;
     return *this;
   }
 
-  ANY_DEVICE_INLINE Complex &operator*=(const Complex &other) {
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE Complex &operator*=(const Complex<ScalarR> &other) {
     const scalar_t x_ = x;
     x = x * other.x - y * other.y;
     y = x_ * other.y + y * other.x;
     return *this;
   }
 
-  ANY_DEVICE_INLINE Complex &operator*=(scalar_t real) {
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE Complex &operator*=(ScalarR real) {
     x *= real;
     y *= real;
     return *this;
   }
 
-  ANY_DEVICE_INLINE Complex &operator/=(const Complex &other) {
-    const Scalar norm = other.x * other.x + other.y * other.y;
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE Complex &operator/=(const Complex<ScalarR> &other) {
+    const auto norm = other.x * other.x + other.y * other.y;
     const scalar_t x_ = x;
     x = (x * other.x + y * other.y) / norm;
     y = (y * other.x - x_ * other.y) / norm;
     return *this;
   }
 
-  ANY_DEVICE_INLINE Complex &operator/=(scalar_t real) {
+  template <typename ScalarR>
+  ANY_DEVICE_INLINE Complex &operator/=(ScalarR real) {
     x /= real;
     y /= real;
     return *this;
@@ -101,20 +117,29 @@ ANY_DEVICE_INLINE Complex<Scalar> operator+(const Complex<Scalar> &c) {
   return c;
 }
 
-template <typename Scalar>
-ANY_DEVICE_INLINE Complex<Scalar> operator+(Complex<Scalar> c1,
-                                            const Complex<Scalar> &c2) {
-  return c1 += c2;
+template <typename ScalarL, typename ScalarR>
+ANY_DEVICE_INLINE auto operator+(const Complex<ScalarL> &c1,
+                                 const Complex<ScalarR> &c2)
+    -> Complex<decltype(std::declval<ScalarL>() + std::declval<ScalarR>())> {
+  using res_t = decltype(std::declval<ScalarL>() + std::declval<ScalarR>());
+  Complex<res_t> res = c1;
+  return res += c2;
 }
 
-template <typename Scalar>
-ANY_DEVICE_INLINE Complex<Scalar> operator+(Complex<Scalar> c, Scalar real) {
-  return c += real;
+template <typename ScalarL, typename ScalarR>
+ANY_DEVICE_INLINE auto operator+(const Complex<ScalarL> &c, ScalarR real)
+    -> Complex<decltype(std::declval<ScalarL>() + std::declval<ScalarR>())> {
+  using res_t = decltype(std::declval<ScalarL>() + std::declval<ScalarR>());
+  Complex<res_t> res = c;
+  return res += real;
 }
 
-template <typename Scalar>
-ANY_DEVICE_INLINE Complex<Scalar> operator+(Scalar real, Complex<Scalar> c) {
-  return c += real;
+template <typename ScalarL, typename ScalarR>
+ANY_DEVICE_INLINE auto operator+(ScalarL real, const Complex<ScalarR> &c)
+    -> Complex<decltype(std::declval<ScalarL>() + std::declval<ScalarR>())> {
+  using res_t = decltype(std::declval<ScalarL>() + std::declval<ScalarR>());
+  Complex<res_t> res = c;
+  return res += real;
 }
 
 template <typename Scalar>
@@ -122,53 +147,79 @@ ANY_DEVICE_INLINE Complex<Scalar> operator-(const Complex<Scalar> &c) {
   return {-c.x, -c.y};
 }
 
-template <typename Scalar>
-ANY_DEVICE_INLINE Complex<Scalar> operator-(Complex<Scalar> c1,
-                                            const Complex<Scalar> &c2) {
-  return c1 -= c2;
+template <typename ScalarL, typename ScalarR>
+ANY_DEVICE_INLINE auto operator-(const Complex<ScalarL> &c1,
+                                 const Complex<ScalarR> &c2)
+    -> Complex<decltype(std::declval<ScalarL>() - std::declval<ScalarR>())> {
+  using res_t = decltype(std::declval<ScalarL>() - std::declval<ScalarR>());
+  Complex<res_t> res = c1;
+  return res -= c2;
 }
 
-template <typename Scalar>
-ANY_DEVICE_INLINE Complex<Scalar> operator-(Complex<Scalar> c, Scalar real) {
-  return c -= real;
+template <typename ScalarL, typename ScalarR>
+ANY_DEVICE_INLINE auto operator-(const Complex<ScalarL> &c, ScalarR real)
+    -> Complex<decltype(std::declval<ScalarL>() - std::declval<ScalarR>())> {
+  using res_t = decltype(std::declval<ScalarL>() - std::declval<ScalarR>());
+  Complex<res_t> res = c;
+  return res -= real;
 }
 
-template <typename Scalar>
-ANY_DEVICE_INLINE Complex<Scalar> operator-(Scalar real,
-                                            const Complex<Scalar> &c) {
-  return real + (-c);
+template <typename ScalarL, typename ScalarR>
+ANY_DEVICE_INLINE auto operator-(ScalarL real, const Complex<ScalarR> &c)
+    -> Complex<decltype(std::declval<ScalarL>() - std::declval<ScalarR>())> {
+  using res_t = decltype(std::declval<ScalarL>() - std::declval<ScalarR>());
+  Complex<res_t> res = real;
+  return res -= c;
 }
 
-template <typename Scalar>
-ANY_DEVICE_INLINE Complex<Scalar> operator*(Complex<Scalar> c1,
-                                            const Complex<Scalar> &c2) {
-  return c1 *= c2;
+template <typename ScalarL, typename ScalarR>
+ANY_DEVICE_INLINE auto operator*(const Complex<ScalarL> &c1,
+                                 const Complex<ScalarR> &c2)
+    -> Complex<decltype(std::declval<ScalarL>() * std::declval<ScalarR>())> {
+  using res_t = decltype(std::declval<ScalarL>() * std::declval<ScalarR>());
+  Complex<res_t> res = c1;
+  return res *= c2;
 }
 
-template <typename Scalar>
-ANY_DEVICE_INLINE Complex<Scalar> operator*(Complex<Scalar> c, Scalar real) {
-  return c *= real;
+template <typename ScalarL, typename ScalarR>
+ANY_DEVICE_INLINE auto operator*(const Complex<ScalarL> &c, ScalarR real)
+    -> Complex<decltype(std::declval<ScalarL>() * std::declval<ScalarR>())> {
+  using res_t = decltype(std::declval<ScalarL>() * std::declval<ScalarR>());
+  Complex<res_t> res = c;
+  return res *= real;
 }
 
-template <typename Scalar>
-ANY_DEVICE_INLINE Complex<Scalar> operator*(Scalar real, Complex<Scalar> c) {
-  return c *= real;
+template <typename ScalarL, typename ScalarR>
+ANY_DEVICE_INLINE auto operator*(ScalarL real, const Complex<ScalarR> &c)
+    -> Complex<decltype(std::declval<ScalarL>() * std::declval<ScalarR>())> {
+  using res_t = decltype(std::declval<ScalarL>() * std::declval<ScalarR>());
+  Complex<res_t> res = c;
+  return res *= real;
 }
 
-template <typename Scalar>
-ANY_DEVICE_INLINE Complex<Scalar> operator/(Complex<Scalar> c1,
-                                            const Complex<Scalar> &c2) {
-  return c1 /= c2;
+template <typename ScalarL, typename ScalarR>
+ANY_DEVICE_INLINE auto operator/(const Complex<ScalarL> &c1,
+                                 const Complex<ScalarR> &c2)
+    -> Complex<decltype(std::declval<ScalarL>() / std::declval<ScalarR>())> {
+  using res_t = decltype(std::declval<ScalarL>() / std::declval<ScalarR>());
+  Complex<res_t> res = c1;
+  return res /= c2;
 }
 
-template <typename Scalar>
-ANY_DEVICE_INLINE Complex<Scalar> operator/(Complex<Scalar> c, Scalar real) {
-  return c /= real;
+template <typename ScalarL, typename ScalarR>
+ANY_DEVICE_INLINE auto operator/(const Complex<ScalarL> &c, ScalarR real)
+    -> Complex<decltype(std::declval<ScalarL>() / std::declval<ScalarR>())> {
+  using res_t = decltype(std::declval<ScalarL>() / std::declval<ScalarR>());
+  Complex<res_t> res = c;
+  return res /= real;
 }
 
-template <typename Scalar>
-ANY_DEVICE_INLINE Complex<Scalar> operator/(Scalar real, Complex<Scalar> c) {
-  return Complex<Scalar>(real) / c;
+template <typename ScalarL, typename ScalarR>
+ANY_DEVICE_INLINE auto operator/(ScalarL real, const Complex<ScalarR> &c)
+    -> Complex<decltype(std::declval<ScalarL>() / std::declval<ScalarR>())> {
+  using res_t = decltype(std::declval<ScalarL>() / std::declval<ScalarR>());
+  Complex<res_t> res = real;
+  return res /= c;
 }
 
 template <typename Scalar>
