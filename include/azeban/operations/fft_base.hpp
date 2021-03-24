@@ -3,6 +3,7 @@
 
 #include <azeban/config.hpp>
 #include <zisa/memory/array.hpp>
+#include <zisa/memory/array_view.hpp>
 
 namespace azeban {
 

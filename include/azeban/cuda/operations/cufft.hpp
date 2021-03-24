@@ -26,7 +26,6 @@ public:
            && "cuFFT is GPU only!");
     assert(u.memory_location() == zisa::device_type::cuda
            && "cuFFT is GPU only!");
-    // Create a plan for the forward operation
     int rdist = 1;
     int cdist = 1;
     int n[dim_v];
@@ -35,33 +34,61 @@ public:
       cdist *= u_hat_.shape(i + 1);
       n[i] = u_.shape(i + 1);
     }
+    size_t workspace_size = 0;
+    // Create a plan for the forward operation
     if (direction_ & FFT_FORWARD) {
-      auto status = cufftPlanMany(&plan_forward_, // plan
-                                  dim_v,          // rank
-                                  n,              // n
-                                  NULL,           // inembed
-                                  1,              // istride
-                                  rdist,          // idist
-                                  NULL,           // onembed
-                                  1,              // ostride
-                                  cdist,          // odist
-                                  type_forward,   // type
-                                  u.shape(0));    // batch
+      cufftResult status = cufftCreate(&plan_forward_);
       cudaCheckError(status);
+      status = cufftSetAutoAllocation(plan_forward_, false);
+      cudaCheckError(status);
+      status = cufftPlanMany(&plan_forward_, // plan
+                             dim_v,          // rank
+                             n,              // n
+                             NULL,           // inembed
+                             1,              // istride
+                             rdist,          // idist
+                             NULL,           // onembed
+                             1,              // ostride
+                             cdist,          // odist
+                             type_forward,   // type
+                             u.shape(0));    // batch
+      cudaCheckError(status);
+      size_t fwd_size;
+      status = cufftGetSize(plan_forward_, &fwd_size);
+      cudaCheckError(status);
+      workspace_size = std::max(workspace_size, fwd_size);
     }
     // Create a plan for the backward operation
     if (direction_ & FFT_BACKWARD) {
-      auto status = cufftPlanMany(&plan_backward_, // plan
-                                  dim_v,           // rank
-                                  n,               // n
-                                  NULL,            // inembed
-                                  1,               // istride
-                                  cdist,           // idist
-                                  NULL,            // onembed
-                                  1,               // ostride
-                                  rdist,           // odist
-                                  type_backward,   // type
-                                  u.shape(0));     // batch
+      cufftResult status = cufftCreate(&plan_backward_);
+      cudaCheckError(status);
+      status = cufftSetAutoAllocation(plan_backward_, false);
+      cudaCheckError(status);
+      status = cufftPlanMany(&plan_backward_, // plan
+                             dim_v,           // rank
+                             n,               // n
+                             NULL,            // inembed
+                             1,               // istride
+                             cdist,           // idist
+                             NULL,            // onembed
+                             1,               // ostride
+                             rdist,           // odist
+                             type_backward,   // type
+                             u.shape(0));     // batch
+      cudaCheckError(status);
+      size_t bkw_size;
+      status = cufftGetSize(plan_backward_, &bkw_size);
+      cudaCheckError(status);
+      workspace_size = std::max(workspace_size, bkw_size);
+    }
+    // Allocate the shared work area
+    cudaMalloc((void **)(&work_area_), workspace_size);
+    if (direction & FFT_FORWARD) {
+      cufftResult status = cufftSetWorkArea(plan_forward_, work_area_);
+      cudaCheckError(status);
+    }
+    if (direction & FFT_BACKWARD) {
+      cufftResult status = cufftSetWorkArea(plan_backward_, work_area_);
       cudaCheckError(status);
     }
   }
@@ -73,6 +100,7 @@ public:
     if (direction_ & FFT_BACKWARD) {
       cufftDestroy(plan_backward_);
     }
+    cudaFree(work_area_);
   }
 
   virtual void forward() override {
@@ -123,6 +151,7 @@ protected:
 private:
   cufftHandle plan_forward_;
   cufftHandle plan_backward_;
+  void *work_area_;
 
   static constexpr cufftType type_forward
       = std::is_same_v<float, real_t> ? CUFFT_R2C : CUFFT_D2Z;
