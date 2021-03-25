@@ -1,6 +1,7 @@
 #include <azeban/cuda/operations/cufft_mpi.hpp>
 #include <azeban/mpi_types.hpp>
 #include <azeban/profiler.hpp>
+#include <fmt/core.h>
 #include <zisa/cuda/memory/cuda_array.hpp>
 
 namespace azeban {
@@ -19,6 +20,12 @@ CUFFT_MPI<2>::CUFFT_MPI(const zisa::array_view<complex_t, 3> &u_hat,
   MPI_Comm_rank(comm_, &rank);
   MPI_Comm_size(comm_, &size);
 
+  zisa::shape_t<3> partial_u_hat_size(
+      u.shape(0), u.shape(1), u.shape(2) / 2 + 1);
+  partial_u_hat_ = zisa::cuda_array<complex_t, 3>(partial_u_hat_size);
+  mpi_send_buffer_ = zisa::array<complex_t, 3>(partial_u_hat_size);
+  mpi_recv_buffer_ = zisa::array<complex_t, 3>(u_hat_.shape());
+
   // Find out how big the data chunks of each rank are
   const zisa::int_t N_phys = u_.shape(1);
   const zisa::int_t N_fourier = u_hat_.shape(1);
@@ -35,7 +42,8 @@ CUFFT_MPI<2>::CUFFT_MPI(const zisa::array_view<complex_t, 3> &u_hat,
                 comm_);
 
   // Construct datatypes to transmit and receive rows and columns of data
-  MPI_Type_vector(N_phys, 1, u_.shape(2), mpi_type<complex_t>(), &col_type_);
+  MPI_Type_vector(
+      N_phys, 1, partial_u_hat_.shape(2), mpi_type<complex_t>(), &col_type_);
   MPI_Type_commit(&col_type_);
   natural_types_ = std::vector<MPI_Datatype>(size);
   transposed_types_ = std::vector<MPI_Datatype>(size);
@@ -50,10 +58,6 @@ CUFFT_MPI<2>::CUFFT_MPI(const zisa::array_view<complex_t, 3> &u_hat,
                     &transposed_types_[r]);
     MPI_Type_commit(&transposed_types_[r]);
   }
-
-  zisa::shape_t<3> partial_u_hat_size(
-      u.shape(0), u.shape(1), u.shape(2) / 2 + 1);
-  partial_u_hat_ = zisa::cuda_array<complex_t, 3>(partial_u_hat_size);
 
   size_t workspace_size = 0;
   // Create the plans for the forward operations
@@ -171,29 +175,28 @@ void CUFFT_MPI<2>::transpose_forward() {
   MPI_Comm_rank(comm_, &rank);
   MPI_Comm_size(comm_, &size);
 
-  const void *sendbuf = (void *)partial_u_hat_.raw();
   const std::vector<int> sendcounts(size, 1);
-  std::vector<int> sdispls(size);
-  const MPI_Datatype *sendtypes = natural_types_.data();
-  void *recvbuf = (void *)u_hat_.raw();
   const std::vector<int> recvcounts(size, 1);
+  std::vector<int> sdispls(size);
   std::vector<int> rdispls(size);
-  const MPI_Datatype *recvtypes = transposed_types_.data();
   sdispls[0] = 0;
   rdispls[0] = 0;
   for (int r = 1; r < size; ++r) {
     sdispls[r] = sdispls[r - 1] + size_u_hat_[r - 1] * sizeof(complex_t);
     rdispls[r] = rdispls[r - 1] + size_u_[r - 1] * sizeof(complex_t);
   }
-  MPI_Alltoallw(sendbuf,
+
+  zisa::copy(mpi_send_buffer_, partial_u_hat_);
+  MPI_Alltoallw(mpi_send_buffer_.raw(),
                 sendcounts.data(),
                 sdispls.data(),
-                sendtypes,
-                recvbuf,
+                natural_types_.data(),
+                mpi_recv_buffer_.raw(),
                 recvcounts.data(),
                 rdispls.data(),
-                recvtypes,
+                transposed_types_.data(),
                 comm_);
+  zisa::copy(u_hat_, mpi_recv_buffer_);
 }
 
 void CUFFT_MPI<2>::transpose_backward() {

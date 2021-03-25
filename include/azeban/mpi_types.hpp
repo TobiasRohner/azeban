@@ -85,7 +85,10 @@ struct MPI_Type<Complex<T>> {
     MPI_Type_commit(&type);
   }
 
-  ~MPI_Type() { MPI_Type_free(&type); }
+  ~MPI_Type() {
+    // Not allowed to free the type because this destructor will be called after
+    // MPI_Finalize() MPI_Type_free(&type);
+  }
 
   MPI_Datatype type;
 };

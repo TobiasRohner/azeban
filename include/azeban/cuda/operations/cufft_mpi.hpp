@@ -51,6 +51,8 @@ private:
   MPI_Comm comm_;
   void *work_area_;
   zisa::array<complex_t, 3> partial_u_hat_;
+  zisa::array<complex_t, 3> mpi_send_buffer_;
+  zisa::array<complex_t, 3> mpi_recv_buffer_;
   std::unique_ptr<zisa::int_t[]> size_u_;
   std::unique_ptr<zisa::int_t[]> size_u_hat_;
   MPI_Datatype col_type_;

@@ -584,7 +584,8 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
 
   zisa::int_t n = 128;
   zisa::shape_t<3> rshape{1, n / size + (rank < n % size ? 1 : 0), n};
-  zisa::shape_t<3> cshape{1, (n / 2 + 1) / size + (rank < (n / 2 + 1) % size ? 1 : 0), n};
+  zisa::shape_t<3> cshape{
+      1, (n / 2 + 1) / size + (rank < (n / 2 + 1) % size ? 1 : 0), n};
   auto h_u = zisa::array<azeban::real_t, 3>(rshape);
   auto h_u_hat = zisa::array<azeban::complex_t, 3>(cshape);
   auto d_u = zisa::cuda_array<azeban::real_t, 3>(rshape);
@@ -608,7 +609,8 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
 
   for (zisa::int_t i = 0; i < cshape[1]; ++i) {
     for (zisa::int_t j = 0; j < cshape[2]; ++j) {
-      const zisa::int_t i__ = i + rank * (n / size) + (rank < size % n ? rank : 0);
+      const zisa::int_t i__
+          = i + rank * (n / size) + (rank < size % n ? rank : 0);
       const int i_ = i__ >= n / 2 + 1 ? zisa::integer_cast<int>(i) - n
                                       : zisa::integer_cast<int>(i);
       const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n

@@ -73,7 +73,10 @@ static void runFromConfig(const nlohmann::json &config) {
 
 int main(int argc, char *argv[]) {
 #if AZEBAN_HAS_MPI
-  MPI_Init(&argc, &argv);
+  int provided;
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
+  LOG_ERR_IF(provided < MPI_THREAD_FUNNELED,
+             "MPI did not provide enough thread safety");
 #endif
 
   if (argc != 2) {
