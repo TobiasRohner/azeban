@@ -111,13 +111,13 @@ CUFFT_MPI<2>::~CUFFT_MPI() {
     // TODO: Implement
   }
   cudaFree(work_area_);
-  MPI_Type_free(&col_type_);
   for (auto &&t : natural_types_) {
     MPI_Type_free(&t);
   }
   for (auto &&t : transposed_types_) {
     MPI_Type_free(&t);
   }
+  MPI_Type_free(&col_type_);
 }
 
 void CUFFT_MPI<2>::forward() {

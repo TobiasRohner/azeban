@@ -3,8 +3,11 @@
 
 #include "fft_base.hpp"
 #include "fftwfft.hpp"
-#ifdef ZISA_HAS_CUDA
+#if ZISA_HAS_CUDA
 #include <azeban/cuda/operations/cufft.hpp>
+#endif
+#if AZEBAN_HAS_MPI
+#include <azeban/cuda/operations/cufft_mpi.hpp>
 #endif
 #include "fft_factory.hpp"
 #include <string>

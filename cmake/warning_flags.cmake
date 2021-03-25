@@ -20,6 +20,7 @@ if(NOT TARGET warning_flags)
     host_compiler_flags(-Wall)
     host_compiler_flags(-Wextra)
     # host_compiler_flags(-Wconversion)
+    host_compiler_flags(-Wno-cast-function-type)
   endif()
 
   if(ZISA_MAX_ERRORS)
