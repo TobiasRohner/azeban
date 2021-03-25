@@ -11,6 +11,9 @@
 #include <zisa/cuda/memory/cuda_array.hpp>
 #include <zisa/io/hdf5_serial_writer.hpp>
 #include <zisa/memory/array.hpp>
+#if AZEBAN_HAS_MPI
+#include <mpi.h>
+#endif
 
 using namespace azeban;
 
@@ -68,7 +71,11 @@ static void runFromConfig(const nlohmann::json &config) {
   }
 }
 
-int main(int argc, const char *argv[]) {
+int main(int argc, char *argv[]) {
+#if AZEBAN_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
+
   if (argc != 2) {
     fmt::print(stderr, "Usage: {} <config>\n", argv[0]);
     exit(1);
@@ -105,6 +112,10 @@ int main(int argc, const char *argv[]) {
   fmt::print(Profiler::summary());
   std::ofstream pstream("profiling.json");
   pstream << std::setw(2) << Profiler::json();
+#endif
+
+#if AZEBAN_HAS_MPI
+  MPI_Finalize();
 #endif
 
   return EXIT_SUCCESS;

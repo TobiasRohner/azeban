@@ -12,6 +12,15 @@ include("cmake/fast_debug.cmake")
 # -- Dependencies --------------------------------------------------------------
 add_library(azeban_dependencies INTERFACE)
 
+if(AZEBAN_HAS_MPI)
+  find_package(MPI REQUIRED)
+  target_compile_definitions(azeban_dependencies INTERFACE AZEBAN_HAS_MPI=1)
+  target_include_directories(azeban_dependencies INTERFACE ${MPI_CXX_INCLUDE_PATH})
+  target_compile_options(azeban_dependencies INTERFACE
+    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CXX>:${MPI_CXX_COMPILE_FLAGS}>>)
+  target_link_libraries(azeban_dependencies INTERFACE ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
+endif()
+
 find_package(FFTW3 REQUIRED)
 target_link_libraries(azeban_dependencies INTERFACE fftw3f)
 target_link_libraries(azeban_dependencies INTERFACE fftw3)

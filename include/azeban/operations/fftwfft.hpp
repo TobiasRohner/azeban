@@ -65,7 +65,6 @@ public:
            && "FFTW is CPU only!");
     assert(u.memory_location() == zisa::device_type::cpu
            && "FFTW is CPU only!");
-    // Create a plan for the forward operation
     int rdist = 1;
     int cdist = 1;
     int n[dim_v];
@@ -74,6 +73,7 @@ public:
       cdist *= u_hat_.shape()[i + 1];
       n[i] = u_.shape()[i + 1];
     }
+    // Create a plan for the forward operation
     if (direction_ & FFT_FORWARD) {
       plan_forward_ = plan_many_dft_r2c(
           dim_v,                                        // rank

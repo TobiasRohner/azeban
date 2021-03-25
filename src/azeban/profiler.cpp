@@ -2,6 +2,9 @@
 #if ZISA_HAS_CUDA
 #include <cuda_runtime.h>
 #endif
+#if AZEBAN_HAS_MPI
+#include <mpi.h>
+#endif
 #include <algorithm>
 #include <fmt/chrono.h>
 #include <fmt/core.h>
@@ -27,6 +30,9 @@ void Profiler::stop() {
 void Profiler::sync() {
 #if ZISA_HAS_CUDA
   cudaDeviceSynchronize();
+#endif
+#if AZEBAN_HAS_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
 #endif
 }
 
