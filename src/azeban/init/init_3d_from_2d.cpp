@@ -4,7 +4,7 @@
 
 namespace azeban {
 
-void Init3DFrom2D::initialize(const zisa::array_view<real_t, 4> &u) const {
+void Init3DFrom2D::do_initialize(const zisa::array_view<real_t, 4> &u) const {
   const auto init = [&](auto &&u_) {
     const zisa::int_t N = u_.shape(1);
     auto u2d = zisa::array<real_t, 3>(zisa::shape_t<3>(2, N, N),
@@ -38,7 +38,7 @@ void Init3DFrom2D::initialize(const zisa::array_view<real_t, 4> &u) const {
   }
 }
 
-void Init3DFrom2D::initialize(
+void Init3DFrom2D::do_initialize(
     const zisa::array_view<complex_t, 4> &u_hat) const {
   const zisa::int_t N = u_hat.shape(1);
   auto u = zisa::array<real_t, 4>(zisa::shape_t<4>(u_hat.shape(0), N, N, N),

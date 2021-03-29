@@ -5,7 +5,7 @@
 
 namespace azeban {
 
-void TaylorGreen<2>::initialize(const zisa::array_view<real_t, 3> &u) const {
+void TaylorGreen<2>::do_initialize(const zisa::array_view<real_t, 3> &u) const {
   const auto init = [&](auto &&u_) {
     const zisa::int_t N = u_.shape(1);
     for (zisa::int_t i = 0; i < N; ++i) {
@@ -28,7 +28,7 @@ void TaylorGreen<2>::initialize(const zisa::array_view<real_t, 3> &u) const {
   }
 }
 
-void TaylorGreen<2>::initialize(
+void TaylorGreen<2>::do_initialize(
     const zisa::array_view<complex_t, 3> &u_hat) const {
   const zisa::int_t N = u_hat.shape(1);
   auto u = zisa::array<real_t, 3>(zisa::shape_t<3>(2, N, N),
@@ -38,7 +38,7 @@ void TaylorGreen<2>::initialize(
   fft->forward();
 }
 
-void TaylorGreen<3>::initialize(const zisa::array_view<real_t, 4> &u) const {
+void TaylorGreen<3>::do_initialize(const zisa::array_view<real_t, 4> &u) const {
   const auto init = [&](auto &&u_) {
     const zisa::int_t N = u_.shape(1);
     for (zisa::int_t i = 0; i < N; ++i) {
@@ -65,7 +65,7 @@ void TaylorGreen<3>::initialize(const zisa::array_view<real_t, 4> &u) const {
   }
 }
 
-void TaylorGreen<3>::initialize(
+void TaylorGreen<3>::do_initialize(
     const zisa::array_view<complex_t, 4> &u_hat) const {
   const zisa::int_t N = u_hat.shape(1);
   auto u = zisa::array<real_t, 4>(zisa::shape_t<4>(3, N, N, N),

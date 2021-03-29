@@ -4,7 +4,8 @@
 
 namespace azeban {
 
-void DoubleShearLayer::initialize(const zisa::array_view<real_t, 3> &u) const {
+void DoubleShearLayer::do_initialize(
+    const zisa::array_view<real_t, 3> &u) const {
   const auto init = [&](auto &&u_) {
     const zisa::int_t N = u_.shape(1);
     for (zisa::int_t i = 0; i < N; ++i) {
@@ -31,7 +32,7 @@ void DoubleShearLayer::initialize(const zisa::array_view<real_t, 3> &u) const {
   }
 }
 
-void DoubleShearLayer::initialize(
+void DoubleShearLayer::do_initialize(
     const zisa::array_view<complex_t, 3> &u_hat) const {
   const zisa::int_t N = u_hat.shape(1);
   auto u = zisa::array<real_t, 3>(zisa::shape_t<3>(2, N, N),

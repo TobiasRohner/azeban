@@ -2,7 +2,7 @@
 #define AXPY_H_
 
 #include <zisa/memory/array_view.hpp>
-#ifdef ZISA_HAS_CUDA
+#if ZISA_HAS_CUDA
 #include <azeban/cuda/operations/axpy_cuda.hpp>
 #endif
 
@@ -33,7 +33,7 @@ void axpy(const Scalar &a,
   }
 #endif
   else {
-    assert(false && "Unsupported combination of memory locations");
+    LOG_ERR("Unsupported combination of memory locations");
   }
 }
 

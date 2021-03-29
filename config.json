@@ -1,10 +1,10 @@
 {
   "device": "cuda",
-  "dimension": 3,
+  "dimension": 2,
   "time": 1,
   "snapshots": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
   "grid": {
-    "N_phys": 128,
+    "N_phys": 64,
     "N_phys_pad": "../results/fft_benchmark.json"
   },
   "equation": {
@@ -20,6 +20,8 @@
     "C": 0.2
   },
   "init": {
-    "name": "Taylor Green"
+    "name": "Discontinuous Vortex Patch",
+    "rho": 0.2,
+    "delta": 0.05
   }
 }
