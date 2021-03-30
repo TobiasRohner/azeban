@@ -21,7 +21,7 @@ public:
   Initializer &operator=(const Initializer &) = default;
   Initializer &operator=(Initializer &&) = default;
 
-  void initialize(const zisa::array_view<real_t, Dim + 1> &u) const {
+  virtual void initialize(const zisa::array_view<real_t, Dim + 1> &u) const {
     if constexpr (Dim > 1) {
       zisa::shape_t<Dim + 1> u_hat_shape;
       u_hat_shape[0] = u.shape(0);
@@ -45,7 +45,8 @@ public:
     }
   }
 
-  void initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat) const {
+  virtual void
+  initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat) const {
     if constexpr (Dim > 1) {
       do_initialize(u_hat);
       leray(u_hat);

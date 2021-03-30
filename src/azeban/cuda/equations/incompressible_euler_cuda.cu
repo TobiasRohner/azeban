@@ -7,6 +7,10 @@ namespace azeban {
   template void incompressible_euler_compute_B_cuda<DIM>(                      \
       const zisa::array_view<real_t, DIM + 1> &,                               \
       const zisa::array_const_view<real_t, DIM + 1> &,                         \
+      const Grid<DIM> &);                                                      \
+  template void incompressible_euler_compute_B_tracer_cuda<DIM>(               \
+      const zisa::array_view<real_t, DIM + 1> &,                               \
+      const zisa::array_const_view<real_t, DIM + 1> &,                         \
       const Grid<DIM> &);
 
 AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_COMPUTE_B_CUDA(2)
@@ -20,6 +24,14 @@ AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_COMPUTE_B_CUDA(3)
       const zisa::array_view<complex_t, 3> &,                                  \
       const TYPE &);                                                           \
   template void incompressible_euler_3d_cuda<TYPE>(                            \
+      const zisa::array_const_view<complex_t, 4> &,                            \
+      const zisa::array_view<complex_t, 4> &,                                  \
+      const TYPE &);                                                           \
+  template void incompressible_euler_2d_tracer_cuda<TYPE>(                     \
+      const zisa::array_const_view<complex_t, 3> &,                            \
+      const zisa::array_view<complex_t, 3> &,                                  \
+      const TYPE &);                                                           \
+  template void incompressible_euler_3d_tracer_cuda<TYPE>(                     \
       const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_view<complex_t, 4> &,                                  \
       const TYPE &);

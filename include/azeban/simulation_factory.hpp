@@ -41,7 +41,10 @@ Simulation<Dim> make_simulation(const nlohmann::json &config) {
     fmt::print(stderr, "Config must contain key \"equation\"\n");
     exit(1);
   }
-  auto equation = make_equation<Dim>(config["equation"], grid, device);
+  const bool has_tracer
+      = config.contains("init") && config["init"].contains("tracer");
+  auto equation
+      = make_equation<Dim>(config["equation"], grid, has_tracer, device);
 
   if (!config.contains("timestepper")) {
     fmt::print("Config is missing timestepper specifications\n");

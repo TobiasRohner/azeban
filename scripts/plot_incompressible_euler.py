@@ -26,7 +26,6 @@ def curl(x, y):
 with h5py.File(DATA_FILE, 'r') as f:
     keys = list(sorted(f.keys(), key = lambda n : float(n)))
     dim, Nx, Ny = f[keys[0]].shape
-    assert dim == 2
 
     fig, ax = plt.subplots()
     img = curl(f[keys[0]][0], f[keys[0]][1])

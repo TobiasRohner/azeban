@@ -16,6 +16,7 @@ namespace azeban {
 template <int Dim>
 std::shared_ptr<Equation<Dim>> make_equation(const nlohmann::json &config,
                                              const Grid<Dim> &grid,
+                                             bool has_tracer,
                                              zisa::device_type device) {
   if (!config.contains("name")) {
     fmt::print(stderr, "Equation config must contain key \"name\"\n");
@@ -40,7 +41,7 @@ std::shared_ptr<Equation<Dim>> make_equation(const nlohmann::json &config,
     if (equation_name == "Burgers") {
       return make_burgers(grid, visc, device);
     } else if (equation_name == "Euler") {
-      return make_incompressible_euler(grid, visc, device);
+      return make_incompressible_euler(grid, visc, has_tracer, device);
     } else if (equation_name == "Euler Naive") {
       return make_incompressible_euler_naive(grid, visc, device);
     } else {
@@ -53,7 +54,7 @@ std::shared_ptr<Equation<Dim>> make_equation(const nlohmann::json &config,
     if (equation_name == "Burgers") {
       return make_burgers(grid, visc, device);
     } else if (equation_name == "Euler") {
-      return make_incompressible_euler(grid, visc, device);
+      return make_incompressible_euler(grid, visc, has_tracer, device);
     } else if (equation_name == "Euler Naive") {
       return make_incompressible_euler_naive(grid, visc, device);
     } else {

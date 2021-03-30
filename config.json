@@ -1,10 +1,10 @@
 {
   "device": "cuda",
   "dimension": 2,
-  "time": 1,
-  "snapshots": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+  "time": 10,
+  "snapshots": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   "grid": {
-    "N_phys": 64,
+    "N_phys": 256,
     "N_phys_pad": "../results/fft_benchmark.json"
   },
   "equation": {
@@ -12,7 +12,7 @@
     "visc": {
       "type": "Smooth Cutoff",
       "eps": 0.05,
-      "k0": 1
+      "k0": 70
     }
   },
   "timestepper": {
@@ -20,8 +20,13 @@
     "C": 0.2
   },
   "init": {
-    "name": "Discontinuous Vortex Patch",
+    "name": "Double Shear Layer",
     "rho": 0.2,
-    "delta": 0.05
+    "delta": 0.05,
+    "tracer": {
+      "name": "Sphere",
+      "center": [0.5, 0.5],
+      "radius": 0.1
+    }
   }
 }

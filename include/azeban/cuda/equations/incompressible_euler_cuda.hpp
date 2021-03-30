@@ -14,6 +14,12 @@ void incompressible_euler_compute_B_cuda(
     const zisa::array_const_view<real_t, Dim + 1> &u,
     const Grid<Dim> &grid);
 
+template <int Dim>
+void incompressible_euler_compute_B_tracer_cuda(
+    const zisa::array_view<real_t, Dim + 1> &B,
+    const zisa::array_const_view<real_t, Dim + 1> &u,
+    const Grid<Dim> &grid);
+
 template <typename SpectralViscosity>
 void incompressible_euler_2d_cuda(
     const zisa::array_const_view<complex_t, 3> &B_hat,
@@ -26,12 +32,32 @@ void incompressible_euler_3d_cuda(
     const zisa::array_view<complex_t, 4> &u_hat,
     const SpectralViscosity &visc);
 
+template <typename SpectralViscosity>
+void incompressible_euler_2d_tracer_cuda(
+    const zisa::array_const_view<complex_t, 3> &B_hat,
+    const zisa::array_view<complex_t, 3> &u_hat,
+    const SpectralViscosity &visc);
+
+template <typename SpectralViscosity>
+void incompressible_euler_3d_tracer_cuda(
+    const zisa::array_const_view<complex_t, 4> &B_hat,
+    const zisa::array_view<complex_t, 4> &u_hat,
+    const SpectralViscosity &visc);
+
 #define AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(TYPE)                     \
   extern template void incompressible_euler_2d_cuda<TYPE>(                     \
       const zisa::array_const_view<complex_t, 3> &,                            \
       const zisa::array_view<complex_t, 3> &,                                  \
       const TYPE &);                                                           \
   extern template void incompressible_euler_3d_cuda<TYPE>(                     \
+      const zisa::array_const_view<complex_t, 4> &,                            \
+      const zisa::array_view<complex_t, 4> &,                                  \
+      const TYPE &);                                                           \
+  extern template void incompressible_euler_2d_tracer_cuda<TYPE>(              \
+      const zisa::array_const_view<complex_t, 3> &,                            \
+      const zisa::array_view<complex_t, 3> &,                                  \
+      const TYPE &);                                                           \
+  extern template void incompressible_euler_3d_tracer_cuda<TYPE>(              \
       const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_view<complex_t, 4> &,                                  \
       const TYPE &);
