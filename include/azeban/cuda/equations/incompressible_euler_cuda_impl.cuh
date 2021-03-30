@@ -114,9 +114,9 @@ __global__ void incompressible_euler_compute_B_tracer_cuda_kernel<3>(
     B[3 * stride + idx] = norm * u3 * u1;
     B[4 * stride + idx] = norm * u3 * u2;
     B[5 * stride + idx] = norm * u3 * u3;
-    B[6 * stride + idx] = norm * rho + u1;
-    B[7 * stride + idx] = norm * rho + u2;
-    B[8 * stride + idx] = norm * rho + u3;
+    B[6 * stride + idx] = norm * rho * u1;
+    B[7 * stride + idx] = norm * rho * u2;
+    B[8 * stride + idx] = norm * rho * u3;
   }
 }
 

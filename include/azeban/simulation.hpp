@@ -19,19 +19,30 @@ public:
              const std::shared_ptr<TimeIntegrator<dim_v>> &timestepper,
              zisa::device_type device = zisa::device_type::cpu)
       : u_(shape, device),
+        u_view_(u_.shape(), u_.raw(), u_.device()),
         cfl_(cfl),
         timestepper_(timestepper),
         time_(0),
-        memory_location_(device) {}
+        memory_location_(device) {
+    zisa::shape_t<dim_v + 1> u_view_shape = u_.shape();
+    u_view_shape[0] = dim_v;
+    u_view_ = zisa::array_view<complex_t, dim_v + 1>(
+        u_view_shape, u_.raw(), u_.device());
+  }
   Simulation(const zisa::array_const_view<complex_t, dim_v + 1> &u,
              const CFL<Dim> cfl,
              const std::shared_ptr<TimeIntegrator<dim_v>> &timestepper)
       : u_(u.shape(), u.memory_location()),
+        u_view_(u_.shape(), u_.raw(), u_.device()),
         cfl_(cfl),
         timestepper_(timestepper),
         time_(0),
         memory_location_(u.memory_location()) {
     zisa::copy(u_, u);
+    zisa::shape_t<dim_v + 1> u_view_shape = u_.shape();
+    u_view_shape[0] = dim_v;
+    u_view_ = zisa::array_view<complex_t, dim_v + 1>(
+        u_view_shape, u_.raw(), u_.device());
   }
   Simulation(const Simulation &) = delete;
   Simulation(Simulation &&) = default;
@@ -40,11 +51,11 @@ public:
   Simulation &operator=(Simulation &&) = default;
 
   void simulate_until(real_t t) {
-    real_t dt = cfl_.dt(u_);
+    real_t dt = cfl_.dt(u_view_);
     while (time_ < t - dt) {
       timestepper_->integrate(dt, u_);
       time_ += dt;
-      dt = cfl_.dt(u_);
+      dt = cfl_.dt(u_view_);
     }
     timestepper_->integrate(t - time_, u_);
     time_ = t;
@@ -53,7 +64,7 @@ public:
   void simulate_for(real_t t) { simulate_until(time_ + t); }
 
   real_t step() {
-    const real_t dt = cfl_.dt(u_);
+    const real_t dt = cfl_.dt(u_view_);
     timestepper_->integrate(dt, u_);
     time_ += dt;
     return dt;
@@ -68,6 +79,7 @@ public:
 
 private:
   zisa::array<complex_t, dim_v + 1> u_;
+  zisa::array_view<complex_t, dim_v + 1> u_view_;
   CFL<Dim> cfl_;
   std::shared_ptr<TimeIntegrator<dim_v>> timestepper_;
   real_t time_;

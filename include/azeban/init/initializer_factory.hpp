@@ -5,6 +5,7 @@
 #include "double_shear_layer_factory.hpp"
 #include "init_3d_from_2d.hpp"
 #include "initializer.hpp"
+#include "shear_tube_factory.hpp"
 #include "shock_factory.hpp"
 #include "sine_1d_factory.hpp"
 #include "sphere_factory.hpp"
@@ -39,6 +40,8 @@ make_initializer_u(const nlohmann::json &config) {
     return make_discontinuous_vortex_patch<Dim>(config);
   } else if (name == "Taylor Green") {
     return make_taylor_green<Dim>();
+  } else if (name == "Shear Tube") {
+    return make_shear_tube<Dim>(config);
   } else {
     fmt::print(stderr, "Unknown Initializer: \"{}\"\n", name);
     exit(1);
