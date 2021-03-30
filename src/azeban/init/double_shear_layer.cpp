@@ -4,20 +4,21 @@
 
 namespace azeban {
 
-void DoubleShearLayer::do_initialize(
-    const zisa::array_view<real_t, 3> &u) const {
+void DoubleShearLayer::do_initialize(const zisa::array_view<real_t, 3> &u) {
   const auto init = [&](auto &&u_) {
     const zisa::int_t N = u_.shape(1);
+    const real_t rho = rho_.get();
+    const real_t delta = delta_.get();
     for (zisa::int_t i = 0; i < N; ++i) {
       for (zisa::int_t j = 0; j < N; ++j) {
         const real_t x = static_cast<real_t>(i) / N;
         const real_t y = static_cast<real_t>(j) / N;
         if (y < 0.5) {
-          u_(0, i, j) = std::tanh(2 * zisa::pi * (y - 0.25) / rho_);
+          u_(0, i, j) = std::tanh(2 * zisa::pi * (y - 0.25) / rho);
         } else {
-          u_(0, i, j) = std::tanh(2 * zisa::pi * (0.75 - y) / rho_);
+          u_(0, i, j) = std::tanh(2 * zisa::pi * (0.75 - y) / rho);
         }
-        u_(1, i, j) = delta_ * zisa::sin(2 * zisa::pi * x);
+        u_(1, i, j) = delta * zisa::sin(2 * zisa::pi * x);
       }
     }
   };
@@ -33,7 +34,7 @@ void DoubleShearLayer::do_initialize(
 }
 
 void DoubleShearLayer::do_initialize(
-    const zisa::array_view<complex_t, 3> &u_hat) const {
+    const zisa::array_view<complex_t, 3> &u_hat) {
   const zisa::int_t N = u_hat.shape(1);
   auto u = zisa::array<real_t, 3>(zisa::shape_t<3>(2, N, N),
                                   u_hat.memory_location());

@@ -23,7 +23,7 @@ public:
   Sphere &operator=(Sphere &) = default;
 
   virtual void
-  initialize(const zisa::array_view<real_t, dim_v + 1> &u) const override {
+  initialize(const zisa::array_view<real_t, dim_v + 1> &u) override {
     const auto init = [&](auto &&u_) {
       const zisa::int_t N = u_.shape(1);
       if constexpr (dim_v == 2) {
@@ -66,8 +66,8 @@ public:
     }
   }
 
-  virtual void initialize(
-      const zisa::array_view<complex_t, dim_v + 1> &u_hat) const override {
+  virtual void
+  initialize(const zisa::array_view<complex_t, dim_v + 1> &u_hat) override {
     const zisa::int_t N = u_hat.shape(1);
     zisa::shape_t<dim_v + 1> shape;
     shape[0] = 1;
@@ -82,10 +82,9 @@ public:
 
 protected:
   virtual void
-  do_initialize(const zisa::array_view<real_t, dim_v + 1> &) const override {}
+  do_initialize(const zisa::array_view<real_t, dim_v + 1> &) override {}
   virtual void
-  do_initialize(const zisa::array_view<complex_t, dim_v + 1> &) const override {
-  }
+  do_initialize(const zisa::array_view<complex_t, dim_v + 1> &) override {}
 
 private:
   std::array<real_t, dim_v> center_;

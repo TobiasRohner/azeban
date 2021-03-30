@@ -3,14 +3,15 @@
 
 #include "double_shear_layer.hpp"
 #include "init_3d_from_2d.hpp"
+#include <azeban/random/random_variable_factory.hpp>
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>
 
 namespace azeban {
 
-template <int Dim>
+template <int Dim, typename RNG>
 std::shared_ptr<Initializer<Dim>>
-make_double_shear_layer(const nlohmann::json &config) {
+make_double_shear_layer(const nlohmann::json &config, RNG &rng) {
   if constexpr (Dim == 2 || Dim == 3) {
     if (!config.contains("rho")) {
       fmt::print(
@@ -24,8 +25,10 @@ make_double_shear_layer(const nlohmann::json &config) {
                  "\"delta\"\n");
       exit(1);
     }
-    const real_t rho = config["rho"];
-    const real_t delta = config["delta"];
+    RandomVariable<real_t> rho
+        = make_random_variable<real_t>(config["rho"], rng);
+    RandomVariable<real_t> delta
+        = make_random_variable<real_t>(config["delta"], rng);
     if constexpr (Dim == 2) {
       return std::make_shared<DoubleShearLayer>(rho, delta);
     } else {
@@ -36,7 +39,7 @@ make_double_shear_layer(const nlohmann::json &config) {
         exit(1);
       }
       const int dim = config["dimension"];
-      const auto init2d = std::make_shared<DoubleShearLayer>(rho, delta);
+      auto init2d = std::make_shared<DoubleShearLayer>(rho, delta);
       return std::make_shared<Init3DFrom2D>(dim, init2d);
     }
   } else {

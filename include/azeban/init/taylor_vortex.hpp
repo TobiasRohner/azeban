@@ -19,10 +19,9 @@ public:
   TaylorVortex &operator=(TaylorVortex &) = default;
 
 protected:
+  virtual void do_initialize(const zisa::array_view<real_t, 3> &u) override;
   virtual void
-  do_initialize(const zisa::array_view<real_t, 3> &u) const override;
-  virtual void
-  do_initialize(const zisa::array_view<complex_t, 3> &u_hat) const override;
+  do_initialize(const zisa::array_view<complex_t, 3> &u_hat) override;
 };
 
 }

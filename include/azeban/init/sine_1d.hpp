@@ -19,10 +19,9 @@ public:
   Sine1D &operator=(Sine1D &&) = default;
 
 protected:
+  virtual void do_initialize(const zisa::array_view<real_t, 2> &u) override;
   virtual void
-  do_initialize(const zisa::array_view<real_t, 2> &u) const override;
-  virtual void
-  do_initialize(const zisa::array_view<complex_t, 2> &u_hat) const override;
+  do_initialize(const zisa::array_view<complex_t, 2> &u_hat) override;
 };
 
 }

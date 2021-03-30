@@ -19,9 +19,9 @@
 
 namespace azeban {
 
-template <int Dim>
+template <int Dim, typename RNG>
 std::shared_ptr<Initializer<Dim>>
-make_initializer_u(const nlohmann::json &config) {
+make_initializer_u(const nlohmann::json &config, RNG &rng) {
   if (!config.contains("name")) {
     fmt::print(stderr, "Config does not contain initializer name\n");
     exit(1);
@@ -31,9 +31,9 @@ make_initializer_u(const nlohmann::json &config) {
   if (name == "Sine 1D") {
     return make_sine_1d<Dim>();
   } else if (name == "Shock") {
-    return make_shock<Dim>(config);
+    return make_shock<Dim>(config, rng);
   } else if (name == "Double Shear Layer") {
-    return make_double_shear_layer<Dim>(config);
+    return make_double_shear_layer<Dim>(config, rng);
   } else if (name == "Taylor Vortex") {
     return make_taylor_vortex<Dim>(config);
   } else if (name == "Discontinuous Vortex Patch") {
@@ -41,7 +41,7 @@ make_initializer_u(const nlohmann::json &config) {
   } else if (name == "Taylor Green") {
     return make_taylor_green<Dim>();
   } else if (name == "Shear Tube") {
-    return make_shear_tube<Dim>(config);
+    return make_shear_tube<Dim>(config, rng);
   } else {
     fmt::print(stderr, "Unknown Initializer: \"{}\"\n", name);
     exit(1);
@@ -65,15 +65,15 @@ make_initializer_rho(const nlohmann::json &config) {
   }
 }
 
-template <int Dim>
-std::shared_ptr<Initializer<Dim>>
-make_initializer(const nlohmann::json &config) {
+template <int Dim, typename RNG>
+std::shared_ptr<Initializer<Dim>> make_initializer(const nlohmann::json &config,
+                                                   RNG &rng) {
   if (!config.contains("init")) {
     fmt::print(stderr, "Config does not contain initialization information\n");
     exit(1);
   }
 
-  auto init_u = make_initializer_u<Dim>(config["init"]);
+  auto init_u = make_initializer_u<Dim>(config["init"], rng);
   if (config["init"].contains("tracer")) {
     auto init_rho = make_initializer_rho<Dim>(config["init"]["tracer"]);
     return std::make_shared<VelocityAndTracer<Dim>>(init_u, init_rho);

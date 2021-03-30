@@ -22,8 +22,7 @@ public:
   VelocityAndTracer &operator=(const VelocityAndTracer &) = default;
   VelocityAndTracer &operator=(VelocityAndTracer &) = default;
 
-  virtual void
-  initialize(const zisa::array_view<real_t, Dim + 1> &u) const override {
+  virtual void initialize(const zisa::array_view<real_t, Dim + 1> &u) override {
     zisa::shape_t<Dim + 1> shape_u = u.shape();
     shape_u[0] -= 1;
     zisa::array_view<real_t, Dim + 1> view_u(
@@ -37,7 +36,7 @@ public:
   }
 
   virtual void
-  initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat) const override {
+  initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat) override {
     zisa::shape_t<Dim + 1> shape_u_hat = u_hat.shape();
     shape_u_hat[0] -= 1;
     zisa::array_view<complex_t, Dim + 1> view_u_hat(
@@ -54,10 +53,9 @@ public:
 
 protected:
   virtual void
-  do_initialize(const zisa::array_view<real_t, dim_v + 1> &) const override {}
+  do_initialize(const zisa::array_view<real_t, dim_v + 1> &) override {}
   virtual void
-  do_initialize(const zisa::array_view<complex_t, dim_v + 1> &) const override {
-  }
+  do_initialize(const zisa::array_view<complex_t, dim_v + 1> &) override {}
 
 private:
   std::shared_ptr<Initializer<Dim>> init_u_;

@@ -4,7 +4,7 @@
 
 namespace azeban {
 
-void Sine1D::do_initialize(const zisa::array_view<real_t, 2> &u) const {
+void Sine1D::do_initialize(const zisa::array_view<real_t, 2> &u) {
   const auto init = [&](auto &&u_) {
     const zisa::int_t N = u.shape(1);
     for (zisa::int_t i = 0; i < N; ++i) {
@@ -22,7 +22,7 @@ void Sine1D::do_initialize(const zisa::array_view<real_t, 2> &u) const {
   }
 }
 
-void Sine1D::do_initialize(const zisa::array_view<complex_t, 2> &u_hat) const {
+void Sine1D::do_initialize(const zisa::array_view<complex_t, 2> &u_hat) {
   const auto init = [&](auto &&u_hat_) {
     const zisa::int_t N = u_hat_.shape(1);
     for (zisa::int_t i = 0; i < N; ++i) {

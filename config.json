@@ -1,10 +1,11 @@
 {
   "device": "cuda",
-  "dimension": 3,
+  "dimension": 2,
+  "seed": 0,
   "time": 1,
   "snapshots": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
   "grid": {
-    "N_phys": 64,
+    "N_phys": 256,
     "N_phys_pad": "../results/fft_benchmark.json"
   },
   "equation": {
@@ -20,12 +21,20 @@
     "C": 0.2
   },
   "init": {
-    "name": "Shear Tube",
-    "rho": 0.2,
-    "delta": 0.05,
+    "name": "Double Shear Layer",
+    "rho": {
+      "name": "Uniform",
+      "min": 0.1,
+      "max": 0.3
+    },
+    "delta": {
+      "name": "Normal",
+      "mu": 0,
+      "sigma": 0.05
+    },
     "tracer": {
       "name": "Sphere",
-      "center": [0.5, 0.5, 0.5],
+      "center": [0.5, 0.5],
       "radius": 0.1
     }
   }

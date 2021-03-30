@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iomanip>
 #include <nlohmann/json.hpp>
+#include <random>
 #include <zisa/config.hpp>
 #include <zisa/cuda/memory/cuda_array.hpp>
 #include <zisa/io/hdf5_serial_writer.hpp>
@@ -38,6 +39,11 @@ static void runFromConfig(const nlohmann::json &config) {
     output = config["output"];
   }
 
+  std::mt19937 rng;
+  if (config.contains("seed")) {
+    rng.seed(config["seed"].get<size_t>());
+  }
+
   auto simulation = make_simulation<dim_v>(config);
   const auto &grid = simulation.grid();
 
@@ -49,7 +55,7 @@ static void runFromConfig(const nlohmann::json &config) {
       = grid.make_array_fourier(simulation.n_vars(), zisa::device_type::cpu);
   auto fft = make_fft<dim_v>(u_hat_host, u_host);
 
-  auto initializer = make_initializer<dim_v>(config);
+  auto initializer = make_initializer<dim_v>(config, rng);
   initializer->initialize(simulation.u());
 
   zisa::copy(u_hat_host, simulation.u());

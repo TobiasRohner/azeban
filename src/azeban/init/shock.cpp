@@ -4,12 +4,14 @@
 
 namespace azeban {
 
-void Shock::do_initialize(const zisa::array_view<real_t, 2> &u) const {
+void Shock::do_initialize(const zisa::array_view<real_t, 2> &u) {
   const auto init = [&](auto &&u_) {
     const zisa::int_t N = u_.shape(1);
+    const real_t x0 = x0_.get();
+    const real_t x1 = x1_.get();
     for (zisa::int_t i = 0; i < N; ++i) {
       const real_t x = static_cast<real_t>(i) / N;
-      u_[i] = x >= x0_ && x < x1_ ? 1 : 0;
+      u_[i] = x >= x0 && x < x1 ? 1 : 0;
     }
   };
   if (u.memory_location() == zisa::device_type::cpu) {
@@ -23,7 +25,7 @@ void Shock::do_initialize(const zisa::array_view<real_t, 2> &u) const {
   }
 }
 
-void Shock::do_initialize(const zisa::array_view<complex_t, 2> &u_hat) const {
+void Shock::do_initialize(const zisa::array_view<complex_t, 2> &u_hat) {
   const zisa::int_t N = 2 * (u_hat.shape(1) - 1);
   auto u
       = zisa::array<real_t, 2>(zisa::shape_t<2>(1, N), u_hat.memory_location());

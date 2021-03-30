@@ -20,10 +20,9 @@ public:
   Init3DFrom2D &operator=(Init3DFrom2D &&) = default;
 
 protected:
+  virtual void do_initialize(const zisa::array_view<real_t, 4> &u) override;
   virtual void
-  do_initialize(const zisa::array_view<real_t, 4> &u) const override;
-  virtual void
-  do_initialize(const zisa::array_view<complex_t, 4> &u_hat) const override;
+  do_initialize(const zisa::array_view<complex_t, 4> &u_hat) override;
 
 private:
   zisa::int_t dim_;
