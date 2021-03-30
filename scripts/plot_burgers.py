@@ -33,5 +33,5 @@ with h5py.File(DATA_FILE, 'r') as f:
         ln1.set_data(xdata, np.abs(np.fft.fft(ydata))/N)
         return ln, ln1
 
-    anim = FuncAnimation(fig, update, frames=keys, init_func=init, blit=True, interval=1000./60)
+    anim = FuncAnimation(fig, update, frames=keys, init_func=init, blit=True, interval=1000./1)
     plt.show()

@@ -1,6 +1,7 @@
 #ifndef INITIALIZER_FACTORY_H_
 #define INITIALIZER_FACTORY_H_
 
+#include "brownian_motion_factory.hpp"
 #include "discontinuous_vortex_patch_factory.hpp"
 #include "double_shear_layer_factory.hpp"
 #include "init_3d_from_2d.hpp"
@@ -42,6 +43,8 @@ make_initializer_u(const nlohmann::json &config, RNG &rng) {
     return make_taylor_green<Dim>();
   } else if (name == "Shear Tube") {
     return make_shear_tube<Dim>(config, rng);
+  } else if (name == "Brownian Motion") {
+    return make_brownian_motion<Dim>(config, rng);
   } else {
     fmt::print(stderr, "Unknown Initializer: \"{}\"\n", name);
     exit(1);

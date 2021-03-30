@@ -1,3 +1,4 @@
+#include <hdf5.h>
 #include <azeban/init/initializer_factory.hpp>
 #include <azeban/operations/fft.hpp>
 #include <azeban/profiler.hpp>
