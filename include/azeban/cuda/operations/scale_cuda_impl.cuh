@@ -16,7 +16,6 @@ __global__ void scale_cuda_kernel(Scalar a, zisa::array_view<Scalar, 1> x) {
 
 template <typename Scalar>
 void scale_cuda(const Scalar &a, const zisa::array_view<Scalar, 1> &x) {
-  assert(x.shape() == y.shape());
   const int thread_dims = 1024;
   const int block_dims
       = zisa::div_up(static_cast<int>(x.shape(0)), thread_dims);

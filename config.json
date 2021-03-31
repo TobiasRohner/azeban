@@ -1,15 +1,15 @@
 {
   "device": "cuda",
-  "dimension": 1,
+  "dimension": 2,
   "seed": 1,
-  "time": 10,
-  "snapshots": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  "time": 1,
+  "snapshots": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
   "grid": {
-    "N_phys": 4096,
+    "N_phys": 256,
     "N_phys_pad": "../results/fft_benchmark.json"
   },
   "equation": {
-    "name": "Burgers",
+    "name": "Euler",
     "visc": {
       "type": "Smooth Cutoff",
       "eps": 0.05,
@@ -23,7 +23,7 @@
   "init": {
     "name": "Brownian Motion",
     "hurst": 0.5,
-    "tracer_": {
+    "tracer": {
       "name": "Sphere",
       "center": [0.5, 0.5],
       "radius": 0.1

@@ -11,6 +11,7 @@ void BrownianMotion<1>::do_initialize(const zisa::array_view<real_t, 2> &u) {
       zisa::array_view<real_t, 1> view(shape_u,
                                        u_.raw() + d * zisa::product(shape_u),
                                        zisa::device_type::cpu);
+      view(0) = 0;
       generate_step(view, H, 0, N);
     }
   };
@@ -65,6 +66,7 @@ void BrownianMotion<2>::do_initialize(const zisa::array_view<real_t, 3> &u) {
       zisa::array_view<real_t, 2> view(shape_u,
                                        u_.raw() + d * zisa::product(shape_u),
                                        zisa::device_type::cpu);
+      view(0, 0) = 0;
       generate_step(view, H, 0, N, 0, N);
     }
   };
@@ -96,7 +98,31 @@ void BrownianMotion<2>::generate_step(const zisa::array_view<real_t, 2> &u,
                                       zisa::int_t i1,
                                       zisa::int_t j0,
                                       zisa::int_t j1) {
-  LOG_ERR("Not yet implemented");
+  if (i1 - i0 == 1 || j1 - j0 == 1) {
+    return;
+  }
+  zisa::int_t N = u.shape(0);
+  const zisa::int_t im = i0 + (i1 - i0) / 2;
+  const zisa::int_t jm = j0 + (j1 - j0) / 2;
+  const real_t ui0j0 = u(i0, j0);
+  const real_t ui0j1 = u(i0, j1 % N);
+  const real_t ui1j0 = u(i1 % N, j0);
+  const real_t ui1j1 = u(i1 % N, j1 % N);
+  const real_t sigma = zisa::sqrt((i1 - i0) * (1. - zisa::pow(2., 2 * H - 2))
+                                  / zisa::pow(N, 2 * H));
+  u(i0, jm) = 0.5 * (ui0j0 + ui0j1) + sigma * normal_.get();
+  u(im, j0) = 0.5 * (ui0j0 + ui1j0) + sigma * normal_.get();
+  if (i1 < N) {
+    u(i1, jm) = 0.5 * (ui1j0 + ui1j1) + sigma * normal_.get();
+  }
+  if (j1 < N) {
+    u(im, j1) = 0.5 * (ui0j1 + ui1j1) + sigma * normal_.get();
+  }
+  u(im, jm) = 0.25 * (ui0j0 + ui0j1 + ui1j0 + ui1j1) + sigma * normal_.get();
+  generate_step(u, H, i0, im, j0, jm);
+  generate_step(u, H, i0, im, jm, j1);
+  generate_step(u, H, im, i1, j0, jm);
+  generate_step(u, H, im, i1, jm, j1);
 }
 
 void BrownianMotion<3>::do_initialize(const zisa::array_view<real_t, 4> &u) {
@@ -110,6 +136,7 @@ void BrownianMotion<3>::do_initialize(const zisa::array_view<real_t, 4> &u) {
       zisa::array_view<real_t, 3> view(shape_u,
                                        u_.raw() + d * zisa::product(shape_u),
                                        zisa::device_type::cpu);
+      view(0, 0, 0) = 0;
       generate_step(view, H, 0, N, 0, N, 0, N);
     }
   };
