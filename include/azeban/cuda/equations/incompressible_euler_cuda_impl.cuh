@@ -190,7 +190,7 @@ incompressible_euler_3d_cuda_kernel(zisa::array_const_view<complex_t, 4> B_hat,
       i_ -= u_hat.shape(1);
     }
     if (j_ >= u_hat.shape(2) / 2 + 1) {
-      i_ -= u_hat.shape(2);
+      j_ -= u_hat.shape(2);
     }
     const real_t k1 = 2 * zisa::pi * i_;
     const real_t k2 = 2 * zisa::pi * j_;
@@ -308,7 +308,7 @@ __global__ void incompressible_euler_3d_tracer_cuda_kernel(
       i_ -= u_hat.shape(1);
     }
     if (j_ >= u_hat.shape(2) / 2 + 1) {
-      i_ -= u_hat.shape(2);
+      j_ -= u_hat.shape(2);
     }
     const real_t k1 = 2 * zisa::pi * i_;
     const real_t k2 = 2 * zisa::pi * j_;
@@ -320,9 +320,9 @@ __global__ void incompressible_euler_3d_tracer_cuda_kernel(
     const complex_t B31_hat = B_hat[3 * stride_B + idx_B];
     const complex_t B32_hat = B_hat[4 * stride_B + idx_B];
     const complex_t B33_hat = B_hat[5 * stride_B + idx_B];
-    const complex_t rhou1_hat = B_hat[5 * stride_B + idx_B];
-    const complex_t rhou2_hat = B_hat[6 * stride_B + idx_B];
-    const complex_t rhou3_hat = B_hat[7 * stride_B + idx_B];
+    const complex_t rhou1_hat = B_hat[6 * stride_B + idx_B];
+    const complex_t rhou2_hat = B_hat[7 * stride_B + idx_B];
+    const complex_t rhou3_hat = B_hat[8 * stride_B + idx_B];
     const complex_t b1_hat = complex_t(0, k1) * B11_hat
                              + complex_t(0, k2) * B21_hat
                              + complex_t(0, k3) * B31_hat;
