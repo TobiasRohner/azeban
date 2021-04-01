@@ -1,3 +1,4 @@
+#if AZEBAN_HAS_MPI
 #include <azeban/cuda/operations/cufft_mpi.hpp>
 #include <azeban/mpi_types.hpp>
 #include <azeban/profiler.hpp>
@@ -204,3 +205,4 @@ void CUFFT_MPI<2>::transpose_backward() {
 }
 
 }
+#endif

@@ -577,6 +577,7 @@ TEST_CASE("cuFFT 3D vector valued data", "[cufft]") {
   }
 }
 
+#if AZEBAN_HAS_MPI
 TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -624,3 +625,4 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
     }
   }
 }
+#endif
