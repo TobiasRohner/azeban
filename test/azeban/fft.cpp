@@ -583,7 +583,7 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  zisa::int_t n = 8;
+  zisa::int_t n = 128;
   zisa::shape_t<3> rshape{1, n / size + (rank < n % size ? 1 : 0), n};
   zisa::shape_t<3> cshape{
       1, (n / 2 + 1) / size + (rank < (n / 2 + 1) % size ? 1 : 0), n};
@@ -624,6 +624,63 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
       expected.y = 0;
       REQUIRE(std::fabs(h_u_hat(0, i, j).x - expected.x) <= 1e-10);
       REQUIRE(std::fabs(h_u_hat(0, i, j).y - expected.y) <= 1e-10);
+    }
+  }
+}
+
+TEST_CASE("cuFFT MPI 2d vector valued data", "[mpi]") {
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  zisa::int_t n = 128;
+  zisa::shape_t<3> rshape{2, n / size + (rank < n % size ? 1 : 0), n};
+  zisa::shape_t<3> cshape{
+      2, (n / 2 + 1) / size + (rank < (n / 2 + 1) % size ? 1 : 0), n};
+  auto h_u = zisa::array<azeban::real_t, 3>(rshape);
+  auto h_u_hat = zisa::array<azeban::complex_t, 3>(cshape);
+  auto d_u = zisa::cuda_array<azeban::real_t, 3>(rshape);
+  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 3>(cshape);
+
+  std::shared_ptr<azeban::FFT<2>> fft
+      = std::make_shared<azeban::CUFFT_MPI<2>>(d_u_hat, d_u, MPI_COMM_WORLD);
+
+  for (zisa::int_t i = 0; i < rshape[1]; ++i) {
+    const zisa::int_t i_
+        = i + rank * (n / size) + (rank < n % size ? rank : n % size);
+    for (zisa::int_t j = 0; j < rshape[2]; ++j) {
+      h_u(0, i, j) = zisa::cos(2.0 * zisa::pi * (i_ + j) / n);
+      h_u(1, i, j) = zisa::cos(4.0 * zisa::pi * (i_ + j) / n);
+    }
+  }
+
+  zisa::copy(d_u, h_u);
+  fft->forward();
+  zisa::copy(h_u_hat, d_u_hat);
+  fft->backward();
+  zisa::copy(h_u, d_u);
+
+  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
+    for (zisa::int_t j = 0; j < cshape[2]; ++j) {
+      const zisa::int_t i__
+          = i + rank * ((n / 2 + 1) / size)
+            + (rank < (n / 2 + 1) % size ? rank : (n / 2 + 1) % size);
+      const int i_ = i__ >= n / 2 + 1 ? zisa::integer_cast<int>(i__) - n
+                                      : zisa::integer_cast<int>(i__);
+      const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
+                                    : zisa::integer_cast<int>(j);
+      azeban::complex_t expected_0;
+      expected_0.x
+          = (i_ == 1 && j_ == 1) || (i_ == -1 && j_ == -1) ? n * n / 2.0 : 0.0;
+      expected_0.y = 0;
+      azeban::complex_t expected_1;
+      expected_1.x
+          = (i_ == 2 && j_ == 2) || (i_ == -2 && j_ == -2) ? n * n / 2.0 : 0.0;
+      expected_1.y = 0;
+      REQUIRE(std::fabs(h_u_hat(0, i, j).x - expected_0.x) <= 1e-10);
+      REQUIRE(std::fabs(h_u_hat(0, i, j).x - expected_0.x) <= 1e-10);
+      REQUIRE(std::fabs(h_u_hat(1, i, j).y - expected_1.y) <= 1e-10);
+      REQUIRE(std::fabs(h_u_hat(1, i, j).y - expected_1.y) <= 1e-10);
     }
   }
 }

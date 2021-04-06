@@ -129,12 +129,6 @@ void CUFFT_MPI<2>::forward() {
   LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
              "Forward operation was not initialized");
   AZEBAN_PROFILE_START("CUFFT_MPI::forward");
-  int rank, size;
-  MPI_Comm_rank(comm_, &rank);
-  MPI_Comm_size(comm_, &size);
-  if (rank == 0) {
-    std::cout << "CUFFT_MPI<2>::forward() called" << std::endl;
-  }
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {
@@ -194,15 +188,25 @@ void CUFFT_MPI<2>::transpose_forward() {
   }
 
   zisa::copy(mpi_send_buffer_, partial_u_hat_);
-  MPI_Alltoallw(mpi_send_buffer_.raw(),
-                sendcounts.data(),
-                sdispls.data(),
-                natural_types_.data(),
-                mpi_recv_buffer_.raw(),
-                recvcounts.data(),
-                rdispls.data(),
-                transposed_types_.data(),
-                comm_);
+  
+  const int N = mpi_send_buffer_.shape(0);
+  std::vector<MPI_Request> reqs(N);
+  for (zisa::int_t d = 0 ; d < N ; ++d) {
+    const ptrdiff_t send_offset = d * zisa::product(mpi_send_buffer_.shape()) / N;
+    const ptrdiff_t recv_offset = d * zisa::product(mpi_recv_buffer_.shape()) / N;
+    MPI_Ialltoallw(mpi_send_buffer_.raw() + send_offset,
+		   sendcounts.data(),
+		   sdispls.data(),
+		   natural_types_.data(),
+		   mpi_recv_buffer_.raw() + recv_offset,
+		   recvcounts.data(),
+		   rdispls.data(),
+		   transposed_types_.data(),
+		   comm_,
+		   &reqs[d]);
+  }
+  MPI_Waitall(N, reqs.data(), MPI_STATUSES_IGNORE);
+
   zisa::copy(u_hat_, mpi_recv_buffer_);
 }
 
