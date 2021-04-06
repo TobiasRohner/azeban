@@ -129,6 +129,12 @@ void CUFFT_MPI<2>::forward() {
   LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
              "Forward operation was not initialized");
   AZEBAN_PROFILE_START("CUFFT_MPI::forward");
+  int rank, size;
+  MPI_Comm_rank(comm_, &rank);
+  MPI_Comm_size(comm_, &size);
+  if (rank == 0) {
+    std::cout << "CUFFT_MPI<2>::forward() called" << std::endl;
+  }
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {

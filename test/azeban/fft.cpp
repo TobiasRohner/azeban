@@ -583,7 +583,7 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  zisa::int_t n = 128;
+  zisa::int_t n = 8;
   zisa::shape_t<3> rshape{1, n / size + (rank < n % size ? 1 : 0), n};
   zisa::shape_t<3> cshape{
       1, (n / 2 + 1) / size + (rank < (n / 2 + 1) % size ? 1 : 0), n};
@@ -596,7 +596,8 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
       = std::make_shared<azeban::CUFFT_MPI<2>>(d_u_hat, d_u, MPI_COMM_WORLD);
 
   for (zisa::int_t i = 0; i < rshape[1]; ++i) {
-    const zisa::int_t i_ = i + rank * (n / size) + (rank < size % n ? rank : 0);
+    const zisa::int_t i_
+        = i + rank * (n / size) + (rank < n % size ? rank : n % size);
     for (zisa::int_t j = 0; j < rshape[2]; ++j) {
       h_u(0, i, j) = zisa::cos(2.0 * zisa::pi * (i_ + j) / n);
     }
@@ -611,9 +612,10 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
   for (zisa::int_t i = 0; i < cshape[1]; ++i) {
     for (zisa::int_t j = 0; j < cshape[2]; ++j) {
       const zisa::int_t i__
-          = i + rank * (n / size) + (rank < size % n ? rank : 0);
-      const int i_ = i__ >= n / 2 + 1 ? zisa::integer_cast<int>(i) - n
-                                      : zisa::integer_cast<int>(i);
+          = i + rank * ((n / 2 + 1) / size)
+            + (rank < (n / 2 + 1) % size ? rank : (n / 2 + 1) % size);
+      const int i_ = i__ >= n / 2 + 1 ? zisa::integer_cast<int>(i__) - n
+                                      : zisa::integer_cast<int>(i__);
       const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
                                     : zisa::integer_cast<int>(j);
       azeban::complex_t expected;
