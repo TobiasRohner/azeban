@@ -626,6 +626,16 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
       REQUIRE(std::fabs(h_u_hat(0, i, j).y - expected.y) <= 1e-10);
     }
   }
+
+  for (zisa::int_t i = 0; i < rshape[1]; ++i) {
+    for (zisa::int_t j = 0; j < rshape[2]; ++j) {
+      const zisa::int_t i_
+          = i + rank * (n / size) + (rank < n % size ? rank : n % size);
+      const azeban::real_t expected
+          = n * n * zisa::cos(2.0 * zisa::pi * (i_ + j) / n);
+      REQUIRE(std::fabs(h_u(0, i, j) - expected) <= 1e-8);
+    }
+  }
 }
 
 TEST_CASE("cuFFT MPI 2d vector valued data", "[mpi]") {
@@ -681,6 +691,19 @@ TEST_CASE("cuFFT MPI 2d vector valued data", "[mpi]") {
       REQUIRE(std::fabs(h_u_hat(0, i, j).x - expected_0.x) <= 1e-10);
       REQUIRE(std::fabs(h_u_hat(1, i, j).y - expected_1.y) <= 1e-10);
       REQUIRE(std::fabs(h_u_hat(1, i, j).y - expected_1.y) <= 1e-10);
+    }
+  }
+
+  for (zisa::int_t i = 0; i < rshape[1]; ++i) {
+    for (zisa::int_t j = 0; j < rshape[2]; ++j) {
+      const zisa::int_t i_
+          = i + rank * (n / size) + (rank < n % size ? rank : n % size);
+      const azeban::real_t expected_0
+          = n * n * zisa::cos(2.0 * zisa::pi * (i_ + j) / n);
+      const azeban::real_t expected_1
+          = n * n * zisa::cos(4.0 * zisa::pi * (i_ + j) / n);
+      REQUIRE(std::fabs(h_u(0, i, j) - expected_0) <= 1e-8);
+      REQUIRE(std::fabs(h_u(1, i, j) - expected_1) <= 1e-8);
     }
   }
 }

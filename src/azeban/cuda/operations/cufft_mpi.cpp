@@ -92,7 +92,32 @@ CUFFT_MPI<2>::CUFFT_MPI(const zisa::array_view<complex_t, 3> &u_hat,
   }
   // Create the plans for the backward operations
   if (direction_ & FFT_BACKWARD) {
-    // TODO: Implement
+    // Before transposing
+    cufftResult status = cufftCreate(&plan_backward_c2c_);
+    cudaCheckError(status);
+    status = cufftSetAutoAllocation(plan_backward_c2c_, false);
+    cudaCheckError(status);
+    size_t bkw1_size;
+    status = cufftMakePlan1d(plan_backward_c2c_,                // plan
+                             u_hat_.shape(2),                   // n
+                             type_backward_c2c,                 // type
+                             u_hat_.shape(0) * u_hat_.shape(1), // batch
+                             &bkw1_size);                       // workSize
+    cudaCheckError(status);
+    workspace_size = std::max(workspace_size, bkw1_size);
+    // After transposing
+    status = cufftCreate(&plan_backward_c2r_);
+    cudaCheckError(status);
+    status = cufftSetAutoAllocation(plan_backward_c2r_, false);
+    cudaCheckError(status);
+    size_t bkw2_size;
+    status = cufftMakePlan1d(plan_backward_c2r_,        // plan
+                             u_.shape(2),               // n
+                             type_backward_c2r,         // type
+                             u_.shape(0) * u_.shape(1), // batch
+                             &bkw2_size);               // workSize
+    cudaCheckError(status);
+    workspace_size = std::max(workspace_size, bkw2_size);
   }
   // Allocate the shared work area
   cudaMalloc((void **)(&work_area_), workspace_size);
@@ -103,7 +128,10 @@ CUFFT_MPI<2>::CUFFT_MPI(const zisa::array_view<complex_t, 3> &u_hat,
     cudaCheckError(status);
   }
   if (direction_ & FFT_BACKWARD) {
-    // TODO: Implement
+    cufftResult status = cufftSetWorkArea(plan_backward_c2r_, work_area_);
+    cudaCheckError(status);
+    status = cufftSetWorkArea(plan_backward_c2c_, work_area_);
+    cudaCheckError(status);
   }
 }
 
@@ -113,7 +141,8 @@ CUFFT_MPI<2>::~CUFFT_MPI() {
     cufftDestroy(plan_forward_c2c_);
   }
   if (direction_ & FFT_BACKWARD) {
-    // TODO: Implement
+    cufftDestroy(plan_backward_c2r_);
+    cufftDestroy(plan_backward_c2c_);
   }
   cudaFree(work_area_);
   for (auto &&t : natural_types_) {
@@ -168,7 +197,47 @@ void CUFFT_MPI<2>::forward() {
 }
 
 void CUFFT_MPI<2>::backward() {
-  // TODO
+  LOG_ERR_IF((direction_ & FFT_BACKWARD) == 0,
+             "Backward operation was not initialized");
+  AZEBAN_PROFILE_START("CUFFT_MPI::backward");
+  // TODO: Remove the C-style casts when the compiler chooses not to ignore the
+  // `constexpr` anymore
+  if constexpr (std::is_same_v<float, real_t>) {
+    // Perform the local FFTs
+    cufftResult status
+        = cufftExecC2C(plan_backward_c2c_,
+                       reinterpret_cast<cufftComplex *>(u_hat_.raw()),
+                       reinterpret_cast<cufftComplex *>(u_hat_.raw()),
+                       CUFFT_INVERSE);
+    cudaCheckError(status);
+    cudaDeviceSynchronize();
+    // Transpose the data from partial_u_hat_ to u_hat_
+    transpose_backward();
+    // Perform the final local FFTs in place
+    status
+        = cufftExecC2R(plan_forward_c2c_,
+                       reinterpret_cast<cufftComplex *>(partial_u_hat_.raw()),
+                       (float *)u_.raw());
+    cudaCheckError(status);
+  } else {
+    // Perform the local FFTs
+    cufftResult status
+        = cufftExecZ2Z(plan_backward_c2c_,
+                       reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()),
+                       reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()),
+                       CUFFT_INVERSE);
+    cudaCheckError(status);
+    cudaDeviceSynchronize();
+    // Transpose the data from partial_u_hat_ to u_hat_
+    transpose_backward();
+    // Perform the final local FFTs in place
+    status = cufftExecZ2D(
+        plan_backward_c2r_,
+        reinterpret_cast<cufftDoubleComplex *>(partial_u_hat_.raw()),
+        (double *)u_.raw());
+    cudaCheckError(status);
+  }
+  AZEBAN_PROFILE_STOP("CUFFT_MPI::backward");
 }
 
 void CUFFT_MPI<2>::transpose_forward() {
@@ -188,22 +257,24 @@ void CUFFT_MPI<2>::transpose_forward() {
   }
 
   zisa::copy(mpi_send_buffer_, partial_u_hat_);
-  
+
   const int N = mpi_send_buffer_.shape(0);
   std::vector<MPI_Request> reqs(N);
-  for (zisa::int_t d = 0 ; d < N ; ++d) {
-    const ptrdiff_t send_offset = d * zisa::product(mpi_send_buffer_.shape()) / N;
-    const ptrdiff_t recv_offset = d * zisa::product(mpi_recv_buffer_.shape()) / N;
+  for (zisa::int_t d = 0; d < N; ++d) {
+    const ptrdiff_t send_offset
+        = d * zisa::product(mpi_send_buffer_.shape()) / N;
+    const ptrdiff_t recv_offset
+        = d * zisa::product(mpi_recv_buffer_.shape()) / N;
     MPI_Ialltoallw(mpi_send_buffer_.raw() + send_offset,
-		   sendcounts.data(),
-		   sdispls.data(),
-		   natural_types_.data(),
-		   mpi_recv_buffer_.raw() + recv_offset,
-		   recvcounts.data(),
-		   rdispls.data(),
-		   transposed_types_.data(),
-		   comm_,
-		   &reqs[d]);
+                   sendcounts.data(),
+                   sdispls.data(),
+                   natural_types_.data(),
+                   mpi_recv_buffer_.raw() + recv_offset,
+                   recvcounts.data(),
+                   rdispls.data(),
+                   transposed_types_.data(),
+                   comm_,
+                   &reqs[d]);
   }
   MPI_Waitall(N, reqs.data(), MPI_STATUSES_IGNORE);
 
@@ -211,7 +282,44 @@ void CUFFT_MPI<2>::transpose_forward() {
 }
 
 void CUFFT_MPI<2>::transpose_backward() {
-  // TODO: Implement
+  int rank, size;
+  MPI_Comm_rank(comm_, &rank);
+  MPI_Comm_size(comm_, &size);
+
+  const std::vector<int> sendcounts(size, 1);
+  const std::vector<int> recvcounts(size, 1);
+  std::vector<int> sdispls(size);
+  std::vector<int> rdispls(size);
+  sdispls[0] = 0;
+  rdispls[0] = 0;
+  for (int r = 1; r < size; ++r) {
+    sdispls[r] = sdispls[r - 1] + size_u_[r - 1] * sizeof(complex_t);
+    rdispls[r] = rdispls[r - 1] + size_u_hat_[r - 1] * sizeof(complex_t);
+  }
+
+  zisa::copy(mpi_recv_buffer_, u_hat_);
+
+  const int N = mpi_send_buffer_.shape(0);
+  std::vector<MPI_Request> reqs(N);
+  for (zisa::int_t d = 0; d < N; ++d) {
+    const ptrdiff_t send_offset
+        = d * zisa::product(mpi_recv_buffer_.shape()) / N;
+    const ptrdiff_t recv_offset
+        = d * zisa::product(mpi_send_buffer_.shape()) / N;
+    MPI_Ialltoallw(mpi_recv_buffer_.raw() + send_offset,
+                   sendcounts.data(),
+                   sdispls.data(),
+                   transposed_types_.data(),
+                   mpi_send_buffer_.raw() + recv_offset,
+                   recvcounts.data(),
+                   rdispls.data(),
+                   natural_types_.data(),
+                   comm_,
+                   &reqs[d]);
+  }
+  MPI_Waitall(N, reqs.data(), MPI_STATUSES_IGNORE);
+
+  zisa::copy(partial_u_hat_, mpi_send_buffer_);
 }
 
 }
