@@ -8,3 +8,4 @@
   nlohmann_json/3.9.1
   fmt/6.0.0@bincrafters/stable
   fftw/3.3.9
+  netcdf/4.7.4

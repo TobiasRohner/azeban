@@ -2,6 +2,8 @@
 #define INCOMPRESSIBLE_EULER_CUDA_IMPL_H_
 
 #include "incompressible_euler_cuda.hpp"
+#include <azeban/equations/incompressible_euler_functions.hpp>
+#include <azeban/equations/advection_functions.hpp>
 
 namespace azeban {
 
@@ -26,9 +28,7 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<2>(
   if (i < grid.N_phys_pad && j < grid.N_phys_pad) {
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
-    B[0 * stride + idx] = norm * u1 * u1;
-    B[1 * stride + idx] = norm * u1 * u2;
-    B[2 * stride + idx] = norm * u2 * u2;
+    incompressible_euler_2d_compute_B(stride, idx, norm, u1, u2, B.raw());
   }
 }
 
@@ -50,12 +50,7 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<3>(
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
     const real_t u3 = u[2 * stride + idx];
-    B[0 * stride + idx] = norm * u1 * u1;
-    B[1 * stride + idx] = norm * u2 * u1;
-    B[2 * stride + idx] = norm * u2 * u2;
-    B[3 * stride + idx] = norm * u3 * u1;
-    B[4 * stride + idx] = norm * u3 * u2;
-    B[5 * stride + idx] = norm * u3 * u3;
+    incompressible_euler_3d_compute_B(stride, idx, norm, u1, u2, u3, B.raw());
   }
 }
 
@@ -81,11 +76,8 @@ __global__ void incompressible_euler_compute_B_tracer_cuda_kernel<2>(
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
     const real_t rho = u[2 * stride + idx];
-    B[0 * stride + idx] = norm * u1 * u1;
-    B[1 * stride + idx] = norm * u1 * u2;
-    B[2 * stride + idx] = norm * u2 * u2;
-    B[3 * stride + idx] = norm * rho * u1;
-    B[4 * stride + idx] = norm * rho * u2;
+    incompressible_euler_2d_compute_B(stride, idx, norm, u1, u2, B.raw());
+    advection_2d_compute_B(stride, idx, norm, rho, u1, u2, B.raw() + 3 * stride);
   }
 }
 
@@ -108,15 +100,8 @@ __global__ void incompressible_euler_compute_B_tracer_cuda_kernel<3>(
     const real_t u2 = u[1 * stride + idx];
     const real_t u3 = u[2 * stride + idx];
     const real_t rho = u[3 * stride + idx];
-    B[0 * stride + idx] = norm * u1 * u1;
-    B[1 * stride + idx] = norm * u2 * u1;
-    B[2 * stride + idx] = norm * u2 * u2;
-    B[3 * stride + idx] = norm * u3 * u1;
-    B[4 * stride + idx] = norm * u3 * u2;
-    B[5 * stride + idx] = norm * u3 * u3;
-    B[6 * stride + idx] = norm * rho * u1;
-    B[7 * stride + idx] = norm * rho * u2;
-    B[8 * stride + idx] = norm * rho * u3;
+    incompressible_euler_3d_compute_B(stride, idx, norm, u1, u2, u3, B.raw());
+    advection_3d_compute_B(stride, idx, norm, rho, u1, u2, u3, B.raw() + 6 * stride);
   }
 }
 
@@ -141,20 +126,10 @@ incompressible_euler_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
     }
     const real_t k1 = 2 * zisa::pi * i_;
     const real_t k2 = 2 * zisa::pi * j;
-
-    const complex_t B11_hat = B_hat[0 * stride_B + idx_B];
-    const complex_t B12_hat = B_hat[1 * stride_B + idx_B];
-    const complex_t B22_hat = B_hat[2 * stride_B + idx_B];
-    const complex_t b1_hat
-        = complex_t(0, k1) * B11_hat + complex_t(0, k2) * B12_hat;
-    const complex_t b2_hat
-        = complex_t(0, k1) * B12_hat + complex_t(0, k2) * B22_hat;
-
     const real_t absk2 = k1 * k1 + k2 * k2;
-    const complex_t L1_hat
-        = (1. - (k1 * k1) / absk2) * b1_hat + (0. - (k1 * k2) / absk2) * b2_hat;
-    const complex_t L2_hat
-        = (0. - (k2 * k1) / absk2) * b1_hat + (1. - (k2 * k2) / absk2) * b2_hat;
+
+    complex_t L1_hat, L2_hat;
+    incompressible_euler_2d_compute_L(k1, k2, absk2, stride_B, idx_B, B_hat.raw(), &L1_hat, &L2_hat);
 
     const real_t v = visc.eval(zisa::sqrt(absk2));
     u_hat[0 * stride_u + idx_u]
@@ -195,33 +170,10 @@ incompressible_euler_3d_cuda_kernel(zisa::array_const_view<complex_t, 4> B_hat,
     const real_t k1 = 2 * zisa::pi * i_;
     const real_t k2 = 2 * zisa::pi * j_;
     const real_t k3 = 2 * zisa::pi * k;
-
-    const complex_t B11_hat = B_hat[0 * stride_B + idx_B];
-    const complex_t B21_hat = B_hat[1 * stride_B + idx_B];
-    const complex_t B22_hat = B_hat[2 * stride_B + idx_B];
-    const complex_t B31_hat = B_hat[3 * stride_B + idx_B];
-    const complex_t B32_hat = B_hat[4 * stride_B + idx_B];
-    const complex_t B33_hat = B_hat[5 * stride_B + idx_B];
-    const complex_t b1_hat = complex_t(0, k1) * B11_hat
-                             + complex_t(0, k2) * B21_hat
-                             + complex_t(0, k3) * B31_hat;
-    const complex_t b2_hat = complex_t(0, k1) * B21_hat
-                             + complex_t(0, k2) * B22_hat
-                             + complex_t(0, k3) * B32_hat;
-    const complex_t b3_hat = complex_t(0, k1) * B31_hat
-                             + complex_t(0, k2) * B32_hat
-                             + complex_t(0, k3) * B33_hat;
-
     const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
-    const complex_t L1_hat = (1. - (k1 * k1) / absk2) * b1_hat
-                             + (0. - (k1 * k2) / absk2) * b2_hat
-                             + (0. - (k1 * k3) / absk2) * b3_hat;
-    const complex_t L2_hat = (0. - (k2 * k1) / absk2) * b1_hat
-                             + (1. - (k2 * k2) / absk2) * b2_hat
-                             + (0. - (k2 * k3) / absk2) * b3_hat;
-    const complex_t L3_hat = (0. - (k3 * k1) / absk2) * b1_hat
-                             + (0. - (k3 * k2) / absk2) * b2_hat
-                             + (1. - (k3 * k3) / absk2) * b3_hat;
+
+    complex_t L1_hat, L2_hat, L3_hat;
+    incompressible_euler_3d_compute_L(k1, k2, k3, absk2, stride_B, idx_B, B_hat.raw(), &L1_hat, &L2_hat, &L3_hat);
 
     const real_t v = visc.eval(zisa::sqrt(absk2));
     u_hat[0 * stride_u + idx_u]
@@ -254,31 +206,18 @@ __global__ void incompressible_euler_2d_tracer_cuda_kernel(
     }
     const real_t k1 = 2 * zisa::pi * i_;
     const real_t k2 = 2 * zisa::pi * j;
-
-    const complex_t B11_hat = B_hat[0 * stride_B + idx_B];
-    const complex_t B12_hat = B_hat[1 * stride_B + idx_B];
-    const complex_t B22_hat = B_hat[2 * stride_B + idx_B];
-    const complex_t rhou1_hat = B_hat[3 * stride_B + idx_B];
-    const complex_t rhou2_hat = B_hat[4 * stride_B + idx_B];
-    const complex_t b1_hat
-        = complex_t(0, k1) * B11_hat + complex_t(0, k2) * B12_hat;
-    const complex_t b2_hat
-        = complex_t(0, k1) * B12_hat + complex_t(0, k2) * B22_hat;
-    const complex_t b3_hat
-        = complex_t(0, k1) * rhou1_hat + complex_t(0, k2) * rhou2_hat;
-
     const real_t absk2 = k1 * k1 + k2 * k2;
-    const complex_t L1_hat
-        = (1. - (k1 * k1) / absk2) * b1_hat + (0. - (k1 * k2) / absk2) * b2_hat;
-    const complex_t L2_hat
-        = (0. - (k2 * k1) / absk2) * b1_hat + (1. - (k2 * k2) / absk2) * b2_hat;
+
+    complex_t L1_hat, L2_hat, L3_hat;
+    incompressible_euler_2d_compute_L(k1, k2, absk2, stride_B, idx_B, B_hat.raw(), &L1_hat, &L2_hat);
+    advection_2d(k1, k2, stride_B, idx_B, B_hat.raw() + 3 * stride_B, &L3_hat);
 
     const real_t v = visc.eval(zisa::sqrt(absk2));
     u_hat[0 * stride_u + idx_u]
         = absk2 == 0 ? 0 : -L1_hat + v * u_hat[0 * stride_u + idx_u];
     u_hat[1 * stride_u + idx_u]
         = absk2 == 0 ? 0 : -L2_hat + v * u_hat[1 * stride_u + idx_u];
-    u_hat[2 * stride_u + idx_u] = -b3_hat + v * u_hat[2 * stride_u + idx_u];
+    u_hat[2 * stride_u + idx_u] = -L3_hat + v * u_hat[2 * stride_u + idx_u];
   }
 }
 
@@ -313,39 +252,11 @@ __global__ void incompressible_euler_3d_tracer_cuda_kernel(
     const real_t k1 = 2 * zisa::pi * i_;
     const real_t k2 = 2 * zisa::pi * j_;
     const real_t k3 = 2 * zisa::pi * k;
-
-    const complex_t B11_hat = B_hat[0 * stride_B + idx_B];
-    const complex_t B21_hat = B_hat[1 * stride_B + idx_B];
-    const complex_t B22_hat = B_hat[2 * stride_B + idx_B];
-    const complex_t B31_hat = B_hat[3 * stride_B + idx_B];
-    const complex_t B32_hat = B_hat[4 * stride_B + idx_B];
-    const complex_t B33_hat = B_hat[5 * stride_B + idx_B];
-    const complex_t rhou1_hat = B_hat[6 * stride_B + idx_B];
-    const complex_t rhou2_hat = B_hat[7 * stride_B + idx_B];
-    const complex_t rhou3_hat = B_hat[8 * stride_B + idx_B];
-    const complex_t b1_hat = complex_t(0, k1) * B11_hat
-                             + complex_t(0, k2) * B21_hat
-                             + complex_t(0, k3) * B31_hat;
-    const complex_t b2_hat = complex_t(0, k1) * B21_hat
-                             + complex_t(0, k2) * B22_hat
-                             + complex_t(0, k3) * B32_hat;
-    const complex_t b3_hat = complex_t(0, k1) * B31_hat
-                             + complex_t(0, k2) * B32_hat
-                             + complex_t(0, k3) * B33_hat;
-    const complex_t b4_hat = complex_t(0, k1) * rhou1_hat
-                             + complex_t(0, k2) * rhou2_hat
-                             + complex_t(0, k3) * rhou3_hat;
-
     const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
-    const complex_t L1_hat = (1. - (k1 * k1) / absk2) * b1_hat
-                             + (0. - (k1 * k2) / absk2) * b2_hat
-                             + (0. - (k1 * k3) / absk2) * b3_hat;
-    const complex_t L2_hat = (0. - (k2 * k1) / absk2) * b1_hat
-                             + (1. - (k2 * k2) / absk2) * b2_hat
-                             + (0. - (k2 * k3) / absk2) * b3_hat;
-    const complex_t L3_hat = (0. - (k3 * k1) / absk2) * b1_hat
-                             + (0. - (k3 * k2) / absk2) * b2_hat
-                             + (1. - (k3 * k3) / absk2) * b3_hat;
+
+    complex_t L1_hat, L2_hat, L3_hat, L4_hat;
+    incompressible_euler_3d_compute_L(k1, k2, k3, absk2, stride_B, idx_B, B_hat.raw(), &L1_hat, &L2_hat, &L3_hat);
+    advection_3d(k1, k2, k3, stride_B, idx_B, B_hat.raw() + 6 * stride_B, &L4_hat);
 
     const real_t v = visc.eval(zisa::sqrt(absk2));
     u_hat[0 * stride_u + idx_u]
@@ -354,7 +265,7 @@ __global__ void incompressible_euler_3d_tracer_cuda_kernel(
         = absk2 == 0 ? 0 : -L2_hat + v * u_hat[1 * stride_u + idx_u];
     u_hat[2 * stride_u + idx_u]
         = absk2 == 0 ? 0 : -L3_hat + v * u_hat[2 * stride_u + idx_u];
-    u_hat[3 * stride_u + idx_u] = -b4_hat + v * u_hat[3 * stride_u + idx_u];
+    u_hat[3 * stride_u + idx_u] = -L4_hat + v * u_hat[3 * stride_u + idx_u];
   }
 }
 

@@ -2,6 +2,8 @@
 #define INCOMPRESSIBLE_EULER_H_
 
 #include "equation.hpp"
+#include "incompressible_euler_functions.hpp"
+#include "advection_functions.hpp"
 #include <azeban/config.hpp>
 #include <azeban/grid.hpp>
 #include <azeban/operations/convolve.hpp>
@@ -126,38 +128,33 @@ private:
                           / (zisa::pow<dim_v>(grid_.N_phys)
                              * zisa::pow<dim_v>(grid_.N_phys_pad));
       if constexpr (dim_v == 2) {
+	const unsigned stride = grid_.N_phys_pad * grid_.N_phys_pad;
         for (zisa::int_t i = 0; i < u_.shape(1); ++i) {
           for (zisa::int_t j = 0; j < u_.shape(2); ++j) {
+	    const unsigned idx = i * grid_.N_phys_pad + j;
             const real_t u1 = u_(0, i, j);
             const real_t u2 = u_(1, i, j);
-            B_(0, i, j) = norm * u1 * u1;
-            B_(1, i, j) = norm * u1 * u2;
-            B_(2, i, j) = norm * u2 * u2;
+	    incompressible_euler_2d_compute_B(stride, idx, norm, u1, u2, B_.raw());
             if (has_tracer_) {
               const real_t rho = u_(2, i, j);
-              B_(3, i, j) = norm * rho * u1;
-              B_(4, i, j) = norm * rho * u2;
+	      advection_2d_compute_B(stride, idx, norm, rho, u1, u2, B_.raw() + 3 * stride);
             }
           }
         }
       } else {
+	const unsigned stride = grid_.N_phys_pad * grid_.N_phys_pad * grid_.N_phys_pad;
         for (zisa::int_t i = 0; i < u_.shape(1); ++i) {
           for (zisa::int_t j = 0; j < u_.shape(2); ++j) {
             for (zisa::int_t k = 0; k < u_.shape(3); ++k) {
+	      const unsigned idx
+		  = i * grid_.N_phys_pad * grid_.N_phys_pad + j * grid_.N_phys_pad + k;
               const real_t u1 = u_(0, i, j, k);
               const real_t u2 = u_(1, i, j, k);
               const real_t u3 = u_(2, i, j, k);
-              B_(0, i, j, k) = norm * u1 * u1;
-              B_(1, i, j, k) = norm * u2 * u1;
-              B_(2, i, j, k) = norm * u2 * u2;
-              B_(3, i, j, k) = norm * u3 * u1;
-              B_(4, i, j, k) = norm * u3 * u2;
-              B_(5, i, j, k) = norm * u3 * u3;
+	      incompressible_euler_3d_compute_B(stride, idx, norm, u1, u2, u3, B_.raw());
               if (has_tracer_) {
                 const real_t rho = u_(3, i, j, k);
-                B_(6, i, j, k) = norm * rho * u1;
-                B_(7, i, j, k) = norm * rho * u2;
-                B_(8, i, j, k) = norm * rho * u3;
+		advection_3d_compute_B(stride, idx, norm, rho, u1, u2, u3, B_.raw() + 6 * stride);
               }
             }
           }
@@ -185,42 +182,34 @@ private:
     AZEBAN_PROFILE_START("IncompressibleEuler::computeDudt");
     if (device_ == zisa::device_type::cpu) {
       if constexpr (dim_v == 2) {
+	const unsigned stride_B = B_hat_.shape(1) * B_hat_.shape(2);
         for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
           const int i_B = i >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)
                               ? B_hat_.shape(1) - u_hat.shape(1) + i
                               : i;
           for (int j = 0; j < zisa::integer_cast<int>(u_hat.shape(2)); ++j) {
+	    const unsigned idx_B = i_B * B_hat_.shape(2) + j;
             int i_ = i;
             if (i >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)) {
               i_ -= u_hat.shape(1);
             }
             const real_t k1 = 2 * zisa::pi * i_;
             const real_t k2 = 2 * zisa::pi * j;
-            const complex_t B11_hat = B_hat_(0, i_B, j);
-            const complex_t B12_hat = B_hat_(1, i_B, j);
-            const complex_t B22_hat = B_hat_(2, i_B, j);
-            const complex_t b1_hat
-                = complex_t(0, k1) * B11_hat + complex_t(0, k2) * B12_hat;
-            const complex_t b2_hat
-                = complex_t(0, k1) * B12_hat + complex_t(0, k2) * B22_hat;
             const real_t absk2 = k1 * k1 + k2 * k2;
-            const complex_t L1_hat = (1. - (k1 * k1) / absk2) * b1_hat
-                                     + (0. - (k1 * k2) / absk2) * b2_hat;
-            const complex_t L2_hat = (0. - (k2 * k1) / absk2) * b1_hat
-                                     + (1. - (k2 * k2) / absk2) * b2_hat;
+	    complex_t L1_hat, L2_hat;
+	    incompressible_euler_2d_compute_L(k1, k2, absk2, stride_B, idx_B, B_hat_.raw(), &L1_hat, &L2_hat);
             const real_t v = visc_.eval(zisa::sqrt(absk2));
             u_hat(0, i, j) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j);
             u_hat(1, i, j) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j);
             if (has_tracer_) {
-              const complex_t rhou1_hat = B_hat_(3, i_B, j);
-              const complex_t rhou2_hat = B_hat_(4, i_B, j);
-              const complex_t b3_hat
-                  = complex_t(0, k1) * rhou1_hat + complex_t(0, k2) * rhou2_hat;
-              u_hat(2, i, j) = -b3_hat + v * u_hat(2, i, j);
+	      complex_t L3_hat;
+	      advection_2d(k1, k2, stride_B, idx_B, B_hat_.raw() + 3 * stride_B, &L3_hat);
+              u_hat(2, i, j) = -L3_hat + v * u_hat(2, i, j);
             }
           }
         }
       } else {
+	const unsigned stride_B = B_hat_.shape(1) * B_hat_.shape(2) * B_hat_.shape(3);
         for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
           const int i_B = i >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)
                               ? B_hat_.shape(1) - u_hat.shape(1) + i
@@ -230,6 +219,8 @@ private:
                                 ? B_hat_.shape(2) - u_hat.shape(2) + j
                                 : j;
             for (int k = 0; k < zisa::integer_cast<int>(u_hat.shape(3)); ++k) {
+	      const unsigned idx_B
+		  = i_B * B_hat_.shape(2) * B_hat_.shape(3) + j_B * B_hat_.shape(3) + k;
               int i_ = i;
               int j_ = j;
               if (i_ >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)) {
@@ -241,31 +232,9 @@ private:
               const real_t k1 = 2 * zisa::pi * i_;
               const real_t k2 = 2 * zisa::pi * j_;
               const real_t k3 = 2 * zisa::pi * k;
-              const complex_t B11_hat = B_hat_(0, i_B, j_B, k);
-              const complex_t B21_hat = B_hat_(1, i_B, j_B, k);
-              const complex_t B22_hat = B_hat_(2, i_B, j_B, k);
-              const complex_t B31_hat = B_hat_(3, i_B, j_B, k);
-              const complex_t B32_hat = B_hat_(4, i_B, j_B, k);
-              const complex_t B33_hat = B_hat_(5, i_B, j_B, k);
-              const complex_t b1_hat = complex_t(0, k1) * B11_hat
-                                       + complex_t(0, k2) * B21_hat
-                                       + complex_t(0, k3) * B31_hat;
-              const complex_t b2_hat = complex_t(0, k1) * B21_hat
-                                       + complex_t(0, k2) * B22_hat
-                                       + complex_t(0, k3) * B32_hat;
-              const complex_t b3_hat = complex_t(0, k1) * B31_hat
-                                       + complex_t(0, k2) * B32_hat
-                                       + complex_t(0, k3) * B33_hat;
               const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
-              const complex_t L1_hat = (1. - (k1 * k1) / absk2) * b1_hat
-                                       + (0. - (k1 * k2) / absk2) * b2_hat
-                                       + (0. - (k1 * k3) / absk2) * b3_hat;
-              const complex_t L2_hat = (0. - (k2 * k1) / absk2) * b1_hat
-                                       + (1. - (k2 * k2) / absk2) * b2_hat
-                                       + (0. - (k2 * k3) / absk2) * b3_hat;
-              const complex_t L3_hat = (0. - (k3 * k1) / absk2) * b1_hat
-                                       + (0. - (k3 * k2) / absk2) * b2_hat
-                                       + (1. - (k3 * k3) / absk2) * b3_hat;
+	      complex_t L1_hat, L2_hat, L3_hat;
+	      incompressible_euler_3d_compute_L(k1, k2, k3, absk2, stride_B, idx_B, B_hat_.raw(), &L1_hat, &L2_hat, &L3_hat);
               const real_t v = visc_.eval(zisa::sqrt(absk2));
               u_hat(0, i, j, k)
                   = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j, k);
@@ -274,13 +243,9 @@ private:
               u_hat(2, i, j, k)
                   = absk2 == 0 ? 0 : -L3_hat + v * u_hat(2, i, j, k);
               if (has_tracer_) {
-                const complex_t rhou1_hat = B_hat_(6, i_B, j_B, k);
-                const complex_t rhou2_hat = B_hat_(7, i_B, j_B, k);
-                const complex_t rhou3_hat = B_hat_(8, i_B, j_B, k);
-                const complex_t b4_hat = complex_t(0, k1) * rhou1_hat
-                                         + complex_t(0, k2) * rhou2_hat
-                                         + complex_t(0, k3) * rhou3_hat;
-                u_hat(4, i, j, k) = -b4_hat + v * u_hat(3, i, j, k);
+		complex_t L4_hat;
+		advection_3d(k1, k2, k3, stride_B, idx_B, B_hat_.raw() + 6 * stride_B, &L4_hat);
+                u_hat(4, i, j, k) = -L4_hat + v * u_hat(3, i, j, k);
               }
             }
           }

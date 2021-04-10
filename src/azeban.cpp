@@ -48,6 +48,14 @@ static void runFromConfig(const nlohmann::json &config) {
   auto simulation = make_simulation<dim_v>(config);
   const auto &grid = simulation.grid();
 
+#if AZEBAN_HAS_MPI
+  int size;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if (size > 1 && simulation.memory_location() != zisa::device_type::cuda) {
+    LOG_ERR("MPI is only allowed for CUDA simulations");
+  }
+#endif
+
   zisa::HDF5SerialWriter hdf5_writer(output);
 
   auto u_host
