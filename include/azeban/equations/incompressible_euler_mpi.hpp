@@ -5,6 +5,7 @@
 #include "equation.hpp"
 #include "incompressible_euler_functions.hpp"
 #include <azeban/config.hpp>
+#include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
 #include <azeban/operations/fft_mpi_factory.hpp>
 #include <azeban/profiler.hpp>
 
@@ -26,20 +27,22 @@ public:
                           bool has_tracer = false)
       : super(grid), comm_(comm), visc_(visc), has_tracer_(has_tracer) {
     // TODO: Actually pad the padded arrays
+    grid_.N_phys_pad = grid_.N_phys;
+    grid_.N_fourier_pad = grid_.N_fourier;
     const zisa::int_t n_var_u = dim_v + (has_tracer ? 1 : 0);
     const zisa::int_t n_var_B
         = (dim_v * dim_v + dim_v) / 2 + (has_tracer ? dim_v : 0);
     h_u_hat_pad_
-        = grid.make_array_fourier(n_var_u, zisa::device_type::cpu, comm);
+        = grid_.make_array_fourier_pad(n_var_u, zisa::device_type::cpu, comm);
     d_u_hat_pad_
-        = grid.make_array_fourier(n_var_u, zisa::device_type::cuda, comm);
-    u_pad_ = grid.make_array_phys(n_var_u, zisa::device_type::cuda, comm);
-    B_pad_ = grid.make_array_phys(n_var_B, zisa::device_type::cuda, comm);
+        = grid_.make_array_fourier_pad(n_var_u, zisa::device_type::cuda, comm);
+    u_pad_ = grid_.make_array_phys_pad(n_var_u, zisa::device_type::cuda, comm);
+    B_pad_ = grid_.make_array_phys_pad(n_var_B, zisa::device_type::cuda, comm);
     d_B_hat_pad_
-        = grid.make_array_fourier(n_var_B, zisa::device_type::cuda, comm);
+        = grid_.make_array_fourier_pad(n_var_B, zisa::device_type::cuda, comm);
     h_B_hat_pad_
-        = grid.make_array_fourier(n_var_B, zisa::device_type::cpu, comm);
-    B_hat_ = grid.make_array_fourier(n_var_B, zisa::device_type::cpu, comm);
+        = grid_.make_array_fourier_pad(n_var_B, zisa::device_type::cpu, comm);
+    B_hat_ = grid_.make_array_fourier(n_var_B, zisa::device_type::cpu, comm);
     fft_u_ = make_fft_mpi<dim_v>(d_u_hat_pad_, u_pad_, comm, FFT_BACKWARD);
     fft_B_ = make_fft_mpi<dim_v>(d_B_hat_pad_, B_pad_, comm, FFT_FORWARD);
   }
@@ -77,6 +80,9 @@ public:
   }
 
   virtual int n_vars() const override { return dim_v + (has_tracer_ ? 1 : 0); }
+
+protected:
+  using super::grid_;
 
 private:
   MPI_Comm comm_;
@@ -136,23 +142,35 @@ private:
 
   void computeB() {
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeB");
-    // TODO: Implement
+    if (has_tracer_) {
+      incompressible_euler_compute_B_tracer_cuda<dim_v>(
+          fft_B_->u(), fft_u_->u(), grid_);
+    } else {
+      incompressible_euler_compute_B_cuda<dim_v>(
+          fft_B_->u(), fft_u_->u(), grid_);
+    }
     AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeB");
   }
 
   void computeDudt(const zisa::array_view<complex_t, dim_v + 1> &u_hat) {
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
     if constexpr (dim_v == 2) {
+      const zisa::int_t i_base = grid_.i_fourier(0, comm_);
+      const zisa::int_t j_base = grid_.j_fourier(0, comm_);
       const unsigned stride_B = B_hat_.shape(1) * B_hat_.shape(2);
       for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
         for (int j = 0; j < zisa::integer_cast<int>(u_hat.shape(2)); ++j) {
           const unsigned idx_B = i * B_hat_.shape(2) + j;
-          int i_ = i;
-          if (i >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)) {
+          int i_ = i_base + i;
+          if (i_ >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)) {
             i_ -= u_hat.shape(1);
           }
+          int j_ = j_base + j;
+          if (j_ >= zisa::integer_cast<int>(u_hat.shape(2) / 2 + 1)) {
+            j_ -= u_hat.shape(2);
+          }
           const real_t k1 = 2 * zisa::pi * i_;
-          const real_t k2 = 2 * zisa::pi * j;
+          const real_t k2 = 2 * zisa::pi * j_;
           const real_t absk2 = k1 * k1 + k2 * k2;
           complex_t L1_hat, L2_hat;
           incompressible_euler_2d_compute_L(
@@ -169,6 +187,9 @@ private:
         }
       }
     } else {
+      const zisa::int_t i_base = grid_.i_fourier(0, comm_);
+      const zisa::int_t j_base = grid_.j_fourier(0, comm_);
+      const zisa::int_t k_base = grid_.k_fourier(0, comm_);
       const unsigned stride_B
           = B_hat_.shape(1) * B_hat_.shape(2) * B_hat_.shape(3);
       for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
@@ -176,17 +197,21 @@ private:
           for (int k = 0; k < zisa::integer_cast<int>(u_hat.shape(3)); ++k) {
             const unsigned idx_B = i * B_hat_.shape(2) * B_hat_.shape(3)
                                    + j * B_hat_.shape(3) + k;
-            int i_ = i;
-            int j_ = j;
+            int i_ = i_base + i;
+            int j_ = j_base + j;
+            int k_ = k_base + k;
             if (i_ >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)) {
               i_ -= u_hat.shape(1);
             }
             if (j_ >= zisa::integer_cast<int>(u_hat.shape(2) / 2 + 1)) {
               j_ -= u_hat.shape(2);
             }
+            if (k_ >= zisa::integer_cast<int>(u_hat.shape(3) / 2 + 1)) {
+              k_ -= u_hat.shape(3);
+            }
             const real_t k1 = 2 * zisa::pi * i_;
             const real_t k2 = 2 * zisa::pi * j_;
-            const real_t k3 = 2 * zisa::pi * k;
+            const real_t k3 = 2 * zisa::pi * k_;
             const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
             complex_t L1_hat, L2_hat, L3_hat;
             incompressible_euler_3d_compute_L(k1,
