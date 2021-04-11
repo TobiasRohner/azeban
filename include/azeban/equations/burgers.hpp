@@ -4,9 +4,9 @@
 
 #include "equation.hpp"
 #include <azeban/config.hpp>
+#include <azeban/grid.hpp>
 #include <azeban/operations/convolve.hpp>
 #include <azeban/operations/fft.hpp>
-#include <azeban/grid.hpp>
 #ifdef ZISA_HAS_CUDA
 #include <azeban/cuda/equations/burgers_cuda.hpp>
 #endif
@@ -24,7 +24,7 @@ public:
   Burgers(const Grid<1> &grid,
           const SpectralViscosity &visc,
           zisa::device_type device)
-      : super(), device_(device), visc_(visc) {
+      : super(grid), device_(device), visc_(visc) {
     u_hat_ = grid.make_array_fourier_pad(1, device);
     u_ = grid.make_array_phys_pad(1, device);
     fft_ = make_fft<1>(u_hat_, u_);
@@ -69,7 +69,6 @@ public:
   virtual int n_vars() const override { return 1; }
 
 private:
-  Grid<dim_v> grid_;
   zisa::device_type device_;
   zisa::array<complex_t, 2> u_hat_;
   zisa::array<real_t, 2> u_;

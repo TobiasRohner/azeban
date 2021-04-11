@@ -4,6 +4,9 @@
 #include <azeban/config.hpp>
 #include <zisa/config.hpp>
 #include <zisa/memory/array.hpp>
+#if AZEBAN_HAS_MPI
+#include <mpi.h>
+#endif
 
 namespace azeban {
 
@@ -41,6 +44,22 @@ struct Grid {
     return shape;
   }
 
+#if AZEBAN_HAS_MPI
+  zisa::shape_t<dim_v + 1> shape_phys(zisa::int_t n_vars, MPI_Comm comm) const {
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+    zisa::shape_t<dim_v + 1> shape;
+    shape[0] = n_vars;
+    shape[1] = N_phys / size
+               + (zisa::integer_cast<zisa::int_t>(rank) < N_phys % size);
+    for (zisa::int_t i = 2; i < dim_v + 1; ++i) {
+      shape[i] = N_phys;
+    }
+    return shape;
+  }
+#endif
+
   zisa::shape_t<dim_v + 1> shape_fourier(zisa::int_t n_vars) const {
     zisa::shape_t<dim_v + 1> shape;
     shape[0] = n_vars;
@@ -51,6 +70,32 @@ struct Grid {
     return shape;
   }
 
+#if AZEBAN_HAS_MPI
+  zisa::shape_t<dim_v + 1> shape_fourier(zisa::int_t n_vars,
+                                         MPI_Comm comm) const {
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+    zisa::shape_t<dim_v + 1> shape;
+    shape[0] = n_vars;
+    if (dim_v == 1) {
+      shape[1] = N_fourier;
+    } else if (dim_v == 2) {
+      shape[1] = N_fourier / size
+                 + (zisa::integer_cast<zisa::int_t>(rank) < N_fourier % size);
+      shape[2] = N_phys;
+    } else if (dim_v == 3) {
+      shape[1] = N_phys / size
+                 + (zisa::integer_cast<zisa::int_t>(rank) < N_phys % size);
+      shape[2] = N_fourier;
+      shape[3] = N_phys;
+    } else {
+      LOG_ERR("Unsupported Dimension");
+    }
+    return shape;
+  }
+#endif
+
   zisa::shape_t<dim_v + 1> shape_phys_pad(zisa::int_t n_vars) const {
     zisa::shape_t<dim_v + 1> shape;
     shape[0] = n_vars;
@@ -59,6 +104,23 @@ struct Grid {
     }
     return shape;
   }
+
+#if AZEBAN_HAS_MPI
+  zisa::shape_t<dim_v + 1> shape_phys_pad(zisa::int_t n_vars,
+                                          MPI_Comm comm) const {
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+    zisa::shape_t<dim_v + 1> shape;
+    shape[0] = n_vars;
+    shape[1] = N_phys_pad / size
+               + (zisa::integer_cast<zisa::int_t>(rank) < N_phys_pad % size);
+    for (zisa::int_t i = 2; i < dim_v + 1; ++i) {
+      shape[i] = N_phys_pad;
+    }
+    return shape;
+  }
+#endif
 
   zisa::shape_t<dim_v + 1> shape_fourier_pad(zisa::int_t n_vars) const {
     zisa::shape_t<dim_v + 1> shape;
@@ -70,25 +132,85 @@ struct Grid {
     return shape;
   }
 
+#if AZEBAN_HAS_MPI
+  zisa::shape_t<dim_v + 1> shape_fourier_pad(zisa::int_t n_vars,
+                                             MPI_Comm comm) const {
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+    zisa::shape_t<dim_v + 1> shape;
+    shape[0] = n_vars;
+    if (dim_v == 1) {
+      shape[1] = N_fourier_pad;
+    } else if (dim_v == 2) {
+      shape[1]
+          = N_fourier_pad / size
+            + (zisa::integer_cast<zisa::int_t>(rank) < N_fourier_pad % size);
+      shape[2] = N_phys_pad;
+    } else if (dim_v == 3) {
+      shape[1] = N_phys_pad / size
+                 + (zisa::integer_cast<zisa::int_t>(rank) < N_phys_pad % size);
+      shape[2] = N_fourier_pad;
+      shape[3] = N_phys_pad;
+    } else {
+      LOG_ERR("Unsupported Dimension");
+    }
+    return shape;
+  }
+#endif
+
   zisa::array<real_t, dim_v + 1>
   make_array_phys(zisa::int_t n_vars, zisa::device_type device) const {
     return zisa::array<real_t, dim_v + 1>(shape_phys(n_vars), device);
   }
+
+#if AZEBAN_HAS_MPI
+  zisa::array<real_t, dim_v + 1> make_array_phys(zisa::int_t n_vars,
+                                                 zisa::device_type device,
+                                                 MPI_Comm comm) const {
+    return zisa::array<real_t, dim_v + 1>(shape_phys(n_vars, comm), device);
+  }
+#endif
 
   zisa::array<complex_t, dim_v + 1>
   make_array_fourier(zisa::int_t n_vars, zisa::device_type device) const {
     return zisa::array<complex_t, dim_v + 1>(shape_fourier(n_vars), device);
   }
 
+#if AZEBAN_HAS_MPI
+  zisa::array<complex_t, dim_v + 1> make_array_fourier(zisa::int_t n_vars,
+                                                       zisa::device_type device,
+                                                       MPI_Comm comm) const {
+    return zisa::array<complex_t, dim_v + 1>(shape_fourier(n_vars, comm),
+                                             device);
+  }
+#endif
+
   zisa::array<real_t, dim_v + 1>
   make_array_phys_pad(zisa::int_t n_vars, zisa::device_type device) const {
     return zisa::array<real_t, dim_v + 1>(shape_phys_pad(n_vars), device);
   }
 
+#if AZEBAN_HAS_MPI
+  zisa::array<real_t, dim_v + 1> make_array_phys_pad(zisa::int_t n_vars,
+                                                     zisa::device_type device,
+                                                     MPI_Comm comm) const {
+    return zisa::array<real_t, dim_v + 1>(shape_phys_pad(n_vars, comm), device);
+  }
+#endif
+
   zisa::array<complex_t, dim_v + 1>
   make_array_fourier_pad(zisa::int_t n_vars, zisa::device_type device) const {
     return zisa::array<complex_t, dim_v + 1>(shape_fourier_pad(n_vars), device);
   }
+
+#if AZEBAN_HAS_MPI
+  zisa::array<complex_t, dim_v + 1> make_array_fourier_pad(
+      zisa::int_t n_vars, zisa::device_type device, MPI_Comm comm) const {
+    return zisa::array<complex_t, dim_v + 1>(shape_fourier_pad(n_vars, comm),
+                                             device);
+  }
+#endif
 };
 
 }

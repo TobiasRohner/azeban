@@ -1,11 +1,10 @@
 #ifndef EQUATION_MPI_FACTORY_H_
 #define EQUATION_MPI_FACTORY_H_
 
-
 #include <azeban/equations/equation.hpp>
 #include <azeban/equations/incompressible_euler_mpi_factory.hpp>
 #include <azeban/equations/spectral_viscosity_factory.hpp>
-#include <azeban/grid_mpi.hpp>
+#include <azeban/grid.hpp>
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -14,7 +13,8 @@ namespace azeban {
 
 template <int Dim>
 std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
-                                                 const Grid_MPI<Dim> &grid,
+                                                 const Grid<Dim> &grid,
+                                                 MPI_Comm comm,
                                                  bool has_tracer) {
   if (!config.contains("name")) {
     fmt::print(stderr, "Equation config must contain key \"name\"\n");
@@ -37,7 +37,7 @@ std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
     SmoothCutoff1D visc = make_smooth_cutoff_1d(config["visc"], grid);
 
     if (equation_name == "Euler") {
-      return make_incompressible_euler_mpi(grid, visc, has_tracer);
+      return make_incompressible_euler_mpi(grid, comm, visc, has_tracer);
     } else {
       fmt::print(stderr, "Unknown Equation");
       exit(1);
@@ -46,7 +46,7 @@ std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
     Step1D visc = make_step_1d(config["visc"], grid);
 
     if (equation_name == "Euler") {
-      return make_incompressible_euler_mpi(grid, visc, has_tracer);
+      return make_incompressible_euler_mpi(grid, comm, visc, has_tracer);
     } else {
       fmt::print(stderr, "Unknown Equation");
       exit(1);
@@ -60,6 +60,5 @@ std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
 }
 
 }
-
 
 #endif

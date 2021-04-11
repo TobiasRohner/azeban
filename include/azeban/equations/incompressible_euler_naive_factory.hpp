@@ -16,6 +16,9 @@ make_incompressible_euler_naive(const Grid<Dim> &grid,
     return std::make_shared<IncompressibleEulerNaive<Dim, SpectralViscosity>>(
         grid, visc, device);
   } else {
+    ZISA_UNUSED(grid);
+    ZISA_UNUSED(visc);
+    ZISA_UNUSED(device);
     fmt::print(stderr, "Euler is only implemented for 2D or 3D\n");
     exit(1);
   }

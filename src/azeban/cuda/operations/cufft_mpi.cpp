@@ -259,7 +259,7 @@ void CUFFT_MPI<2>::transpose_forward() {
 
   zisa::copy(mpi_send_buffer_, partial_u_hat_);
 
-  const int N = mpi_send_buffer_.shape(0);
+  const zisa::int_t N = mpi_send_buffer_.shape(0);
   std::vector<MPI_Request> reqs(N);
   for (zisa::int_t d = 0; d < N; ++d) {
     const ptrdiff_t send_offset
@@ -300,7 +300,7 @@ void CUFFT_MPI<2>::transpose_backward() {
 
   zisa::copy(mpi_recv_buffer_, u_hat_);
 
-  const int N = mpi_send_buffer_.shape(0);
+  const zisa::int_t N = mpi_send_buffer_.shape(0);
   std::vector<MPI_Request> reqs(N);
   for (zisa::int_t d = 0; d < N; ++d) {
     const ptrdiff_t send_offset
@@ -373,8 +373,10 @@ CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
   natural_types_ = std::vector<MPI_Datatype>(size);
   transposed_types_ = std::vector<MPI_Datatype>(size);
   for (int r = 0; r < size; ++r) {
-    int sizes_nat[2] = {partial_u_hat_.shape(2), partial_u_hat_.shape(3)};
-    int subsizes_nat[2] = {size_u_hat_[r], partial_u_hat_.shape(3)};
+    int sizes_nat[2] = {zisa::integer_cast<int>(partial_u_hat_.shape(2)),
+                        zisa::integer_cast<int>(partial_u_hat_.shape(3))};
+    int subsizes_nat[2] = {zisa::integer_cast<int>(size_u_hat_[r]),
+                           zisa::integer_cast<int>(partial_u_hat_.shape(3))};
     int starts_nat[2] = {0, 0};
     MPI_Type_create_subarray(2,
                              sizes_nat,
@@ -384,8 +386,12 @@ CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
                              col_type,
                              &natural_types_[r]);
     MPI_Type_commit(&natural_types_[r]);
-    int sizes_trans[3] = {u_hat_.shape(1), u_hat_.shape(2), u_hat_.shape(3)};
-    int subsizes_trans[3] = {u_hat_.shape(1), u_hat_.shape(2), size_u_[r]};
+    int sizes_trans[3] = {zisa::integer_cast<int>(u_hat_.shape(1)),
+                          zisa::integer_cast<int>(u_hat_.shape(2)),
+                          zisa::integer_cast<int>(u_hat_.shape(3))};
+    int subsizes_trans[3] = {zisa::integer_cast<int>(u_hat_.shape(1)),
+                             zisa::integer_cast<int>(u_hat_.shape(2)),
+                             zisa::integer_cast<int>(size_u_[r])};
     int starts_trans[3] = {0, 0, 0};
     MPI_Type_create_subarray(3,
                              sizes_trans,
@@ -406,7 +412,8 @@ CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
     cudaCheckError(status);
     status = cufftSetAutoAllocation(plan_forward_r2c_, false);
     cudaCheckError(status);
-    int n[2] = {u_.shape(2), u_.shape(3)};
+    int n[2] = {zisa::integer_cast<int>(u_.shape(2)),
+                zisa::integer_cast<int>(u_.shape(3))};
     size_t fwd1_size;
     status = cufftMakePlanMany(plan_forward_r2c_,                 // plan
                                2,                                 // rank
@@ -458,7 +465,8 @@ CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
     cudaCheckError(status);
     status = cufftSetAutoAllocation(plan_backward_c2r_, false);
     cudaCheckError(status);
-    int n[2] = {u_.shape(2), u_.shape(3)};
+    int n[2] = {zisa::integer_cast<int>(u_.shape(2)),
+                zisa::integer_cast<int>(u_.shape(3))};
     size_t bkw2_size;
     status = cufftMakePlanMany(plan_backward_c2r_, // plan
                                2,                  // rank
@@ -620,7 +628,7 @@ void CUFFT_MPI<3>::transpose_forward() {
 
   zisa::copy(mpi_send_buffer_, partial_u_hat_);
 
-  const int N = mpi_send_buffer_.shape(0);
+  const zisa::int_t N = mpi_send_buffer_.shape(0);
   std::vector<MPI_Request> reqs(N);
   for (zisa::int_t d = 0; d < N; ++d) {
     const ptrdiff_t send_offset
@@ -663,7 +671,7 @@ void CUFFT_MPI<3>::transpose_backward() {
 
   zisa::copy(mpi_recv_buffer_, u_hat_);
 
-  const int N = mpi_send_buffer_.shape(0);
+  const zisa::int_t N = mpi_send_buffer_.shape(0);
   std::vector<MPI_Request> reqs(N);
   for (zisa::int_t d = 0; d < N; ++d) {
     const ptrdiff_t send_offset

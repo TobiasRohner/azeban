@@ -26,7 +26,7 @@ public:
   IncompressibleEulerNaive(const Grid<dim_v> &grid,
                            const SpectralViscosity &visc,
                            zisa::device_type device)
-      : super(), device_(device), visc_(visc) {
+      : super(grid), device_(device), visc_(visc) {
     u_hat_ = grid.make_array_fourier_pad(dim_v, device);
     u_ = grid.make_array_phys_pad(dim_v, device);
     B_hat_ = grid.make_array_fourier_pad((dim_v * dim_v + dim_v) / 2, device);
@@ -160,8 +160,10 @@ public:
 
   virtual int n_vars() const override { return dim_v; }
 
+protected:
+  using super::grid_;
+
 private:
-  Grid<dim_v> grid_;
   zisa::device_type device_;
   zisa::array<complex_t, dim_v + 1> u_hat_;
   zisa::array<real_t, dim_v + 1> u_;

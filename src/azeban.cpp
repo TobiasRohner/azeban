@@ -1,4 +1,3 @@
-#include <hdf5.h>
 #include <azeban/init/initializer_factory.hpp>
 #include <azeban/operations/fft.hpp>
 #include <azeban/profiler.hpp>
@@ -6,6 +5,7 @@
 #include <cstdlib>
 #include <fmt/core.h>
 #include <fstream>
+#include <hdf5.h>
 #include <iomanip>
 #include <nlohmann/json.hpp>
 #include <random>
@@ -14,8 +14,8 @@
 #include <zisa/io/hdf5_serial_writer.hpp>
 #include <zisa/memory/array.hpp>
 #if AZEBAN_HAS_MPI
-#include <mpi.h>
 #include <azeban/simulation_mpi_factory.hpp>
+#include <mpi.h>
 #endif
 
 using namespace azeban;
