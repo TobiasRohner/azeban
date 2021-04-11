@@ -211,6 +211,110 @@ struct Grid {
                                              device);
   }
 #endif
+
+#if AZEBAN_HAS_MPI
+  zisa::int_t i_phys(zisa::int_t i, MPI_Comm comm) const {
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+    return i + rank * (N_phys / size)
+           + zisa::min(zisa::integer_cast<zisa::int_t>(rank), N_phys % size);
+  }
+
+  zisa::int_t i_fourier(zisa::int_t i, MPI_Comm comm) const {
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+    if (dim_v == 1) {
+      return i;
+    } else if (dim_v == 2) {
+      return i + rank * (N_fourier / size)
+             + zisa::min(zisa::integer_cast<zisa::int_t>(rank),
+                         N_fourier % size);
+    } else if (dim_v == 3) {
+      return i + rank * (N_phys / size)
+             + zisa::min(zisa::integer_cast<zisa::int_t>(rank), N_phys % size);
+    } else {
+      LOG_ERR("Unsupported Dimension");
+    }
+  }
+
+  zisa::int_t j_phys(zisa::int_t j, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return j;
+  }
+
+  zisa::int_t j_fourier(zisa::int_t j, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return j;
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_phys(zisa::int_t k, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return k;
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_fourier(zisa::int_t k, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return k;
+  }
+
+  zisa::int_t i_phys_pad(zisa::int_t i, MPI_Comm comm) const {
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+    return i + rank * (N_phys_pad / size)
+           + zisa::min(zisa::integer_cast<zisa::int_t>(rank),
+                       N_phys_pad % size);
+  }
+
+  zisa::int_t i_fourier_pad(zisa::int_t i, MPI_Comm comm) const {
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+    if (dim_v == 1) {
+      return i;
+    } else if (dim_v == 2) {
+      return i + rank * (N_fourier_pad / size)
+             + zisa::min(zisa::integer_cast<zisa::int_t>(rank),
+                         N_fourier_pad % size);
+    } else if (dim_v == 3) {
+      return i + rank * (N_phys_pad / size)
+             + zisa::min(zisa::integer_cast<zisa::int_t>(rank),
+                         N_phys_pad % size);
+    } else {
+      LOG_ERR("Unsupported Dimension");
+    }
+  }
+
+  zisa::int_t j_phys_pad(zisa::int_t j, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return j;
+  }
+
+  zisa::int_t j_fourier_pad(zisa::int_t j, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return j;
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_phys_pad(zisa::int_t k, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return k;
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_fourier_pad(zisa::int_t k, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return k;
+  }
+#endif
 };
 
 }

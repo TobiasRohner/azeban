@@ -1,5 +1,6 @@
 #include <azeban/catch.hpp>
 
+#include <azeban/grid.hpp>
 #include <azeban/operations/fft.hpp>
 #include <fmt/core.h>
 #include <zisa/cuda/memory/cuda_array.hpp>
@@ -585,9 +586,9 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   zisa::int_t n = 128;
-  zisa::shape_t<3> rshape{1, n / size + (rank < n % size ? 1 : 0), n};
-  zisa::shape_t<3> cshape{
-      1, (n / 2 + 1) / size + (rank < (n / 2 + 1) % size ? 1 : 0), n};
+  azeban::Grid<2> grid(n);
+  zisa::shape_t<3> rshape = grid.shape_phys(1, MPI_COMM_WORLD);
+  zisa::shape_t<3> cshape = grid.shape_fourier(1, MPI_COMM_WORLD);
   auto h_u = zisa::array<azeban::real_t, 3>(rshape);
   auto h_u_hat = zisa::array<azeban::complex_t, 3>(cshape);
   auto d_u = zisa::cuda_array<azeban::real_t, 3>(rshape);
@@ -597,8 +598,7 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
       = std::make_shared<azeban::CUFFT_MPI<2>>(d_u_hat, d_u, MPI_COMM_WORLD);
 
   for (zisa::int_t i = 0; i < rshape[1]; ++i) {
-    const zisa::int_t i_
-        = i + rank * (n / size) + (rank < n % size ? rank : n % size);
+    const zisa::int_t i_ = grid.i_phys(i, MPI_COMM_WORLD);
     for (zisa::int_t j = 0; j < rshape[2]; ++j) {
       h_u(0, i, j) = zisa::cos(2.0 * zisa::pi * (i_ + j) / n);
     }
@@ -612,9 +612,7 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
 
   for (zisa::int_t i = 0; i < cshape[1]; ++i) {
     for (zisa::int_t j = 0; j < cshape[2]; ++j) {
-      const zisa::int_t i__
-          = i + rank * ((n / 2 + 1) / size)
-            + (rank < (n / 2 + 1) % size ? rank : (n / 2 + 1) % size);
+      const zisa::int_t i__ = grid.i_fourier(i, MPI_COMM_WORLD);
       const int i_ = i__ >= n / 2 + 1 ? zisa::integer_cast<int>(i__) - n
                                       : zisa::integer_cast<int>(i__);
       const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
@@ -630,8 +628,7 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
 
   for (zisa::int_t i = 0; i < rshape[1]; ++i) {
     for (zisa::int_t j = 0; j < rshape[2]; ++j) {
-      const zisa::int_t i_
-          = i + rank * (n / size) + (rank < n % size ? rank : n % size);
+      const zisa::int_t i_ = grid.i_phys(i, MPI_COMM_WORLD);
       const azeban::real_t expected
           = n * n * zisa::cos(2.0 * zisa::pi * (i_ + j) / n);
       REQUIRE(std::fabs(h_u(0, i, j) - expected) <= 1e-8);
@@ -645,9 +642,9 @@ TEST_CASE("cuFFT MPI 2d vector valued data", "[mpi]") {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   zisa::int_t n = 128;
-  zisa::shape_t<3> rshape{2, n / size + (rank < n % size ? 1 : 0), n};
-  zisa::shape_t<3> cshape{
-      2, (n / 2 + 1) / size + (rank < (n / 2 + 1) % size ? 1 : 0), n};
+  azeban::Grid<2> grid(n);
+  zisa::shape_t<3> rshape = grid.shape_phys(2, MPI_COMM_WORLD);
+  zisa::shape_t<3> cshape = grid.shape_fourier(2, MPI_COMM_WORLD);
   auto h_u = zisa::array<azeban::real_t, 3>(rshape);
   auto h_u_hat = zisa::array<azeban::complex_t, 3>(cshape);
   auto d_u = zisa::cuda_array<azeban::real_t, 3>(rshape);
@@ -657,8 +654,7 @@ TEST_CASE("cuFFT MPI 2d vector valued data", "[mpi]") {
       = std::make_shared<azeban::CUFFT_MPI<2>>(d_u_hat, d_u, MPI_COMM_WORLD);
 
   for (zisa::int_t i = 0; i < rshape[1]; ++i) {
-    const zisa::int_t i_
-        = i + rank * (n / size) + (rank < n % size ? rank : n % size);
+    const zisa::int_t i_ = grid.i_phys(i, MPI_COMM_WORLD);
     for (zisa::int_t j = 0; j < rshape[2]; ++j) {
       h_u(0, i, j) = zisa::cos(2.0 * zisa::pi * (i_ + j) / n);
       h_u(1, i, j) = zisa::cos(4.0 * zisa::pi * (i_ + j) / n);
@@ -673,9 +669,7 @@ TEST_CASE("cuFFT MPI 2d vector valued data", "[mpi]") {
 
   for (zisa::int_t i = 0; i < cshape[1]; ++i) {
     for (zisa::int_t j = 0; j < cshape[2]; ++j) {
-      const zisa::int_t i__
-          = i + rank * ((n / 2 + 1) / size)
-            + (rank < (n / 2 + 1) % size ? rank : (n / 2 + 1) % size);
+      const zisa::int_t i__ = grid.i_fourier(i, MPI_COMM_WORLD);
       const int i_ = i__ >= n / 2 + 1 ? zisa::integer_cast<int>(i__) - n
                                       : zisa::integer_cast<int>(i__);
       const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
@@ -697,8 +691,7 @@ TEST_CASE("cuFFT MPI 2d vector valued data", "[mpi]") {
 
   for (zisa::int_t i = 0; i < rshape[1]; ++i) {
     for (zisa::int_t j = 0; j < rshape[2]; ++j) {
-      const zisa::int_t i_
-          = i + rank * (n / size) + (rank < n % size ? rank : n % size);
+      const zisa::int_t i_ = grid.i_phys(i, MPI_COMM_WORLD);
       const azeban::real_t expected_0
           = n * n * zisa::cos(2.0 * zisa::pi * (i_ + j) / n);
       const azeban::real_t expected_1
@@ -715,9 +708,10 @@ TEST_CASE("cuFFT MPI 3d scalar valued data", "[mpi]") {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   zisa::int_t n = 128;
-  zisa::shape_t<4> rshape{1, n / size + (rank < n % size ? 1 : 0), n, n};
-  zisa::shape_t<4> cshape{
-      1, n / size + (rank < n % size ? 1 : 0), n / 2 + 1, n};
+  azeban::Grid<3> grid(n);
+  zisa::shape_t<4> rshape = grid.shape_phys(1, MPI_COMM_WORLD);
+  ;
+  zisa::shape_t<4> cshape = grid.shape_fourier(1, MPI_COMM_WORLD);
   auto h_u = zisa::array<azeban::real_t, 4>(rshape);
   auto h_u_hat = zisa::array<azeban::complex_t, 4>(cshape);
   auto d_u = zisa::cuda_array<azeban::real_t, 4>(rshape);
@@ -727,8 +721,7 @@ TEST_CASE("cuFFT MPI 3d scalar valued data", "[mpi]") {
       = std::make_shared<azeban::CUFFT_MPI<3>>(d_u_hat, d_u, MPI_COMM_WORLD);
 
   for (zisa::int_t i = 0; i < rshape[1]; ++i) {
-    const zisa::int_t i_
-        = i + rank * (n / size) + (rank < n % size ? rank : n % size);
+    const zisa::int_t i_ = grid.i_phys(i, MPI_COMM_WORLD);
     for (zisa::int_t j = 0; j < rshape[2]; ++j) {
       for (zisa::int_t k = 0; k < rshape[3]; ++k) {
         h_u(0, i, j, k) = zisa::cos(2.0 * zisa::pi * (i_ + j + k) / n);
@@ -745,8 +738,7 @@ TEST_CASE("cuFFT MPI 3d scalar valued data", "[mpi]") {
   for (zisa::int_t i = 0; i < cshape[1]; ++i) {
     for (zisa::int_t j = 0; j < cshape[2]; ++j) {
       for (zisa::int_t k = 0; k < cshape[3]; ++k) {
-        const zisa::int_t i__
-            = i + rank * (n / size) + (rank < n % size ? rank : n % size);
+        const zisa::int_t i__ = grid.i_fourier(i, MPI_COMM_WORLD);
         const int i_ = i__ >= n / 2 + 1 ? zisa::integer_cast<int>(i__) - n
                                         : zisa::integer_cast<int>(i__);
         const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
@@ -768,8 +760,7 @@ TEST_CASE("cuFFT MPI 3d scalar valued data", "[mpi]") {
   for (zisa::int_t i = 0; i < rshape[1]; ++i) {
     for (zisa::int_t j = 0; j < rshape[2]; ++j) {
       for (zisa::int_t k = 0; k < rshape[3]; ++k) {
-        const zisa::int_t i_
-            = i + rank * (n / size) + (rank < n % size ? rank : n % size);
+        const zisa::int_t i_ = grid.i_phys(i, MPI_COMM_WORLD);
         const azeban::real_t expected
             = n * n * n * zisa::cos(2.0 * zisa::pi * (i_ + j + k) / n);
         REQUIRE(std::fabs(h_u(0, i, j, k) - expected) <= 1e-8);
@@ -784,9 +775,9 @@ TEST_CASE("cuFFT MPI 3d vector valued data", "[mpi]") {
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   zisa::int_t n = 128;
-  zisa::shape_t<4> rshape{3, n / size + (rank < n % size ? 1 : 0), n, n};
-  zisa::shape_t<4> cshape{
-      3, n / size + (rank < n % size ? 1 : 0), n / 2 + 1, n};
+  azeban::Grid<3> grid(n);
+  zisa::shape_t<4> rshape = grid.shape_phys(3, MPI_COMM_WORLD);
+  zisa::shape_t<4> cshape = grid.shape_fourier(3, MPI_COMM_WORLD);
   auto h_u = zisa::array<azeban::real_t, 4>(rshape);
   auto h_u_hat = zisa::array<azeban::complex_t, 4>(cshape);
   auto d_u = zisa::cuda_array<azeban::real_t, 4>(rshape);
@@ -796,8 +787,7 @@ TEST_CASE("cuFFT MPI 3d vector valued data", "[mpi]") {
       = std::make_shared<azeban::CUFFT_MPI<3>>(d_u_hat, d_u, MPI_COMM_WORLD);
 
   for (zisa::int_t i = 0; i < rshape[1]; ++i) {
-    const zisa::int_t i_
-        = i + rank * (n / size) + (rank < n % size ? rank : n % size);
+    const zisa::int_t i_ = grid.i_phys(i, MPI_COMM_WORLD);
     for (zisa::int_t j = 0; j < rshape[2]; ++j) {
       for (zisa::int_t k = 0; k < rshape[3]; ++k) {
         h_u(0, i, j, k) = zisa::cos(2.0 * zisa::pi * (i_ + j + k) / n);
@@ -816,8 +806,7 @@ TEST_CASE("cuFFT MPI 3d vector valued data", "[mpi]") {
   for (zisa::int_t i = 0; i < cshape[1]; ++i) {
     for (zisa::int_t j = 0; j < cshape[2]; ++j) {
       for (zisa::int_t k = 0; k < cshape[3]; ++k) {
-        const zisa::int_t i__
-            = i + rank * (n / size) + (rank < n % size ? rank : n % size);
+        const zisa::int_t i__ = grid.i_fourier(i, MPI_COMM_WORLD);
         const int i_ = i__ >= n / 2 + 1 ? zisa::integer_cast<int>(i__) - n
                                         : zisa::integer_cast<int>(i__);
         const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
@@ -855,8 +844,7 @@ TEST_CASE("cuFFT MPI 3d vector valued data", "[mpi]") {
   for (zisa::int_t i = 0; i < rshape[1]; ++i) {
     for (zisa::int_t j = 0; j < rshape[2]; ++j) {
       for (zisa::int_t k = 0; k < rshape[3]; ++k) {
-        const zisa::int_t i_
-            = i + rank * (n / size) + (rank < n % size ? rank : n % size);
+        const zisa::int_t i_ = grid.i_phys(i, MPI_COMM_WORLD);
         const azeban::real_t expected_0
             = n * n * n * zisa::cos(2.0 * zisa::pi * (i_ + j + k) / n);
         const azeban::real_t expected_1

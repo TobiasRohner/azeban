@@ -59,7 +59,7 @@ public:
     const zisa::int_t n_var_u = dim_v + (has_tracer_ ? 1 : 0);
     const zisa::int_t n_var_B
         = (dim_v * dim_v + dim_v) / 2 + (has_tracer_ ? dim_v : 0);
-    for (int i = 0; i < n_var_u; ++i) {
+    for (zisa::int_t i = 0; i < n_var_u; ++i) {
       // TODO: Change this to a padded copy
       zisa::copy(component(h_u_hat_pad_, i), component(u_hat, i));
     }
@@ -68,7 +68,7 @@ public:
     computeB();
     fft_B_->forward();
     zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
-    for (int i = 0; i < n_var_B; ++i) {
+    for (zisa::int_t i = 0; i < n_var_B; ++i) {
       // TODO: Change this to a padded copy
       zisa::copy(component(B_hat_, i), component(h_B_hat_pad_, i));
     }

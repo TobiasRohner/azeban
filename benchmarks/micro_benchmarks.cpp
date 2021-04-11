@@ -4,15 +4,13 @@
 #include <mpi.h>
 #endif
 
-
 class NullReporter : public benchmark::BenchmarkReporter {
 public:
   NullReporter() = default;
   virtual bool ReportContext(const Context &) override { return true; }
-  virtual void ReportRuns(const std::vector<Run> &) override  { }
-  virtual void Finalize() override { }
+  virtual void ReportRuns(const std::vector<Run> &) override {}
+  virtual void Finalize() override {}
 };
-
 
 int main(int argc, char *argv[]) {
 #if AZEBAN_HAS_MPI
@@ -28,8 +26,7 @@ int main(int argc, char *argv[]) {
     benchmark::Initialize(&argc, argv);
     benchmark::RunSpecifiedBenchmarks();
 #if AZEBAN_HAS_MPI
-  }
-  else {
+  } else {
     benchmark::Initialize(&argc, argv);
     NullReporter null;
     benchmark::RunSpecifiedBenchmarks(&null);

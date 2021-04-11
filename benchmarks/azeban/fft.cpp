@@ -106,12 +106,11 @@ static void fft_3d_params(benchmark::internal::Benchmark *bm) {
 }
 
 static void fft_3d_params_mpi(benchmark::internal::Benchmark *bm) {
-  const auto candidates
-      = good_sizes(768);
+  const auto candidates = good_sizes(768);
   for (zisa::int_t d : {3, 6}) {
     for (zisa::int_t N : candidates) {
       if (N > 220) {
-	bm->Args({d, N});
+        bm->Args({d, N});
       }
     }
   }
@@ -166,14 +165,16 @@ static void bm_fft_3d_forward_mpi(benchmark::State &state) {
       d, n / size + (rank < n % size ? 1 : 0), n / 2 + 1, n};
   auto h_u = zisa::array<azeban::real_t, 4>(rshape);
   auto d_u = zisa::array<azeban::real_t, 4>(rshape, zisa::device_type::cuda);
-  auto d_u_hat = zisa::array<azeban::complex_t, 4>(cshape, zisa::device_type::cuda);
+  auto d_u_hat
+      = zisa::array<azeban::complex_t, 4>(cshape, zisa::device_type::cuda);
 
   for (zisa::int_t i = 0; i < zisa::product(rshape); ++i) {
     h_u[i] = zisa::cos(2.1 * zisa::pi / n * i);
   }
   zisa::copy(d_u, h_u);
 
-  const auto fft = std::make_shared<azeban::CUFFT_MPI<3>>(d_u_hat, d_u, MPI_COMM_WORLD, azeban::FFT_FORWARD);
+  const auto fft = std::make_shared<azeban::CUFFT_MPI<3>>(
+      d_u_hat, d_u, MPI_COMM_WORLD, azeban::FFT_FORWARD);
 
   for (auto _ : state) {
     fft->forward();
