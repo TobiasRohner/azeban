@@ -158,7 +158,6 @@ public:
     AZEBAN_PROFILE_STOP("IncompressibleEulerNaive::dudt");
   }
 
-  using super::grid;
   virtual int n_vars() const override { return dim_v; }
 
 protected:

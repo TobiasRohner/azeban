@@ -12,6 +12,9 @@ std::shared_ptr<Equation<Dim>> make_burgers(const Grid<Dim> &grid,
   if constexpr (Dim == 1) {
     return std::make_shared<Burgers<SpectralViscosity>>(grid, visc, device);
   } else {
+    ZISA_UNUSED(grid);
+    ZISA_UNUSED(visc);
+    ZISA_UNUSED(device);
     fmt::print(stderr, "Burgers is only implemented for 1D\n");
     exit(1);
   }

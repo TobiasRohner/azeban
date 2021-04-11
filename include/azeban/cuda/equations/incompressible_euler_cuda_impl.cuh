@@ -2,8 +2,8 @@
 #define INCOMPRESSIBLE_EULER_CUDA_IMPL_H_
 
 #include "incompressible_euler_cuda.hpp"
-#include <azeban/equations/incompressible_euler_functions.hpp>
 #include <azeban/equations/advection_functions.hpp>
+#include <azeban/equations/incompressible_euler_functions.hpp>
 
 namespace azeban {
 
@@ -77,7 +77,8 @@ __global__ void incompressible_euler_compute_B_tracer_cuda_kernel<2>(
     const real_t u2 = u[1 * stride + idx];
     const real_t rho = u[2 * stride + idx];
     incompressible_euler_2d_compute_B(stride, idx, norm, u1, u2, B.raw());
-    advection_2d_compute_B(stride, idx, norm, rho, u1, u2, B.raw() + 3 * stride);
+    advection_2d_compute_B(
+        stride, idx, norm, rho, u1, u2, B.raw() + 3 * stride);
   }
 }
 
@@ -101,7 +102,8 @@ __global__ void incompressible_euler_compute_B_tracer_cuda_kernel<3>(
     const real_t u3 = u[2 * stride + idx];
     const real_t rho = u[3 * stride + idx];
     incompressible_euler_3d_compute_B(stride, idx, norm, u1, u2, u3, B.raw());
-    advection_3d_compute_B(stride, idx, norm, rho, u1, u2, u3, B.raw() + 6 * stride);
+    advection_3d_compute_B(
+        stride, idx, norm, rho, u1, u2, u3, B.raw() + 6 * stride);
   }
 }
 
@@ -129,7 +131,8 @@ incompressible_euler_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
     const real_t absk2 = k1 * k1 + k2 * k2;
 
     complex_t L1_hat, L2_hat;
-    incompressible_euler_2d_compute_L(k1, k2, absk2, stride_B, idx_B, B_hat.raw(), &L1_hat, &L2_hat);
+    incompressible_euler_2d_compute_L(
+        k1, k2, absk2, stride_B, idx_B, B_hat.raw(), &L1_hat, &L2_hat);
 
     const real_t v = visc.eval(zisa::sqrt(absk2));
     u_hat[0 * stride_u + idx_u]
@@ -173,7 +176,16 @@ incompressible_euler_3d_cuda_kernel(zisa::array_const_view<complex_t, 4> B_hat,
     const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
 
     complex_t L1_hat, L2_hat, L3_hat;
-    incompressible_euler_3d_compute_L(k1, k2, k3, absk2, stride_B, idx_B, B_hat.raw(), &L1_hat, &L2_hat, &L3_hat);
+    incompressible_euler_3d_compute_L(k1,
+                                      k2,
+                                      k3,
+                                      absk2,
+                                      stride_B,
+                                      idx_B,
+                                      B_hat.raw(),
+                                      &L1_hat,
+                                      &L2_hat,
+                                      &L3_hat);
 
     const real_t v = visc.eval(zisa::sqrt(absk2));
     u_hat[0 * stride_u + idx_u]
@@ -209,7 +221,8 @@ __global__ void incompressible_euler_2d_tracer_cuda_kernel(
     const real_t absk2 = k1 * k1 + k2 * k2;
 
     complex_t L1_hat, L2_hat, L3_hat;
-    incompressible_euler_2d_compute_L(k1, k2, absk2, stride_B, idx_B, B_hat.raw(), &L1_hat, &L2_hat);
+    incompressible_euler_2d_compute_L(
+        k1, k2, absk2, stride_B, idx_B, B_hat.raw(), &L1_hat, &L2_hat);
     advection_2d(k1, k2, stride_B, idx_B, B_hat.raw() + 3 * stride_B, &L3_hat);
 
     const real_t v = visc.eval(zisa::sqrt(absk2));
@@ -255,8 +268,18 @@ __global__ void incompressible_euler_3d_tracer_cuda_kernel(
     const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
 
     complex_t L1_hat, L2_hat, L3_hat, L4_hat;
-    incompressible_euler_3d_compute_L(k1, k2, k3, absk2, stride_B, idx_B, B_hat.raw(), &L1_hat, &L2_hat, &L3_hat);
-    advection_3d(k1, k2, k3, stride_B, idx_B, B_hat.raw() + 6 * stride_B, &L4_hat);
+    incompressible_euler_3d_compute_L(k1,
+                                      k2,
+                                      k3,
+                                      absk2,
+                                      stride_B,
+                                      idx_B,
+                                      B_hat.raw(),
+                                      &L1_hat,
+                                      &L2_hat,
+                                      &L3_hat);
+    advection_3d(
+        k1, k2, k3, stride_B, idx_B, B_hat.raw() + 6 * stride_B, &L4_hat);
 
     const real_t v = visc.eval(zisa::sqrt(absk2));
     u_hat[0 * stride_u + idx_u]

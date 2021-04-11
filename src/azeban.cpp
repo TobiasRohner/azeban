@@ -1,4 +1,3 @@
-#include <hdf5.h>
 #include <azeban/init/initializer_factory.hpp>
 #include <azeban/operations/fft.hpp>
 #include <azeban/profiler.hpp>
@@ -6,6 +5,7 @@
 #include <cstdlib>
 #include <fmt/core.h>
 #include <fstream>
+#include <hdf5.h>
 #include <iomanip>
 #include <nlohmann/json.hpp>
 #include <random>
@@ -14,6 +14,7 @@
 #include <zisa/io/hdf5_serial_writer.hpp>
 #include <zisa/memory/array.hpp>
 #if AZEBAN_HAS_MPI
+#include <azeban/simulation_mpi_factory.hpp>
 #include <mpi.h>
 #endif
 
@@ -45,16 +46,12 @@ static void runFromConfig(const nlohmann::json &config) {
     rng.seed(config["seed"].get<size_t>());
   }
 
-  auto simulation = make_simulation<dim_v>(config);
-  const auto &grid = simulation.grid();
-
 #if AZEBAN_HAS_MPI
-  int size;
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  if (size > 1 && simulation.memory_location() != zisa::device_type::cuda) {
-    LOG_ERR("MPI is only allowed for CUDA simulations");
-  }
+  auto simulation = make_simulation_mpi<dim_v>(config, MPI_COMM_WORLD);
+#else
+  auto simulation = make_simulation<dim_v>(config);
 #endif
+  const auto &grid = simulation.grid();
 
   zisa::HDF5SerialWriter hdf5_writer(output);
 

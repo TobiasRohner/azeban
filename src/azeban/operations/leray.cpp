@@ -9,14 +9,14 @@ namespace azeban {
 
 void leray(const zisa::array_view<complex_t, 3> &u_hat) {
   if (u_hat.memory_location() == zisa::device_type::cpu) {
-    for (long i = 0; i < u_hat.shape(1); ++i) {
+    for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
       long i_ = i;
-      if (i_ >= u_hat.shape(1) / 2 + 1) {
+      if (i_ >= zisa::integer_cast<long>(u_hat.shape(1) / 2 + 1)) {
         i_ -= u_hat.shape(1);
       }
-      for (long j = 0; j < u_hat.shape(2); ++j) {
+      for (zisa::int_t j = 0; j < u_hat.shape(2); ++j) {
         long j_ = j;
-        if (j_ >= u_hat.shape(2) / 2 + 1) {
+        if (j_ >= zisa::integer_cast<long>(u_hat.shape(2) / 2 + 1)) {
           j_ -= u_hat.shape(2);
         }
         const real_t k1 = 2 * zisa::pi * i_;
@@ -45,19 +45,19 @@ void leray(const zisa::array_view<complex_t, 3> &u_hat) {
 
 void leray(const zisa::array_view<complex_t, 4> &u_hat) {
   if (u_hat.memory_location() == zisa::device_type::cpu) {
-    for (long i = 0; i < u_hat.shape(1); ++i) {
+    for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
       long i_ = i;
-      if (i_ >= u_hat.shape(1) / 2 + 1) {
+      if (i_ >= zisa::integer_cast<long>(u_hat.shape(1) / 2 + 1)) {
         i_ -= u_hat.shape(1);
       }
-      for (long j = 0; j < u_hat.shape(2); ++j) {
+      for (zisa::int_t j = 0; j < u_hat.shape(2); ++j) {
         long j_ = j;
-        if (j_ >= u_hat.shape(2) / 2 + 1) {
+        if (j_ >= zisa::integer_cast<long>(u_hat.shape(2) / 2 + 1)) {
           j_ -= u_hat.shape(2);
         }
-        for (long k = 0; k < u_hat.shape(3); ++k) {
+        for (zisa::int_t k = 0; k < u_hat.shape(3); ++k) {
           long k_ = k;
-          if (k_ >= u_hat.shape(3) / 2 + 1) {
+          if (k_ >= zisa::integer_cast<long>(u_hat.shape(3) / 2 + 1)) {
             k_ -= u_hat.shape(3);
           }
           const real_t k1 = 2 * zisa::pi * i_;

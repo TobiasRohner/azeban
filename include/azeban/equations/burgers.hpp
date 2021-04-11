@@ -4,6 +4,7 @@
 
 #include "equation.hpp"
 #include <azeban/config.hpp>
+#include <azeban/grid.hpp>
 #include <azeban/operations/convolve.hpp>
 #include <azeban/operations/fft.hpp>
 #ifdef ZISA_HAS_CUDA
@@ -65,7 +66,6 @@ public:
     }
   }
 
-  using super::grid;
   virtual int n_vars() const override { return 1; }
 
 private:

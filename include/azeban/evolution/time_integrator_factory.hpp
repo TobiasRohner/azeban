@@ -7,15 +7,16 @@
 #include <azeban/evolution/ssp_rk3.hpp>
 #include <azeban/evolution/time_integrator.hpp>
 #include <fmt/core.h>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <zisa/config.hpp>
 
 namespace azeban {
 
-template <int Dim, typename Json>
+template <int Dim, template <int> typename GridT>
 std::shared_ptr<TimeIntegrator<Dim>>
-make_timestepper(Json &&config,
-                 const Grid<Dim> &grid,
+make_timestepper(const nlohmann::json &config,
+                 const GridT<Dim> &grid,
                  const std::shared_ptr<Equation<Dim>> &equation,
                  zisa::device_type device) {
   if (!config.contains("type")) {
