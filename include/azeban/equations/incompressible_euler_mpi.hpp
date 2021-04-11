@@ -1,0 +1,201 @@
+#ifndef INCOMPRESSIBLE_EULER_MPI_H_
+#define INCOMPRESSIBLE_EULER_MPI_H_
+
+#include "equation.hpp"
+#include "incompressible_euler_functions.hpp"
+#include "advection_functions.hpp"
+#include <azeban/config.hpp>
+#include <azeban/grid_mpi.hpp>
+#include <azeban/operations/fft_mpi_factory.hpp>
+#include <azeban/profiler.hpp>
+
+
+namespace azeban {
+
+template<int Dim, typename SpectralViscosity>
+class IncompressibleEuler_MPI final : public Equation<Dim> {
+  using super = Equation<Dim>;
+  static_assert(Dim == 2 || Dim == 3,
+                "Incompressible Euler is only implemented for 2D and 3D");
+
+public:
+  using scalar_t = complex_t;
+  static constexpr int dim_v = Dim;
+
+  IncompressibleEuler_MPI(const Grid_MPI<dim_v> &grid, const SpectralViscosity &visc, bool has_tracer = false) : super(), grid_(grid), visc_(visc), has_tracer_(has_tracer) {
+    // TODO: Actually pad the padded arrays
+    const zisa::int_t n_var_u = dim_v + (has_tracer ? 1 : 0);
+    const zisa::int_t n_var_B = (dim_v * dim_v + dim_v) / 2 + (has_tracer ? dim_v : 0);
+    h_u_hat_pad_ = grid.make_array_fourier(n_var_u, zisa::device_type::cpu);
+    d_u_hat_pad_ = grid.make_array_fourier(n_var_u, zisa::device_type::cuda);
+    u_pad_ = grid.make_array_phys(n_var_u, zisa::device_type::cuda);
+    B_pad_ = grid.make_array_phys(n_var_B, zisa::device_type::cuda);
+    d_B_hat_pad_ = grid.make_array_fourier(n_var_B, zisa::device_type::cuda);
+    h_B_hat_pad_ = grid.make_array_fourier(n_var_B, zisa::device_type::cpu);
+    B_hat_ = grid.make_array_fourier(n_var_B, zisa::device_type::cpu);
+    fft_u_ = make_fft_mpi(d_u_hat_pad_, u_pad_, FFT_BACKWARD);
+    fft_B_ = make_fft_mpi(d_B_hat_pad_, B_pad_, FFT_FORWARD);
+  }
+  IncompressibleEuler_MPI(const IncompressibleEuler_MPI &) = delete;
+  IncompressibleEuler_MPI(IncompressibleEuler_MPI &&) = default;
+  virtual ~IncompressibleEuler_MPI() = default;
+  IncompressibleEuler_MPI &operator=(const IncompressibleEuler_MPI &) = delete;
+  IncompressibleEuler_MPI &operator=(IncompressibleEuler_MPI &&) = default;
+
+  virtual void dudt(const zisa::array_view<complex_t, dim_v + 1> &u_hat) override {
+    LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cpu, "Euler MPI needs CPU arrays");
+    LOG_ERR_IF(u_hat.shape(0) != h_u_hat_pad_.shape(0), "Wrong number of variables");
+    AZEBAN_PROFILE_START("IncompressibleEuler_MPI::dudt");
+    const zisa::int_t n_var_u = dim_v + (has_tracer_ ? 1 : 0);
+    const zisa::int_t n_var_B = (dim_v * dim_v + dim_v) / 2 + (has_tracer_ ? dim_v : 0);
+    for (int i = 0 ; i < n_var_u ; ++i) {
+      // TODO: Change this to a padded copy
+      zisa::copy(component(h_u_hat_pad_, i), component(u_hat, i));
+    }
+    zisa::copy(d_u_hat_pad_, h_u_hat_pad_);
+    fft_u_->backward();
+    computeB();
+    fft_B_->forward();
+    zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
+    for (int i = 0 ; i < n_var_B ; ++i) {
+      // TODO: Change this to a padded copy
+      zisa::copy(component(B_hat_, i), component(h_B_hat_pad_, i));
+    }
+    computeDudt(u_hat);
+    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::dudt");
+  }
+
+  virtual int n_vars() const override { return dim_v + (has_tracer_ ? 1 : 0); }
+
+private:
+  Grid_MPI<dim_v> grid_;
+  SpectralViscosity visc_;
+  zisa::array<complex_t, dim_v + 1> h_u_hat_pad_;
+  zisa::array<complex_t, dim_v + 1> d_u_hat_pad_;
+  zisa::array<real_t, dim_v + 1> u_pad_;
+  zisa::array<real_t, dim_v + 1> B_pad_;
+  zisa::array<complex_t, dim_v + 1> d_B_hat_pad_;
+  zisa::array<complex_t, dim_v + 1> h_B_hat_pad_;
+  zisa::array<complex_t, dim_v + 1> B_hat_;
+  std::shared_ptr<FFT<dim_v>> fft_u_;
+  std::shared_ptr<FFT<dim_v>> fft_B_;
+  bool has_tracer_;
+
+  template <typename Scalar>
+  static zisa::array_view<Scalar, dim_v>
+  component(const zisa::array_view<Scalar, dim_v + 1> &arr, int dim) {
+    zisa::shape_t<dim_v> shape;
+    for (int i = 0; i < dim_v; ++i) {
+      shape[i] = arr.shape(i + 1);
+    }
+    return {
+        shape, arr.raw() + dim * zisa::product(shape), arr.memory_location()};
+  }
+
+  template <typename Scalar>
+  static zisa::array_const_view<Scalar, dim_v>
+  component(const zisa::array_const_view<Scalar, dim_v + 1> &arr, int dim) {
+    zisa::shape_t<dim_v> shape;
+    for (int i = 0; i < dim_v; ++i) {
+      shape[i] = arr.shape(i + 1);
+    }
+    return {
+        shape, arr.raw() + dim * zisa::product(shape), arr.memory_location()};
+  }
+
+  template <typename Scalar>
+  static zisa::array_view<Scalar, dim_v>
+  component(zisa::array<Scalar, dim_v + 1> &arr, int dim) {
+    zisa::shape_t<dim_v> shape;
+    for (int i = 0; i < dim_v; ++i) {
+      shape[i] = arr.shape(i + 1);
+    }
+    return {shape, arr.raw() + dim * zisa::product(shape), arr.device()};
+  }
+
+  template <typename Scalar>
+  static zisa::array_const_view<Scalar, dim_v>
+  component(const zisa::array<Scalar, dim_v + 1> &arr, int dim) {
+    zisa::shape_t<dim_v> shape;
+    for (int i = 0; i < dim_v; ++i) {
+      shape[i] = arr.shape(i + 1);
+    }
+    return {shape, arr.raw() + dim * zisa::product(shape), arr.device()};
+  }
+
+  void computeB() {
+    AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeB");
+    // TODO: Implement
+    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeB");
+  }
+
+  void computeDudt(const zisa::array_view<complex_t, dim_v + 1> &u_hat) {
+    AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
+    if constexpr (dim_v == 2) {
+      const unsigned stride_B = B_hat_.shape(1) * B_hat_.shape(2);
+      for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
+	for (int j = 0; j < zisa::integer_cast<int>(u_hat.shape(2)); ++j) {
+	  const unsigned idx_B = i * B_hat_.shape(2) + j;
+	  int i_ = i;
+	  if (i >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)) {
+	    i_ -= u_hat.shape(1);
+	  }
+	  const real_t k1 = 2 * zisa::pi * i_;
+	  const real_t k2 = 2 * zisa::pi * j;
+	  const real_t absk2 = k1 * k1 + k2 * k2;
+	  complex_t L1_hat, L2_hat;
+	  incompressible_euler_2d_compute_L(k1, k2, absk2, stride_B, idx_B, B_hat_.raw(), &L1_hat, &L2_hat);
+	  const real_t v = visc_.eval(zisa::sqrt(absk2));
+	  u_hat(0, i, j) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j);
+	  u_hat(1, i, j) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j);
+	  if (has_tracer_) {
+	    complex_t L3_hat;
+	    advection_2d(k1, k2, stride_B, idx_B, B_hat_.raw() + 3 * stride_B, &L3_hat);
+	    u_hat(2, i, j) = -L3_hat + v * u_hat(2, i, j);
+	  }
+	}
+      }
+    } else {
+      const unsigned stride_B = B_hat_.shape(1) * B_hat_.shape(2) * B_hat_.shape(3);
+      for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
+	for (int j = 0; j < zisa::integer_cast<int>(u_hat.shape(2)); ++j) {
+	  for (int k = 0; k < zisa::integer_cast<int>(u_hat.shape(3)); ++k) {
+	    const unsigned idx_B = i * B_hat_.shape(2) * B_hat_.shape(3) + j * B_hat_.shape(3) + k;
+	    int i_ = i;
+	    int j_ = j;
+	    if (i_ >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)) {
+	      i_ -= u_hat.shape(1);
+	    }
+	    if (j_ >= zisa::integer_cast<int>(u_hat.shape(2) / 2 + 1)) {
+	      j_ -= u_hat.shape(2);
+	    }
+	    const real_t k1 = 2 * zisa::pi * i_;
+	    const real_t k2 = 2 * zisa::pi * j_;
+	    const real_t k3 = 2 * zisa::pi * k;
+	    const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
+	    complex_t L1_hat, L2_hat, L3_hat;
+	    incompressible_euler_3d_compute_L(k1, k2, k3, absk2, stride_B, idx_B, B_hat_.raw(), &L1_hat, &L2_hat, &L3_hat);
+	    const real_t v = visc_.eval(zisa::sqrt(absk2));
+	    u_hat(0, i, j, k)
+		= absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j, k);
+	    u_hat(1, i, j, k)
+		= absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j, k);
+	    u_hat(2, i, j, k)
+		= absk2 == 0 ? 0 : -L3_hat + v * u_hat(2, i, j, k);
+	    if (has_tracer_) {
+	      complex_t L4_hat;
+	      advection_3d(k1, k2, k3, stride_B, idx_B, B_hat_.raw() + 6 * stride_B, &L4_hat);
+	      u_hat(4, i, j, k) = -L4_hat + v * u_hat(3, i, j, k);
+	    }
+	  }
+	}
+      }
+    }
+    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeDudt");
+  }
+};
+
+}
+
+
+#endif

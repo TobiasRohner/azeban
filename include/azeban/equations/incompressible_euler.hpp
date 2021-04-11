@@ -29,7 +29,7 @@ public:
                       const SpectralViscosity &visc,
                       zisa::device_type device,
                       bool has_tracer = false)
-      : super(grid), device_(device), visc_(visc), has_tracer_(has_tracer) {
+      : super(), grid_(grid), device_(device), visc_(visc), has_tracer_(has_tracer) {
     u_hat_ = grid.make_array_fourier_pad(dim_v + (has_tracer ? 1 : 0), device);
     u_ = grid.make_array_phys_pad(dim_v + (has_tracer ? 1 : 0), device);
     B_hat_ = grid.make_array_fourier_pad(
@@ -62,13 +62,10 @@ public:
     AZEBAN_PROFILE_STOP("IncompressibleEuler::dudt");
   }
 
-  using super::grid;
   virtual int n_vars() const override { return dim_v + (has_tracer_ ? 1 : 0); }
 
-protected:
-  using super::grid_;
-
 private:
+  Grid<dim_v> grid_;
   zisa::device_type device_;
   zisa::array<complex_t, dim_v + 1> u_hat_;
   zisa::array<real_t, dim_v + 1> u_;
