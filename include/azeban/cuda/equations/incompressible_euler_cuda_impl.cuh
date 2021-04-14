@@ -20,12 +20,12 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<2>(
     Grid<2> grid) {
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
-  const unsigned stride = grid.N_phys_pad * grid.N_phys_pad;
-  const unsigned idx = i * grid.N_phys_pad + j;
+  const unsigned stride = u.shape(1) * u.shape(2);
+  const unsigned idx = i * u.shape(2) + j;
 
   const real_t norm
       = 1.0 / (zisa::pow<2>(grid.N_phys) * zisa::pow<2>(grid.N_phys_pad));
-  if (i < grid.N_phys_pad && j < grid.N_phys_pad) {
+  if (i < u.shape(1) && j < u.shape(2)) {
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
     incompressible_euler_2d_compute_B(stride, idx, norm, u1, u2, B.raw());
@@ -40,13 +40,12 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<3>(
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
   const unsigned k = blockIdx.z * blockDim.z + threadIdx.z;
-  const unsigned stride = grid.N_phys_pad * grid.N_phys_pad * grid.N_phys_pad;
-  const unsigned idx
-      = i * grid.N_phys_pad * grid.N_phys_pad + j * grid.N_phys_pad + k;
+  const unsigned stride = u.shape(1) * u.shape(2) * u.shape(3);
+  const unsigned idx = i * u.shape(2) * u.shape(3) + j * u.shape(3) + k;
 
   const real_t norm
       = 1.0 / (zisa::pow<3>(grid.N_phys) * zisa::pow<3>(grid.N_phys_pad));
-  if (i < grid.N_phys_pad && j < grid.N_phys_pad && k < grid.N_phys_pad) {
+  if (i < u.shape(1) && j < u.shape(2) && k < u.shape(3)) {
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
     const real_t u3 = u[2 * stride + idx];
@@ -67,12 +66,12 @@ __global__ void incompressible_euler_compute_B_tracer_cuda_kernel<2>(
     Grid<2> grid) {
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
-  const unsigned stride = grid.N_phys_pad * grid.N_phys_pad;
-  const unsigned idx = i * grid.N_phys_pad + j;
+  const unsigned stride = u.shape(1) * u.shape(2);
+  const unsigned idx = i * u.shape(2) + j;
 
   const real_t norm
       = 1.0 / (zisa::pow<2>(grid.N_phys) * zisa::pow<2>(grid.N_phys_pad));
-  if (i < grid.N_phys_pad && j < grid.N_phys_pad) {
+  if (i < u.shape(1) && j < u.shape(2)) {
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
     const real_t rho = u[2 * stride + idx];
@@ -90,13 +89,12 @@ __global__ void incompressible_euler_compute_B_tracer_cuda_kernel<3>(
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
   const unsigned k = blockIdx.z * blockDim.z + threadIdx.z;
-  const unsigned stride = grid.N_phys_pad * grid.N_phys_pad * grid.N_phys_pad;
-  const unsigned idx
-      = i * grid.N_phys_pad * grid.N_phys_pad + j * grid.N_phys_pad + k;
+  const unsigned stride = u.shape(1) * u.shape(2) * u.shape(3);
+  const unsigned idx = i * u.shape(2) * u.shape(3) + j * u.shape(3) + k;
 
   const real_t norm
       = 1.0 / (zisa::pow<3>(grid.N_phys) * zisa::pow<3>(grid.N_phys_pad));
-  if (i < grid.N_phys_pad && j < grid.N_phys_pad && k < grid.N_phys_pad) {
+  if (i < u.shape(1) && j < u.shape(2) && k < u.shape(3)) {
     const real_t u1 = u[0 * stride + idx];
     const real_t u2 = u[1 * stride + idx];
     const real_t u3 = u[2 * stride + idx];

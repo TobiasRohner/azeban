@@ -113,7 +113,6 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
   }
 
   auto simulation = make_simulation_mpi<dim_v>(config, comm);
-  ZISA_CHECK_CUDA_DEBUG;
   const auto &grid = simulation.grid();
 
   std::unique_ptr<zisa::HDF5SerialWriter> hdf5_writer;
@@ -125,15 +124,11 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
       = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu, comm);
   auto u_device = grid.make_array_phys(
       simulation.n_vars(), zisa::device_type::cuda, comm);
-  ZISA_CHECK_CUDA_DEBUG;
   auto u_hat_device = grid.make_array_fourier(
       simulation.n_vars(), zisa::device_type::cuda, comm);
-  ZISA_CHECK_CUDA_DEBUG;
   auto fft = make_fft_mpi<dim_v>(u_hat_device, u_device, comm);
-  ZISA_CHECK_CUDA_DEBUG;
 
   auto initializer = make_initializer<dim_v>(config, rng);
-  ZISA_CHECK_CUDA_DEBUG;
   zisa::array<real_t, dim_v + 1> u_init;
   if (rank == 0) {
     u_init = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
@@ -195,7 +190,7 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
     zisa::save(*hdf5_writer, u_init, std::to_string(real_t(0)));
   }
   for (real_t t : snapshots) {
-    simulation.simulate_until(t);
+    simulation.simulate_until(t, comm);
     if (rank == 0) {
       fmt::print("Time: {}\n", t);
     }
