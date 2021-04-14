@@ -44,5 +44,5 @@ with h5py.File(DATA_FILE, 'r') as f:
         return ln,
 
     anim = FuncAnimation(fig, update, frames=keys, init_func=init, blit=True, interval=1000./5, save_count=len(keys))
-    anim.save('euler.gif')
+    anim.save('euler.mp4')
     plt.show()

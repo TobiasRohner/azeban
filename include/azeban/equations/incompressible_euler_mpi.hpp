@@ -157,17 +157,18 @@ private:
     if constexpr (dim_v == 2) {
       const zisa::int_t i_base = grid_.i_fourier(0, comm_);
       const zisa::int_t j_base = grid_.j_fourier(0, comm_);
+      const auto shape_phys = grid_.shape_phys(1);
       const unsigned stride_B = B_hat_.shape(1) * B_hat_.shape(2);
       for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
         for (int j = 0; j < zisa::integer_cast<int>(u_hat.shape(2)); ++j) {
           const unsigned idx_B = i * B_hat_.shape(2) + j;
           int i_ = i_base + i;
-          if (i_ >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)) {
-            i_ -= u_hat.shape(1);
+          if (i_ >= zisa::integer_cast<int>(shape_phys[1] / 2 + 1)) {
+            i_ -= shape_phys[1];
           }
           int j_ = j_base + j;
-          if (j_ >= zisa::integer_cast<int>(u_hat.shape(2) / 2 + 1)) {
-            j_ -= u_hat.shape(2);
+          if (j_ >= zisa::integer_cast<int>(shape_phys[2] / 2 + 1)) {
+            j_ -= shape_phys[2];
           }
           const real_t k1 = 2 * zisa::pi * i_;
           const real_t k2 = 2 * zisa::pi * j_;
@@ -190,6 +191,7 @@ private:
       const zisa::int_t i_base = grid_.i_fourier(0, comm_);
       const zisa::int_t j_base = grid_.j_fourier(0, comm_);
       const zisa::int_t k_base = grid_.k_fourier(0, comm_);
+      const auto shape_phys = grid_.shape_phys(1);
       const unsigned stride_B
           = B_hat_.shape(1) * B_hat_.shape(2) * B_hat_.shape(3);
       for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
@@ -200,14 +202,14 @@ private:
             int i_ = i_base + i;
             int j_ = j_base + j;
             int k_ = k_base + k;
-            if (i_ >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)) {
-              i_ -= u_hat.shape(1);
+            if (i_ >= zisa::integer_cast<int>(shape_phys[1] / 2 + 1)) {
+              i_ -= shape_phys[1];
             }
-            if (j_ >= zisa::integer_cast<int>(u_hat.shape(2) / 2 + 1)) {
-              j_ -= u_hat.shape(2);
+            if (j_ >= zisa::integer_cast<int>(shape_phys[2] / 2 + 1)) {
+              j_ -= shape_phys[2];
             }
-            if (k_ >= zisa::integer_cast<int>(u_hat.shape(3) / 2 + 1)) {
-              k_ -= u_hat.shape(3);
+            if (k_ >= zisa::integer_cast<int>(shape_phys[3] / 2 + 1)) {
+              k_ -= shape_phys[3];
             }
             const real_t k1 = 2 * zisa::pi * i_;
             const real_t k2 = 2 * zisa::pi * j_;
