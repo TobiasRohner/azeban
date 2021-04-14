@@ -21,8 +21,9 @@
     "C": 0.2
   },
   "init": {
-    "name": "Brownian Motion",
-    "hurst": 0.5,
+    "name": "Shear Tube",
+    "rho": 0.2,
+    "delta": 0.05,
     "tracer": {
       "name": "Sphere",
       "center": [0.5, 0.5, 0.5],

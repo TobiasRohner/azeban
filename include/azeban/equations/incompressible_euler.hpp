@@ -271,7 +271,7 @@ private:
                              idx_B,
                              B_hat_.raw() + 6 * stride_B,
                              &L4_hat);
-                u_hat(4, i, j, k) = -L4_hat + v * u_hat(3, i, j, k);
+                u_hat(3, i, j, k) = -L4_hat + v * u_hat(3, i, j, k);
               }
             }
           }

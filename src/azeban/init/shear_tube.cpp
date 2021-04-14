@@ -1,5 +1,6 @@
 #include <azeban/init/shear_tube.hpp>
 #include <azeban/operations/fft.hpp>
+#include <fmt/core.h>
 #include <zisa/memory/array.hpp>
 
 namespace azeban {

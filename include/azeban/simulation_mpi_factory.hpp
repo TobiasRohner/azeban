@@ -3,6 +3,7 @@
 
 #include "simulation_factory.hpp"
 #include <azeban/equations/equation_mpi_factory.hpp>
+#include <azeban/evolution/time_integrator_mpi_factory.hpp>
 #include <azeban/grid_factory.hpp>
 
 namespace azeban {
@@ -35,8 +36,8 @@ Simulation<Dim> make_simulation_mpi(const nlohmann::json &config,
       fmt::print("Config is missing timestepper specifications\n");
       exit(1);
     }
-    auto timestepper = make_timestepper(
-        config["timestepper"], grid, equation, zisa::device_type::cpu);
+    auto timestepper = make_timestepper_mpi(
+        config["timestepper"], grid, equation, zisa::device_type::cpu, comm);
 
     if (!config["timestepper"].contains("C")) {
       fmt::print(stderr, "Timestepper config is missing CFL constant \"C\"\n");
@@ -45,7 +46,7 @@ Simulation<Dim> make_simulation_mpi(const nlohmann::json &config,
     const real_t C = config["timestepper"]["C"];
     auto cfl = CFL<Dim>(grid, C);
 
-    return Simulation(grid.shape_fourier(equation->n_vars()),
+    return Simulation(grid.shape_fourier(equation->n_vars(), comm),
                       cfl,
                       timestepper,
                       zisa::device_type::cpu);

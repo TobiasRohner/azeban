@@ -5,6 +5,7 @@
 #include <azeban/operations/fft.hpp>
 #include <azeban/operations/leray.hpp>
 #include <azeban/operations/scale.hpp>
+#include <fmt/core.h>
 #include <zisa/memory/array_view.hpp>
 
 namespace azeban {
@@ -23,11 +24,7 @@ public:
 
   virtual void initialize(const zisa::array_view<real_t, Dim + 1> &u) {
     if constexpr (Dim > 1) {
-      zisa::shape_t<Dim + 1> u_hat_shape;
-      u_hat_shape[0] = u.shape(0);
-      for (int i = 0; i < Dim - 1; ++i) {
-        u_hat_shape[i + 1] = u.shape(i + 1);
-      }
+      zisa::shape_t<Dim + 1> u_hat_shape = u.shape();
       u_hat_shape[Dim] = u.shape(Dim) / 2 + 1;
       auto u_hat
           = zisa::array<complex_t, Dim + 1>(u_hat_shape, u.memory_location());

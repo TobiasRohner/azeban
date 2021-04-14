@@ -5,6 +5,9 @@
 #include <azeban/evolution/cfl.hpp>
 #include <azeban/evolution/time_integrator.hpp>
 #include <fmt/core.h>
+#if AZEBAN_HAS_MPI
+#include <mpi.h>
+#endif
 
 namespace azeban {
 
@@ -52,10 +55,12 @@ public:
 
   void simulate_until(real_t t) {
     real_t dt = cfl_.dt(u_view_);
+    fmt::print(stderr, "dt = {}\n", dt);
     while (time_ < t - dt) {
       timestepper_->integrate(dt, u_);
       time_ += dt;
       dt = cfl_.dt(u_view_);
+      fmt::print(stderr, "dt = {}\n", dt);
     }
     timestepper_->integrate(t - time_, u_);
     time_ = t;
@@ -69,6 +74,32 @@ public:
     time_ += dt;
     return dt;
   }
+
+#if AZEBAN_HAS_MPI
+  void simulate_until(real_t t, MPI_Comm comm) {
+    real_t dt = cfl_.dt(u_view_, comm);
+    fmt::print(stderr, "dt = {}\n", dt);
+    while (time_ < t - dt) {
+      timestepper_->integrate(dt, u_);
+      time_ += dt;
+      dt = cfl_.dt(u_view_, comm);
+      fmt::print(stderr, "dt = {}\n", dt);
+    }
+    timestepper_->integrate(t - time_, u_);
+    time_ = t;
+  }
+
+  void simulate_for(real_t t, MPI_Comm comm) {
+    simulate_until(time_ + t, comm);
+  }
+
+  real_t step(MPI_Comm comm) {
+    const real_t dt = cfl_.dt(u_view_, comm);
+    timestepper_->integrate(dt, u_);
+    time_ += dt;
+    return dt;
+  }
+#endif
 
   real_t time() const { return time_; }
   zisa::array_view<complex_t, dim_v + 1> u() { return u_; }
