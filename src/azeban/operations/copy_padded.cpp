@@ -16,7 +16,7 @@ void copy_to_padded(const zisa::array_view<complex_t, 1> &dst,
       dst[i] = pad_value;
     }
   }
-#ifdef ZISA_HAS_CUDA
+#if ZISA_HAS_CUDA
   else if (src.memory_location() == zisa::device_type::cuda
            && dst.memory_location() == zisa::device_type::cuda) {
     copy_to_padded_cuda(dst, src, pad_value);
@@ -59,7 +59,7 @@ void copy_to_padded(const zisa::array_view<complex_t, 2> &dst,
       }
     }
   }
-#ifdef ZISA_HAS_CUDA
+#if ZISA_HAS_CUDA
   else if (src.memory_location() == zisa::device_type::cuda
            && dst.memory_location() == zisa::device_type::cuda) {
     copy_to_padded_cuda(dst, src, pad_value);
@@ -112,7 +112,7 @@ void copy_to_padded(const zisa::array_view<complex_t, 3> &dst,
       }
     }
   }
-#ifdef ZISA_HAS_CUDA
+#if ZISA_HAS_CUDA
   else if (src.memory_location() == zisa::device_type::cuda
            && dst.memory_location() == zisa::device_type::cuda) {
     copy_to_padded_cuda(dst, src, pad_value);
