@@ -175,14 +175,14 @@ private:
           const real_t absk2 = k1 * k1 + k2 * k2;
           complex_t L1_hat, L2_hat;
           incompressible_euler_2d_compute_L(
-              k1, k2, absk2, stride_B, idx_B, B_hat_.raw(), &L1_hat, &L2_hat);
+              k2, k1, absk2, stride_B, idx_B, B_hat_.raw(), &L1_hat, &L2_hat);
           const real_t v = visc_.eval(zisa::sqrt(absk2));
           u_hat(0, i, j) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j);
           u_hat(1, i, j) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j);
           if (has_tracer_) {
             complex_t L3_hat;
             advection_2d(
-                k1, k2, stride_B, idx_B, B_hat_.raw() + 3 * stride_B, &L3_hat);
+                k2, k1, stride_B, idx_B, B_hat_.raw() + 3 * stride_B, &L3_hat);
             u_hat(2, i, j) = -L3_hat + v * u_hat(2, i, j);
           }
         }
@@ -216,9 +216,9 @@ private:
             const real_t k3 = 2 * zisa::pi * k_;
             const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
             complex_t L1_hat, L2_hat, L3_hat;
-            incompressible_euler_3d_compute_L(k1,
+            incompressible_euler_3d_compute_L(k3,
+                                              k1,
                                               k2,
-                                              k3,
                                               absk2,
                                               stride_B,
                                               idx_B,
@@ -235,9 +235,9 @@ private:
                 = absk2 == 0 ? 0 : -L3_hat + v * u_hat(2, i, j, k);
             if (has_tracer_) {
               complex_t L4_hat;
-              advection_3d(k1,
+              advection_3d(k3,
+                           k1,
                            k2,
-                           k3,
                            stride_B,
                            idx_B,
                            B_hat_.raw() + 6 * stride_B,
