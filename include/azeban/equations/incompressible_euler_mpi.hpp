@@ -8,6 +8,8 @@
 #include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
 #include <azeban/operations/fft_mpi_factory.hpp>
 #include <azeban/profiler.hpp>
+#include <fmt/core.h>
+#include <fmt/ranges.h>
 
 namespace azeban {
 
@@ -37,12 +39,14 @@ public:
 protected:
   using super::grid_;
   MPI_Comm comm_;
+  zisa::array<complex_t, dim_v + 1> u_hat_partial_pad_;
   zisa::array<complex_t, dim_v + 1> h_u_hat_pad_;
   zisa::array<complex_t, dim_v + 1> d_u_hat_pad_;
   zisa::array<real_t, dim_v + 1> u_pad_;
   zisa::array<real_t, dim_v + 1> B_pad_;
   zisa::array<complex_t, dim_v + 1> d_B_hat_pad_;
   zisa::array<complex_t, dim_v + 1> h_B_hat_pad_;
+  zisa::array<complex_t, dim_v + 1> B_hat_partial_pad_;
   zisa::array<complex_t, dim_v + 1> B_hat_;
   std::shared_ptr<FFT<dim_v>> fft_u_;
   std::shared_ptr<FFT<dim_v>> fft_B_;
@@ -58,6 +62,8 @@ protected:
   component(const zisa::array<complex_t, dim_v + 1> &arr, int dim);
 
   void computeB();
+  void pad_u_hat(const zisa::array_const_view<complex_t, dim_v + 1> &u_hat);
+  void unpad_B_hat();
 };
 
 template <int Dim, typename SpectralViscosity>
@@ -92,26 +98,18 @@ public:
     LOG_ERR_IF(u_hat.shape(0) != h_u_hat_pad_.shape(0),
                "Wrong number of variables");
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::dudt");
-    const zisa::int_t n_var_u = 2 + (has_tracer_ ? 1 : 0);
-    const zisa::int_t n_var_B = 3 + (has_tracer_ ? 2 : 0);
-    for (zisa::int_t i = 0; i < n_var_u; ++i) {
-      // TODO: Change this to a padded copy
-      zisa::copy(component(h_u_hat_pad_, i), component(u_hat, i));
-    }
+    pad_u_hat(u_hat);
     zisa::copy(d_u_hat_pad_, h_u_hat_pad_);
     fft_u_->backward();
     computeB();
     fft_B_->forward();
     zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
-    for (zisa::int_t i = 0; i < n_var_B; ++i) {
-      // TODO: Change this to a padded copy
-      zisa::copy(component(B_hat_, i), component(h_B_hat_pad_, i));
-    }
+    unpad_B_hat();
     computeDudt(u_hat);
     AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::dudt");
   }
 
-  virtual int n_vars() const override { return 2 + (has_tracer_ ? 1 : 0); }
+  using super::n_vars;
 
 protected:
   using super::B_hat_;
@@ -129,6 +127,8 @@ protected:
 
   using super::component;
   using super::computeB;
+  using super::pad_u_hat;
+  using super::unpad_B_hat;
 
 private:
   SpectralViscosity visc_;
@@ -197,26 +197,18 @@ public:
     LOG_ERR_IF(u_hat.shape(0) != h_u_hat_pad_.shape(0),
                "Wrong number of variables");
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::dudt");
-    const zisa::int_t n_var_u = 3 + (has_tracer_ ? 1 : 0);
-    const zisa::int_t n_var_B = 6 + (has_tracer_ ? 3 : 0);
-    for (zisa::int_t i = 0; i < n_var_u; ++i) {
-      // TODO: Change this to a padded copy
-      zisa::copy(component(h_u_hat_pad_, i), component(u_hat, i));
-    }
+    pad_u_hat(u_hat);
     zisa::copy(d_u_hat_pad_, h_u_hat_pad_);
     fft_u_->backward();
     computeB();
     fft_B_->forward();
     zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
-    for (zisa::int_t i = 0; i < n_var_B; ++i) {
-      // TODO: Change this to a padded copy
-      zisa::copy(component(B_hat_, i), component(h_B_hat_pad_, i));
-    }
+    unpad_B_hat();
     computeDudt(u_hat);
     AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::dudt");
   }
 
-  virtual int n_vars() const override { return 3 + (has_tracer_ ? 1 : 0); }
+  using super::n_vars;
 
 protected:
   using super::B_hat_;
@@ -234,6 +226,8 @@ protected:
 
   using super::component;
   using super::computeB;
+  using super::pad_u_hat;
+  using super::unpad_B_hat;
 
 private:
   SpectralViscosity visc_;

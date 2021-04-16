@@ -213,17 +213,21 @@ struct Grid {
 #endif
 
 #if AZEBAN_HAS_MPI
-  zisa::int_t i_phys(zisa::int_t i, MPI_Comm comm) const {
-    int rank, size;
-    MPI_Comm_rank(comm, &rank);
+  zisa::int_t i_phys(zisa::int_t i, int rank, MPI_Comm comm) const {
+    int size;
     MPI_Comm_size(comm, &size);
     return i + rank * (N_phys / size)
            + zisa::min(zisa::integer_cast<zisa::int_t>(rank), N_phys % size);
   }
 
-  zisa::int_t i_fourier(zisa::int_t i, MPI_Comm comm) const {
-    int rank, size;
+  zisa::int_t i_phys(zisa::int_t i, MPI_Comm comm) const {
+    int rank;
     MPI_Comm_rank(comm, &rank);
+    return i_phys(i, rank, comm);
+  }
+
+  zisa::int_t i_fourier(zisa::int_t i, int rank, MPI_Comm comm) const {
+    int size;
     MPI_Comm_size(comm, &size);
     if (dim_v == 1) {
       return i;
@@ -239,7 +243,25 @@ struct Grid {
     }
   }
 
+  zisa::int_t i_fourier(zisa::int_t i, MPI_Comm comm) const {
+    int rank;
+    MPI_Comm_rank(comm, &rank);
+    return i_fourier(i, rank, comm);
+  }
+
+  zisa::int_t j_phys(zisa::int_t j, int rank, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    ZISA_UNUSED(rank);
+    return j;
+  }
+
   zisa::int_t j_phys(zisa::int_t j, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return j;
+  }
+
+  zisa::int_t j_fourier(zisa::int_t j, int rank, MPI_Comm comm) const {
+    ZISA_UNUSED(rank);
     ZISA_UNUSED(comm);
     return j;
   }
@@ -251,7 +273,23 @@ struct Grid {
 
   template <bool enable = Dim == 3,
             typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_phys(zisa::int_t k, int rank, MPI_Comm comm) const {
+    ZISA_UNUSED(rank);
+    ZISA_UNUSED(comm);
+    return k;
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
   zisa::int_t k_phys(zisa::int_t k, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return k;
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_fourier(zisa::int_t k, int rank, MPI_Comm comm) const {
+    ZISA_UNUSED(rank);
     ZISA_UNUSED(comm);
     return k;
   }
@@ -263,18 +301,22 @@ struct Grid {
     return k;
   }
 
-  zisa::int_t i_phys_pad(zisa::int_t i, MPI_Comm comm) const {
-    int rank, size;
-    MPI_Comm_rank(comm, &rank);
+  zisa::int_t i_phys_pad(zisa::int_t i, int rank, MPI_Comm comm) const {
+    int size;
     MPI_Comm_size(comm, &size);
     return i + rank * (N_phys_pad / size)
            + zisa::min(zisa::integer_cast<zisa::int_t>(rank),
                        N_phys_pad % size);
   }
 
-  zisa::int_t i_fourier_pad(zisa::int_t i, MPI_Comm comm) const {
-    int rank, size;
+  zisa::int_t i_phys_pad(zisa::int_t i, MPI_Comm comm) const {
+    int rank;
     MPI_Comm_rank(comm, &rank);
+    return i_phys_pad(i, rank, comm);
+  }
+
+  zisa::int_t i_fourier_pad(zisa::int_t i, int rank, MPI_Comm comm) const {
+    int size;
     MPI_Comm_size(comm, &size);
     if (dim_v == 1) {
       return i;
@@ -291,7 +333,25 @@ struct Grid {
     }
   }
 
+  zisa::int_t i_fourier_pad(zisa::int_t i, MPI_Comm comm) const {
+    int rank;
+    MPI_Comm_rank(comm, &rank);
+    return i_fourier_pad(i, rank, comm);
+  }
+
+  zisa::int_t j_phys_pad(zisa::int_t j, int rank, MPI_Comm comm) const {
+    ZISA_UNUSED(rank);
+    ZISA_UNUSED(comm);
+    return j;
+  }
+
   zisa::int_t j_phys_pad(zisa::int_t j, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return j;
+  }
+
+  zisa::int_t j_fourier_pad(zisa::int_t j, int rank, MPI_Comm comm) const {
+    ZISA_UNUSED(rank);
     ZISA_UNUSED(comm);
     return j;
   }
@@ -303,7 +363,23 @@ struct Grid {
 
   template <bool enable = Dim == 3,
             typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_phys_pad(zisa::int_t k, int rank, MPI_Comm comm) const {
+    ZISA_UNUSED(rank);
+    ZISA_UNUSED(comm);
+    return k;
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
   zisa::int_t k_phys_pad(zisa::int_t k, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return k;
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_fourier_pad(zisa::int_t k, int rank, MPI_Comm comm) const {
+    ZISA_UNUSED(rank);
     ZISA_UNUSED(comm);
     return k;
   }

@@ -4,6 +4,9 @@
 #include <iostream>
 #include <zisa/config.hpp>
 #include <zisa/math/basic_functions.hpp>
+#ifndef __NVCC__
+#include <fmt/format.h>
+#endif
 
 namespace azeban {
 
@@ -238,5 +241,20 @@ std::ostream &operator<<(std::ostream &os, const Complex<Scalar> &c) {
 }
 
 }
+
+#ifndef __NVCC__
+template <typename Scalar>
+struct fmt::formatter<azeban::Complex<Scalar>> {
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext &ctx) {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto format(const azeban::Complex<Scalar> &c, FormatContext &ctx) {
+    return fmt::format_to(ctx.out(), "({}, {})", c.x, c.y);
+  }
+};
+#endif
 
 #endif
