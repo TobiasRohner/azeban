@@ -376,7 +376,116 @@ template <>
 void IncompressibleEuler_MPI_Base<3>::pad_u_hat(
     const zisa::array_const_view<complex_t, 4> &u_hat) {
   AZEBAN_PROFILE_START("IncompressibleEuler_MPI::pad_u_hat");
-  LOG_ERR("Not Implemented");
+  int rank, size;
+  MPI_Comm_rank(comm_, &rank);
+  MPI_Comm_size(comm_, &size);
+  std::vector<MPI_Request> send_reqs;
+  std::vector<MPI_Request> recv_reqs;
+  const zisa::int_t n_vars = u_hat.shape(0);
+  const zisa::int_t pad = grid_.N_phys_pad - grid_.N_phys;
+  const zisa::int_t i0 = grid_.i_fourier(0, rank, comm_);
+  const zisa::int_t i1 = grid_.i_fourier(0, rank + 1, comm_);
+  const zisa::int_t i0_pad = grid_.i_fourier_pad(0, rank, comm_);
+  const zisa::int_t i1_pad = grid_.i_fourier_pad(0, rank + 1, comm_);
+  // Send unpadded data
+  for (zisa::int_t d = 0 ; d < n_vars ; ++d) {
+    const auto slice = component(u_hat, d);
+    for (int send_to = 0 ; send_to < size ; ++send_to) {
+      zisa::int_t i0_other_pad = grid_.i_fourier_pad(0, send_to, comm_);
+      zisa::int_t i1_other_pad = grid_.i_fourier_pad(0, send_to + 1, comm_);
+      // Padded block does not contain padding values
+      if (i1_other_pad < grid_.N_fourier || i0_other_pad >= grid_.N_fourier + pad) {
+	if (i0_other_pad <= grid_.N_fourier + pad) {
+	  i0_other_pad -= pad;
+	  i1_other_pad -= pad;
+	}
+	if (i0 < i0_other_pad && i1 > i0_other_pad) {
+	  send_reqs.emplace_back();
+	  MPI_Isend(slice.raw(),
+		    (i1 - i0_other_pad) * slice.shape(1) * slice.shape(2),
+		    mpi_type<complex_t>(),
+		    send_to,
+		    d,
+		    comm_,
+		    &send_reqs.back());
+	}
+	else if (i0 >= i0_other_pad && i1 <= i1_other_pad) {
+	  send_reqs.emplace_back();
+	  MPI_Isend(slice.raw(),
+		    slice.size(),
+		    mpi_type<complex_t>(),
+		    send_to,
+		    d,
+		    comm_,
+		    &send_reqs.back());
+	}
+	else if (i0 < i1_other_pad && i1 > i1_other_pad) {
+	  send_reqs.emplace_back();
+	  MPI_Isend(slice.raw(),
+		    (i1_other_pad - i0) * slice.shape(1) * slice.shape(2),
+		    mpi_type<complex_t>(),
+		    send_to,
+		    d,
+		    comm_,
+		    &send_reqs.back());
+	}
+      }
+      // Somewhere in the padded block are padding values
+      else {
+	// Padding values are at the end of the block
+	if (i1_other_pad > grid_.N_fourier && i1_pad_other <= grid_.N_fourier + pad) {
+	  if (i1 > i0_other_pad && i0 < grid_.N_fourier) {
+	    send_reqs.emplace_back();
+	    MPI_Isend(slice.raw() + (i0_other_pad - i0) * slice.shape(1) * slice.shape(2),
+		      (i1 - i0_other_pad) * slice.shape(1) * slice.shape(2),
+		      mpi_type<complex_t>(),
+		      send_to,
+		      d,
+		      comm_,
+		      &send_reqs.back());
+	  }
+	  else if (i0 < i0_other_pad && i1 > grid_.N_fourier) {
+	    send_reqs.emplace_back();
+	    MPI_Isend(slice.raw() + (i0_other_pad - i0) * slice.shape(1) * slice.shape(2),
+		      (grid_.N_fourier - i0_other_pad) * slice.shape(1) * slice.shape(2),
+		      mpi_type<complex_t>(),
+		      send_to,
+		      d,
+		      comm_,
+		      &send_reqs.back());
+	  }
+	  else if (i0 >= i0_other_pad && i1 <= i1_other_pad && i1 > grid_.N_fourier) {
+	    send_reqs.emplace_back();
+	    MPI_Isend(slice.raw(),
+		      (grid_.N_fourier - i0) * slice.shape(1) * slice.shape(2),
+		      mpi_type<complex_t>(),
+		      send_to,
+		      d,
+		      comm_,
+		      &send_reqs.back());
+	  }
+	  else if (i0 >= i0_other_pad && i1 <= grid_.N_fourier) {
+	    send_reqs.emplace_back();
+	    MPI_Isend(slice.raw(),
+		      slice.size(),
+		      mpi_type<complex_t>(),
+		      send_to,
+		      d,
+		      comm_,
+		      &send_reqs.back());
+	  }
+	}
+	// Padding values are in the middle of the block
+	else if (i0_other_pad < grid_.N_fourier && i1_other_pad > grid_.N_fourier + pad) {
+	  // TODO: Implement
+	}
+	// Padding values are at the start of the block
+	else if (i0_other_pad >= grid_.N_fourier && i0_other_pad < grid_.N_fourier + pad) {
+	  // TODO: Implement
+	}
+      }
+    }
+  }
   AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::pad_u_hat");
 }
 
