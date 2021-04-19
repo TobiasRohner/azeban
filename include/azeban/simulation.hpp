@@ -55,12 +55,10 @@ public:
 
   void simulate_until(real_t t) {
     real_t dt = cfl_.dt(u_view_);
-    fmt::print(stderr, "dt = {}\n", dt);
     while (time_ < t - dt) {
       timestepper_->integrate(dt, u_);
       time_ += dt;
       dt = cfl_.dt(u_view_);
-      fmt::print(stderr, "dt = {}\n", dt);
     }
     timestepper_->integrate(t - time_, u_);
     time_ = t;

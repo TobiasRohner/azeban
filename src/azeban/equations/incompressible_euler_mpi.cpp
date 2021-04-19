@@ -414,16 +414,18 @@ static auto get_padding_messages(const Grid<3> &grid, MPI_Comm comm) {
           = unpadded_pos - unpadded_last_sent;
       msgs[unpadded_rank][padded_rank].tag = tag;
     }
-    ++unpadded_pos;
     if (sent) {
       ++tag;
-      unpadded_last_sent = unpadded_pos - 1;
-      if (unpadded_pos > i1_unpadded) {
+      unpadded_last_sent = unpadded_pos;
+      if (unpadded_pos == i1_unpadded) {
         ++unpadded_rank;
       }
-      if (unpadded_pos > grid.N_fourier) {
-        zisa::int_t i0 = i0_padded;
-        zisa::int_t i1 = i1_padded;
+      if (padded_pos == i1_padded) {
+        ++padded_rank;
+      }
+      if (unpadded_pos == grid.N_fourier) {
+        zisa::int_t i0 = grid.i_fourier_pad(0, padded_rank, comm);
+        zisa::int_t i1 = grid.i_fourier_pad(0, padded_rank + 1, comm);
         while (!(i0 <= unpadded_pos + pad && i1 > unpadded_pos + pad)) {
           ++padded_rank;
           i0 = grid.i_fourier_pad(0, padded_rank, comm);
@@ -431,7 +433,9 @@ static auto get_padding_messages(const Grid<3> &grid, MPI_Comm comm) {
         }
       }
     }
+    ++unpadded_pos;
   }
+  /*
   MPI_Barrier(comm);
   if (rank == 0) {
     for (int unpadded = 0; unpadded < size; ++unpadded) {
@@ -450,6 +454,7 @@ static auto get_padding_messages(const Grid<3> &grid, MPI_Comm comm) {
     }
   }
   MPI_Barrier(comm);
+  */
   return msgs;
 }
 
