@@ -8,6 +8,9 @@
 #include <string>
 #include <vector>
 #include <zisa/config.hpp>
+#if AZEBAN_HAS_MPI
+#include <mpi.h>
+#endif
 
 namespace azeban {
 
@@ -31,6 +34,11 @@ public:
   static void sync();
   static void start(const std::string &name);
   static void stop(const std::string &name);
+#if AZEBAN_HAS_MPI
+  static void sync(MPI_Comm comm);
+  static void start(const std::string &name, MPI_Comm comm);
+  static void stop(const std::string &name, MPI_Comm comm);
+#endif
 
   static std::string summary();
   static nlohmann::json json();
@@ -42,11 +50,11 @@ private:
 };
 
 #if AZEBAN_DO_PROFILE
-#define AZEBAN_PROFILE_START(name) Profiler::start(name)
-#define AZEBAN_PROFILE_STOP(name) Profiler::stop(name)
+#define AZEBAN_PROFILE_START(...) Profiler::start(__VA_ARGS__)
+#define AZEBAN_PROFILE_STOP(...) Profiler::stop(__VA_ARGS__)
 #else
-#define AZEBAN_PROFILE_START(name)
-#define AZEBAN_PROFILE_STOP(name)
+#define AZEBAN_PROFILE_START(...)
+#define AZEBAN_PROFILE_STOP(...)
 #endif
 
 }

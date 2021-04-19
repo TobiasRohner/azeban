@@ -158,7 +158,7 @@ CUFFT_MPI<2>::~CUFFT_MPI() {
 void CUFFT_MPI<2>::forward() {
   LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
              "Forward operation was not initialized");
-  AZEBAN_PROFILE_START("CUFFT_MPI::forward");
+  AZEBAN_PROFILE_START("CUFFT_MPI::forward", comm_);
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {
@@ -194,13 +194,13 @@ void CUFFT_MPI<2>::forward() {
                           CUFFT_FORWARD);
     cudaCheckError(status);
   }
-  AZEBAN_PROFILE_STOP("CUFFT_MPI::forward");
+  AZEBAN_PROFILE_STOP("CUFFT_MPI::forward", comm_);
 }
 
 void CUFFT_MPI<2>::backward() {
   LOG_ERR_IF((direction_ & FFT_BACKWARD) == 0,
              "Backward operation was not initialized");
-  AZEBAN_PROFILE_START("CUFFT_MPI::backward");
+  AZEBAN_PROFILE_START("CUFFT_MPI::backward", comm_);
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {
@@ -238,7 +238,7 @@ void CUFFT_MPI<2>::backward() {
         (double *)u_.raw());
     cudaCheckError(status);
   }
-  AZEBAN_PROFILE_STOP("CUFFT_MPI::backward");
+  AZEBAN_PROFILE_STOP("CUFFT_MPI::backward", comm_);
 }
 
 void CUFFT_MPI<2>::transpose_forward() {
@@ -523,7 +523,7 @@ void CUFFT_MPI<3>::forward() {
              "Forward operation was not initialized");
   int rank;
   MPI_Comm_rank(comm_, &rank);
-  AZEBAN_PROFILE_START("CUFFT_MPI::forward");
+  AZEBAN_PROFILE_START("CUFFT_MPI::forward", comm_);
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {
@@ -559,7 +559,7 @@ void CUFFT_MPI<3>::forward() {
                           CUFFT_FORWARD);
     cudaCheckError(status);
   }
-  AZEBAN_PROFILE_STOP("CUFFT_MPI::forward");
+  AZEBAN_PROFILE_STOP("CUFFT_MPI::forward", comm_);
 }
 
 void CUFFT_MPI<3>::backward() {
@@ -567,7 +567,7 @@ void CUFFT_MPI<3>::backward() {
              "Backward operation was not initialized");
   int rank;
   MPI_Comm_rank(comm_, &rank);
-  AZEBAN_PROFILE_START("CUFFT_MPI::backward");
+  AZEBAN_PROFILE_START("CUFFT_MPI::backward", comm_);
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {
@@ -605,7 +605,7 @@ void CUFFT_MPI<3>::backward() {
         (double *)u_.raw());
     cudaCheckError(status);
   }
-  AZEBAN_PROFILE_STOP("CUFFT_MPI::backward");
+  AZEBAN_PROFILE_STOP("CUFFT_MPI::backward", comm_);
 }
 
 void CUFFT_MPI<3>::transpose_forward() {

@@ -67,20 +67,20 @@ IncompressibleEuler_MPI_Base<2>::component(const zisa::array<complex_t, 3> &arr,
 
 template <>
 void IncompressibleEuler_MPI_Base<2>::computeB() {
-  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeB");
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeB", comm_);
   if (has_tracer_) {
     incompressible_euler_compute_B_tracer_cuda<2>(
         fft_B_->u(), fft_u_->u(), grid_);
   } else {
     incompressible_euler_compute_B_cuda<2>(fft_B_->u(), fft_u_->u(), grid_);
   }
-  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeB");
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeB", comm_);
 }
 
 template <>
 void IncompressibleEuler_MPI_Base<2>::pad_u_hat(
     const zisa::array_const_view<complex_t, 3> &u_hat) {
-  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::pad_u_hat");
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::pad_u_hat", comm_);
   int rank, size;
   MPI_Comm_rank(comm_, &rank);
   MPI_Comm_size(comm_, &size);
@@ -194,12 +194,12 @@ void IncompressibleEuler_MPI_Base<2>::pad_u_hat(
       }
     }
   }
-  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::pad_u_hat");
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::pad_u_hat", comm_);
 }
 
 template <>
 void IncompressibleEuler_MPI_Base<2>::unpad_B_hat() {
-  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::unpad_B_hat");
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::unpad_B_hat", comm_);
   int rank, size;
   MPI_Comm_rank(comm_, &rank);
   MPI_Comm_size(comm_, &size);
@@ -298,7 +298,7 @@ void IncompressibleEuler_MPI_Base<2>::unpad_B_hat() {
   }
   MPI_Waitall(send_reqs.size(), send_reqs.data(), MPI_STATUSES_IGNORE);
   MPI_Waitall(recv_reqs.size(), recv_reqs.data(), MPI_STATUSES_IGNORE);
-  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::unpad_B_hat");
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::unpad_B_hat", comm_);
 }
 
 template <>
@@ -362,14 +362,14 @@ IncompressibleEuler_MPI_Base<3>::component(const zisa::array<complex_t, 4> &arr,
 
 template <>
 void IncompressibleEuler_MPI_Base<3>::computeB() {
-  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeB");
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeB", comm_);
   if (has_tracer_) {
     incompressible_euler_compute_B_tracer_cuda<3>(
         fft_B_->u(), fft_u_->u(), grid_);
   } else {
     incompressible_euler_compute_B_cuda<3>(fft_B_->u(), fft_u_->u(), grid_);
   }
-  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeB");
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeB", comm_);
 }
 
 static auto get_padding_messages(const Grid<3> &grid, MPI_Comm comm) {
@@ -461,7 +461,7 @@ static auto get_padding_messages(const Grid<3> &grid, MPI_Comm comm) {
 template <>
 void IncompressibleEuler_MPI_Base<3>::pad_u_hat(
     const zisa::array_const_view<complex_t, 4> &u_hat) {
-  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::pad_u_hat");
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::pad_u_hat", comm_);
   int rank, size;
   MPI_Comm_rank(comm_, &rank);
   MPI_Comm_size(comm_, &size);
@@ -547,12 +547,12 @@ void IncompressibleEuler_MPI_Base<3>::pad_u_hat(
       }
     }
   }
-  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::pad_u_hat");
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::pad_u_hat", comm_);
 }
 
 template <>
 void IncompressibleEuler_MPI_Base<3>::unpad_B_hat() {
-  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::unpad_B_hat");
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::unpad_B_hat", comm_);
   int rank, size;
   MPI_Comm_rank(comm_, &rank);
   MPI_Comm_size(comm_, &size);
@@ -616,7 +616,7 @@ void IncompressibleEuler_MPI_Base<3>::unpad_B_hat() {
   }
   MPI_Waitall(send_reqs.size(), send_reqs.data(), MPI_STATUSES_IGNORE);
   MPI_Waitall(recv_reqs.size(), recv_reqs.data(), MPI_STATUSES_IGNORE);
-  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::unpad_B_hat");
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::unpad_B_hat", comm_);
 }
 
 }

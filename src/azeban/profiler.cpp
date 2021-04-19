@@ -31,9 +31,6 @@ void Profiler::sync() {
 #if ZISA_HAS_CUDA
   cudaDeviceSynchronize();
 #endif
-#if AZEBAN_HAS_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
-#endif
 }
 
 void Profiler::start(const std::string &name) {
@@ -50,6 +47,28 @@ void Profiler::stop(const std::string &name) {
   Stage &stage = stages_.find(name)->second;
   stage.elapsed += end_time - stage.start_time;
 }
+
+#if AZEBAN_HAS_MPI
+void Profiler::sync(MPI_Comm comm) {
+  sync();
+  MPI_Barrier(comm);
+}
+
+void Profiler::start(const std::string &name, MPI_Comm comm) {
+  auto [it, is_new] = stages_.emplace(name, name);
+  Stage &stage = it->second;
+  ++stage.num_calls;
+  sync(comm);
+  stage.start_time = clock::now();
+}
+
+void Profiler::stop(const std::string &name, MPI_Comm comm) {
+  sync(comm);
+  time_point end_time = clock::now();
+  Stage &stage = stages_.find(name)->second;
+  stage.elapsed += end_time - stage.start_time;
+}
+#endif
 
 std::string Profiler::summary() {
   struct StageSummary {
