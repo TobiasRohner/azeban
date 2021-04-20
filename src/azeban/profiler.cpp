@@ -49,6 +49,17 @@ void Profiler::stop(const std::string &name) {
 }
 
 #if AZEBAN_HAS_MPI
+void Profiler::start(MPI_Comm comm) {
+  sync(comm);
+  start_time = clock::now();
+}
+
+void Profiler::stop(MPI_Comm comm) {
+  sync(comm);
+  time_point end_time = clock::now();
+  elapsed = end_time - start_time;
+}
+
 void Profiler::sync(MPI_Comm comm) {
   sync();
   MPI_Barrier(comm);

@@ -37,11 +37,11 @@ public:
 #if AZEBAN_HAS_MPI
   real_t dt(const zisa::array_const_view<complex_t, dim_v + 1> &u_hat,
             MPI_Comm comm) const {
-    AZEBAN_PROFILE_START("CFL::dt");
+    AZEBAN_PROFILE_START("CFL::dt", comm);
     const real_t sup_loc = norm(u_hat, 1);
     real_t sup;
     MPI_Allreduce(&sup_loc, &sup, 1, mpi_type(sup), MPI_SUM, comm);
-    AZEBAN_PROFILE_STOP("CFL::dt");
+    AZEBAN_PROFILE_STOP("CFL::dt", comm);
     return zisa::pow<dim_v - 1>(grid_.N_phys) * C_ / sup;
   }
 #endif

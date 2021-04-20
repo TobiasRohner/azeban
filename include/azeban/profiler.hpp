@@ -35,6 +35,8 @@ public:
   static void start(const std::string &name);
   static void stop(const std::string &name);
 #if AZEBAN_HAS_MPI
+  static void start(MPI_Comm comm);
+  static void stop(MPI_Comm comm);
   static void sync(MPI_Comm comm);
   static void start(const std::string &name, MPI_Comm comm);
   static void stop(const std::string &name, MPI_Comm comm);

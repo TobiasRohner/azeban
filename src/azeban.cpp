@@ -245,13 +245,19 @@ int main(int argc, char *argv[]) {
   int dim = config["dimension"];
 
 #if AZEBAN_HAS_MPI
-  int size;
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   const bool use_mpi = size > 1;
 #endif
 
-  Profiler::start();
 #if AZEBAN_HAS_MPI
+  Profiler::start(MPI_COMM_WORLD);
+#else
+  Profiler::start();
+#endif
+#if AZEBAN_HAS_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
   if (use_mpi) {
     switch (dim) {
     case 2:
@@ -282,13 +288,21 @@ int main(int argc, char *argv[]) {
     }
 #if AZEBAN_HAS_MPI
   }
-#endif
+  Profiler::stop(MPI_COMM_WORLD);
+#else
   Profiler::stop();
+#endif
 
 #if AZEBAN_DO_PROFILE
+#if AZEBAN_HAS_MPI
+  fmt::print("Rank {}:\n{}", rank, Profiler::summary());
+  std::ofstream pstream("profiling_rank" + std::to_string(rank) + ".json");
+  pstream << std::setw(2) << Profiler::json();
+#else
   fmt::print(Profiler::summary());
   std::ofstream pstream("profiling.json");
   pstream << std::setw(2) << Profiler::json();
+#endif
 #endif
 
 #if AZEBAN_HAS_MPI
