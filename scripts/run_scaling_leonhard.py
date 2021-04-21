@@ -73,14 +73,15 @@ def run_strong(dim, args):
             jobname = 'euler_' + str(dim) + 'd_strong_N' + str(N) + '_np' + str(n)
             # Create custom config file
             tmpfolder = os.path.join(args.tmp, jobname)
-            if not os.path.exists(tmpfolder):
-                os.makedirs(tmpfolder)
             config = os.path.join(tmpfolder, 'config.json')
-            with open(config, 'w') as f:
-                if dim == 2:
-                    f.write(CONFIG_2D.format(time=str(102.4/N), N=str(N)))
-                if dim == 3:
-                    f.write(CONFIG_3D.format(time=str(1.28/N), N=str(N)))
+            if not args.dry:
+                if not os.path.exists(tmpfolder):
+                    os.makedirs(tmpfolder)
+                with open(config, 'w') as f:
+                    if dim == 2:
+                        f.write(CONFIG_2D.format(time=str(102.4/N), N=str(N)))
+                    if dim == 3:
+                        f.write(CONFIG_3D.format(time=str(1.28/N), N=str(N)))
             cmd = ['bsub']
             cmd += ['-n', str(n)]
             cmd += ['-W', '00:10']
@@ -91,7 +92,8 @@ def run_strong(dim, args):
             cmd += ['-R', '"rusage[mem=' + str(32 * 1024 // n) + ']"']
             cmd += ['mpirun', args.executable, config]
             print(' '.join(cmd))
-            retval = subprocess.call(' '.join(cmd), shell=True)
+            if not args.dry:
+                retval = subprocess.call(' '.join(cmd), shell=True)
 
 
 def run_weak(dim, args):
@@ -108,14 +110,15 @@ def run_weak(dim, args):
         jobname = 'euler_' + str(dim) + 'd_weak_N' + str(N) + '_np' + str(n)
         # Create custom config file
         tmpfolder = os.path.join(args.tmp, jobname)
-        if not os.path.exists(tmpfolder):
-            os.makedirs(tmpfolder)
         config = os.path.join(tmpfolder, 'config.json')
-        with open(config, 'w') as f:
-            if dim == 2:
-                f.write(CONFIG_2D.format(time=str(10.24/N), N=str(N)))
-            if dim == 3:
-                f.write(CONFIG_3D.format(time=str(0.128/N), N=str(N)))
+        if not args.dry:
+            if not os.path.exists(tmpfolder):
+                os.makedirs(tmpfolder)
+            with open(config, 'w') as f:
+                if dim == 2:
+                    f.write(CONFIG_2D.format(time=str(10.24/N), N=str(N)))
+                if dim == 3:
+                    f.write(CONFIG_3D.format(time=str(0.128/N), N=str(N)))
         cmd = ['bsub']
         cmd += ['-n', str(n_tot)]
         cmd += ['-W', '00:10']
@@ -127,7 +130,8 @@ def run_weak(dim, args):
         cmd += ['-R', '"span[ptile=' + str(n_per_node) + ']"']
         cmd += ['mpirun', '-n', str(n), args.executable, config]
         print(' '.join(cmd))
-        retval = subprocess.call(' '.join(cmd), shell=True)
+        if not args.dry:
+            retval = subprocess.call(' '.join(cmd), shell=True)
 
 
 
@@ -136,22 +140,16 @@ if __name__ == '__main__':
     parser.add_argument('--executable', type=str, required=True)
     parser.add_argument('--tmp', type=str, default='/tmp')
     parser.add_argument('--dim', type=int, nargs='+')
-    parser.add_argument('--task', type=str, default='run')
+    parser.add_argument('--dry', action='store_true')
     args = parser.parse_args(sys.argv[1:])
     if args.dim is None:
         args.dim = [2, 3]
     args.executable = os.path.realpath(args.executable)
     args.tmp = os.path.realpath(args.tmp)
 
-    if args.task == 'run':
-        if 2 in args.dim:
-            run_strong(2, args)
-            run_weak(2, args)
-        if 3 in args.dim:
-            run_strong(3, args)
-            run_weak(3, args)
-    if args.task == 'plot':
-        if 2 in args.dim:
-            pass
-        if 3 in args.dim:
-            pass
+    if 2 in args.dim:
+        run_strong(2, args)
+        run_weak(2, args)
+    if 3 in args.dim:
+        run_strong(3, args)
+        run_weak(3, args)
