@@ -24,6 +24,11 @@ using namespace azeban;
 
 template <int dim_v>
 static void runFromConfig(const nlohmann::json &config) {
+  zisa::int_t num_samples = 1;
+  if (config.contains("num_samples")) {
+    num_samples = config["num_samples"];
+  }
+
   if (!config.contains("time")) {
     fmt::print(stderr, "Config file does not contain \"time\"\n");
     exit(1);
@@ -38,7 +43,7 @@ static void runFromConfig(const nlohmann::json &config) {
     snapshots.push_back(t_final);
   }
 
-  std::string output = "result.h5";
+  std::string output = "result";
   if (config.contains("output")) {
     output = config["output"];
   }
@@ -48,36 +53,39 @@ static void runFromConfig(const nlohmann::json &config) {
     rng.seed(config["seed"].get<size_t>());
   }
 
-  auto simulation = make_simulation<dim_v>(config);
-  const auto &grid = simulation.grid();
-
-  zisa::HDF5SerialWriter hdf5_writer(output);
-
-  auto u_host
-      = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
-  auto u_hat_host
-      = grid.make_array_fourier(simulation.n_vars(), zisa::device_type::cpu);
-  auto fft = make_fft<dim_v>(u_hat_host, u_host);
-
   auto initializer = make_initializer<dim_v>(config, rng);
-  initializer->initialize(simulation.u());
 
-  zisa::copy(u_hat_host, simulation.u());
-  fft->backward();
-  for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
-    u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
-  }
-  zisa::save(hdf5_writer, u_host, std::to_string(real_t(0)));
-  for (real_t t : snapshots) {
-    simulation.simulate_until(t);
-    fmt::print("Time: {}\n", t);
+  for (zisa::int_t sample = 0 ; sample < num_samples ; ++sample) {
+    auto simulation = make_simulation<dim_v>(config);
+    const auto &grid = simulation.grid();
+
+    auto u_host
+	= grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
+    auto u_hat_host
+	= grid.make_array_fourier(simulation.n_vars(), zisa::device_type::cpu);
+    auto fft = make_fft<dim_v>(u_hat_host, u_host);
+  
+    initializer->initialize(simulation.u());
+
+    zisa::HDF5SerialWriter hdf5_writer(output + "_sample_" + std::to_string(sample) + ".h5");
 
     zisa::copy(u_hat_host, simulation.u());
     fft->backward();
     for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
       u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
     }
-    zisa::save(hdf5_writer, u_host, std::to_string(t));
+    zisa::save(hdf5_writer, u_host, std::to_string(real_t(0)));
+    for (real_t t : snapshots) {
+      simulation.simulate_until(t);
+      fmt::print("Sample {}, Time {}\n", sample, t);
+
+      zisa::copy(u_hat_host, simulation.u());
+      fft->backward();
+      for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
+	u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
+      }
+      zisa::save(hdf5_writer, u_host, std::to_string(t));
+    }
   }
 }
 
@@ -88,6 +96,11 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
 
+  zisa::int_t num_samples = 1;
+  if (config.contains("num_samples")) {
+    num_samples = config["num_samples"];
+  }
+
   if (!config.contains("time")) {
     fmt::print(stderr, "Config file does not contain \"time\"\n");
     exit(1);
@@ -112,88 +125,62 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
     rng.seed(config["seed"].get<size_t>());
   }
 
-  auto simulation = make_simulation_mpi<dim_v>(config, comm);
-  const auto &grid = simulation.grid();
-
-  std::unique_ptr<zisa::HDF5SerialWriter> hdf5_writer;
-  if (rank == 0) {
-    hdf5_writer = std::make_unique<zisa::HDF5SerialWriter>(output);
-  }
-
-  auto u_host
-      = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu, comm);
-  auto u_device = grid.make_array_phys(
-      simulation.n_vars(), zisa::device_type::cuda, comm);
-  auto u_hat_device = grid.make_array_fourier(
-      simulation.n_vars(), zisa::device_type::cuda, comm);
-  auto fft = make_fft_mpi<dim_v>(u_hat_device, u_device, comm);
-
   auto initializer = make_initializer<dim_v>(config, rng);
-  zisa::array<real_t, dim_v + 1> u_init;
-  if (rank == 0) {
-    u_init = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
-    initializer->initialize(u_init);
-  }
-  std::vector<int> cnts(size);
-  std::vector<int> displs(size);
-  for (int r = 0; r < size; ++r) {
-    cnts[r] = zisa::pow<dim_v - 1>(grid.N_phys)
-              * (grid.N_phys / size
-                 + (zisa::integer_cast<zisa::int_t>(r) < grid.N_phys % size));
-  }
-  displs[0] = 0;
-  for (int r = 1; r < size; ++r) {
-    displs[r] = displs[r - 1] + cnts[r - 1];
-  }
-  std::vector<MPI_Request> reqs(simulation.n_vars());
-  const zisa::int_t n_elems_per_component_glob
-      = zisa::product(grid.shape_phys(1));
-  const zisa::int_t n_elems_per_component_loc
-      = zisa::product(grid.shape_phys(1, comm));
-  for (zisa::int_t i = 0; i < simulation.n_vars(); ++i) {
-    MPI_Iscatterv(u_init.raw() + i * n_elems_per_component_glob,
-                  cnts.data(),
-                  displs.data(),
-                  mpi_type<real_t>(),
-                  u_host.raw() + i * n_elems_per_component_loc,
-                  cnts[rank],
-                  mpi_type<real_t>(),
-                  0,
-                  comm,
-                  &reqs[i]);
-  }
-  MPI_Waitall(simulation.n_vars(), reqs.data(), MPI_STATUSES_IGNORE);
-  zisa::copy(u_device, u_host);
-  fft->forward();
-  zisa::copy(simulation.u(), u_hat_device);
 
-  zisa::copy(u_hat_device, simulation.u());
-  fft->backward();
-  zisa::copy(u_host, u_device);
-  for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
-    u_host[i] /= zisa::pow<dim_v>(grid.N_phys);
-  }
-  for (zisa::int_t i = 0; i < simulation.n_vars(); ++i) {
-    MPI_Igatherv(u_host.raw() + i * n_elems_per_component_loc,
-                 cnts[rank],
-                 mpi_type<real_t>(),
-                 u_init.raw() + i * n_elems_per_component_glob,
-                 cnts.data(),
-                 displs.data(),
-                 mpi_type<real_t>(),
-                 0,
-                 comm,
-                 &reqs[i]);
-  }
-  MPI_Waitall(simulation.n_vars(), reqs.data(), MPI_STATUSES_IGNORE);
-  if (rank == 0) {
-    zisa::save(*hdf5_writer, u_init, std::to_string(real_t(0)));
-  }
-  for (real_t t : snapshots) {
-    simulation.simulate_until(t, comm);
+  for (zisa::int_t sample = 0 ; sample < num_samples ; ++sample) {
+    auto simulation = make_simulation_mpi<dim_v>(config, comm);
+    const auto &grid = simulation.grid();
+
+    auto u_host
+	= grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu, comm);
+    auto u_device = grid.make_array_phys(
+	simulation.n_vars(), zisa::device_type::cuda, comm);
+    auto u_hat_device = grid.make_array_fourier(
+	simulation.n_vars(), zisa::device_type::cuda, comm);
+    auto fft = make_fft_mpi<dim_v>(u_hat_device, u_device, comm);
+
+    std::unique_ptr<zisa::HDF5SerialWriter> hdf5_writer;
     if (rank == 0) {
-      fmt::print("Time: {}\n", t);
+      hdf5_writer = std::make_unique<zisa::HDF5SerialWriter>(output + "_sample_" + std::to_string(sample) + ".h5");
     }
+
+    zisa::array<real_t, dim_v + 1> u_init;
+    if (rank == 0) {
+      u_init = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
+      initializer->initialize(u_init);
+    }
+    std::vector<int> cnts(size);
+    std::vector<int> displs(size);
+    for (int r = 0; r < size; ++r) {
+      cnts[r] = zisa::pow<dim_v - 1>(grid.N_phys)
+		* (grid.N_phys / size
+		   + (zisa::integer_cast<zisa::int_t>(r) < grid.N_phys % size));
+    }
+    displs[0] = 0;
+    for (int r = 1; r < size; ++r) {
+      displs[r] = displs[r - 1] + cnts[r - 1];
+    }
+    std::vector<MPI_Request> reqs(simulation.n_vars());
+    const zisa::int_t n_elems_per_component_glob
+	= zisa::product(grid.shape_phys(1));
+    const zisa::int_t n_elems_per_component_loc
+	= zisa::product(grid.shape_phys(1, comm));
+    for (zisa::int_t i = 0; i < simulation.n_vars(); ++i) {
+      MPI_Iscatterv(u_init.raw() + i * n_elems_per_component_glob,
+		    cnts.data(),
+		    displs.data(),
+		    mpi_type<real_t>(),
+		    u_host.raw() + i * n_elems_per_component_loc,
+		    cnts[rank],
+		    mpi_type<real_t>(),
+		    0,
+		    comm,
+		    &reqs[i]);
+    }
+    MPI_Waitall(simulation.n_vars(), reqs.data(), MPI_STATUSES_IGNORE);
+    zisa::copy(u_device, u_host);
+    fft->forward();
+    zisa::copy(simulation.u(), u_hat_device);
 
     zisa::copy(u_hat_device, simulation.u());
     fft->backward();
@@ -203,19 +190,48 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
     }
     for (zisa::int_t i = 0; i < simulation.n_vars(); ++i) {
       MPI_Igatherv(u_host.raw() + i * n_elems_per_component_loc,
-                   cnts[rank],
-                   mpi_type<real_t>(),
-                   u_init.raw() + i * n_elems_per_component_glob,
-                   cnts.data(),
-                   displs.data(),
-                   mpi_type<real_t>(),
-                   0,
-                   comm,
-                   &reqs[i]);
+		   cnts[rank],
+		   mpi_type<real_t>(),
+		   u_init.raw() + i * n_elems_per_component_glob,
+		   cnts.data(),
+		   displs.data(),
+		   mpi_type<real_t>(),
+		   0,
+		   comm,
+		   &reqs[i]);
     }
     MPI_Waitall(simulation.n_vars(), reqs.data(), MPI_STATUSES_IGNORE);
     if (rank == 0) {
-      zisa::save(*hdf5_writer, u_init, std::to_string(t));
+      zisa::save(*hdf5_writer, u_init, std::to_string(real_t(0)));
+    }
+    for (real_t t : snapshots) {
+      simulation.simulate_until(t, comm);
+      if (rank == 0) {
+	fmt::print("Time: {}\n", t);
+      }
+
+      zisa::copy(u_hat_device, simulation.u());
+      fft->backward();
+      zisa::copy(u_host, u_device);
+      for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
+	u_host[i] /= zisa::pow<dim_v>(grid.N_phys);
+      }
+      for (zisa::int_t i = 0; i < simulation.n_vars(); ++i) {
+	MPI_Igatherv(u_host.raw() + i * n_elems_per_component_loc,
+		     cnts[rank],
+		     mpi_type<real_t>(),
+		     u_init.raw() + i * n_elems_per_component_glob,
+		     cnts.data(),
+		     displs.data(),
+		     mpi_type<real_t>(),
+		     0,
+		     comm,
+		     &reqs[i]);
+      }
+      MPI_Waitall(simulation.n_vars(), reqs.data(), MPI_STATUSES_IGNORE);
+      if (rank == 0) {
+	zisa::save(*hdf5_writer, u_init, std::to_string(t));
+      }
     }
   }
 }

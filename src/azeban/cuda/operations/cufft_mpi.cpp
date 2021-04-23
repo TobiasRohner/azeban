@@ -242,6 +242,7 @@ void CUFFT_MPI<2>::backward() {
 }
 
 void CUFFT_MPI<2>::transpose_forward() {
+  AZEBAN_PROFILE_START("CUFFT_MPI::transpose_forward", comm_);
   int rank, size;
   MPI_Comm_rank(comm_, &rank);
   MPI_Comm_size(comm_, &size);
@@ -280,9 +281,11 @@ void CUFFT_MPI<2>::transpose_forward() {
   MPI_Waitall(N, reqs.data(), MPI_STATUSES_IGNORE);
 
   zisa::copy(u_hat_, mpi_recv_buffer_);
+  AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose_forward", comm_);
 }
 
 void CUFFT_MPI<2>::transpose_backward() {
+  AZEBAN_PROFILE_START("CUFFT_MPI::transpose_backward", comm_);
   int rank, size;
   MPI_Comm_rank(comm_, &rank);
   MPI_Comm_size(comm_, &size);
@@ -321,6 +324,7 @@ void CUFFT_MPI<2>::transpose_backward() {
   MPI_Waitall(N, reqs.data(), MPI_STATUSES_IGNORE);
 
   zisa::copy(partial_u_hat_, mpi_send_buffer_);
+  AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose_backward", comm_);
 }
 
 CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
@@ -609,6 +613,7 @@ void CUFFT_MPI<3>::backward() {
 }
 
 void CUFFT_MPI<3>::transpose_forward() {
+  AZEBAN_PROFILE_START("CUFFT_MPI::transpose_forward", comm_);
   int rank, size;
   MPI_Comm_rank(comm_, &rank);
   MPI_Comm_size(comm_, &size);
@@ -649,9 +654,11 @@ void CUFFT_MPI<3>::transpose_forward() {
   MPI_Waitall(N, reqs.data(), MPI_STATUSES_IGNORE);
 
   zisa::copy(u_hat_, mpi_recv_buffer_);
+  AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose_forward", comm_);
 }
 
 void CUFFT_MPI<3>::transpose_backward() {
+  AZEBAN_PROFILE_START("CUFFT_MPI::transpose_backward", comm_);
   int rank, size;
   MPI_Comm_rank(comm_, &rank);
   MPI_Comm_size(comm_, &size);
@@ -692,6 +699,7 @@ void CUFFT_MPI<3>::transpose_backward() {
   MPI_Waitall(N, reqs.data(), MPI_STATUSES_IGNORE);
 
   zisa::copy(partial_u_hat_, mpi_send_buffer_);
+  AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose_backward", comm_);
 }
 
 }
