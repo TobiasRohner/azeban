@@ -90,6 +90,7 @@ do
                -DCMAKE_C_COMPILER="${CC}" \
                -DCMAKE_CXX_COMPILER="${CXX}" \
                -DZISA_HAS_CUDA=${ZISA_HAS_CUDA} \
+	       -DZISA_HAS_NETCDF=1 \
                -DCMAKE_BUILD_TYPE=Release \
                ..
 
@@ -108,4 +109,5 @@ echo "        -DCMAKE_PREFIX_PATH=${install_dir}/zisa/lib/cmake/zisa \\ "
 echo "        -DCMAKE_C_COMPILER=${CC} \\ "
 echo "        -DCMAKE_CXX_COMPILER=${CXX} \\ "
 echo "        -DZISA_HAS_CUDA=${ZISA_HAS_CUDA} \\ "
+echo "	      -DZISA_HAS_NETCDF=1 \\ "
 echo "        REMAINING_ARGS "

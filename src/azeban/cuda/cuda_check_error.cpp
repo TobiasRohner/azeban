@@ -1,6 +1,7 @@
 #include <azeban/cuda/cuda_check_error.hpp>
 #include <cuda_runtime.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 namespace azeban::internal {
 

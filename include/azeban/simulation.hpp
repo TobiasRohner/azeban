@@ -97,6 +97,8 @@ public:
   }
 #endif
 
+  void reset() { time_ = 0; }
+
   real_t time() const { return time_; }
   zisa::array_view<complex_t, dim_v + 1> u() { return u_; }
   zisa::array_const_view<complex_t, dim_v + 1> u() const { return u_; }
