@@ -2,7 +2,7 @@
 
 
 import sys
-import h5py
+import netCDF4 as nc
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -23,12 +23,15 @@ def curl(x, y):
     return (dx - dy) * x.shape[0]
 
 
-with h5py.File(DATA_FILE, 'r') as f:
-    keys = list(sorted(f.keys(), key = lambda n : float(n)))
-    dim, Nx, Ny = f[keys[0]].shape
+with nc.Dataset(DATA_FILE, 'r', format='NETCDF4') as f:
+    names = [v for v in f.variables]
+    print(names)
+    info = [(int(name.split('_')[1]), float(name.split('_')[3]), name[:-2]) for name in names if name != 'time' and name.endswith('_u')]
+    info = sorted(info, key = lambda t: (t[0], t[1]))
+    print(info)
 
     fig, ax = plt.subplots()
-    img = curl(f[keys[0]][0], f[keys[0]][1])
+    img = curl(f[info[0][2]+'_u'], f[info[0][2]+'_v'])
     ln = plt.imshow(img)
 
     def init():
@@ -36,13 +39,15 @@ with h5py.File(DATA_FILE, 'r') as f:
         return ln,
 
     def update(frame):
-        print(frame)
-        img = curl(f[frame][0], f[frame][1])
+        print(frame[2])
+        u = f[frame[2]+'_u'][:]
+        v = f[frame[2]+'_v'][:]
+        img = curl(u, v)
         print(img)
         ln.set_array(img)
         plt.clim(np.min(img), np.max(img))
         return ln,
 
-    anim = FuncAnimation(fig, update, frames=keys, init_func=init, blit=True, interval=1000./5, save_count=len(keys))
+    anim = FuncAnimation(fig, update, frames=info, init_func=init, blit=True, interval=1000./5, save_count=len(info))
     anim.save('euler.mp4')
     plt.show()
