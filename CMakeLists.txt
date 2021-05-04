@@ -31,9 +31,19 @@ target_link_libraries(azeban_dependencies INTERFACE nlohmann_json::nlohmann_json
 find_package(fmt REQUIRED)
 target_link_libraries(azeban_dependencies INTERFACE fmt::fmt)
 
-find_package(HDF5 REQUIRED)
-target_include_directories(azeban_dependencies INTERFACE ${HDF5_INCLUDE_DIRS})
-target_link_libraries(azeban_dependencies INTERFACE ${HDF5_LIBRARIES})
+if(ZISA_HAS_HDF5)
+  find_package(HDF5 REQUIRED)
+  target_include_directories(azeban_dependencies INTERFACE ${HDF5_INCLUDE_DIRS})
+  target_link_libraries(azeban_dependencies INTERFACE ${HDF5_LIBRARIES})
+  target_compile_definitions(azeban_dependencies INTERFACE ZISA_HAS_HDF5=1)
+endif()
+
+if(ZISA_HAS_NETCDF)
+  find_package(NetCDF REQUIRED)
+  target_include_directories(azeban_dependencies INTERFACE ${NetCDF_INCLUDE_DIRS})
+  target_link_libraries(azeban_dependencies INTERFACE ${NetCDF_LIBRARIES})
+  target_compile_definitions(azeban_dependencies INTERFACE ZISA_HAS_NETCDF=1)
+endif()
 
 # experimental/filesystem
 target_link_libraries(azeban_dependencies INTERFACE stdc++fs)
