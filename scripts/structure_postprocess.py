@@ -17,7 +17,6 @@ if __name__ == '__main__':
     parser.add_argument('--nz', type=int, default=1)
     args = parser.parse_args(sys.argv[1:])
 
-    dimension = 2 if args.nz == 1 else 3
     with nc.Dataset(args.input, 'r', format='NETCDF4') as f:
         data = {}
         for v in f.variables:
@@ -29,7 +28,7 @@ if __name__ == '__main__':
                 if h > 0:
                     data[v]['s'][-1] += data[v]['s'][-2]
             for h in range(s.size):
-                data[v]['s'][h] /= (h+1)**dimension
+                data[v]['s'][h] /= args.nx * args.ny * args.nz
         with nc.Dataset(args.output, 'w', format='NETCDF4') as o:
             for v, d in data.items():
                 N = len(d['h'])
