@@ -295,7 +295,7 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
   }
 
   for (zisa::int_t sample = 0; sample < num_samples; ++sample) {
-    auto simulation = make_simulation_mpi<dim_v>(config, comm);
+    simulation = make_simulation_mpi<dim_v>(config, comm);
     const auto &grid = simulation.grid();
 
     auto u_host = grid.make_array_phys(

@@ -2,7 +2,6 @@
 #include <azeban/cuda/operations/cufft_mpi.hpp>
 #include <azeban/mpi_types.hpp>
 #include <azeban/profiler.hpp>
-#include <fmt/core.h>
 #include <zisa/cuda/memory/cuda_array.hpp>
 
 namespace azeban {
