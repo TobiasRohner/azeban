@@ -2,6 +2,7 @@
 #include <azeban/operations/fft.hpp>
 #include <azeban/profiler.hpp>
 #include <azeban/simulation_factory.hpp>
+#include <azeban/sequence_factory.hpp>
 #include <cstdlib>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
@@ -155,7 +156,7 @@ static void runFromConfig(const nlohmann::json &config) {
 
   std::vector<real_t> snapshots;
   if (config.contains("snapshots")) {
-    snapshots = config["snapshots"].get<std::vector<real_t>>();
+    snapshots = make_sequence<real_t>(config["snapshots"]);
   }
   if (!(snapshots.size() > 0 && snapshots.back() == t_final)) {
     snapshots.push_back(t_final);
@@ -262,7 +263,7 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
 
   std::vector<real_t> snapshots;
   if (config.contains("snapshots")) {
-    snapshots = config["snapshots"].get<std::vector<real_t>>();
+    snapshots = make_sequence<real_t>(config["snapshots"]);
   }
   if (!(snapshots.size() > 0 && snapshots.back() == t_final)) {
     snapshots.push_back(t_final);

@@ -53,10 +53,6 @@ private:
   zisa::array<complex_t, 3> partial_u_hat_;
   zisa::array<complex_t, 3> mpi_send_buffer_;
   zisa::array<complex_t, 3> mpi_recv_buffer_;
-  std::unique_ptr<zisa::int_t[]> size_u_;
-  std::unique_ptr<zisa::int_t[]> size_u_hat_;
-  std::vector<MPI_Datatype> natural_types_;
-  std::vector<MPI_Datatype> transposed_types_;
 
   static constexpr cufftType type_forward_r2c
       = std::is_same_v<float, real_t> ? CUFFT_R2C : CUFFT_D2Z;
@@ -66,9 +62,6 @@ private:
       = std::is_same_v<float, real_t> ? CUFFT_C2C : CUFFT_Z2Z;
   static constexpr cufftType type_backward_c2c
       = std::is_same_v<float, real_t> ? CUFFT_C2C : CUFFT_Z2Z;
-
-  void transpose_forward();
-  void transpose_backward();
 };
 
 template <>
