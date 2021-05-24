@@ -85,9 +85,9 @@ struct Grid {
                  + (zisa::integer_cast<zisa::int_t>(rank) < N_fourier % size);
       shape[2] = N_phys;
     } else if (dim_v == 3) {
-      shape[1] = N_phys / size
-                 + (zisa::integer_cast<zisa::int_t>(rank) < N_phys % size);
-      shape[2] = N_fourier;
+      shape[1] = N_fourier / size
+                 + (zisa::integer_cast<zisa::int_t>(rank) < N_fourier % size);
+      shape[2] = N_phys;
       shape[3] = N_phys;
     } else {
       LOG_ERR("Unsupported Dimension");
@@ -148,9 +148,9 @@ struct Grid {
             + (zisa::integer_cast<zisa::int_t>(rank) < N_fourier_pad % size);
       shape[2] = N_phys_pad;
     } else if (dim_v == 3) {
-      shape[1] = N_phys_pad / size
-                 + (zisa::integer_cast<zisa::int_t>(rank) < N_phys_pad % size);
-      shape[2] = N_fourier_pad;
+      shape[1] = N_fourier_pad / size
+                 + (zisa::integer_cast<zisa::int_t>(rank) < N_fourier_pad % size);
+      shape[2] = N_phys_pad;
       shape[3] = N_phys_pad;
     } else {
       LOG_ERR("Unsupported Dimension");
@@ -236,8 +236,8 @@ struct Grid {
              + zisa::min(zisa::integer_cast<zisa::int_t>(rank),
                          N_fourier % size);
     } else if (dim_v == 3) {
-      return i + rank * (N_phys / size)
-             + zisa::min(zisa::integer_cast<zisa::int_t>(rank), N_phys % size);
+      return i + rank * (N_fourier / size)
+             + zisa::min(zisa::integer_cast<zisa::int_t>(rank), N_fourier % size);
     } else {
       LOG_ERR("Unsupported Dimension");
     }
@@ -325,9 +325,9 @@ struct Grid {
              + zisa::min(zisa::integer_cast<zisa::int_t>(rank),
                          N_fourier_pad % size);
     } else if (dim_v == 3) {
-      return i + rank * (N_phys_pad / size)
+      return i + rank * (N_fourier_pad / size)
              + zisa::min(zisa::integer_cast<zisa::int_t>(rank),
-                         N_phys_pad % size);
+                         N_fourier_pad % size);
     } else {
       LOG_ERR("Unsupported Dimension");
     }

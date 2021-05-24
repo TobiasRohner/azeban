@@ -21,6 +21,9 @@ if(AZEBAN_HAS_MPI)
   target_link_libraries(azeban_dependencies INTERFACE ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
 endif()
 
+find_package(OpenMP REQUIRED)
+target_link_libraries(azeban_dependencies INTERFACE OpenMP::OpenMP_CXX)
+
 find_package(FFTW3 REQUIRED)
 target_link_libraries(azeban_dependencies INTERFACE fftw3f)
 target_link_libraries(azeban_dependencies INTERFACE fftw3)

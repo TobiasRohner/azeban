@@ -1,17 +1,17 @@
 {
-  "output": "result_1024",
+  "output": "result_64",
   "device": "cuda",
-  "dimension": 2,
+  "dimension": 3,
   "num_samples": 1,
   "seed": 1,
-  "time": 0.01,
+  "time": 0.005,
   "snapshots": {
     "start": 0,
-    "stop": 0.01,
-    "n": 20
+    "stop": 0.005,
+    "n": 10
   },
   "grid": {
-    "N_phys": 1024,
+    "N_phys": 64,
     "N_phys_pad": ""
   },
   "equation": {

@@ -350,7 +350,7 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
     for (real_t t : snapshots) {
       simulation.simulate_until(t, comm);
       if (rank == 0) {
-        fmt::print("Time: {}\n", t);
+        fmt::print("Sample: {}, Time: {}\n", sample, t);
       }
 
       zisa::copy(u_hat_device, simulation.u());
