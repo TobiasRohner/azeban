@@ -58,6 +58,11 @@ make_nc_writer<1>(const std::string &filename,
       vars.emplace_back(name + "_u",
                         std::vector<std::string>{"N"},
                         zisa::erase_data_type<real_t>());
+      if (simulation.n_vars() == 2) {
+	vars.emplace_back(name + "_rho",
+			  std::vector<std::string>{"N"},
+			  zisa::erase_data_type<real_t>());
+      }
     }
   }
 
@@ -95,6 +100,11 @@ make_nc_writer<2>(const std::string &filename,
       vars.emplace_back(name + "_v",
                         std::vector<std::string>{"N", "N"},
                         zisa::erase_data_type<real_t>());
+      if (simulation.n_vars() == 3) {
+	vars.emplace_back(name + "_rho",
+			  std::vector<std::string>{"N", "N"},
+			  zisa::erase_data_type<real_t>());
+      }
     }
   }
 
@@ -134,6 +144,11 @@ make_nc_writer<3>(const std::string &filename,
       vars.emplace_back(name + "_w",
                         std::vector<std::string>{"N", "N", "N"},
                         zisa::erase_data_type<real_t>());
+      if (simulation.n_vars() == 4) {
+	vars.emplace_back(name + "_rho",
+			  std::vector<std::string>{"N", "N", "N"},
+			  zisa::erase_data_type<real_t>());
+      }
     }
   }
 
@@ -211,6 +226,11 @@ static void runFromConfig(const nlohmann::json &config) {
         zisa::array_const_view<real_t, 1> u(
             slice_shape, u_host.raw(), zisa::device_type::cpu);
         zisa::save(writer, u, name + "_u");
+	if (simulation.n_vars() == 2) {
+	  zisa::array_const_view<real_t, 1> rho(
+	      slice_shape, u_host.raw() + zisa::product(slice_shape), zisa::device_type::cpu);
+	  zisa::save(writer, rho, name + "_rho");
+	}
       }
       if (dim_v == 2) {
         zisa::shape_t<2> slice_shape(grid.N_phys, grid.N_phys);
@@ -222,6 +242,11 @@ static void runFromConfig(const nlohmann::json &config) {
                                             zisa::device_type::cpu);
         zisa::save(writer, u, name + "_u");
         zisa::save(writer, v, name + "_v");
+	if (simulation.n_vars() == 3) {
+	  zisa::array_const_view<real_t, 2> rho(
+	      slice_shape, u_host.raw() + 2 * zisa::product(slice_shape), zisa::device_type::cpu);
+	  zisa::save(writer, rho, name + "_rho");
+	}
       }
       if (dim_v == 3) {
         zisa::shape_t<3> slice_shape(grid.N_phys, grid.N_phys, grid.N_phys);
@@ -238,6 +263,11 @@ static void runFromConfig(const nlohmann::json &config) {
         zisa::save(writer, u, name + "_u");
         zisa::save(writer, v, name + "_v");
         zisa::save(writer, w, name + "_w");
+	if (simulation.n_vars() == 4) {
+	  zisa::array_const_view<real_t, 3> rho(
+	      slice_shape, u_host.raw() + 3 * zisa::product(slice_shape), zisa::device_type::cpu);
+	  zisa::save(writer, rho, name + "_rho");
+	}
       }
     }
   }
@@ -380,6 +410,11 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
           zisa::array_const_view<real_t, 1> u(
               slice_shape, u_init.raw(), zisa::device_type::cpu);
           zisa::save(*writer, u, name + "_u");
+	  if (simulation.n_vars() == 2) {
+	    zisa::array_const_view<real_t, 1> rho(
+		slice_shape, u_init.raw() + zisa::product(slice_shape), zisa::device_type::cpu);
+	    zisa::save(*writer, rho, name + "_rho");
+	  }
         }
         if (dim_v == 2) {
           zisa::shape_t<2> slice_shape(grid.N_phys, grid.N_phys);
@@ -391,6 +426,11 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
                                               zisa::device_type::cpu);
           zisa::save(*writer, u, name + "_u");
           zisa::save(*writer, v, name + "_v");
+	  if (simulation.n_vars() == 3) {
+	    zisa::array_const_view<real_t, 2> rho(
+		slice_shape, u_init.raw() + 2 * zisa::product(slice_shape), zisa::device_type::cpu);
+	    zisa::save(*writer, rho, name + "_rho");
+	  }
         }
         if (dim_v == 3) {
           zisa::shape_t<3> slice_shape(grid.N_phys, grid.N_phys, grid.N_phys);
@@ -407,6 +447,11 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
           zisa::save(*writer, u, name + "_u");
           zisa::save(*writer, v, name + "_v");
           zisa::save(*writer, w, name + "_w");
+	  if (simulation.n_vars() == 4) {
+	    zisa::array_const_view<real_t, 3> rho(
+		slice_shape, u_init.raw() + 3 * zisa::product(slice_shape), zisa::device_type::cpu);
+	    zisa::save(*writer, rho, name + "_rho");
+	  }
         }
       }
     }

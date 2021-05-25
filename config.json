@@ -4,10 +4,10 @@
   "dimension": 3,
   "num_samples": 1,
   "seed": 1,
-  "time": 0.005,
+  "time": 1,
   "snapshots": {
     "start": 0,
-    "stop": 0.005,
+    "stop": 1,
     "n": 10
   },
   "grid": {
@@ -27,9 +27,10 @@
     "C": 0.2
   },
   "init": {
-    "name": "Brownian Motion",
-    "hurst": 0.5,
-    "tracer_": {
+    "name": "Shear Tube",
+    "rho": 0.2,
+    "delta": 0.05,
+    "tracer": {
       "name": "Sphere",
       "center": [0.5, 0.5, 0.5],
       "radius": 0.1
