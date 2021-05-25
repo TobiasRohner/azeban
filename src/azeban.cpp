@@ -167,11 +167,14 @@ static void runFromConfig(const nlohmann::json &config) {
     fmt::print(stderr, "Config file does not contain \"time\"\n");
     exit(1);
   }
-  const real_t t_final = config["time"];
+  real_t t_final = config["time"];
 
   std::vector<real_t> snapshots;
   if (config.contains("snapshots")) {
     snapshots = make_sequence<real_t>(config["snapshots"]);
+  }
+  if (snapshots.size() > 0 && snapshots.back() > t_final) {
+    t_final = snapshots.back();
   }
   if (!(snapshots.size() > 0 && snapshots.back() == t_final)) {
     snapshots.push_back(t_final);
@@ -289,11 +292,14 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
     fmt::print(stderr, "Config file does not contain \"time\"\n");
     exit(1);
   }
-  const real_t t_final = config["time"];
+  real_t t_final = config["time"];
 
   std::vector<real_t> snapshots;
   if (config.contains("snapshots")) {
     snapshots = make_sequence<real_t>(config["snapshots"]);
+  }
+  if (snapshots.size() > 0 && snapshots.back() > t_final) {
+    t_final = snapshots.back();
   }
   if (!(snapshots.size() > 0 && snapshots.back() == t_final)) {
     snapshots.push_back(t_final);
