@@ -20,13 +20,12 @@ if __name__ == '__main__':
     with nc.Dataset(args.input, 'r', format='NETCDF4') as f:
         data = {}
         for v in f.variables:
-            data[v] = {'h':[], 's':[]}
+            data[v] = {'h':[0], 's':[0]}
             s = f[v][:]
-            for h in range(s.size):
-                data[v]['h'].append((h+1) / args.nx)
+            for h in range(1, s.size):
+                data[v]['h'].append((h) / args.nx)
                 data[v]['s'].append(s[h])
-                if h > 0:
-                    data[v]['s'][-1] += data[v]['s'][-2]
+                data[v]['s'][-1] += data[v]['s'][-2]
             for h in range(s.size):
                 data[v]['s'][h] /= args.nx * args.ny * args.nz
         with nc.Dataset(args.output, 'w', format='NETCDF4') as o:
