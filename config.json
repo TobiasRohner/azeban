@@ -1,5 +1,5 @@
 {
-  "output": "brownian_bridge_2D_N256_T1.0",
+  "output": "brownian_bridge_2D_N256_H0.15_T1.0",
   "device": "cuda",
   "dimension": 2,
   "num_samples": 64,

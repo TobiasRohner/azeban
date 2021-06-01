@@ -6,15 +6,17 @@ namespace azeban {
 __global__ void leray_cuda_kernel(zisa::array_view<complex_t, 3> u_hat) {
   const int i = blockIdx.x * blockDim.x + threadIdx.x;
   const int j = blockIdx.y * blockDim.y + threadIdx.y;
+  const int N_phys = u_hat.shape(1);
+  const int N_fourier = N_phys / 2 + 1;
 
   if (i < u_hat.shape(1) && j < u_hat.shape(2)) {
     int i_ = i;
-    if (i_ >= u_hat.shape(1) / 2 + 1) {
-      i_ -= u_hat.shape(1);
+    if (i_ >= N_fourier) {
+      i_ -= N_phys;
     }
     int j_ = j;
-    if (j_ >= u_hat.shape(2) / 2 + 1) {
-      j_ -= u_hat.shape(2);
+    if (j_ >= N_fourier) {
+      j_ -= N_phys;
     }
     const real_t k1 = 2 * zisa::pi * i_;
     const real_t k2 = 2 * zisa::pi * j_;
@@ -34,19 +36,21 @@ __global__ void leray_cuda_kernel(zisa::array_view<complex_t, 4> u_hat) {
   const int i = blockIdx.x * blockDim.x + threadIdx.x;
   const int j = blockIdx.y * blockDim.y + threadIdx.y;
   const int k = blockIdx.z * blockDim.z + threadIdx.z;
+  const int N_phys = u_hat.shape(1);
+  const int N_fourier = N_phys / 2 + 1;
 
   if (i < u_hat.shape(1) && j < u_hat.shape(2) && k < u_hat.shape(3)) {
     int i_ = i;
-    if (i_ >= u_hat.shape(1) / 2 + 1) {
-      i_ -= u_hat.shape(1);
+    if (i_ >= N_fourier) {
+      i_ -= N_phys;
     }
     int j_ = j;
-    if (j_ >= u_hat.shape(2) / 2 + 1) {
-      j_ -= u_hat.shape(2);
+    if (j_ >= N_fourier) {
+      j_ -= N_phys;
     }
     int k_ = k;
-    if (k_ >= u_hat.shape(3) / 2 + 1) {
-      k_ -= u_hat.shape(3);
+    if (k_ >= N_fourier) {
+      k_ -= N_phys;
     }
     const real_t k1 = 2 * zisa::pi * i_;
     const real_t k2 = 2 * zisa::pi * j_;

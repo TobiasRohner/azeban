@@ -156,6 +156,13 @@ if(AZEBAN_HAS_BENCHMARK)
       $<BUILD_INTERFACE:${azeban_SOURCE_DIR}/benchmarks>
   )
   target_link_libraries(azeban_benchmarks PRIVATE azeban_lib benchmark::benchmark)
+
+  add_executable(system_properties)
+  set_target_properties(system_properties PROPERTIES CXX_STANDARD 17)
+  if(ZISA_HAS_CUDA)
+    set_target_properties(system_properties PROPERTIES CUDA_STANDARD 11)
+  endif()
+  target_link_libraries(system_properties PRIVATE azeban_lib)
 endif()
 
 # -- Subdirectories ------------------------------------------------------------

@@ -1,4 +1,5 @@
 #include <azeban/config.hpp>
+#include <azeban/profiler.hpp>
 #include <azeban/operations/leray.hpp>
 #include <zisa/config.hpp>
 #if ZISA_HAS_CUDA
@@ -8,16 +9,19 @@
 namespace azeban {
 
 void leray(const zisa::array_view<complex_t, 3> &u_hat) {
+  AZEBAN_PROFILE_START("leray");
   if (u_hat.memory_location() == zisa::device_type::cpu) {
+    const long N_phys = u_hat.shape(1);
+    const long N_fourier = N_phys / 2 + 1;
     for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
       long i_ = i;
-      if (i_ >= zisa::integer_cast<long>(u_hat.shape(1) / 2 + 1)) {
-        i_ -= u_hat.shape(1);
+      if (i_ >= N_fourier) {
+        i_ -= N_phys;
       }
       for (zisa::int_t j = 0; j < u_hat.shape(2); ++j) {
         long j_ = j;
-        if (j_ >= zisa::integer_cast<long>(u_hat.shape(2) / 2 + 1)) {
-          j_ -= u_hat.shape(2);
+        if (j_ >= N_fourier) {
+          j_ -= N_phys;
         }
         const real_t k1 = 2 * zisa::pi * i_;
         const real_t k2 = 2 * zisa::pi * j_;
@@ -41,24 +45,28 @@ void leray(const zisa::array_view<complex_t, 3> &u_hat) {
   else {
     LOG_ERR("Unsupported Memory Location");
   }
+  AZEBAN_PROFILE_STOP("leray");
 }
 
 void leray(const zisa::array_view<complex_t, 4> &u_hat) {
+  AZEBAN_PROFILE_START("leray");
   if (u_hat.memory_location() == zisa::device_type::cpu) {
+    const long N_phys = u_hat.shape(1);
+    const long N_fourier = N_phys / 2 + 1;
     for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
       long i_ = i;
-      if (i_ >= zisa::integer_cast<long>(u_hat.shape(1) / 2 + 1)) {
-        i_ -= u_hat.shape(1);
+      if (i_ >= N_fourier) {
+        i_ -= N_phys;
       }
       for (zisa::int_t j = 0; j < u_hat.shape(2); ++j) {
         long j_ = j;
-        if (j_ >= zisa::integer_cast<long>(u_hat.shape(2) / 2 + 1)) {
-          j_ -= u_hat.shape(2);
+        if (j_ >= N_fourier) {
+          j_ -= N_phys;
         }
         for (zisa::int_t k = 0; k < u_hat.shape(3); ++k) {
           long k_ = k;
-          if (k_ >= zisa::integer_cast<long>(u_hat.shape(3) / 2 + 1)) {
-            k_ -= u_hat.shape(3);
+          if (k_ >= N_fourier) {
+            k_ -= N_phys;
           }
           const real_t k1 = 2 * zisa::pi * i_;
           const real_t k2 = 2 * zisa::pi * j_;
@@ -94,6 +102,7 @@ void leray(const zisa::array_view<complex_t, 4> &u_hat) {
   else {
     LOG_ERR("Unsupported Memory Location");
   }
+  AZEBAN_PROFILE_STOP("leray");
 }
 
 }

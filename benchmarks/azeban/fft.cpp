@@ -75,7 +75,7 @@ static void fft_1d_params(benchmark::internal::Benchmark *bm) {
   for (long device : {static_cast<long>(zisa::device_type::cpu),
                       static_cast<long>(zisa::device_type::cuda)}) {
     for (zisa::int_t N : candidates) {
-      bm->Args({1, N, device});
+      bm->Args({N, device});
     }
   }
 }
@@ -84,10 +84,8 @@ static void fft_2d_params(benchmark::internal::Benchmark *bm) {
   const auto candidates = good_sizes(zisa::int_t(1) << 11);
   for (long device : {static_cast<long>(zisa::device_type::cpu),
                       static_cast<long>(zisa::device_type::cuda)}) {
-    for (zisa::int_t d : {2, 3}) {
-      for (zisa::int_t N : candidates) {
-        bm->Args({d, N, device});
-      }
+    for (zisa::int_t N : candidates) {
+      bm->Args({N, device});
     }
   }
 }
@@ -97,31 +95,27 @@ static void fft_3d_params(benchmark::internal::Benchmark *bm) {
       = good_sizes(220 /* TODO: Change this if GPU memory is larger! */);
   for (long device : {static_cast<long>(zisa::device_type::cpu),
                       static_cast<long>(zisa::device_type::cuda)}) {
-    for (zisa::int_t d : {3, 6}) {
-      for (zisa::int_t N : candidates) {
-        bm->Args({d, N, device});
-      }
+    for (zisa::int_t N : candidates) {
+      bm->Args({N, device});
     }
   }
 }
 
 static void fft_3d_params_mpi(benchmark::internal::Benchmark *bm) {
   const auto candidates = good_sizes(768);
-  for (zisa::int_t d : {3, 6}) {
-    for (zisa::int_t N : candidates) {
-      if (N > 220) {
-        bm->Args({d, N});
-      }
+  for (zisa::int_t N : candidates) {
+    if (N > 220) {
+      bm->Args({N});
     }
   }
 }
 
 template <int Dim>
 static void bm_fft_forward(benchmark::State &state) {
-  const zisa::int_t d = state.range(0);
-  const zisa::int_t n = state.range(1);
+  const zisa::int_t d = 1;
+  const zisa::int_t n = state.range(0);
   const zisa::device_type device
-      = static_cast<zisa::device_type>(state.range(2));
+      = static_cast<zisa::device_type>(state.range(1));
   zisa::shape_t<Dim + 1> rshape;
   zisa::shape_t<Dim + 1> cshape;
   rshape[0] = d;
@@ -183,5 +177,5 @@ static void bm_fft_3d_forward_mpi(benchmark::State &state) {
   }
 }
 
-BENCHMARK(bm_fft_3d_forward_mpi)->Apply(fft_3d_params_mpi);
+//BENCHMARK(bm_fft_3d_forward_mpi)->Apply(fft_3d_params_mpi);
 #endif
