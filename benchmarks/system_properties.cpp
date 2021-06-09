@@ -1,16 +1,14 @@
-#include <memory>
-#include <cstdlib>
-#include <chrono>
 #include <algorithm>
+#include <chrono>
+#include <cstdlib>
 #include <fmt/core.h>
+#include <memory>
 #if ZISA_HAS_CUDA
 #include <cuda_runtime.h>
 #endif
 #if AZEBAN_HAS_MPI
 #include <mpi.h>
 #endif
-
-
 
 void measure_bandwidth_host(size_t bytes) {
   auto from = std::make_unique<uint8_t[]>(bytes);
@@ -70,14 +68,20 @@ void measure_bandwidth_mpi_send(size_t bytes) {
     return;
   }
   auto buffer = std::make_unique<uint8_t[]>(bytes);
-  
+
   MPI_Barrier(MPI_COMM_WORLD);
   auto start = std::chrono::steady_clock::now();
   if (rank == 0) {
     MPI_Send(buffer.get(), bytes, MPI_UINT8_T, 1, 0, MPI_COMM_WORLD);
   }
   if (rank == 1) {
-    MPI_Recv(buffer.get(), bytes, MPI_UINT8_T, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(buffer.get(),
+             bytes,
+             MPI_UINT8_T,
+             0,
+             0,
+             MPI_COMM_WORLD,
+             MPI_STATUS_IGNORE);
   }
   MPI_Barrier(MPI_COMM_WORLD);
   auto stop = std::chrono::steady_clock::now();
@@ -86,7 +90,6 @@ void measure_bandwidth_mpi_send(size_t bytes) {
   fmt::print("MPI Bandwidth: {}bytes/s\n", bytes / time.count());
 }
 #endif
-
 
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);

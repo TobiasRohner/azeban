@@ -4,18 +4,15 @@
 #include <nlohmann/json.hpp>
 #include <vector>
 
-
 namespace azeban {
 
-template<typename T>
+template <typename T>
 std::vector<T> make_sequence(const nlohmann::json &config) {
   if (config.is_number()) {
     return std::vector<T>(1, config.get<T>());
-  }
-  else if (config.is_array()) {
+  } else if (config.is_array()) {
     return config.get<std::vector<T>>();
-  }
-  else if (config.is_object()) {
+  } else if (config.is_object()) {
     std::vector<T> res;
     T start = 0;
     if (config.contains("start")) {
@@ -27,30 +24,26 @@ std::vector<T> make_sequence(const nlohmann::json &config) {
     T stop = config["stop"];
     if (config.contains("n")) {
       const size_t n = config["n"];
-      for (size_t i = 0 ; i <= n ; ++i) {
-	res.push_back(start + i * (stop - start) / n);
+      for (size_t i = 0; i <= n; ++i) {
+        res.push_back(start + i * (stop - start) / n);
       }
       return res;
-    }
-    else if (config.contains("step")) {
+    } else if (config.contains("step")) {
       const T step = config["step"];
       res.push_back(start);
       while (res.back() < stop) {
-	res.push_back(res.back() + step);
+        res.push_back(res.back() + step);
       }
       res.back() = stop;
       return res;
-    }
-    else {
+    } else {
       LOG_ERR("Expected either \"n\" or \"step\" in sequence specification");
     }
-  }
-  else {
+  } else {
     LOG_ERR("Unsupported type for a sequence");
   }
 }
 
 }
-
 
 #endif

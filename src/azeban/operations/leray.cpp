@@ -1,6 +1,6 @@
 #include <azeban/config.hpp>
-#include <azeban/profiler.hpp>
 #include <azeban/operations/leray.hpp>
+#include <azeban/profiler.hpp>
 #include <zisa/config.hpp>
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/operations/leray_cuda.hpp>
@@ -22,16 +22,17 @@ void leray(const zisa::array_view<complex_t, 3> &u_hat) {
         const real_t k1 = 2 * zisa::pi * i_;
         const real_t k2 = 2 * zisa::pi * j;
         const real_t absk2 = k1 * k1 + k2 * k2;
-	if (absk2 == 0) {
-	  u_hat(0, i, j) = 0;
-	  u_hat(1, i, j) = 0;
-	}
-	else {
-	  const complex_t u1_hat = u_hat(0, i, j);
-	  const complex_t u2_hat = u_hat(1, i, j);
-	  u_hat(0, i, j) = (1. - (k1 * k1) / absk2) * u1_hat + (0. - (k1 * k2) / absk2) * u2_hat;
-	  u_hat(1, i, j) = (0. - (k2 * k1) / absk2) * u1_hat + (1. - (k2 * k2) / absk2) * u2_hat;
-	}
+        if (absk2 == 0) {
+          u_hat(0, i, j) = 0;
+          u_hat(1, i, j) = 0;
+        } else {
+          const complex_t u1_hat = u_hat(0, i, j);
+          const complex_t u2_hat = u_hat(1, i, j);
+          u_hat(0, i, j) = (1. - (k1 * k1) / absk2) * u1_hat
+                           + (0. - (k1 * k2) / absk2) * u2_hat;
+          u_hat(1, i, j) = (0. - (k2 * k1) / absk2) * u1_hat
+                           + (1. - (k2 * k2) / absk2) * u2_hat;
+        }
       }
     }
   }

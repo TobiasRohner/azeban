@@ -1,8 +1,8 @@
 #if AZEBAN_HAS_MPI
 #include <azeban/cuda/operations/cufft_mpi.hpp>
 #include <azeban/mpi_types.hpp>
-#include <azeban/profiler.hpp>
 #include <azeban/operations/transpose.hpp>
+#include <azeban/profiler.hpp>
 #include <zisa/cuda/memory/cuda_array.hpp>
 
 namespace azeban {

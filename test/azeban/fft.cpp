@@ -150,9 +150,10 @@ TEST_CASE("FFTW 2D scalar valued data", "[fft]") {
 
   fft->backward();
 
-  for (zisa::int_t i = 0 ; i < n ; ++i) {
-    for (zisa::int_t j = 0 ; j < n ; ++j) {
-      const azeban::real_t expected = n * n * zisa::cos(2.0 * zisa::pi * (i + j) / n);
+  for (zisa::int_t i = 0; i < n; ++i) {
+    for (zisa::int_t j = 0; j < n; ++j) {
+      const azeban::real_t expected
+          = n * n * zisa::cos(2.0 * zisa::pi * (i + j) / n);
       REQUIRE(std::fabs(u(0, i, j) - expected) <= 1e-8);
     }
   }
@@ -200,10 +201,12 @@ TEST_CASE("FFTW 2D vector valued data", "[fft]") {
 
   fft->backward();
 
-  for (zisa::int_t i = 0 ; i < n ; ++i) {
-    for (zisa::int_t j = 0 ; j < n ; ++j) {
-      const azeban::real_t expected1 = n * n * zisa::cos(2.0 * zisa::pi * (i + j) / n);
-      const azeban::real_t expected2 = n * n * zisa::cos(4.0 * zisa::pi * (i + j) / n);
+  for (zisa::int_t i = 0; i < n; ++i) {
+    for (zisa::int_t j = 0; j < n; ++j) {
+      const azeban::real_t expected1
+          = n * n * zisa::cos(2.0 * zisa::pi * (i + j) / n);
+      const azeban::real_t expected2
+          = n * n * zisa::cos(4.0 * zisa::pi * (i + j) / n);
       REQUIRE(std::fabs(u(0, i, j) - expected1) <= 1e-8);
       REQUIRE(std::fabs(u(1, i, j) - expected2) <= 1e-8);
     }
@@ -253,11 +256,12 @@ TEST_CASE("FFTW 3D scalar valued data", "[fft]") {
 
   fft->backward();
 
-  for (zisa::int_t i = 0 ; i < n ; ++i) {
-    for (zisa::int_t j = 0 ; j < n ; ++j) {
-      for (zisa::int_t k = 0 ; k < n ; ++k) {
-	const azeban::real_t expected = n * n * n * zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
-	REQUIRE(std::fabs(u(0, i, j, k) - expected) <= 1e-8);
+  for (zisa::int_t i = 0; i < n; ++i) {
+    for (zisa::int_t j = 0; j < n; ++j) {
+      for (zisa::int_t k = 0; k < n; ++k) {
+        const azeban::real_t expected
+            = n * n * n * zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
+        REQUIRE(std::fabs(u(0, i, j, k) - expected) <= 1e-8);
       }
     }
   }
@@ -324,15 +328,18 @@ TEST_CASE("FFTW 3D vector valued data", "[fft]") {
 
   fft->backward();
 
-  for (zisa::int_t i = 0 ; i < n ; ++i) {
-    for (zisa::int_t j = 0 ; j < n ; ++j) {
-      for (zisa::int_t k = 0 ; k < n ; ++k) {
-	const azeban::real_t expected1 = n * n * n * zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
-	const azeban::real_t expected2 = n * n * n * zisa::cos(4.0 * zisa::pi * (i + j + k) / n);
-	const azeban::real_t expected3 = n * n * n * zisa::cos(6.0 * zisa::pi * (i + j + k) / n);
-	REQUIRE(std::fabs(u(0, i, j, k) - expected1) <= 1e-8);
-	REQUIRE(std::fabs(u(1, i, j, k) - expected2) <= 1e-8);
-	REQUIRE(std::fabs(u(2, i, j, k) - expected3) <= 1e-8);
+  for (zisa::int_t i = 0; i < n; ++i) {
+    for (zisa::int_t j = 0; j < n; ++j) {
+      for (zisa::int_t k = 0; k < n; ++k) {
+        const azeban::real_t expected1
+            = n * n * n * zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
+        const azeban::real_t expected2
+            = n * n * n * zisa::cos(4.0 * zisa::pi * (i + j + k) / n);
+        const azeban::real_t expected3
+            = n * n * n * zisa::cos(6.0 * zisa::pi * (i + j + k) / n);
+        REQUIRE(std::fabs(u(0, i, j, k) - expected1) <= 1e-8);
+        REQUIRE(std::fabs(u(1, i, j, k) - expected2) <= 1e-8);
+        REQUIRE(std::fabs(u(2, i, j, k) - expected3) <= 1e-8);
       }
     }
   }

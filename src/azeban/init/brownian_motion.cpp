@@ -49,7 +49,9 @@ void BrownianMotion<1>::generate_step(const zisa::array_view<real_t, 1> &u,
   const real_t ui0 = u(i0);
   const real_t ui1 = i1 == u.shape(0) ? 0 : u(i1);
   const real_t X = normal_.get();
-  const real_t sigma = zisa::sqrt(zisa::pow(static_cast<real_t>(i1 - i0) / N, 2 * H) * (1. - zisa::pow(2., 2 * H - 2)));
+  const real_t sigma
+      = zisa::sqrt(zisa::pow(static_cast<real_t>(i1 - i0) / N, 2 * H)
+                   * (1. - zisa::pow(2., 2 * H - 2)));
   u(im) = 0.5 * (ui0 + ui1) + sigma * X;
   generate_step(u, H, i0, im);
   generate_step(u, H, im, i1);
@@ -107,7 +109,9 @@ void BrownianMotion<2>::generate_step(const zisa::array_view<real_t, 2> &u,
   const real_t ui0j1 = u(i0, j1 % N);
   const real_t ui1j0 = u(i1 % N, j0);
   const real_t ui1j1 = u(i1 % N, j1 % N);
-  const real_t sigma = zisa::sqrt(zisa::pow(static_cast<real_t>(i1 - i0) / N, 2 * H) * (1. - zisa::pow(2., 2 * H - 2)));
+  const real_t sigma
+      = zisa::sqrt(zisa::pow(static_cast<real_t>(i1 - i0) / N, 2 * H)
+                   * (1. - zisa::pow(2., 2 * H - 2)));
   if (i0 == 0) {
     u(i0, jm) = 0.5 * (ui0j0 + ui0j1) + sigma * normal_.get();
   }
@@ -191,7 +195,9 @@ void BrownianMotion<3>::generate_step(const zisa::array_view<real_t, 3> &u,
   const real_t ui1j0k1 = u(i1 % N, j0, k1 % N);
   const real_t ui1j1k0 = u(i1 % N, j1 % N, k0);
   const real_t ui1j1k1 = u(i1 % N, j1 % N, k1 % N);
-  const real_t sigma = zisa::sqrt(zisa::pow(static_cast<real_t>(i1 - i0) / N, 2 * H) * (1. - zisa::pow(2., 2 * H - 2)));
+  const real_t sigma
+      = zisa::sqrt(zisa::pow(static_cast<real_t>(i1 - i0) / N, 2 * H)
+                   * (1. - zisa::pow(2., 2 * H - 2)));
   // Edges
   if (i0 == 0 && j0 == 0) {
     u(i0, j0, km) = 0.5 * (ui0j0k0 + ui0j0k1) + sigma * normal_.get();
@@ -243,16 +249,16 @@ void BrownianMotion<3>::generate_step(const zisa::array_view<real_t, 3> &u,
   const real_t ui1j1km = u(i1 % N, j1 % N, km);
   const real_t ui1jmk1 = u(i1 % N, jm, k1 % N);
   if (i0 == 0) {
-    u(i0, jm, km)
-	= 0.25 * (ui0j0km + ui0j1km + ui0jmk0 + ui0jmk1) + sigma * normal_.get();
+    u(i0, jm, km) = 0.25 * (ui0j0km + ui0j1km + ui0jmk0 + ui0jmk1)
+                    + sigma * normal_.get();
   }
   if (j0 == 0) {
-    u(im, j0, km)
-	= 0.25 * (ui0j0km + ui1j0km + uimj0k0 + uimj0k1) + sigma * normal_.get();
+    u(im, j0, km) = 0.25 * (ui0j0km + ui1j0km + uimj0k0 + uimj0k1)
+                    + sigma * normal_.get();
   }
   if (k0 == 0) {
-    u(im, jm, k0)
-	= 0.25 * (ui0jmk0 + ui1jmk0 + uimj0k0 + uimj1k0) + sigma * normal_.get();
+    u(im, jm, k0) = 0.25 * (ui0jmk0 + ui1jmk0 + uimj0k0 + uimj1k0)
+                    + sigma * normal_.get();
   }
   if (i1 < N) {
     u(i1, jm, km) = 0.25 * (ui1j0km + ui1j1km + ui1jmk0 + ui1jmk1)
@@ -273,7 +279,9 @@ void BrownianMotion<3>::generate_step(const zisa::array_view<real_t, 3> &u,
   const real_t ui1jmkm = u(i1 % N, jm, km);
   const real_t uimj1km = u(im, j1 % N, km);
   const real_t uimjmk1 = u(im, jm, k1 % N);
-  u(im, jm, km) = (ui0jmkm + uimj0km + uimjmk0 + ui1jmkm + uimj1km + uimjmk1) / 6 + sigma * normal_.get();
+  u(im, jm, km)
+      = (ui0jmkm + uimj0km + uimjmk0 + ui1jmkm + uimj1km + uimjmk1) / 6
+        + sigma * normal_.get();
   // Recursion
   generate_step(u, H, i0, im, j0, jm, k0, km);
   generate_step(u, H, i0, im, j0, jm, km, k1);

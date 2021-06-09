@@ -141,7 +141,7 @@ private:
     const unsigned stride_B = B_hat_.shape(1) * B_hat_.shape(2);
     const int nx = zisa::integer_cast<int>(u_hat.shape(1));
     const int ny = zisa::integer_cast<int>(u_hat.shape(2));
-    #pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2)
     for (int i = 0; i < nx; ++i) {
       for (int j = 0; j < ny; ++j) {
         const unsigned idx_B = i * B_hat_.shape(2) + j;
@@ -246,7 +246,7 @@ private:
     const int nx = zisa::integer_cast<int>(u_hat.shape(1));
     const int ny = zisa::integer_cast<int>(u_hat.shape(2));
     const int nz = zisa::integer_cast<int>(u_hat.shape(3));
-    #pragma omp parallel for collapse(3)
+#pragma omp parallel for collapse(3)
     for (int i = 0; i < nx; ++i) {
       for (int j = 0; j < ny; ++j) {
         for (int k = 0; k < nz; ++k) {

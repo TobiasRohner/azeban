@@ -15,25 +15,24 @@ if __name__ == '__main__':
     parser.add_argument('--nx', type=int, required=True)
     parser.add_argument('--ny', type=int, required=True)
     parser.add_argument('--nz', type=int, default=1)
+    parser.add_argument('-p', type=float, required=True)
     args = parser.parse_args(sys.argv[1:])
 
     dim = 2 if args.nz == 1 else 3
     with nc.Dataset(args.input, 'r', format='NETCDF4') as f:
-        data = {}
-        for v in f.variables:
-            data[v] = {'h':[0], 's':[0]}
-            s = f[v][:]
-            for h in range(1, s.size):
-                data[v]['h'].append((h) / args.nx)
-                data[v]['s'].append(s[h])
-                data[v]['s'][-1] += data[v]['s'][-2]
-            for h in range(s.size):
-                data[v]['s'][h] /= (2 * h + 1)**dim
+        s = f['u'][:]
+        s += f['v'][:]
+        if dim > 2:
+            s += f['w'][:]
+        N = s.size
+        for h in range(1, N):
+            s[h] += s[h-1]
+        for h in range(N):
+            s[h] /= (2*h+1)**dim
+        s = s**(1./args.p)
         with nc.Dataset(args.output, 'w', format='NETCDF4') as o:
-            for v, d in data.items():
-                N = len(d['h'])
-                o.createDimension('N_' + v, N)
-                var_h = o.createVariable(v + '_h', float, ('N_'+v,))
-                var = o.createVariable(v, float, ('N_'+v,))
-                var_h[:] = d['h']
-                var[:] = d['s']
+            o.createDimension('N', N)
+            var_h = o.createVariable('h', float, ('N',))
+            var_s = o.createVariable('s', float, ('N',))
+            var_h[:] = np.arange(N) / args.nx
+            var_s[:] = s
