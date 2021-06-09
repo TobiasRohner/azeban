@@ -13,7 +13,6 @@
 #include <random>
 #include <zisa/config.hpp>
 #include <zisa/cuda/memory/cuda_array.hpp>
-#include <zisa/io/hdf5_serial_writer.hpp>
 #include <zisa/io/netcdf_file.hpp>
 #include <zisa/io/netcdf_serial_writer.hpp>
 #include <zisa/memory/array.hpp>

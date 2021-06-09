@@ -16,7 +16,6 @@
 #include <fmt/core.h>
 #include <vector>
 #include <zisa/cuda/memory/cuda_array.hpp>
-#include <zisa/io/hdf5_serial_writer.hpp>
 #include <zisa/math/basic_functions.hpp>
 #include <zisa/math/mathematical_constants.hpp>
 #include <zisa/memory/array.hpp>

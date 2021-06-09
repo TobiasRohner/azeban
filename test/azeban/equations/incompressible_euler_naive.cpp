@@ -17,7 +17,9 @@
 #include <fmt/core.h>
 #include <vector>
 #include <zisa/cuda/memory/cuda_array.hpp>
+#if ZISA_HAS_HDF5
 #include <zisa/io/hdf5_serial_writer.hpp>
+#endif
 #include <zisa/math/basic_functions.hpp>
 #include <zisa/math/mathematical_constants.hpp>
 #include <zisa/memory/array.hpp>
@@ -224,6 +226,7 @@ TEST_CASE("2D Euler Naive Derivative") {
   }
 }
 
+#if ZISA_HAS_HDF5
 TEST_CASE("Euler Naive Taylor Vortex 2D", "[slow]") {
   // Load reference solution
   // TODO: Get std::filesystem to not segfault
@@ -386,6 +389,7 @@ TEST_CASE("Euler Naive Taylor Vortex 3D", "[slow]") {
   test(1);
   test(2);
 }
+#endif
 
 TEST_CASE("Euler Naive Double Shear Layer 2D", "[slow]") {
   const auto initializer = std::make_shared<azeban::DoubleShearLayer>(
