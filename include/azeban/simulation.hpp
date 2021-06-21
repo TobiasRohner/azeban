@@ -75,8 +75,13 @@ public:
 
 #if AZEBAN_HAS_MPI
   void simulate_until(real_t t, MPI_Comm comm) {
+    int rank;
+    MPI_Comm_rank(comm, &rank);
     real_t dt = cfl_.dt(u_view_, comm);
     while (time_ < t - dt) {
+      if (rank == 0) {
+	fmt::print(stderr, "t = {}, dt = {}\n", time_, dt);
+      }
       timestepper_->integrate(dt, u_);
       time_ += dt;
       dt = cfl_.dt(u_view_, comm);

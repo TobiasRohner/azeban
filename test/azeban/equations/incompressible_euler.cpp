@@ -17,9 +17,7 @@
 #include <fmt/core.h>
 #include <vector>
 #include <zisa/cuda/memory/cuda_array.hpp>
-#if ZISA_HAS_HDF5
-#include <zisa/io/hdf5_serial_writer.hpp>
-#endif
+#include <zisa/io/netcdf_serial_writer.hpp>
 #include <zisa/math/basic_functions.hpp>
 #include <zisa/math/mathematical_constants.hpp>
 #include <zisa/memory/array.hpp>
@@ -128,6 +126,28 @@ static azeban::real_t measureConvergence(
   return conv_rate;
 }
 
+static zisa::array<azeban::real_t, 3> read_reference() {
+  const std::string filename = "momentum8748_taylor_morinishi6_T0,01.nc";
+  int status, ncid, varid;
+  int dimids[3];
+  size_t dims[3];
+  status = nc_open(filename.c_str(), 0, &ncid);
+  LOG_ERR_IF(status != NC_NOERR, "Failed to open reference solution");
+  status = nc_inq_varid(ncid, "0.010000", &varid);
+  LOG_ERR_IF(status != NC_NOERR, "Failed to open dataset");
+  status = nc_inq_vardimid(ncid, varid, dimids);
+  LOG_ERR_IF(status != NC_NOERR, "Failed to get dimensions");
+  for (int i = 0 ; i < 3 ; ++i) {
+    status = nc_inq_dimlen(ncid, dimids[i], dims + i);
+    LOG_ERR_IF(status != NC_NOERR, "Failed to get dimension length");
+  }
+  const zisa::shape_t<3> shape{dims[0], dims[1], dims[2]};
+  zisa::array<azeban::real_t, 3> reference(shape);
+  status = nc_get_var(ncid, varid, reference.raw());
+  LOG_ERR_IF(status != NC_NOERR, "Failed to read reference data");
+  return reference;
+}
+
 TEST_CASE("2D Euler Compute B") {
   azeban::Grid<2> grid(4);
   const zisa::int_t N_phys = grid.N_phys;
@@ -225,18 +245,8 @@ TEST_CASE("2D Euler Derivative") {
   }
 }
 
-#if ZISA_HAS_HDF5
 TEST_CASE("Taylor Vortex 2D", "[slow]") {
-  // Load reference solution
-  // TODO: Get std::filesystem to not segfault
-  // std::filesystem::path ref_sol_file =
-  // std::filesystem::path(__FILE__).remove_filename() /
-  // "../../../resources/momentum8748_taylor_morinishi6_T0,01.h5";
-  // fmt::print("Loading Reference Solution from \"{}\"\n",
-  // ref_sol_file.string());
-  zisa::HDF5SerialReader reader(
-      "../resources/momentum8748_taylor_morinishi6_T0,01.h5");
-  const auto u_ref = zisa::array<azeban::real_t, 3>::load(reader, "0.010000");
+  const auto u_ref = read_reference();
   const zisa::int_t N_ref = u_ref.shape(1);
 
   const auto initializer = std::make_shared<azeban::TaylorVortex>();
@@ -271,23 +281,23 @@ TEST_CASE("Taylor Vortex 2D", "[slow]") {
     }
 
     azeban::real_t errL2 = 0;
-    for (zisa::int_t i = 0; i < N; ++i) {
-      for (zisa::int_t j = 0; j < N; ++j) {
-        const zisa::int_t i_ref = i * N_ref / N;
-        const zisa::int_t j_ref = j * N_ref / N;
-        const azeban::real_t u_ref_interp = u_ref(0, i_ref, j_ref) / 16;
-        const azeban::real_t v_ref_interp = u_ref(1, i_ref, j_ref) / 16;
-        const azeban::real_t du = h_u(0, i, j) - u_ref_interp;
-        const azeban::real_t dv = h_u(1, i, j) - v_ref_interp;
+    for (zisa::int_t i = 0; i < N_ref; ++i) {
+      for (zisa::int_t j = 0; j < N_ref; ++j) {
+        const zisa::int_t i_sol = i * N / N_ref;
+        const zisa::int_t j_sol = j * N / N_ref;
+        const azeban::real_t u_ref_interp = u_ref(0, i, j) / 16;
+        const azeban::real_t v_ref_interp = u_ref(1, i, j) / 16;
+        const azeban::real_t du = h_u(0, i_sol, j_sol) - u_ref_interp;
+        const azeban::real_t dv = h_u(1, i_sol, j_sol) - v_ref_interp;
         errL2 += zisa::pow<2>(du) + zisa::pow<2>(dv);
       }
     }
-    errL2 = zisa::sqrt(errL2) / (N * N);
+    errL2 = zisa::sqrt(errL2) / (N_ref * N_ref);
     Ns.push_back(N);
     errs.push_back(errL2);
   }
 
-  std::cout << "L2 errors = [" << errs[0];
+  std::cout << "Taylor Vortex 2D L2 errors = [" << errs[0];
   for (zisa::int_t i = 1; i < errs.size(); ++i) {
     std::cout << ", " << errs[i];
   }
@@ -302,16 +312,7 @@ TEST_CASE("Taylor Vortex 2D", "[slow]") {
 }
 
 TEST_CASE("Taylor Vortex 3D", "[slow]") {
-  // Load reference solution
-  // TODO: Get std::filesystem to not segfault
-  // std::filesystem::path ref_sol_file =
-  // std::filesystem::path(__FILE__).remove_filename() /
-  // "../../../resources/momentum8748_taylor_morinishi6_T0,01.h5";
-  // fmt::print("Loading Reference Solution from \"{}\"\n",
-  // ref_sol_file.string());
-  zisa::HDF5SerialReader reader(
-      "../resources/momentum8748_taylor_morinishi6_T0,01.h5");
-  const auto u_ref = zisa::array<azeban::real_t, 3>::load(reader, "0.010000");
+  const auto u_ref = read_reference();
   const zisa::int_t N_ref = u_ref.shape(1);
 
   const auto test = [&](int dim) {
@@ -370,7 +371,7 @@ TEST_CASE("Taylor Vortex 3D", "[slow]") {
       errs.push_back(errL2);
     }
 
-    std::cout << "L2 errors = [" << errs[0];
+    std::cout << "Taylor Vortex 3D L2 errors = [" << errs[0];
     for (zisa::int_t i = 1; i < errs.size(); ++i) {
       std::cout << ", " << errs[i];
     }
@@ -388,7 +389,6 @@ TEST_CASE("Taylor Vortex 3D", "[slow]") {
   test(1);
   test(2);
 }
-#endif
 
 TEST_CASE("Double Shear Layer 2D", "[slow]") {
   const auto initializer = std::make_shared<azeban::DoubleShearLayer>(

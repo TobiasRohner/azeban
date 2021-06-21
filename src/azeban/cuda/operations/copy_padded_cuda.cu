@@ -98,6 +98,7 @@ void copy_to_padded_cuda(const zisa::array_view<complex_t, 1> &dst,
       zisa::div_up(static_cast<int>(dst.shape(0)), thread_dims), 1024);
   copy_to_padded_cuda_kernel<<<block_dims, thread_dims>>>(dst, src, pad_value);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 void copy_to_padded_cuda(const zisa::array_view<complex_t, 2> &dst,
@@ -116,6 +117,7 @@ void copy_to_padded_cuda(const zisa::array_view<complex_t, 2> &dst,
       1);
   copy_to_padded_cuda_kernel<<<block_dims, thread_dims>>>(dst, src, pad_value);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 void copy_to_padded_cuda(const zisa::array_view<complex_t, 3> &dst,
@@ -136,6 +138,7 @@ void copy_to_padded_cuda(const zisa::array_view<complex_t, 3> &dst,
                 1024));
   copy_to_padded_cuda_kernel<<<block_dims, thread_dims>>>(dst, src, pad_value);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 }

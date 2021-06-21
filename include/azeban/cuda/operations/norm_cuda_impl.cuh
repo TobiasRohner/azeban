@@ -62,6 +62,7 @@ real_t norm_cuda(const zisa::array_const_view<Scalar, 1> &data, real_t p) {
   norm_cuda_kernel<<<block_dims, thread_dims, thread_dims * sizeof(real_t)>>>(
       data, zisa::array_view<real_t, 1>(out_data), p);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
   while (block_dims > 1) {
     block_dims = zisa::div_up(static_cast<int>(block_dims), 2 * thread_dims);
     norm_cuda_kernel<<<block_dims, thread_dims, thread_dims * sizeof(real_t)>>>(
@@ -69,6 +70,7 @@ real_t norm_cuda(const zisa::array_const_view<Scalar, 1> &data, real_t p) {
         zisa::array_view<real_t, 1>(out_data),
         p);
     ZISA_CHECK_CUDA_DEBUG;
+    cudaDeviceSynchronize();
   }
   zisa::array<real_t, 1> value(zisa::shape_t<1>(1));
   zisa::internal::copy(

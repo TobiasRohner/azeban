@@ -26,6 +26,7 @@ void axpy_cuda(const Scalar &a,
       = zisa::div_up(static_cast<int>(x.shape(0)), thread_dims);
   axpy_cuda_kernel<<<block_dims, thread_dims>>>(a, x, y);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 }

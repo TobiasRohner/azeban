@@ -113,12 +113,14 @@ public:
                          u_.raw(),
                          reinterpret_cast<cufftComplex *>(u_hat_.raw()));
       cudaCheckError(status);
+      cudaDeviceSynchronize();
     } else {
       auto status
           = cufftExecD2Z(plan_forward_,
                          u_.raw(),
                          reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()));
       cudaCheckError(status);
+      cudaDeviceSynchronize();
     }
     AZEBAN_PROFILE_STOP("CUFFT::forward");
   }
@@ -132,12 +134,14 @@ public:
                                  reinterpret_cast<cufftComplex *>(u_hat_.raw()),
                                  u_.raw());
       cudaCheckError(status);
+      cudaDeviceSynchronize();
     } else {
       auto status
           = cufftExecZ2D(plan_backward_,
                          reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()),
                          u_.raw());
       cudaCheckError(status);
+      cudaDeviceSynchronize();
     }
     AZEBAN_PROFILE_STOP("CUFFT::backward");
   }

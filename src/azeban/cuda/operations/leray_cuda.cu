@@ -74,6 +74,7 @@ void leray_cuda(const zisa::array_view<complex_t, 3> &u_hat) {
       1);
   leray_cuda_kernel<<<block_dims, thread_dims>>>(u_hat);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 void leray_cuda(const zisa::array_view<complex_t, 4> &u_hat) {
@@ -84,6 +85,7 @@ void leray_cuda(const zisa::array_view<complex_t, 4> &u_hat) {
       zisa::div_up(static_cast<int>(u_hat.shape(3)), thread_dims.z));
   leray_cuda_kernel<<<block_dims, thread_dims>>>(u_hat);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 }

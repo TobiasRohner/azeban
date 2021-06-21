@@ -314,6 +314,7 @@ void incompressible_euler_compute_B_cuda<2>(
   incompressible_euler_compute_B_cuda_kernel<2>
       <<<block_dims, thread_dims>>>(B, u, grid);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 template <>
@@ -334,6 +335,7 @@ void incompressible_euler_compute_B_cuda<3>(
   incompressible_euler_compute_B_cuda_kernel<3>
       <<<block_dims, thread_dims>>>(B, u, grid);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 template <int Dim>
@@ -360,6 +362,7 @@ void incompressible_euler_compute_B_tracer_cuda<2>(
   incompressible_euler_compute_B_tracer_cuda_kernel<2>
       <<<block_dims, thread_dims>>>(B, u, grid);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 template <>
@@ -380,6 +383,7 @@ void incompressible_euler_compute_B_tracer_cuda<3>(
   incompressible_euler_compute_B_tracer_cuda_kernel<3>
       <<<block_dims, thread_dims>>>(B, u, grid);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 template <typename SpectralViscosity>
@@ -399,6 +403,7 @@ void incompressible_euler_2d_cuda(
   incompressible_euler_2d_cuda_kernel<<<block_dims, thread_dims>>>(
       B_hat, u_hat, visc);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 template <typename SpectralViscosity>
@@ -416,6 +421,7 @@ void incompressible_euler_3d_cuda(
   incompressible_euler_3d_cuda_kernel<<<block_dims, thread_dims>>>(
       B_hat, u_hat, visc);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 template <typename SpectralViscosity>
@@ -435,6 +441,7 @@ void incompressible_euler_2d_tracer_cuda(
   incompressible_euler_2d_tracer_cuda_kernel<<<block_dims, thread_dims>>>(
       B_hat, u_hat, visc);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 template <typename SpectralViscosity>
@@ -452,6 +459,7 @@ void incompressible_euler_3d_tracer_cuda(
   incompressible_euler_3d_tracer_cuda_kernel<<<block_dims, thread_dims>>>(
       B_hat, u_hat, visc);
   ZISA_CHECK_CUDA_DEBUG;
+  cudaDeviceSynchronize();
 }
 
 }
