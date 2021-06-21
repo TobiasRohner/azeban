@@ -644,18 +644,15 @@ TEST_CASE("cuFFT 2D scalar valued data", "[cufft]") {
   fft->backward();
   zisa::copy(h_u, d_u);
 
-  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
-    for (zisa::int_t j = 0; j < cshape[2]; ++j) {
-      const int i_ = i >= n / 2 + 1 ? zisa::integer_cast<int>(i) - n
-                                    : zisa::integer_cast<int>(i);
-      const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
-                                    : zisa::integer_cast<int>(j);
-      azeban::complex_t expected;
-      expected.x
-          = (i_ == 1 && j_ == 1) || (i_ == -1 && j_ == -1) ? n * n / 2.0 : 0.0;
-      expected.y = 0;
-      REQUIRE(std::fabs(h_u_hat(0, i, j).x - expected.x) <= 1e-10);
-      REQUIRE(std::fabs(h_u_hat(0, i, j).y - expected.y) <= 1e-10);
+  for (zisa::int_t k = 0; k < cshape[1]; ++k) {
+    for (zisa::int_t l = 0; l < cshape[2]; ++l) {
+      REQUIRE(std::fabs(h_u_hat(0, k, l).x - h_u_hat_ref(0, k, l).x) <= 1e-10);
+      REQUIRE(std::fabs(h_u_hat(0, k, l).y - h_u_hat_ref(0, k, l).y) <= 1e-10);
+    }
+  }
+  for (zisa::int_t i = 0; i < n; ++i) {
+    for (zisa::int_t j = 0; j < n; ++j) {
+      REQUIRE(std::fabs(h_u(0, i, j) / (n * n) - h_u_ref(0, i, j)) <= 1e-8);
     }
   }
 }
@@ -736,24 +733,18 @@ TEST_CASE("cuFFT 2D vector valued data", "[cufft]") {
   fft->backward();
   zisa::copy(h_u, d_u);
 
-  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
-    for (zisa::int_t j = 0; j < cshape[2]; ++j) {
-      const int i_ = i >= n / 2 + 1 ? zisa::integer_cast<int>(i) - n
-                                    : zisa::integer_cast<int>(i);
-      const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
-                                    : zisa::integer_cast<int>(j);
-      azeban::complex_t expected_0;
-      expected_0.x
-          = (i_ == 1 && j_ == 1) || (i_ == -1 && j_ == -1) ? n * n / 2.0 : 0.0;
-      expected_0.y = 0;
-      azeban::complex_t expected_1;
-      expected_1.x
-          = (i_ == 2 && j_ == 2) || (i_ == -2 && j_ == -2) ? n * n / 2.0 : 0.0;
-      expected_1.y = 0;
-      REQUIRE(std::fabs(h_u_hat(0, i, j).x - expected_0.x) <= 1e-10);
-      REQUIRE(std::fabs(h_u_hat(0, i, j).x - expected_0.x) <= 1e-10);
-      REQUIRE(std::fabs(h_u_hat(1, i, j).y - expected_1.y) <= 1e-10);
-      REQUIRE(std::fabs(h_u_hat(1, i, j).y - expected_1.y) <= 1e-10);
+  for (zisa::int_t k = 0; k < cshape[1]; ++k) {
+    for (zisa::int_t l = 0; l < cshape[2]; ++l) {
+      REQUIRE(std::fabs(h_u_hat(0, k, l).x - h_u_hat_ref(0, k, l).x) <= 1e-10);
+      REQUIRE(std::fabs(h_u_hat(0, k, l).y - h_u_hat_ref(0, k, l).y) <= 1e-10);
+      REQUIRE(std::fabs(h_u_hat(1, k, l).x - h_u_hat_ref(1, k, l).x) <= 1e-10);
+      REQUIRE(std::fabs(h_u_hat(1, k, l).y - h_u_hat_ref(1, k, l).y) <= 1e-10);
+    }
+  }
+  for (zisa::int_t i = 0; i < n; ++i) {
+    for (zisa::int_t j = 0; j < n; ++j) {
+      REQUIRE(std::fabs(h_u(0, i, j) / (n * n) - h_u_ref(0, i, j)) <= 1e-8);
+      REQUIRE(std::fabs(h_u(1, i, j) / (n * n) - h_u_ref(1, i, j)) <= 1e-8);
     }
   }
 }
