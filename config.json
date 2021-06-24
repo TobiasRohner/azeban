@@ -1,8 +1,8 @@
 {
-  "output": "brownian_bridge_2D_N512_H0.75_T1.0",
+  "output": "taylor_vortex_2D_N1024_T1.0",
   "device": "cuda",
   "dimension": 2,
-  "num_samples": 16,
+  "num_samples": 1,
   "seed": 1,
   "time": 1,
   "snapshots_": [],
@@ -12,15 +12,15 @@
     "n": 10
   },
   "grid": {
-    "N_phys": 512,
+    "N_phys": 1024,
     "N_phys_pad": ""
   },
   "equation": {
-    "name": "Euler",
+    "name": "Euler Naive",
     "visc": {
       "type": "Smooth Cutoff",
       "eps": 0.05,
-      "k0": 22.627
+      "k0": 32
     }
   },
   "timestepper": {
@@ -28,8 +28,7 @@
     "C": 0.2
   },
   "init": {
-    "name": "Brownian Motion",
-    "hurst": 0.75,
+    "name": "Taylor Vortex",
     "tracer_": {
       "name": "Sphere",
       "center": [0.5, 0.5, 0.5],

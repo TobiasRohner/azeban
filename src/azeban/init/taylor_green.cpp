@@ -7,13 +7,15 @@ namespace azeban {
 
 void TaylorGreen<2>::do_initialize(const zisa::array_view<real_t, 3> &u) {
   const auto init = [&](auto &&u_) {
+    const real_t A = 1;
+    const real_t B = -1;
     const zisa::int_t N = u_.shape(1);
     for (zisa::int_t i = 0; i < N; ++i) {
       for (zisa::int_t j = 0; j < N; ++j) {
         const real_t x = 2 * zisa::pi / N * i;
         const real_t y = 2 * zisa::pi / N * j;
-        u_(0, i, j) = zisa::cos(x) * zisa::sin(y);
-        u_(1, i, j) = zisa::sin(x) * zisa::cos(y);
+        u_(0, i, j) = A * zisa::cos(x) * zisa::sin(y);
+        u_(1, i, j) = B * zisa::sin(x) * zisa::cos(y);
       }
     }
   };
@@ -34,12 +36,15 @@ void TaylorGreen<2>::do_initialize(
   auto u = zisa::array<real_t, 3>(zisa::shape_t<3>(2, N, N),
                                   u_hat.memory_location());
   auto fft = make_fft<2>(u_hat, u);
-  initialize(u);
+  do_initialize(u);
   fft->forward();
 }
 
 void TaylorGreen<3>::do_initialize(const zisa::array_view<real_t, 4> &u) {
   const auto init = [&](auto &&u_) {
+    const real_t A = 1;
+    const real_t B = -1;
+    const real_t C = 0;
     const zisa::int_t N = u_.shape(1);
     for (zisa::int_t i = 0; i < N; ++i) {
       for (zisa::int_t j = 0; j < N; ++j) {
@@ -47,9 +52,9 @@ void TaylorGreen<3>::do_initialize(const zisa::array_view<real_t, 4> &u) {
           const real_t x = 2 * zisa::pi / N * i;
           const real_t y = 2 * zisa::pi / N * j;
           const real_t z = 2 * zisa::pi / N * k;
-          u_(0, i, j, k) = zisa::cos(x) * zisa::sin(y) * zisa::sin(z);
-          u_(1, i, j, k) = zisa::sin(x) * zisa::cos(y) * zisa::sin(z);
-          u_(2, i, j, k) = zisa::sin(x) * zisa::sin(y) * zisa::cos(z);
+          u_(0, i, j, k) = A * zisa::cos(x) * zisa::sin(y) * zisa::sin(z);
+          u_(1, i, j, k) = B * zisa::sin(x) * zisa::cos(y) * zisa::sin(z);
+          u_(2, i, j, k) = C * zisa::sin(x) * zisa::sin(y) * zisa::cos(z);
         }
       }
     }
@@ -71,7 +76,7 @@ void TaylorGreen<3>::do_initialize(
   auto u = zisa::array<real_t, 4>(zisa::shape_t<4>(3, N, N, N),
                                   u_hat.memory_location());
   auto fft = make_fft<3>(u_hat, u);
-  initialize(u);
+  do_initialize(u);
   fft->forward();
 }
 

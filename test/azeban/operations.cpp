@@ -141,7 +141,6 @@ TEST_CASE("Leray 2D CUDA", "[operations]") {
       std::make_shared<azeban::Delta<azeban::real_t>>(0.05));
   azeban::DoubleShearLayer init(rho, delta);
   init.initialize(du);
-  zisa::copy(du, hu);
   fft->forward();
   leray(uhat);
   fft->backward();
@@ -175,7 +174,6 @@ TEST_CASE("Leray 3D CUDA", "[operations]") {
       std::make_shared<azeban::Delta<azeban::real_t>>(0.05));
   azeban::ShearTube init(rho, delta);
   init.initialize(du);
-  zisa::copy(du, hu);
   fft->forward();
   leray(uhat);
   fft->backward();

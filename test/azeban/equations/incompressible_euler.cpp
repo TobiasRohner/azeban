@@ -79,6 +79,7 @@ static azeban::real_t measureConvergence(
     solve_euler(u);
     azeban::real_t errL2 = 0;
     if constexpr (dim_v == 2) {
+      /*
       for (zisa::int_t i = 0; i < N; ++i) {
         for (zisa::int_t j = 0; j < N; ++j) {
           const zisa::int_t i_ref = i * N_ref / N;
@@ -89,7 +90,22 @@ static azeban::real_t measureConvergence(
         }
       }
       errL2 = zisa::sqrt(errL2) / (N * N);
+      */
+      for (zisa::int_t i = 0; i < N_ref; ++i) {
+	for (zisa::int_t j = 0; j < N_ref; ++j) {
+	  const zisa::int_t i_sol = i * N / N_ref;
+	  const zisa::int_t j_sol = j * N / N_ref;
+	  const azeban::real_t u_ref_interp = u_ref(0, i, j);
+	  const azeban::real_t v_ref_interp = u_ref(1, i, j);
+	  const azeban::real_t du = u(0, i_sol, j_sol) - u_ref_interp;
+	  const azeban::real_t dv = u(1, i_sol, j_sol) - v_ref_interp;
+	  const azeban::real_t err_loc = zisa::pow<2>(du) + zisa::pow<2>(dv);
+	  errL2 += err_loc;
+	}
+      }
+      errL2 = zisa::sqrt(errL2) / (N_ref * N_ref);
     } else {
+      /*
       for (zisa::int_t i = 0; i < N; ++i) {
         for (zisa::int_t j = 0; j < N; ++j) {
           for (zisa::int_t k = 0; k < N; ++k) {
@@ -107,6 +123,25 @@ static azeban::real_t measureConvergence(
         }
       }
       errL2 = zisa::sqrt(errL2) / (N * N * N);
+      */
+      for (zisa::int_t i = 0; i < N_ref; ++i) {
+	for (zisa::int_t j = 0; j < N_ref; ++j) {
+	  for (zisa::int_t k = 0; k < N_ref; ++k) {
+	    const zisa::int_t i_sol = i * N / N_ref;
+	    const zisa::int_t j_sol = j * N / N_ref;
+	    const zisa::int_t k_sol = k * N / N_ref;
+	    const azeban::real_t u_ref_interp = u_ref(0, i, j, k);
+	    const azeban::real_t v_ref_interp = u_ref(1, i, j, k);
+	    const azeban::real_t w_ref_interp = u_ref(1, i, j, k);
+	    const azeban::real_t du = u(0, i_sol, j_sol, k_sol) - u_ref_interp;
+	    const azeban::real_t dv = u(1, i_sol, j_sol, k_sol) - v_ref_interp;
+	    const azeban::real_t dw = u(2, i_sol, j_sol, k_sol) - w_ref_interp;
+	    const azeban::real_t err_loc = zisa::pow<2>(du) + zisa::pow<2>(dv) + zisa::pow<2>(dw);
+	    errL2 += err_loc;
+	  }
+	}
+      }
+      errL2 = zisa::sqrt(errL2) / (N_ref * N_ref * N_ref);
     }
     Ns.push_back(N);
     errs.push_back(errL2);
@@ -289,7 +324,8 @@ TEST_CASE("Taylor Vortex 2D", "[slow]") {
         const azeban::real_t v_ref_interp = u_ref(1, i, j) / 16;
         const azeban::real_t du = h_u(0, i_sol, j_sol) - u_ref_interp;
         const azeban::real_t dv = h_u(1, i_sol, j_sol) - v_ref_interp;
-        errL2 += zisa::pow<2>(du) + zisa::pow<2>(dv);
+	const azeban::real_t err_loc = zisa::pow<2>(du) + zisa::pow<2>(dv);
+        errL2 += err_loc;
       }
     }
     errL2 = zisa::sqrt(errL2) / (N_ref * N_ref);
