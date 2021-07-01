@@ -42,6 +42,16 @@ Step1D make_step_1d(const nlohmann::json &config, const Grid<Dim> &grid) {
   return Step1D(eps / grid.N_phys, k0);
 }
 
+template<int Dim>
+Quadratic make_quadratic(const nlohmann::json &config, const Grid<Dim> &grid) {
+  if (!config.contains("eps")) {
+    fmt::print(stderr, "Quadratic Viscosity expects \"eps\" parameter in config\n");
+    exit(1);
+  }
+  const real_t eps = config["eps"];
+  return Quadratic(eps, grid.N_phys);
+}
+
 }
 
 #endif

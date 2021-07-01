@@ -20,6 +20,7 @@ void burgers_cuda(const zisa::array_view<complex_t, 2> &u,
 
 AZEBAN_INSTANTIATE_BURGERS_CUDA(Step1D)
 AZEBAN_INSTANTIATE_BURGERS_CUDA(SmoothCutoff1D)
+AZEBAN_INSTANTIATE_BURGERS_CUDA(Quadratic)
 
 #undef AZEBAN_INSTANTIATE_BURGERS_CUDA
 

@@ -54,6 +54,54 @@ struct SmoothCutoff1D final : public SpectralViscosityBase<SmoothCutoff1D> {
   real_t k0;
 };
 
+/*
+struct Quadratic final : public SpectralViscosityBase<Quadratic> {
+  using super = SpectralViscosityBase<Quadratic>;
+
+  Quadratic(real_t _eps, zisa::int_t _N_phys) : super(_eps), N(_N_phys) {}
+
+  ANY_DEVICE_INLINE real_t Qk(real_t k) const {
+    const real_t sqrtN = zisa::sqrt(N);
+    const real_t absk = zisa::abs(k / (2 * zisa::pi));
+    if (absk >= sqrtN) {
+      return 1. - static_cast<real_t>(N) / (absk * absk);
+    }
+    else {
+      return 0;
+    }
+  }
+
+  using super::eval;
+
+  using super::eps;
+  zisa::int_t N;
+};
+*/
+
+struct Quadratic final {
+  Quadratic(real_t _eps, zisa::int_t _N_phys) : eps(_eps), N(_N_phys) {}
+
+  ANY_DEVICE_INLINE real_t Qk(real_t k) const {
+    const real_t sqrtN = zisa::sqrt(N);
+    const real_t absk = zisa::abs(k / (2 * zisa::pi));
+    if (absk >= sqrtN) {
+      return 1. - static_cast<real_t>(N) / (absk * absk);
+    }
+    else {
+      return 0;
+    }
+  }
+
+  ANY_DEVICE_INLINE real_t eval(real_t k) const {
+    const real_t knorm = k / (2 * zisa::pi);
+    return -eps * zisa::max(real_t(0), knorm * knorm - N);
+  }
+
+  real_t eps;
+  zisa::int_t N;
+};
+
+
 }
 
 #endif

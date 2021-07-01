@@ -4,8 +4,12 @@
 #include <zisa/memory/array.hpp>
 
 namespace azeban {
-
+  
 void TaylorVortex::initialize(const zisa::array_view<real_t, 3> &u) {
+  do_initialize(u);
+}
+
+void TaylorVortex::do_initialize(const zisa::array_view<real_t, 3> &u) {
   const auto init = [&](auto &&u_) {
     const zisa::int_t N = u_.shape(1);
     for (zisa::int_t i = 0; i < N; ++i) {
@@ -33,6 +37,10 @@ void TaylorVortex::initialize(const zisa::array_view<real_t, 3> &u) {
 }
 
 void TaylorVortex::initialize(const zisa::array_view<complex_t, 3> &u_hat) {
+  do_initialize(u_hat);
+}
+
+void TaylorVortex::do_initialize(const zisa::array_view<complex_t, 3> &u_hat) {
   const zisa::int_t N = u_hat.shape(1);
   auto u = zisa::array<real_t, 3>(zisa::shape_t<3>(2, N, N),
                                   u_hat.memory_location());

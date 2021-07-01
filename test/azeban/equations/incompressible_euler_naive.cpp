@@ -433,7 +433,7 @@ TEST_CASE("Euler Naive Double Shear Layer 2D", "[slow]") {
           std::make_shared<azeban::Delta<azeban::real_t>>(0.2)),
       azeban::RandomVariable<azeban::real_t>(
           std::make_shared<azeban::Delta<azeban::real_t>>(0.05)));
-  const azeban::real_t conv_rate = measureConvergence<2>(initializer, 512, 1);
+  const azeban::real_t conv_rate = measureConvergence<2>(initializer, 512, 0.25);
   REQUIRE(conv_rate >= 1);
 }
 
@@ -445,7 +445,7 @@ TEST_CASE("Euler Naive Double Shear Layer 3D const. x", "[slow]") {
           std::make_shared<azeban::Delta<azeban::real_t>>(0.05)));
   const auto initializer
       = std::make_shared<azeban::Init3DFrom2D>(0, initializer2d);
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 1);
+  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 0.25);
   REQUIRE(conv_rate >= 1);
 }
 
@@ -457,7 +457,7 @@ TEST_CASE("Euler Naive Double Shear Layer 3D const. y", "[slow]") {
           std::make_shared<azeban::Delta<azeban::real_t>>(0.05)));
   const auto initializer
       = std::make_shared<azeban::Init3DFrom2D>(1, initializer2d);
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 1);
+  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 0.25);
   REQUIRE(conv_rate >= 1);
 }
 
@@ -469,7 +469,7 @@ TEST_CASE("Euler Naive Double Shear Layer 3D const. z", "[slow]") {
           std::make_shared<azeban::Delta<azeban::real_t>>(0.05)));
   const auto initializer
       = std::make_shared<azeban::Init3DFrom2D>(2, initializer2d);
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 1);
+  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 0.25);
   REQUIRE(conv_rate >= 1);
 }
 
@@ -514,6 +514,6 @@ TEST_CASE("Euler Naive Taylor Green 2D", "[slow]") {
 
 TEST_CASE("Euler Naive Taylor Green 3D", "[slow]") {
   const auto initializer = std::make_shared<azeban::TaylorGreen<3>>();
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 1);
+  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 0.1);
   REQUIRE(conv_rate >= 1);
 }

@@ -51,6 +51,15 @@ std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
       fmt::print(stderr, "Unknown Equation");
       exit(1);
     }
+  } else if (visc_type == "Quadratic") {
+    Quadratic visc = make_quadratic(config["visc"], grid);
+
+    if (equation_name == "Euler") {
+      return make_incompressible_euler_mpi(grid, comm, visc, has_tracer);
+    } else {
+      fmt::print(stderr, "Unknown Equation");
+      exit(1);
+    }
   } else {
     fmt::print(stderr, "Unknown Spectral Viscosity type\n");
     exit(1);

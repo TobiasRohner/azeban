@@ -4,6 +4,10 @@
 
 namespace azeban {
 
+void Init3DFrom2D::initialize(const zisa::array_view<real_t, 4> &u) {
+  do_initialize(u);
+}
+
 void Init3DFrom2D::do_initialize(const zisa::array_view<real_t, 4> &u) {
   const auto init = [&](auto &&u_) {
     const zisa::int_t N = u_.shape(1);
@@ -36,6 +40,10 @@ void Init3DFrom2D::do_initialize(const zisa::array_view<real_t, 4> &u) {
   } else {
     LOG_ERR("Unknown Memory Location");
   }
+}
+
+void Init3DFrom2D::initialize(const zisa::array_view<complex_t, 4> &u_hat) {
+  do_initialize(u_hat);
 }
 
 void Init3DFrom2D::do_initialize(const zisa::array_view<complex_t, 4> &u_hat) {
