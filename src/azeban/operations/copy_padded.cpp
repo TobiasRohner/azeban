@@ -89,7 +89,7 @@ void copy_to_padded(const zisa::array_view<complex_t, 3> &dst,
             dst[idx_dst] = pad_value;
             continue;
           }
-          if (i < src_shape[1] / 2 + 1) {
+          if (j < src_shape[1] / 2 + 1) {
             j_src = j;
           } else if (j < src_shape[1] / 2 + 1 + dst_shape[1] - src_shape[1]) {
             dst[idx_dst] = pad_value;
