@@ -10,62 +10,69 @@
 #include <azeban/init/shear_tube.hpp>
 #include <azeban/init/taylor_green.hpp>
 #include <azeban/init/taylor_vortex.hpp>
+#include <azeban/operations/copy_padded.hpp>
+
+template<typename T, int D>
+static zisa::array_view<T, D - 1> component(const zisa::array_view<T, D> &arr, zisa::int_t n) {
+  zisa::shape_t<D - 1> slice_shape;
+  for (zisa::int_t i = 0 ; i < D - 1 ; ++i) {
+    slice_shape[i] = arr.shape(i + 1);
+  }
+  return zisa::array_view<T, D - 1>(slice_shape, arr.raw() + n * zisa::product(slice_shape), arr.memory_location());
+}
+
+template<typename T, int D>
+static zisa::array_const_view<T, D - 1> component(const zisa::array_const_view<T, D> &arr, zisa::int_t n) {
+  zisa::shape_t<D - 1> slice_shape;
+  for (zisa::int_t i = 0 ; i < D - 1 ; ++i) {
+    slice_shape[i] = arr.shape(i + 1);
+  }
+  return zisa::array_const_view<T, D - 1>(slice_shape, arr.raw() + n * zisa::product(slice_shape), arr.memory_location());
+}
+
+template<typename T, int D>
+static zisa::array_view<T, D - 1> component(zisa::array<T, D> &arr, zisa::int_t n) {
+  zisa::shape_t<D - 1> slice_shape;
+  for (zisa::int_t i = 0 ; i < D - 1 ; ++i) {
+    slice_shape[i] = arr.shape(i + 1);
+  }
+  return zisa::array_view<T, D - 1>(slice_shape, arr.raw() + n * zisa::product(slice_shape), arr.device());
+}
 
 template<int dim_v>
 static azeban::real_t measureConvergence(const std::shared_ptr<azeban::Initializer<dim_v>> &initializer, zisa::int_t N_ref) {
   zisa::shape_t<dim_v + 1> shape_ref;
   shape_ref[0] = dim_v;
-  for (zisa::int_t i = 1 ; i <= dim_v ; ++i) {
+  for (zisa::int_t i = 1 ; i < dim_v ; ++i) {
     shape_ref[i] = N_ref;
   }
-  auto u_ref = zisa::array<azeban::real_t, dim_v + 1>(shape_ref);
-  initializer->initialize(u_ref);
+  shape_ref[dim_v] = N_ref / 2 + 1;
+  auto u_ref_hat = zisa::array<azeban::complex_t, dim_v + 1>(shape_ref);
+  initializer->initialize(u_ref_hat);
 
   std::vector<zisa::int_t> Ns;
   std::vector<azeban::real_t> errs;
   for (zisa::int_t N = 16 ; N < N_ref ; N <<= 1) {
     zisa::shape_t<dim_v + 1> shape;
     shape[0] = dim_v;
-    for (zisa::int_t i = 1 ; i <= dim_v ; ++i) {
+    for (zisa::int_t i = 1 ; i < dim_v ; ++i) {
       shape[i] = N;
     }
-    auto u = zisa::array<azeban::real_t, dim_v + 1>(shape);
-    initializer->initialize(u);
-    azeban::real_t errL2 = 0;
-    if constexpr (dim_v == 2) {
-      for (zisa::int_t i = 0; i < N_ref; ++i) {
-	for (zisa::int_t j = 0; j < N_ref; ++j) {
-	  const zisa::int_t i_sol = i * N / N_ref;
-	  const zisa::int_t j_sol = j * N / N_ref;
-	  const azeban::real_t u_ref_interp = u_ref(0, i, j);
-	  const azeban::real_t v_ref_interp = u_ref(1, i, j);
-	  const azeban::real_t du = u(0, i_sol, j_sol) - u_ref_interp;
-	  const azeban::real_t dv = u(1, i_sol, j_sol) - v_ref_interp;
-	  const azeban::real_t err_loc = zisa::pow<2>(du) + zisa::pow<2>(dv);
-	  errL2 += err_loc;
-	}
-      }
-      errL2 = zisa::sqrt(errL2) / (N_ref * N_ref);
-    } else {
-      for (zisa::int_t i = 0; i < N_ref; ++i) {
-	for (zisa::int_t j = 0; j < N_ref; ++j) {
-	  for (zisa::int_t k = 0; k < N_ref; ++k) {
-	    const zisa::int_t i_sol = i * N / N_ref;
-	    const zisa::int_t j_sol = j * N / N_ref;
-	    const zisa::int_t k_sol = k * N / N_ref;
-	    const azeban::real_t u_ref_interp = u_ref(0, i, j, k);
-	    const azeban::real_t v_ref_interp = u_ref(1, i, j, k);
-	    const azeban::real_t w_ref_interp = u_ref(1, i, j, k);
-	    const azeban::real_t du = u(0, i_sol, j_sol, k_sol) - u_ref_interp;
-	    const azeban::real_t dv = u(1, i_sol, j_sol, k_sol) - v_ref_interp;
-	    const azeban::real_t dw = u(2, i_sol, j_sol, k_sol) - w_ref_interp;
-	    const azeban::real_t err_loc = zisa::pow<2>(du) + zisa::pow<2>(dv) + zisa::pow<2>(dw);
-	    errL2 += err_loc;
-	  }
-	}
-      }
-      errL2 = zisa::sqrt(errL2) / (N_ref * N_ref * N_ref);
+    shape[dim_v] = N / 2 + 1;
+    auto u_hat = zisa::array<azeban::complex_t, dim_v + 1>(shape);
+    initializer->initialize(u_hat);
+    auto u_pad_hat = zisa::array<azeban::complex_t, dim_v + 1>(shape_ref);
+    for (zisa::int_t i = 0 ; i < dim_v ; ++i) {
+      azeban::copy_to_padded(component(u_pad_hat, i), component(u_hat, i), 0);
     }
+    for (zisa::int_t i = 0 ; i < u_pad_hat.size() ; ++i) {
+      u_pad_hat[i] *= zisa::pow<dim_v>(static_cast<azeban::real_t>(N_ref) / N);
+    }
+    azeban::real_t errL2 = 0;
+    for (zisa::int_t i = 0 ; i < u_ref_hat.size() ; ++i) {
+      errL2 += azeban::abs2(u_pad_hat[i] - u_ref_hat[i]);
+    }
+    errL2 = zisa::sqrt(errL2) / zisa::pow<dim_v>(N_ref);
     Ns.push_back(N);
     errs.push_back(errL2);
   }
@@ -84,34 +91,7 @@ static azeban::real_t measureConvergence(const std::shared_ptr<azeban::Initializ
 
 
 
-TEST_CASE("Convergence Discontinuous Vortex Patch 2D", "[slow]") {
-  const auto initializer = std::make_shared<azeban::DiscontinuousVortexPatch>();
-  const azeban::real_t conv_rate = measureConvergence<2>(initializer, 1024);
-  REQUIRE(conv_rate > 1);
-}
-
-TEST_CASE("Convergence Discontinuous Vortex Patch 3D const. x", "[slow]") {
-  const auto initializer2d = std::make_shared<azeban::DiscontinuousVortexPatch>();
-  const auto initializer = std::make_shared<azeban::Init3DFrom2D>(0, initializer2d);
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 512);
-  REQUIRE(conv_rate > 1);
-}
-
-TEST_CASE("Convergence Discontinuous Vortex Patch 3D const. y", "[slow]") {
-  const auto initializer2d = std::make_shared<azeban::DiscontinuousVortexPatch>();
-  const auto initializer = std::make_shared<azeban::Init3DFrom2D>(1, initializer2d);
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 512);
-  REQUIRE(conv_rate > 1);
-}
-
-TEST_CASE("Convergence Discontinuous Vortex Patch 3D const. z", "[slow]") {
-  const auto initializer2d = std::make_shared<azeban::DiscontinuousVortexPatch>();
-  const auto initializer = std::make_shared<azeban::Init3DFrom2D>(2, initializer2d);
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 512);
-  REQUIRE(conv_rate > 1);
-}
-
-TEST_CASE("Convergence Double Shear Layer 2D", "[slow]") {
+TEST_CASE("Convergence Double Shear Layer 2D", "[slow][initializer]") {
   const auto initializer = std::make_shared<azeban::DoubleShearLayer>(
       azeban::RandomVariable<azeban::real_t>(
           std::make_shared<azeban::Delta<azeban::real_t>>(0.2)),
@@ -121,7 +101,7 @@ TEST_CASE("Convergence Double Shear Layer 2D", "[slow]") {
   REQUIRE(conv_rate > 1);
 }
 
-TEST_CASE("Convergence Double Shear Layer 3D const. x", "[slow]") {
+TEST_CASE("Convergence Double Shear Layer 3D const. x", "[slow][initializer]") {
   const auto initializer2d = std::make_shared<azeban::DoubleShearLayer>(
       azeban::RandomVariable<azeban::real_t>(
           std::make_shared<azeban::Delta<azeban::real_t>>(0.2)),
@@ -132,7 +112,7 @@ TEST_CASE("Convergence Double Shear Layer 3D const. x", "[slow]") {
   REQUIRE(conv_rate > 1);
 }
 
-TEST_CASE("Convergence Double Shear Layer 3D const. y", "[slow]") {
+TEST_CASE("Convergence Double Shear Layer 3D const. y", "[slow][initializer]") {
   const auto initializer2d = std::make_shared<azeban::DoubleShearLayer>(
       azeban::RandomVariable<azeban::real_t>(
           std::make_shared<azeban::Delta<azeban::real_t>>(0.2)),
@@ -143,7 +123,7 @@ TEST_CASE("Convergence Double Shear Layer 3D const. y", "[slow]") {
   REQUIRE(conv_rate > 1);
 }
 
-TEST_CASE("Convergence Double Shear Layer 3D const. z", "[slow]") {
+TEST_CASE("Convergence Double Shear Layer 3D const. z", "[slow][initializer]") {
   const auto initializer2d = std::make_shared<azeban::DoubleShearLayer>(
       azeban::RandomVariable<azeban::real_t>(
           std::make_shared<azeban::Delta<azeban::real_t>>(0.2)),
@@ -154,7 +134,7 @@ TEST_CASE("Convergence Double Shear Layer 3D const. z", "[slow]") {
   REQUIRE(conv_rate > 1);
 }
 
-TEST_CASE("Convergence Shear Tube 2D", "[slow]") {
+TEST_CASE("Convergence Shear Tube 2D", "[slow][initializer]") {
   const auto initializer = std::make_shared<azeban::ShearTube>(
       azeban::RandomVariable<azeban::real_t>(
           std::make_shared<azeban::Delta<azeban::real_t>>(0.2)),
@@ -164,39 +144,27 @@ TEST_CASE("Convergence Shear Tube 2D", "[slow]") {
   REQUIRE(conv_rate > 1);
 }
 
-TEST_CASE("Convergence Taylor Green 2D", "[slow]") {
-  const auto initializer = std::make_shared<azeban::TaylorGreen<2>>();
-  const azeban::real_t conv_rate = measureConvergence<2>(initializer, 1024);
-  REQUIRE(conv_rate > 1);
-}
-
-TEST_CASE("Convergence Taylor Green 3D", "[slow]") {
-  const auto initializer = std::make_shared<azeban::TaylorGreen<3>>();
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 512);
-  REQUIRE(conv_rate > 1);
-}
-
-TEST_CASE("Convergence Taylor Vortex 2D", "[slow]") {
+TEST_CASE("Convergence Taylor Vortex 2D", "[slow][initializer]") {
   const auto initializer = std::make_shared<azeban::TaylorVortex>();
   const azeban::real_t conv_rate = measureConvergence<2>(initializer, 1024);
   REQUIRE(conv_rate > 1);
 }
 
-TEST_CASE("Convergence Taylor Vortex 3D const. x", "[slow]") {
+TEST_CASE("Convergence Taylor Vortex 3D const. x", "[slow][initializer]") {
   const auto initializer2d = std::make_shared<azeban::TaylorVortex>();
   const auto initializer = std::make_shared<azeban::Init3DFrom2D>(0, initializer2d);
   const azeban::real_t conv_rate = measureConvergence<3>(initializer, 512);
   REQUIRE(conv_rate > 1);
 }
 
-TEST_CASE("Convergence Taylor Vortex 3D const. y", "[slow]") {
+TEST_CASE("Convergence Taylor Vortex 3D const. y", "[slow][initializer]") {
   const auto initializer2d = std::make_shared<azeban::TaylorVortex>();
   const auto initializer = std::make_shared<azeban::Init3DFrom2D>(1, initializer2d);
   const azeban::real_t conv_rate = measureConvergence<3>(initializer, 512);
   REQUIRE(conv_rate > 1);
 }
 
-TEST_CASE("Convergence Taylor Vortex 3D const. z", "[slow]") {
+TEST_CASE("Convergence Taylor Vortex 3D const. z", "[slow][initializer]") {
   const auto initializer2d = std::make_shared<azeban::TaylorVortex>();
   const auto initializer = std::make_shared<azeban::Init3DFrom2D>(2, initializer2d);
   const azeban::real_t conv_rate = measureConvergence<3>(initializer, 512);

@@ -9,6 +9,7 @@
 #include <azeban/init/init_3d_from_2d.hpp>
 #include <azeban/init/taylor_green.hpp>
 #include <azeban/init/taylor_vortex.hpp>
+#include <azeban/operations/copy_padded.hpp>
 #include <azeban/operations/fft.hpp>
 #include <azeban/operations/operations.hpp>
 #include <azeban/random/delta.hpp>
@@ -22,14 +23,40 @@
 #include <zisa/math/mathematical_constants.hpp>
 #include <zisa/memory/array.hpp>
 
+template<typename T, int D>
+static zisa::array_view<T, D - 1> component(const zisa::array_view<T, D> &arr, zisa::int_t n) {
+  zisa::shape_t<D - 1> slice_shape;
+  for (zisa::int_t i = 0 ; i < D - 1 ; ++i) {
+    slice_shape[i] = arr.shape(i + 1);
+  }
+  return zisa::array_view<T, D - 1>(slice_shape, arr.raw() + n * zisa::product(slice_shape), arr.memory_location());
+}
+
+template<typename T, int D>
+static zisa::array_const_view<T, D - 1> component(const zisa::array_const_view<T, D> &arr, zisa::int_t n) {
+  zisa::shape_t<D - 1> slice_shape;
+  for (zisa::int_t i = 0 ; i < D - 1 ; ++i) {
+    slice_shape[i] = arr.shape(i + 1);
+  }
+  return zisa::array_const_view<T, D - 1>(slice_shape, arr.raw() + n * zisa::product(slice_shape), arr.memory_location());
+}
+
+template<typename T, int D>
+static zisa::array_view<T, D - 1> component(zisa::array<T, D> &arr, zisa::int_t n) {
+  zisa::shape_t<D - 1> slice_shape;
+  for (zisa::int_t i = 0 ; i < D - 1 ; ++i) {
+    slice_shape[i] = arr.shape(i + 1);
+  }
+  return zisa::array_view<T, D - 1>(slice_shape, arr.raw() + n * zisa::product(slice_shape), arr.device());
+}
+
 template <int dim_v>
 static azeban::real_t measureConvergence(
     const std::shared_ptr<azeban::Initializer<dim_v>> &initializer,
     zisa::int_t N_ref,
     azeban::real_t t) {
   const auto solve_euler
-      = [&](const zisa::array_view<azeban::real_t, dim_v + 1> &u) {
-          const zisa::int_t N = u.shape(1);
+      = [&](zisa::int_t N) {
           azeban::Grid<dim_v> grid(N);
           azeban::SmoothCutoff1D visc(0.05 / N, 1);
           const auto equation = std::make_shared<
@@ -46,103 +73,31 @@ static azeban::real_t measureConvergence(
               timestepper,
               zisa::device_type::cuda);
 
-          auto d_u = zisa::cuda_array<azeban::real_t, dim_v + 1>(
-              grid.shape_phys(dim_v));
-          const auto fft = azeban::make_fft<dim_v>(simulation.u(), d_u);
-
           initializer->initialize(simulation.u());
           simulation.simulate_until(t);
-          fft->backward();
-          zisa::copy(u, d_u);
-          for (zisa::int_t i = 0; i < zisa::product(u.shape()); ++i) {
-            u[i] /= zisa::product(u.shape()) / u.shape(0);
-          }
+	  auto h_u_hat = zisa::array<azeban::complex_t, dim_v + 1>(azeban::Grid<dim_v>(N_ref).shape_fourier(dim_v));
+	  auto d_u_hat = zisa::cuda_array<azeban::complex_t, dim_v + 1>(azeban::Grid<dim_v>(N_ref).shape_fourier(dim_v));
+	  for (zisa::int_t i = 0 ; i < dim_v ; ++i) {
+	    azeban::copy_to_padded(component(d_u_hat, i), component(simulation.u(), i), 0);
+	  }
+	  zisa::copy(h_u_hat, d_u_hat);
+	  for (zisa::int_t i = 0 ; i < h_u_hat.size() ; ++i) {
+	    h_u_hat[i] *= zisa::pow<dim_v>(static_cast<azeban::real_t>(N_ref) / N);
+	  }
+	  return h_u_hat;
         };
 
-  zisa::shape_t<dim_v + 1> shape_ref;
-  shape_ref[0] = dim_v;
-  for (zisa::int_t i = 1; i <= dim_v; ++i) {
-    shape_ref[i] = N_ref;
-  }
-  auto u_ref = zisa::array<azeban::real_t, dim_v + 1>(shape_ref);
-  solve_euler(u_ref);
+  const auto u_ref_hat = solve_euler(N_ref);
 
   std::vector<zisa::int_t> Ns;
   std::vector<azeban::real_t> errs;
   for (zisa::int_t N = 16; N < N_ref; N <<= 1) {
-    zisa::shape_t<dim_v + 1> shape;
-    shape[0] = dim_v;
-    for (zisa::int_t i = 1; i <= dim_v; ++i) {
-      shape[i] = N;
-    }
-    auto u = zisa::array<azeban::real_t, dim_v + 1>(shape);
-    solve_euler(u);
+    const auto u_hat = solve_euler(N);
     azeban::real_t errL2 = 0;
-    if constexpr (dim_v == 2) {
-      /*
-      for (zisa::int_t i = 0; i < N; ++i) {
-        for (zisa::int_t j = 0; j < N; ++j) {
-          const zisa::int_t i_ref = i * N_ref / N;
-          const zisa::int_t j_ref = j * N_ref / N;
-          const azeban::real_t du = u(0, i, j) - u_ref(0, i_ref, j_ref);
-          const azeban::real_t dv = u(1, i, j) - u_ref(1, i_ref, j_ref);
-          errL2 += zisa::pow<2>(du) + zisa::pow<2>(dv);
-        }
-      }
-      errL2 = zisa::sqrt(errL2) / (N * N);
-      */
-      for (zisa::int_t i = 0; i < N_ref; ++i) {
-	for (zisa::int_t j = 0; j < N_ref; ++j) {
-	  const zisa::int_t i_sol = i * N / N_ref;
-	  const zisa::int_t j_sol = j * N / N_ref;
-	  const azeban::real_t u_ref_interp = u_ref(0, i, j);
-	  const azeban::real_t v_ref_interp = u_ref(1, i, j);
-	  const azeban::real_t du = u(0, i_sol, j_sol) - u_ref_interp;
-	  const azeban::real_t dv = u(1, i_sol, j_sol) - v_ref_interp;
-	  const azeban::real_t err_loc = zisa::pow<2>(du) + zisa::pow<2>(dv);
-	  errL2 += err_loc;
-	}
-      }
-      errL2 = zisa::sqrt(errL2) / (N_ref * N_ref);
-    } else {
-      /*
-      for (zisa::int_t i = 0; i < N; ++i) {
-        for (zisa::int_t j = 0; j < N; ++j) {
-          for (zisa::int_t k = 0; k < N; ++k) {
-            const zisa::int_t i_ref = i * N_ref / N;
-            const zisa::int_t j_ref = j * N_ref / N;
-            const zisa::int_t k_ref = k * N_ref / N;
-            const azeban::real_t du
-                = u(0, i, j, k) - u_ref(0, i_ref, j_ref, k_ref);
-            const azeban::real_t dv
-                = u(1, i, j, k) - u_ref(1, i_ref, j_ref, k_ref);
-            const azeban::real_t dw
-                = u(2, i, j, k) - u_ref(2, i_ref, j_ref, k_ref);
-            errL2 += zisa::pow<2>(du) + zisa::pow<2>(dv) + zisa::pow<2>(dw);
-          }
-        }
-      }
-      errL2 = zisa::sqrt(errL2) / (N * N * N);
-      */
-      for (zisa::int_t i = 0; i < N_ref; ++i) {
-	for (zisa::int_t j = 0; j < N_ref; ++j) {
-	  for (zisa::int_t k = 0; k < N_ref; ++k) {
-	    const zisa::int_t i_sol = i * N / N_ref;
-	    const zisa::int_t j_sol = j * N / N_ref;
-	    const zisa::int_t k_sol = k * N / N_ref;
-	    const azeban::real_t u_ref_interp = u_ref(0, i, j, k);
-	    const azeban::real_t v_ref_interp = u_ref(1, i, j, k);
-	    const azeban::real_t w_ref_interp = u_ref(1, i, j, k);
-	    const azeban::real_t du = u(0, i_sol, j_sol, k_sol) - u_ref_interp;
-	    const azeban::real_t dv = u(1, i_sol, j_sol, k_sol) - v_ref_interp;
-	    const azeban::real_t dw = u(2, i_sol, j_sol, k_sol) - w_ref_interp;
-	    const azeban::real_t err_loc = zisa::pow<2>(du) + zisa::pow<2>(dv) + zisa::pow<2>(dw);
-	    errL2 += err_loc;
-	  }
-	}
-      }
-      errL2 = zisa::sqrt(errL2) / (N_ref * N_ref * N_ref);
+    for (zisa::int_t i = 0 ; i < u_ref_hat.size() ; ++i) {
+      errL2 += azeban::abs2(u_hat[i] - u_ref_hat[i]);
     }
+    errL2 = zisa::sqrt(errL2) / zisa::pow<dim_v>(N_ref);
     Ns.push_back(N);
     errs.push_back(errL2);
   }
@@ -162,7 +117,7 @@ static azeban::real_t measureConvergence(
 }
 
 static zisa::array<azeban::real_t, 3> read_reference() {
-  const std::string filename = "momentum8748_taylor_morinishi6_T0,01.nc";
+  const std::string filename = "momentum8748_taylor_morinishi6_T0,01_reshaped.nc";
   int status, ncid, varid;
   int dimids[3];
   size_t dims[3];
@@ -285,10 +240,14 @@ TEST_CASE("Euler Naive Taylor Vortex 2D", "[slow]") {
   const auto u_ref = read_reference();
   const zisa::int_t N_ref = u_ref.shape(1);
 
+  auto u_pad_hat = zisa::array<azeban::complex_t, 3>({2, N_ref, N_ref / 2 + 1});
+  auto u_pad = zisa::array<azeban::real_t, 3>({2, N_ref, N_ref});
+  const auto fft = azeban::make_fft<2>(u_pad_hat, u_pad);
+
   const auto initializer = std::make_shared<azeban::TaylorVortex>();
   std::vector<zisa::int_t> Ns;
   std::vector<azeban::real_t> errs;
-  for (zisa::int_t N = 128; N < 2048; N <<= 1) {
+  for (zisa::int_t N = 31; N < 1024; N <<= 1) {
     azeban::Grid<2> grid(N);
     azeban::SmoothCutoff1D visc(0.05 / N, 1);
     const auto equation = std::make_shared<
@@ -305,26 +264,25 @@ TEST_CASE("Euler Naive Taylor Vortex 2D", "[slow]") {
                                      zisa::device_type::cuda);
     initializer->initialize(simulation.u());
 
-    auto d_u = zisa::cuda_array<azeban::real_t, 3>(grid.shape_phys(2));
-    auto h_u = zisa::array<azeban::real_t, 3>(grid.shape_phys(2));
-    const auto fft = azeban::make_fft<2>(simulation.u(), d_u);
+    auto h_u_hat = zisa::array<azeban::complex_t, 3>(grid.shape_fourier(2));
 
     simulation.simulate_until(0.01);
+    zisa::copy(h_u_hat, simulation.u());
+    azeban::copy_to_padded(component(u_pad_hat, 0), component(h_u_hat, 0), 0);
+    azeban::copy_to_padded(component(u_pad_hat, 1), component(h_u_hat, 1), 0);
     fft->backward();
-    zisa::copy(h_u, d_u);
-    for (zisa::int_t i = 0; i < zisa::product(h_u.shape()); ++i) {
-      h_u[i] /= zisa::product(h_u.shape()) / h_u.shape(0);
+    for (zisa::int_t i = 0; i < zisa::product(u_pad.shape()); ++i) {
+      u_pad[i] /= zisa::product(u_pad.shape()) / u_pad.shape(0);
+      u_pad[i] *= zisa::pow<2>(static_cast<azeban::real_t>(N_ref) / N);
     }
 
     azeban::real_t errL2 = 0;
     for (zisa::int_t i = 0; i < N_ref; ++i) {
       for (zisa::int_t j = 0; j < N_ref; ++j) {
-        const zisa::int_t i_sol = i * N / N_ref;
-        const zisa::int_t j_sol = j * N / N_ref;
         const azeban::real_t u_ref_interp = u_ref(0, i, j) / 16;
         const azeban::real_t v_ref_interp = u_ref(1, i, j) / 16;
-        const azeban::real_t du = h_u(0, i_sol, j_sol) - u_ref_interp;
-        const azeban::real_t dv = h_u(1, i_sol, j_sol) - v_ref_interp;
+        const azeban::real_t du = u_pad(0, i, j) - u_ref_interp;
+        const azeban::real_t dv = u_pad(1, i, j) - v_ref_interp;
 	const azeban::real_t err_loc = zisa::pow<2>(du) + zisa::pow<2>(dv);
         errL2 += err_loc;
       }
@@ -334,7 +292,7 @@ TEST_CASE("Euler Naive Taylor Vortex 2D", "[slow]") {
     errs.push_back(errL2);
   }
 
-  std::cout << "L2 errors = [" << errs[0];
+  std::cout << "Taylor Vortex 2D L2 errors = [" << errs[0];
   for (zisa::int_t i = 1; i < errs.size(); ++i) {
     std::cout << ", " << errs[i];
   }
@@ -351,6 +309,10 @@ TEST_CASE("Euler Naive Taylor Vortex 2D", "[slow]") {
 TEST_CASE("Euler Naive Taylor Vortex 3D", "[slow]") {
   const auto u_ref = read_reference();
   const zisa::int_t N_ref = u_ref.shape(1);
+
+  auto u_pad_hat = zisa::array<azeban::complex_t, 4>({2, N_ref, N_ref, N_ref / 2 + 1});
+  auto u_pad = zisa::array<azeban::real_t, 4>({2, N_ref, N_ref, N_ref});
+  const auto fft = azeban::make_fft<3>(u_pad_hat, u_pad);
 
   const auto test = [&](int dim) {
     const auto init2d = std::make_shared<azeban::TaylorVortex>();
@@ -375,40 +337,48 @@ TEST_CASE("Euler Naive Taylor Vortex 3D", "[slow]") {
                                        zisa::device_type::cuda);
       initializer->initialize(simulation.u());
 
-      auto d_u = zisa::cuda_array<azeban::real_t, 4>(grid.shape_phys(3));
-      auto h_u = zisa::array<azeban::real_t, 4>(grid.shape_phys(3));
-      const auto fft = azeban::make_fft<3>(simulation.u(), d_u);
+      auto h_u_hat = zisa::array<azeban::complex_t, 4>(grid.shape_fourier(2));
 
       simulation.simulate_until(0.01);
+      zisa::copy(h_u_hat, simulation.u());
+      azeban::copy_to_padded(component(u_pad_hat, 0), component(h_u_hat, 0), 0);
+      azeban::copy_to_padded(component(u_pad_hat, 1), component(h_u_hat, 1), 0);
+      azeban::copy_to_padded(component(u_pad_hat, 2), component(h_u_hat, 2), 0);
       fft->backward();
-      zisa::copy(h_u, d_u);
-      for (zisa::int_t i = 0; i < zisa::product(h_u.shape()); ++i) {
-        h_u[i] /= zisa::product(h_u.shape()) / h_u.shape(0);
+      for (zisa::int_t i = 0; i < zisa::product(u_pad.shape()); ++i) {
+	u_pad[i] /= zisa::product(u_pad.shape()) / u_pad.shape(0);
+	u_pad[i] *= zisa::pow<3>(static_cast<azeban::real_t>(N_ref) / N);
       }
 
       azeban::real_t errL2 = 0;
-      for (zisa::int_t i = 0; i < N; ++i) {
-        for (zisa::int_t j = 0; j < N; ++j) {
-          for (zisa::int_t k = 0; k < N; ++k) {
-            const zisa::int_t i2d = dim > 0 ? i : j;
-            const zisa::int_t j2d = dim > 1 ? j : k;
-            const zisa::int_t i_ref = i2d * N_ref / N;
-            const zisa::int_t j_ref = j2d * N_ref / N;
-            const azeban::real_t u_ref_interp = u_ref(0, i_ref, j_ref) / 16;
-            const azeban::real_t v_ref_interp = u_ref(1, i_ref, j_ref) / 16;
-            const azeban::real_t du = h_u(0, i, j, k) - u_ref_interp;
-            const azeban::real_t dv = h_u(1, i, j, k) - v_ref_interp;
-            const azeban::real_t dw = h_u(2, i, j, k) - v_ref_interp;
-            errL2 += zisa::pow<2>(du) + zisa::pow<2>(dv) + zisa::pow<2>(dw);
-          }
-        }
+      for (zisa::int_t i = 0; i < N_ref; ++i) {
+	for (zisa::int_t j = 0; j < N_ref; ++j) {
+	  for (zisa::int_t k = 0; k < N_ref; ++k) {
+	    azeban::real_t u_ref_interp[3];
+	    for (zisa::int_t d = 0 ; d < 3 ; ++d) {
+	      const zisa::int_t d2d = d < dim ? d : d - 1;
+	      const zisa::int_t i2d = dim > 0 ? i : j;
+	      const zisa::int_t j2d = dim > 1 ? j : k;
+	      if (d == dim) {
+		u_ref_interp[d] = 0;
+	      } else {
+		u_ref_interp[d] = u_ref(d2d, i2d, j2d);
+	      }
+	    }
+	    const azeban::real_t du = u_pad(0, i, j, k) - u_ref_interp[0];
+	    const azeban::real_t dv = u_pad(1, i, j, k) - u_ref_interp[1];
+	    const azeban::real_t dw = u_pad(2, i, j, k) - u_ref_interp[2];
+	    const azeban::real_t err_loc = zisa::pow<2>(du) + zisa::pow<2>(dv) + zisa::pow<2>(dw);
+	    errL2 += err_loc;
+	  }
+	}
       }
-      errL2 = zisa::sqrt(errL2) / (N * N * N);
+      errL2 = zisa::sqrt(errL2) / (N_ref * N_ref * N_ref);
       Ns.push_back(N);
       errs.push_back(errL2);
     }
 
-    std::cout << "L2 errors = [" << errs[0];
+    std::cout << "Taylor Vortex 3D L2 errors = [" << errs[0];
     for (zisa::int_t i = 1; i < errs.size(); ++i) {
       std::cout << ", " << errs[i];
     }
