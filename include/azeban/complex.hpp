@@ -38,22 +38,22 @@ struct Complex {
   }
 
   template <typename ScalarR>
-  ANY_DEVICE_INLINE bool operator==(const Complex<ScalarR> &other) {
+  ANY_DEVICE_INLINE bool operator==(const Complex<ScalarR> &other) const {
     return x == other.x && y == other.y;
   }
 
   template <typename ScalarR>
-  ANY_DEVICE_INLINE bool operator==(ScalarR real) {
+  ANY_DEVICE_INLINE bool operator==(ScalarR real) const {
     return x == real && y == 0;
   }
 
   template <typename ScalarR>
-  ANY_DEVICE_INLINE bool operator!=(const Complex<ScalarR> &other) {
+  ANY_DEVICE_INLINE bool operator!=(const Complex<ScalarR> &other) const {
     return x != other.x || y != other.y;
   }
 
   template <typename ScalarR>
-  ANY_DEVICE_INLINE bool operator!=(ScalarR real) {
+  ANY_DEVICE_INLINE bool operator!=(ScalarR real) const {
     return x != real || y != 0;
   }
 
