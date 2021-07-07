@@ -1,5 +1,6 @@
 #include <azeban/catch.hpp>
 
+#include "../utils.hpp"
 #include <azeban/equations/incompressible_euler.hpp>
 #include <azeban/equations/spectral_viscosity.hpp>
 #include <azeban/evolution/ssp_rk2.hpp>
@@ -23,32 +24,6 @@
 #include <zisa/math/mathematical_constants.hpp>
 #include <zisa/memory/array.hpp>
 
-template<typename T, int D>
-static zisa::array_view<T, D - 1> component(const zisa::array_view<T, D> &arr, zisa::int_t n) {
-  zisa::shape_t<D - 1> slice_shape;
-  for (zisa::int_t i = 0 ; i < D - 1 ; ++i) {
-    slice_shape[i] = arr.shape(i + 1);
-  }
-  return zisa::array_view<T, D - 1>(slice_shape, arr.raw() + n * zisa::product(slice_shape), arr.memory_location());
-}
-
-template<typename T, int D>
-static zisa::array_const_view<T, D - 1> component(const zisa::array_const_view<T, D> &arr, zisa::int_t n) {
-  zisa::shape_t<D - 1> slice_shape;
-  for (zisa::int_t i = 0 ; i < D - 1 ; ++i) {
-    slice_shape[i] = arr.shape(i + 1);
-  }
-  return zisa::array_const_view<T, D - 1>(slice_shape, arr.raw() + n * zisa::product(slice_shape), arr.memory_location());
-}
-
-template<typename T, int D>
-static zisa::array_view<T, D - 1> component(zisa::array<T, D> &arr, zisa::int_t n) {
-  zisa::shape_t<D - 1> slice_shape;
-  for (zisa::int_t i = 0 ; i < D - 1 ; ++i) {
-    slice_shape[i] = arr.shape(i + 1);
-  }
-  return zisa::array_view<T, D - 1>(slice_shape, arr.raw() + n * zisa::product(slice_shape), arr.device());
-}
 
 template <int dim_v>
 static azeban::real_t measureConvergence(
@@ -75,16 +50,9 @@ static azeban::real_t measureConvergence(
 
           initializer->initialize(simulation.u());
           simulation.simulate_until(t);
-	  auto h_u_hat = zisa::array<azeban::complex_t, dim_v + 1>(azeban::Grid<dim_v>(N_ref).shape_fourier(dim_v));
-	  auto d_u_hat = zisa::cuda_array<azeban::complex_t, dim_v + 1>(azeban::Grid<dim_v>(N_ref).shape_fourier(dim_v));
-	  for (zisa::int_t i = 0 ; i < dim_v ; ++i) {
-	    azeban::copy_to_padded(component(d_u_hat, i), component(simulation.u(), i), 0);
-	  }
-	  zisa::copy(h_u_hat, d_u_hat);
-	  for (zisa::int_t i = 0 ; i < h_u_hat.size() ; ++i) {
-	    h_u_hat[i] *= zisa::pow<dim_v>(static_cast<azeban::real_t>(N_ref) / N);
-	  }
-	  return h_u_hat;
+	  auto h_u_hat = zisa::array<azeban::complex_t, dim_v + 1>(grid.shape_fourier(dim_v));
+	  zisa::copy(h_u_hat, simulation.u());
+	  return std::move(h_u_hat);
         };
 
   const auto u_ref_hat = solve_euler(N_ref);
@@ -93,11 +61,7 @@ static azeban::real_t measureConvergence(
   std::vector<azeban::real_t> errs;
   for (zisa::int_t N = 16; N < N_ref; N <<= 1) {
     const auto u_hat = solve_euler(N);
-    azeban::real_t errL2 = 0;
-    for (zisa::int_t i = 0 ; i < u_ref_hat.size() ; ++i) {
-      errL2 += azeban::abs2(u_hat[i] - u_ref_hat[i]);
-    }
-    errL2 = zisa::sqrt(errL2);// / zisa::pow<dim_v>(N_ref);
+    const azeban::real_t errL2 = L2<dim_v>(u_hat, u_ref_hat);
     Ns.push_back(N);
     errs.push_back(errL2);
   }
