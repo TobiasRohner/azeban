@@ -2,6 +2,8 @@
 #define SPECTRAL_VISCOSITY_FACTORY_H_
 
 #include "spectral_viscosity.hpp"
+#include <azeban/grid.hpp>
+#include <azeban/logging.hpp>
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>
 
@@ -50,6 +52,16 @@ Quadratic make_quadratic(const nlohmann::json &config, const Grid<Dim> &grid) {
   }
   const real_t eps = config["eps"];
   return Quadratic(eps, grid.N_phys);
+}
+
+template <int Dim>
+NoViscosity make_no_viscosity(const nlohmann::json &config,
+                              const Grid<Dim> & /* grid */) {
+
+  AZEBAN_ERR_IF(config["type"] != "None",
+                "Config file did not request \"type = None\".\n");
+
+  return NoViscosity();
 }
 
 }

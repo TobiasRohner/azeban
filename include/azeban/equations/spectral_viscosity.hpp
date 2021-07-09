@@ -101,6 +101,10 @@ struct Quadratic final {
   zisa::int_t N;
 };
 
+struct NoViscosity final {
+  ANY_DEVICE_INLINE real_t Qk(real_t /* k */) const { return 0.0; }
+  ANY_DEVICE_INLINE real_t eval(real_t /* k */) const { return 0.0; }
+};
 
 }
 
