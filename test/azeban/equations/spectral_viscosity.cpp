@@ -19,7 +19,6 @@ static void verify(Visc visc, zisa::int_t N) {
 
 
 
-/*
 TEST_CASE("Step1D cutoff 0") {
   for (zisa::int_t N = 16 ; N <= 4096 ; N <<= 1) {
     azeban::Step1D visc(0.05, 0);
@@ -61,7 +60,6 @@ TEST_CASE("SmoothCutoff1D cutoff N") {
     verify(visc, N);
   }
 }
-*/
 
 TEST_CASE("Quadratic") {
   for (zisa::int_t N = 16 ; N <= 4096 ; N <<= 1) {

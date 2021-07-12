@@ -1,14 +1,14 @@
 {
-  "output": "double_shear_layer_2D_N128_rho0.2_delta0.05_T10.0",
+  "output": "heat_T0.1",
   "device": "cuda",
   "dimension": 2,
   "num_samples": 1,
   "seed": 1,
-  "time": 10,
+  "time": 0.1,
   "snapshots_": [],
   "snapshots": {
     "start": 0,
-    "stop": 10,
+    "stop": 0.1,
     "n": 100
   },
   "grid": {
@@ -27,13 +27,12 @@
     "C": 0.2
   },
   "init": {
-    "name": "Double Shear Layer",
-    "rho": 0.2,
-    "delta": 0.05,
-    "tracer_": {
-      "name": "Sphere",
-      "center": [0.5, 0.5, 0.5],
-      "radius": 0.1
+    "name": "Const Phys",
+    "u": 0,
+    "v": 0,
+    "tracer": {
+      "name": "Const Fourier",
+      "rho": 1
     }
   }
 }

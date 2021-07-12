@@ -12,6 +12,8 @@
 #include "sphere_factory.hpp"
 #include "taylor_green_factory.hpp"
 #include "taylor_vortex_factory.hpp"
+#include "const_phys_factory.hpp"
+#include "const_fourier_tracer_factory.hpp"
 #include "velocity_and_tracer.hpp"
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>
@@ -45,6 +47,8 @@ make_initializer_u(const nlohmann::json &config, RNG &rng) {
     return make_shear_tube<Dim>(config, rng);
   } else if (name == "Brownian Motion") {
     return make_brownian_motion<Dim>(config, rng);
+  } else if (name == "Const Phys") {
+    return make_const_phys<Dim>(config, rng);
   } else {
     fmt::print(stderr, "Unknown Initializer: \"{}\"\n", name);
     exit(1);
@@ -62,6 +66,8 @@ make_initializer_rho(const nlohmann::json &config) {
   std::string name = config["name"];
   if (name == "Sphere") {
     return make_sphere<Dim>(config);
+  } else if (name == "Const Fourier") {
+    return make_const_fourier_tracer<Dim>(config);
   } else {
     fmt::print(stderr, "Unknown Initializer: \"{}\"\n", name);
     exit(1);

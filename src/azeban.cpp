@@ -321,7 +321,6 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
   }
 
   auto simulation = make_simulation_mpi<dim_v>(config, comm);
-  const auto &grid = simulation.grid();
   auto initializer = make_initializer<dim_v>(config, rng);
 
   std::unique_ptr<zisa::NetCDFSerialWriter> writer;

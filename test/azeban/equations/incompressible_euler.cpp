@@ -210,9 +210,9 @@ TEST_CASE("Taylor Vortex 2D", "[slow]") {
   const auto initializer = std::make_shared<azeban::TaylorVortex>();
   std::vector<zisa::int_t> Ns;
   std::vector<azeban::real_t> errs;
-  for (zisa::int_t N = 31; N < 1024; N <<= 1) {
+  for (zisa::int_t N = 16; N <= 128; N <<= 1) {
     azeban::Grid<2> grid(N);
-    azeban::SmoothCutoff1D visc(0.05 / N, 1);
+    azeban::SmoothCutoff1D visc(0, 1);
     const auto equation = std::make_shared<
         azeban::IncompressibleEuler<2, azeban::SmoothCutoff1D>>(
         grid, visc, zisa::device_type::cuda);
@@ -285,7 +285,7 @@ TEST_CASE("Taylor Vortex 3D", "[slow]") {
     std::vector<azeban::real_t> errs;
     for (zisa::int_t N = 16; N <= 128; N <<= 1) {
       azeban::Grid<3> grid(N);
-      azeban::SmoothCutoff1D visc(0.05 / N, 1);
+      azeban::SmoothCutoff1D visc(0, 1);
       const auto equation = std::make_shared<
           azeban::IncompressibleEuler<3, azeban::SmoothCutoff1D>>(
           grid, visc, zisa::device_type::cuda);
