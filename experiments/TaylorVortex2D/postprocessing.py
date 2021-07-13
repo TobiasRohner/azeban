@@ -16,9 +16,9 @@ def analytic_sol(N, t):
 
 
 def read_sol(N):
-    with nc.Dataset('taylor_vortex_N{}_T0.5.nc'.format(N)) as f:
-        u = f['sample_0_time_0.500000_u'][:]
-        v = f['sample_0_time_0.500000_v'][:]
+    with nc.Dataset('taylor_vortex_N{}_T0.1.nc'.format(N)) as f:
+        u = f['sample_0_time_0.100000_u'][:]
+        v = f['sample_0_time_0.100000_v'][:]
     return u, v
 
 
@@ -35,7 +35,7 @@ def pad_fourier(u_hat, N_pad):
 
 def compute_err(N, N_ref):
     u, v = read_sol(N)
-    u_ref, v_ref = analytic_sol(N_ref, 0.5)
+    u_ref, v_ref = analytic_sol(N_ref, 0.1)
     u_hat = np.fft.fft2(u)
     v_hat = np.fft.fft2(v)
     u_pad_hat = pad_fourier(u_hat, N_ref)
