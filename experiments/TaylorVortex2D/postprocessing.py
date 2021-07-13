@@ -54,4 +54,4 @@ if __name__ == '__main__':
     errs = [compute_err(N, N_ref) for N in Ns]
     print('\n'.join(['{}: {}'.format(N, err) for N, err in zip(Ns, errs)]))
     with open(sys.argv[1], 'wb') as f:
-        pickle.dump(errs, f)
+        pickle.dump(list(zip(Ns, errs)), f)

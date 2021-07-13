@@ -1,12 +1,12 @@
 {
-  "output": "taylor_vortex_N32_T1.0",
+  "output": "taylor_vortex_N32_T0.5",
   "device": "cuda",
   "dimension": 2,
   "num_samples": 1,
   "seed": 1,
-  "time": 1.0,
+  "time": 0.5,
   "snapshots_": [],
-  "snapshots": [1],
+  "snapshots": [0.5],
   "grid": {
     "N_phys": 32,
     "N_phys_pad": ""
