@@ -12,4 +12,4 @@
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
-srun /users/trohner/azeban/experiments/TaylorVortex2D/postprocessing.py taylor_vortex_2D_errors.pkl
+srun /users/trohner/azeban/experiments/TaylorVortex2D/postprocessing.py None Step Smooth Quadratic taylor_vortex_2D_errors.pkl

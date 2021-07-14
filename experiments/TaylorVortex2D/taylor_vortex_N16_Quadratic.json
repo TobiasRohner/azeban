@@ -1,5 +1,5 @@
 {
-  "output": "taylor_vortex_N64_T0.1",
+  "output": "taylor_vortex_N16_Quadratic_T0.1",
   "device": "cuda",
   "dimension": 2,
   "num_samples": 1,
@@ -8,14 +8,14 @@
   "snapshots_": [],
   "snapshots": [0.1],
   "grid": {
-    "N_phys": 64,
+    "N_phys": 16,
     "N_phys_pad": ""
   },
   "equation": {
     "name": "Euler",
     "visc": {
       "type": "Quadratic",
-      "eps": 0
+      "eps": 0.05
     }
   },
   "timestepper": {

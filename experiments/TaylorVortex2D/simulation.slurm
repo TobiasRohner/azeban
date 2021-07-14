@@ -12,7 +12,19 @@
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
-srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N16.json
-srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N32.json
-srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N64.json
-srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N128.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N16_None.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N32_None.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N64_None.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N128_None.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N16_Step.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N32_Step.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N64_Step.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N128_Step.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N16_Smooth.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N32_Smooth.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N64_Smooth.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N128_Smooth.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N16_Quadratic.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N32_Quadratic.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N64_Quadratic.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorVortex2D/taylor_vortex_N128_Quadratic.json
