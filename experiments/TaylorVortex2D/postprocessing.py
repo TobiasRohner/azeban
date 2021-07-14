@@ -15,10 +15,10 @@ def analytic_sol(N, t):
     return u/16, v/16
 
 
-def read_sol(N):
-    with nc.Dataset('taylor_vortex_N{}_T0.5.nc'.format(N)) as f:
-        u = f['sample_0_time_0.500000_u'][:]
-        v = f['sample_0_time_0.500000_v'][:]
+def read_sol(N, method):
+    with nc.Dataset('taylor_vortex_N{}_{}_T0.1.nc'.format(N, method)) as f:
+        u = f['sample_0_time_0.100000_u'][:]
+        v = f['sample_0_time_0.100000_v'][:]
     return u, v
 
 
@@ -33,9 +33,9 @@ def pad_fourier(u_hat, N_pad):
     return (N_pad / N)**2 * u_pad_hat
 
 
-def compute_err(N, N_ref):
-    u, v = read_sol(N)
-    u_ref, v_ref = analytic_sol(N_ref, 0.5)
+def compute_err(N, N_ref, method):
+    u, v = read_sol(N, method)
+    u_ref, v_ref = analytic_sol(N_ref, 0.1)
     u_hat = np.fft.fft2(u)
     v_hat = np.fft.fft2(v)
     u_pad_hat = pad_fourier(u_hat, N_ref)
@@ -51,7 +51,10 @@ def compute_err(N, N_ref):
 if __name__ == '__main__':
     Ns = [16, 32, 64, 128]
     N_ref = 1024
-    errs = [compute_err(N, N_ref) for N in Ns]
-    print('\n'.join(['{}: {}'.format(N, err) for N, err in zip(Ns, errs)]))
-    with open(sys.argv[1], 'wb') as f:
-        pickle.dump(list(zip(Ns, errs)), f)
+    to_dump = {}
+    for method in sys.argv[1:-1]:
+        errs = [compute_err(N, N_ref, method) for N in Ns]
+        to_dump[method] = list(zip(Ns, errs))
+        print('\n'.join([method]+['{}: {}'.format(N, err) for N, err in zip(Ns, errs)]))
+    with open(sys.argv[-1], 'wb') as f:
+        pickle.dump(to_dump, f)

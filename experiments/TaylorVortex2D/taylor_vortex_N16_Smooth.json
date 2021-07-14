@@ -1,0 +1,29 @@
+{
+  "output": "taylor_vortex_N16_Smooth_T0.1",
+  "device": "cuda",
+  "dimension": 2,
+  "num_samples": 1,
+  "seed": 1,
+  "time": 0.1,
+  "snapshots_": [],
+  "snapshots": [0.1],
+  "grid": {
+    "N_phys": 16,
+    "N_phys_pad": ""
+  },
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "type": "Smooth Cutoff",
+      "eps": 0.05,
+      "k0": 25.1327
+    }
+  },
+  "timestepper": {
+    "type": "SSP RK3",
+    "C": 0.2
+  },
+  "init": {
+    "name": "Taylor Vortex"
+  }
+}
