@@ -87,8 +87,7 @@ struct Quadratic final {
     const real_t absk = zisa::abs(k / (2 * zisa::pi));
     if (absk >= sqrtN) {
       return 1. - static_cast<real_t>(N) / (absk * absk);
-    }
-    else {
+    } else {
       return 0;
     }
   }

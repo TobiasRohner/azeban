@@ -37,7 +37,7 @@ Step1D make_step_1d(const nlohmann::json &config, const Grid<Dim> &grid) {
   return Step1D(eps / grid.N_phys, k0);
 }
 
-template<int Dim>
+template <int Dim>
 Quadratic make_quadratic(const nlohmann::json &config, const Grid<Dim> &grid) {
   AZEBAN_ERR_IF(!config.contains("eps"),
                 "Quadratic Viscosity expects \"eps\" parameter in config\n");
