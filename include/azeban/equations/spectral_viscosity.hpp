@@ -79,7 +79,8 @@ struct Quadratic final : public SpectralViscosityBase<Quadratic> {
 */
 
 struct Quadratic final {
-  Quadratic(real_t _eps, zisa::int_t _N_phys) : eps(_eps), N(_N_phys) {}
+  Quadratic(real_t _eps, zisa::int_t _N_phys)
+      : eps(_eps / _N_phys), N(_N_phys) {}
 
   ANY_DEVICE_INLINE real_t Qk(real_t k) const {
     const real_t sqrtN = zisa::sqrt(N);
