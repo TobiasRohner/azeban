@@ -10,16 +10,10 @@ class DiscontinuousDoubleShearLayer final : public Initializer<2> {
   using super = Initializer<2>;
 
 public:
-  DiscontinuousDoubleShearLayer(const RandomVariable<real_t> &delta)
-      : delta_(delta) {}
-
 protected:
   virtual void do_initialize(const zisa::array_view<real_t, 3> &u) override;
   virtual void
   do_initialize(const zisa::array_view<complex_t, 3> &u_hat) override;
-
-private:
-  RandomVariable<real_t> delta_;
 };
 
 }

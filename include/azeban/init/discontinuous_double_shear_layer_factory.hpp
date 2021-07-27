@@ -12,23 +12,17 @@ namespace azeban {
 
 template <int Dim, typename RNG>
 std::shared_ptr<Initializer<Dim>>
-make_discontinuous_double_shear_layer(const nlohmann::json &config, RNG &rng) {
+make_discontinuous_double_shear_layer(const nlohmann::json &config, RNG &) {
   if constexpr (Dim == 2 || Dim == 3) {
-    AZEBAN_ERR_IF(!config.contains("delta"),
-                  "Discontinuous Double Shear Layer initialization is missing "
-                  "parameter \"delta\"\n");
-
-    RandomVariable<real_t> delta
-        = make_random_variable<real_t>(config["delta"], rng);
     if constexpr (Dim == 2) {
-      return std::make_shared<DiscontinuousDoubleShearLayer>(delta);
+      return std::make_shared<DiscontinuousDoubleShearLayer>();
     } else {
       AZEBAN_ERR_IF(
           !config.contains("dimension"),
           "Must specify constant \"dimension\" to generalize from 2D to 3D\n");
 
       const int dim = config["dimension"];
-      auto init2d = std::make_shared<DiscontinuousDoubleShearLayer>(delta);
+      auto init2d = std::make_shared<DiscontinuousDoubleShearLayer>();
       return std::make_shared<Init3DFrom2D>(dim, init2d);
     }
   }
