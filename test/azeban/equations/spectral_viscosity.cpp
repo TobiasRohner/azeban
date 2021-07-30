@@ -10,6 +10,10 @@
 #include <azeban/evolution/ssp_rk3.hpp>
 #include <azeban/simulation.hpp>
 #include <fmt/core.h>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <tuple>
 
 
 template<typename Visc>
@@ -28,7 +32,8 @@ static void verify(Visc visc, zisa::int_t N) {
 
 
 template<typename Visc>
-static void verify_via_tracer(Visc visc, zisa::int_t N) {
+static std::tuple<azeban::real_t, std::vector<azeban::real_t>, std::vector<azeban::real_t>, std::vector<azeban::complex_t>> verify_via_tracer(Visc visc, zisa::int_t N) {
+  std::tuple<azeban::real_t, std::vector<azeban::real_t>, std::vector<azeban::real_t>, std::vector<azeban::complex_t>> out;
   azeban::Grid<2> grid(N);
   azeban::CFL<2> cfl(grid, 0.2);
   auto equation = std::make_shared<azeban::IncompressibleEuler<2, Visc>>(grid, visc, zisa::device_type::cpu, true);
@@ -40,6 +45,11 @@ static void verify_via_tracer(Visc visc, zisa::int_t N) {
   azeban::Simulation<2> simulation(grid.shape_fourier(3), cfl, timestepper);
   initializer->initialize(simulation.u());
   const azeban::real_t dt = 0.001 / N;
+  std::get<0>(out) = dt;
+  for (zisa::int_t i = 0 ; i < N / 2 + 1 ; i += 16) {
+    std::get<1>(out).push_back(2 * zisa::pi * i);
+    std::get<2>(out).push_back(visc.eval(zisa::sqrt(2) * 2 * zisa::pi * i));
+  }
   for (azeban::real_t t = dt ; t < 0.01 ; t += dt) {
     simulation.simulate_until(t);
     for (zisa::int_t i = 0 ; i < simulation.u().shape(1) ; ++i) {
@@ -58,9 +68,13 @@ static void verify_via_tracer(Visc visc, zisa::int_t N) {
 	const azeban::real_t nu = visc.eval(zisa::sqrt(absk2));
 	const azeban::real_t rho_analytical = zisa::exp(nu * t);
 	REQUIRE(azeban::abs2(rho_analytical - simulation.u()(2, i, j)) <= 1e-7);
+	if (i_ >= 0 && i_ % 16 == 0 && i_ == j_) {
+	  std::get<3>(out).push_back(simulation.u()(2, i, j));
+	}
       }
     }
   }
+  return out;
 }
 
 
@@ -117,48 +131,139 @@ TEST_CASE("Quadratic", "[visc]") {
 TEST_CASE("Step1D cutoff 0 tracer", "[visc]") {
   for (zisa::int_t N = 16 ; N <= 256 ; N <<= 1) {
     azeban::Step1D visc(0.05, 0);
-    verify_via_tracer(visc, N);
+    auto result = verify_via_tracer(visc, N);
+    std::ofstream os("heat_Step1D_cutoff_0_N" + std::to_string(N) + ".txt");
+    os << std::get<0>(result) << '\n';
+    for (azeban::real_t x : std::get<1>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::real_t x : std::get<2>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::complex_t x : std::get<3>(result)) {
+      os << x << ' ';
+    }
   }
 }
 
 TEST_CASE("Step1D cutoff sqrt(N) tracer", "[visc]") {
   for (zisa::int_t N = 16 ; N <= 256 ; N <<= 1) {
     azeban::Step1D visc(0.05, sqrt(N));
-    verify_via_tracer(visc, N);
+    auto result = verify_via_tracer(visc, N);
+    std::ofstream os("heat_Step1D_cutoff_sqrt(N)_N" + std::to_string(N) + ".txt");
+    os << std::get<0>(result) << '\n';
+    for (azeban::real_t x : std::get<1>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::real_t x : std::get<2>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::complex_t x : std::get<3>(result)) {
+      os << x << ' ';
+    }
   }
 }
 
 TEST_CASE("Step1D cutoff N tracer", "[visc]") {
   for (zisa::int_t N = 16 ; N <= 256 ; N <<= 1) {
     azeban::Step1D visc(0.05, N);
-    verify_via_tracer(visc, N);
+    auto result = verify_via_tracer(visc, N);
+    std::ofstream os("heat_Step1D_cutoff_N_N" + std::to_string(N) + ".txt");
+    os << std::get<0>(result) << '\n';
+    for (azeban::real_t x : std::get<1>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::real_t x : std::get<2>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::complex_t x : std::get<3>(result)) {
+      os << x << ' ';
+    }
   }
 }
 
 TEST_CASE("SmoothCutoff1D cutoff 1 tracer", "[visc]") {
   for (zisa::int_t N = 16 ; N <= 256 ; N <<= 1) {
     azeban::SmoothCutoff1D visc(0.05, 1);
-    verify_via_tracer(visc, N);
+    auto result = verify_via_tracer(visc, N);
+    std::ofstream os("heat_SmoothCutoff1D_cutoff_1_N" + std::to_string(N) + ".txt");
+    os << std::get<0>(result) << '\n';
+    for (azeban::real_t x : std::get<1>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::real_t x : std::get<2>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::complex_t x : std::get<3>(result)) {
+      os << x << ' ';
+    }
   }
 }
 
 TEST_CASE("SmoothCutoff1D cutoff sqrt(N) tracer", "[visc]") {
   for (zisa::int_t N = 16 ; N <= 256 ; N <<= 1) {
     azeban::SmoothCutoff1D visc(0.05, sqrt(N));
-    verify_via_tracer(visc, N);
+    auto result = verify_via_tracer(visc, N);
+    std::ofstream os("heat_SmoothCutoff1D_cutoff_sqrt(N)_N" + std::to_string(N) + ".txt");
+    os << std::get<0>(result) << '\n';
+    for (azeban::real_t x : std::get<1>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::real_t x : std::get<2>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::complex_t x : std::get<3>(result)) {
+      os << x << ' ';
+    }
   }
 }
 
 TEST_CASE("SmoothCutoff1D cutoff N tracer", "[visc]") {
   for (zisa::int_t N = 16 ; N <= 256 ; N <<= 1) {
     azeban::SmoothCutoff1D visc(0.05, N);
-    verify_via_tracer(visc, N);
+    auto result = verify_via_tracer(visc, N);
+    std::ofstream os("heat_SmoothCutoff1D_cutoff_N_N" + std::to_string(N) + ".txt");
+    os << std::get<0>(result) << '\n';
+    for (azeban::real_t x : std::get<1>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::real_t x : std::get<2>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::complex_t x : std::get<3>(result)) {
+      os << x << ' ';
+    }
   }
 }
 
 TEST_CASE("Quadratic tracer", "[visc]") {
   for (zisa::int_t N = 16 ; N <= 256 ; N <<= 1) {
     azeban::Quadratic visc(0.05, N);
-    verify_via_tracer(visc, N);
+    auto result = verify_via_tracer(visc, N);
+    std::ofstream os("heat_Quadratic_N" + std::to_string(N) + ".txt");
+    os << std::get<0>(result) << '\n';
+    for (azeban::real_t x : std::get<1>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::real_t x : std::get<2>(result)) {
+      os << x << ' ';
+    }
+    os << '\n';
+    for (azeban::complex_t x : std::get<3>(result)) {
+      os << x << ' ';
+    }
   }
 }
