@@ -74,7 +74,7 @@ static void fft_1d_params(benchmark::internal::Benchmark *bm) {
   const auto candidates = good_sizes(zisa::int_t(1) << 14);
   for (long device : {static_cast<long>(zisa::device_type::cpu),
                       static_cast<long>(zisa::device_type::cuda)}) {
-    for (zisa::int_t N : candidates) {
+    for (long N : candidates) {
       bm->Args({N, device});
     }
   }
@@ -84,7 +84,7 @@ static void fft_2d_params(benchmark::internal::Benchmark *bm) {
   const auto candidates = good_sizes(zisa::int_t(1) << 11);
   for (long device : {static_cast<long>(zisa::device_type::cpu),
                       static_cast<long>(zisa::device_type::cuda)}) {
-    for (zisa::int_t N : candidates) {
+    for (long N : candidates) {
       bm->Args({N, device});
     }
   }
@@ -95,7 +95,7 @@ static void fft_3d_params(benchmark::internal::Benchmark *bm) {
       = good_sizes(220 /* TODO: Change this if GPU memory is larger! */);
   for (long device : {static_cast<long>(zisa::device_type::cpu),
                       static_cast<long>(zisa::device_type::cuda)}) {
-    for (zisa::int_t N : candidates) {
+    for (long N : candidates) {
       bm->Args({N, device});
     }
   }
@@ -103,7 +103,7 @@ static void fft_3d_params(benchmark::internal::Benchmark *bm) {
 
 static void fft_3d_params_mpi(benchmark::internal::Benchmark *bm) {
   const auto candidates = good_sizes(768);
-  for (zisa::int_t N : candidates) {
+  for (long N : candidates) {
     if (N > 220) {
       bm->Args({N});
     }

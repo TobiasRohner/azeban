@@ -392,18 +392,18 @@ static auto get_padding_messages(const Grid<3> &grid, MPI_Comm comm) {
   int unpadded_pos = 0;
   int tag = 0;
   while (unpadded_rank < size && padded_rank < size) {
-    const zisa::int_t i0_unpadded = grid.i_fourier(0, unpadded_rank, comm);
-    const zisa::int_t i1_unpadded = grid.i_fourier(0, unpadded_rank + 1, comm);
-    const zisa::int_t i0_padded = grid.i_fourier_pad(0, padded_rank, comm);
-    const zisa::int_t i1_padded = grid.i_fourier_pad(0, padded_rank + 1, comm);
-    const int padded_last_sent = unpadded_last_sent >= grid.N_fourier
+    const int i0_unpadded = grid.i_fourier(0, unpadded_rank, comm);
+    const int i1_unpadded = grid.i_fourier(0, unpadded_rank + 1, comm);
+    const int i0_padded = grid.i_fourier_pad(0, padded_rank, comm);
+    const int i1_padded = grid.i_fourier_pad(0, padded_rank + 1, comm);
+    const int padded_last_sent = unpadded_last_sent >= zisa::integer_cast<int>(grid.N_fourier)
                                      ? unpadded_last_sent + pad
                                      : unpadded_last_sent;
     const int padded_pos
-        = unpadded_pos >= grid.N_fourier ? unpadded_pos + pad : unpadded_pos;
+        = unpadded_pos >= zisa::integer_cast<int>(grid.N_fourier) ? unpadded_pos + pad : unpadded_pos;
     bool sent = false;
     if (unpadded_pos == i1_unpadded || padded_pos == i1_padded
-        || unpadded_pos == grid.N_fourier) {
+        || unpadded_pos == zisa::integer_cast<int>(grid.N_fourier)) {
       sent = true;
       msgs[unpadded_rank][padded_rank].need_to_send = true;
       msgs[unpadded_rank][padded_rank].unpadded_start
@@ -423,7 +423,7 @@ static auto get_padding_messages(const Grid<3> &grid, MPI_Comm comm) {
       if (padded_pos == i1_padded) {
         ++padded_rank;
       }
-      if (unpadded_pos == grid.N_fourier) {
+      if (unpadded_pos == zisa::integer_cast<int>(grid.N_fourier)) {
         zisa::int_t i0 = grid.i_fourier_pad(0, padded_rank, comm);
         zisa::int_t i1 = grid.i_fourier_pad(0, padded_rank + 1, comm);
         while (!(i0 <= unpadded_pos + pad && i1 > unpadded_pos + pad)) {
@@ -489,7 +489,7 @@ void IncompressibleEuler_MPI_Base<3>::pad_u_hat(
   }
   // Receive all the messages
   std::vector<MPI_Request> recv_reqs;
-  for (int_t send = 0; send < size; ++send) {
+  for (int send = 0; send < size; ++send) {
     const auto &msg = msgs[send][rank];
     if (msg.need_to_send) {
       for (zisa::int_t d = 0; d < n_vars; ++d) {
@@ -597,7 +597,7 @@ void IncompressibleEuler_MPI_Base<3>::unpad_B_hat() {
   }
   // Receive all the messages
   std::vector<MPI_Request> recv_reqs;
-  for (int_t send = 0; send < size; ++send) {
+  for (int send = 0; send < size; ++send) {
     const auto &msg = msgs[rank][send];
     if (msg.need_to_send) {
       for (zisa::int_t d = 0; d < n_vars; ++d) {
