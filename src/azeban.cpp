@@ -475,6 +475,15 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
 }
 #endif
 
+nlohmann::json read_config(const std::string &config_filename) {
+  // Ensures the file `config_filename` is closed again as soon as possible.
+  std::ifstream config_file(config_filename);
+  nlohmann::json config;
+  config_file >> config;
+
+  return config;
+}
+
 int main(int argc, char *argv[]) {
 #if AZEBAN_HAS_MPI
   int provided;
@@ -488,9 +497,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  std::ifstream config_file(argv[1]);
-  nlohmann::json config;
-  config_file >> config;
+  auto config = read_config(argv[1]);
 
   if (!config.contains("dimension")) {
     fmt::print(stderr, "Must provide dimension of simulation\n");

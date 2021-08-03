@@ -1,6 +1,8 @@
 #ifndef RANDOM_VARIABLE_H_
 #define RANDOM_VARIABLE_H_
 
+#include <memory>
+
 namespace azeban {
 
 template <typename Result>

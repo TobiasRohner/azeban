@@ -35,53 +35,38 @@ std::shared_ptr<Equation<Dim>> make_equation(const nlohmann::json &config,
   const std::string equation_name = config["name"];
   const std::string visc_type = config["visc"]["type"];
 
+  auto make_equation
+      = [&equation_name, &grid, &has_tracer, &device](auto visc) {
+          if (equation_name == "Burgers") {
+            return make_burgers(grid, visc, device);
+          } else if (equation_name == "Euler") {
+            return make_incompressible_euler(grid, visc, has_tracer, device);
+          } else if (equation_name == "Euler Naive") {
+            return make_incompressible_euler_naive(grid, visc, device);
+          }
+
+          AZEBAN_ERR("Unkown Equation");
+        };
+
   if (visc_type == "Smooth Cutoff") {
     SmoothCutoff1D visc = make_smooth_cutoff_1d(config["visc"], grid);
+    return make_equation(visc);
 
-    if (equation_name == "Burgers") {
-      return make_burgers(grid, visc, device);
-    } else if (equation_name == "Euler") {
-      return make_incompressible_euler(grid, visc, has_tracer, device);
-    } else if (equation_name == "Euler Naive") {
-      return make_incompressible_euler_naive(grid, visc, device);
-    } else {
-      fmt::print(stderr, "Unknown Equation");
-      exit(1);
-    }
   } else if (visc_type == "Step") {
     Step1D visc = make_step_1d(config["visc"], grid);
+    return make_equation(visc);
 
-    if (equation_name == "Burgers") {
-      return make_burgers(grid, visc, device);
-    } else if (equation_name == "Euler") {
-      return make_incompressible_euler(grid, visc, has_tracer, device);
-    } else if (equation_name == "Euler Naive") {
-      return make_incompressible_euler_naive(grid, visc, device);
-    } else {
-      fmt::print(stderr, "Unknown Equation");
-      exit(1);
-    }
   } else if (visc_type == "Quadratic") {
     Quadratic visc = make_quadratic(config["visc"], grid);
+    return make_equation(visc);
 
-    if (equation_name == "Burgers") {
-      return make_burgers(grid, visc, device);
-    } else if (equation_name == "Euler") {
-      return make_incompressible_euler(grid, visc, has_tracer, device);
-    } else if (equation_name == "Euler Naive") {
-      return make_incompressible_euler_naive(grid, visc, device);
-    } else {
-      fmt::print(stderr, "Unknown Equation");
-      exit(1);
-    }
-  } else {
-    fmt::print(stderr, "Unknown Spectral Viscosity type\n");
-    exit(1);
+  } else if (visc_type == "None") {
+    NoViscosity visc = make_no_viscosity(config["visc"], grid);
+    return make_equation(visc);
   }
-  // Make compiler happy
-  return nullptr;
+
+  AZEBAN_ERR("Unknown Spectral Viscosity type.\n");
 }
 
 }
-
 #endif

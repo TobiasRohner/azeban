@@ -9,6 +9,8 @@ include("cmake/has_build_type.cmake")
 include("cmake/warning_flags.cmake")
 include("cmake/fast_debug.cmake")
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
+
 # -- Dependencies --------------------------------------------------------------
 add_library(azeban_dependencies INTERFACE)
 

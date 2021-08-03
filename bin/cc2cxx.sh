@@ -17,6 +17,9 @@ fi
 if [[ "$cc" == "gcc" ]]
 then
     echo ${prefix}g++
+elif [[ "$cc" == "gcc-10" ]]
+then
+    echo ${prefix}g++-10
 elif [[ "$cc" == "clang" ]]
 then
     echo ${prefix}clang++

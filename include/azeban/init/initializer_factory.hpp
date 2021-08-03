@@ -2,6 +2,7 @@
 #define INITIALIZER_FACTORY_H_
 
 #include "brownian_motion_factory.hpp"
+#include "discontinuous_double_shear_layer_factory.hpp"
 #include "discontinuous_vortex_patch_factory.hpp"
 #include "double_shear_layer_factory.hpp"
 #include "init_3d_from_2d.hpp"
@@ -37,6 +38,8 @@ make_initializer_u(const nlohmann::json &config, RNG &rng) {
     return make_shock<Dim>(config, rng);
   } else if (name == "Double Shear Layer") {
     return make_double_shear_layer<Dim>(config, rng);
+  } else if (name == "Discontinuous Double Shear Layer") {
+    return make_discontinuous_double_shear_layer<Dim>(config, rng);
   } else if (name == "Taylor Vortex") {
     return make_taylor_vortex<Dim>(config);
   } else if (name == "Discontinuous Vortex Patch") {

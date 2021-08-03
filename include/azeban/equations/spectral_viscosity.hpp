@@ -79,15 +79,15 @@ struct Quadratic final : public SpectralViscosityBase<Quadratic> {
 */
 
 struct Quadratic final {
-  Quadratic(real_t _eps, zisa::int_t _N_phys) : eps(_eps), N(_N_phys) {}
+  Quadratic(real_t _eps, zisa::int_t _N_phys)
+      : eps(_eps / _N_phys), N(_N_phys) {}
 
   ANY_DEVICE_INLINE real_t Qk(real_t k) const {
     const real_t sqrtN = zisa::sqrt(N);
     const real_t absk = zisa::abs(k / (2 * zisa::pi));
     if (absk >= sqrtN) {
       return 1. - static_cast<real_t>(N) / (absk * absk);
-    }
-    else {
+    } else {
       return 0;
     }
   }
@@ -101,6 +101,10 @@ struct Quadratic final {
   zisa::int_t N;
 };
 
+struct NoViscosity final {
+  ANY_DEVICE_INLINE real_t Qk(real_t /* k */) const { return 0.0; }
+  ANY_DEVICE_INLINE real_t eval(real_t /* k */) const { return 0.0; }
+};
 
 }
 
