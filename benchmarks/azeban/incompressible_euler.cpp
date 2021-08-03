@@ -67,14 +67,14 @@ static std::vector<zisa::int_t> good_sizes(zisa::int_t Nmax) {
 
 static void compute_B_2d_params(benchmark::internal::Benchmark *bm) {
   const auto candidates = good_sizes(zisa::int_t(1) << 12);
-  for (zisa::int_t N : candidates) {
+  for (long N : candidates) {
     bm->Args({N});
   }
 }
 
 static void compute_B_3d_params(benchmark::internal::Benchmark *bm) {
   const auto candidates = good_sizes(250);
-  for (zisa::int_t N : candidates) {
+  for (long N : candidates) {
     bm->Args({N});
   }
 }

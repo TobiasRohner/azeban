@@ -51,7 +51,7 @@ static azeban::real_t measureConvergence(
           simulation.simulate_until(t);
 	  auto h_u_hat = zisa::array<azeban::complex_t, dim_v + 1>(grid.shape_fourier(dim_v));
 	  zisa::copy(h_u_hat, simulation.u());
-	  return std::move(h_u_hat);
+	  return h_u_hat;
         };
 
   const auto u_ref_hat = solve_euler(N_ref);
@@ -318,7 +318,7 @@ TEST_CASE("Euler Naive Taylor Vortex 3D", "[slow]") {
 	for (zisa::int_t j = 0; j < N_ref; ++j) {
 	  for (zisa::int_t k = 0; k < N_ref; ++k) {
 	    azeban::real_t u_ref_interp[3];
-	    for (zisa::int_t d = 0 ; d < 3 ; ++d) {
+	    for (int d = 0 ; d < 3 ; ++d) {
 	      const zisa::int_t d2d = d < dim ? d : d - 1;
 	      const zisa::int_t i2d = dim > 0 ? i : j;
 	      const zisa::int_t j2d = dim > 1 ? j : k;
