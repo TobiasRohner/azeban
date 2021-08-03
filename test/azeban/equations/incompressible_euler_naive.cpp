@@ -210,7 +210,7 @@ TEST_CASE("Euler Naive Taylor Vortex 2D", "[slow]") {
   const auto initializer = std::make_shared<azeban::TaylorVortex>();
   std::vector<zisa::int_t> Ns;
   std::vector<azeban::real_t> errs;
-  for (zisa::int_t N = 31; N < 1024; N <<= 1) {
+  for (zisa::int_t N = 16; N < 128; N <<= 1) {
     azeban::Grid<2> grid(N);
     azeban::SmoothCutoff1D visc(0.05 / N, 1);
     const auto equation = std::make_shared<
@@ -403,39 +403,6 @@ TEST_CASE("Euler Naive Double Shear Layer 3D const. z", "[slow]") {
   const auto initializer
       = std::make_shared<azeban::Init3DFrom2D>(2, initializer2d);
   const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 0.25);
-  REQUIRE(conv_rate >= 1);
-}
-
-TEST_CASE("Euler Naive Discontinous Vortex Patch 2D", "[slow]") {
-  const auto initializer = std::make_shared<azeban::DiscontinuousVortexPatch>();
-  const azeban::real_t conv_rate = measureConvergence<2>(initializer, 512, 5);
-  REQUIRE(conv_rate >= 1);
-}
-
-TEST_CASE("Euler Naive Discontinous Vortex Patch 3D const x", "[slow]") {
-  const auto initializer2d
-      = std::make_shared<azeban::DiscontinuousVortexPatch>();
-  const auto initializer
-      = std::make_shared<azeban::Init3DFrom2D>(0, initializer2d);
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 5);
-  REQUIRE(conv_rate >= 1);
-}
-
-TEST_CASE("Euler Naive Discontinous Vortex Patch 3D const y", "[slow]") {
-  const auto initializer2d
-      = std::make_shared<azeban::DiscontinuousVortexPatch>();
-  const auto initializer
-      = std::make_shared<azeban::Init3DFrom2D>(1, initializer2d);
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 5);
-  REQUIRE(conv_rate >= 1);
-}
-
-TEST_CASE("Euler Naive Discontinous Vortex Patch 3D const z", "[slow]") {
-  const auto initializer2d
-      = std::make_shared<azeban::DiscontinuousVortexPatch>();
-  const auto initializer
-      = std::make_shared<azeban::Init3DFrom2D>(2, initializer2d);
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 5);
   REQUIRE(conv_rate >= 1);
 }
 
