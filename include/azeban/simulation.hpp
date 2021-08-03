@@ -80,7 +80,7 @@ public:
     real_t dt = cfl_.dt(u_view_, comm);
     while (time_ < t - dt) {
       if (rank == 0) {
-	fmt::print(stderr, "t = {}, dt = {}\n", time_, dt);
+        fmt::print(stderr, "t = {}, dt = {}\n", time_, dt);
       }
       timestepper_->integrate(dt, u_);
       time_ += dt;

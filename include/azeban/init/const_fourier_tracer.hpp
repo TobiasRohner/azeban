@@ -2,19 +2,18 @@
 #define CONST_FOURIER_TRACER_HPP
 
 #include "initializer.hpp"
-#include <azeban/operations/fft.hpp>
 #include <array>
+#include <azeban/operations/fft.hpp>
 #include <type_traits>
-
 
 namespace azeban {
 
-template<int Dim>
+template <int Dim>
 class ConstFourierTracer final : public Initializer<Dim> {
   using super = Initializer<Dim>;
 
 public:
-  ConstFourierTracer(real_t rho) : rho_(rho) { }
+  ConstFourierTracer(real_t rho) : rho_(rho) {}
   ConstFourierTracer(const ConstFourierTracer &) = default;
   ConstFourierTracer(ConstFourierTracer &&) = default;
 
@@ -38,34 +37,34 @@ public:
     zisa::copy(u, h_u);
   }
 
-  virtual void initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat) override {
+  virtual void
+  initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat) override {
     const auto init = [&](const zisa::array_view<complex_t, Dim + 1> &u_) {
       for (auto &c : u_) {
-	c = rho_;
+        c = rho_;
       }
     };
     if (u_hat.memory_location() == zisa::device_type::cpu) {
       init(u_hat);
-    }
-    else if (u_hat.memory_location() == zisa::device_type::cuda) {
+    } else if (u_hat.memory_location() == zisa::device_type::cuda) {
       zisa::array<complex_t, Dim + 1> h_u_hat(u_hat.shape());
       init(h_u_hat);
       zisa::copy(u_hat, h_u_hat);
-    }
-    else {
+    } else {
       LOG_ERR("Unsupported memory loaction");
     }
   }
 
 protected:
-  virtual void do_initialize(const zisa::array_view<real_t, Dim + 1> &u) override { }
-  virtual void do_initialize(const zisa::array_view<complex_t, Dim + 1> &uhat) override { }
+  virtual void
+  do_initialize(const zisa::array_view<real_t, Dim + 1> &u) override {}
+  virtual void
+  do_initialize(const zisa::array_view<complex_t, Dim + 1> &uhat) override {}
 
 private:
   real_t rho_;
 };
 
 }
-
 
 #endif

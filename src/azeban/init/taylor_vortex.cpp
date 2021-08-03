@@ -4,7 +4,7 @@
 #include <zisa/memory/array.hpp>
 
 namespace azeban {
-  
+
 void TaylorVortex::initialize(const zisa::array_view<real_t, 3> &u) {
   do_initialize(u);
 }

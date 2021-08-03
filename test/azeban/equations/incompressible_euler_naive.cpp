@@ -29,30 +29,29 @@ static azeban::real_t measureConvergence(
     const std::shared_ptr<azeban::Initializer<dim_v>> &initializer,
     zisa::int_t N_ref,
     azeban::real_t t) {
-  const auto solve_euler
-      = [&](zisa::int_t N) {
-          azeban::Grid<dim_v> grid(N);
-          azeban::SmoothCutoff1D visc(0.05 / N, 1);
-          const auto equation = std::make_shared<
-              azeban::IncompressibleEulerNaive<dim_v, azeban::SmoothCutoff1D>>(
-              grid, visc, zisa::device_type::cuda);
-          const auto timestepper = std::make_shared<azeban::SSP_RK3<dim_v>>(
-              zisa::device_type::cuda,
-              grid.shape_fourier(equation->n_vars()),
-              equation);
-          azeban::CFL<dim_v> cfl(grid, 0.2);
-          azeban::Simulation<dim_v> simulation(
-              grid.shape_fourier(equation->n_vars()),
-              cfl,
-              timestepper,
-              zisa::device_type::cuda);
+  const auto solve_euler = [&](zisa::int_t N) {
+    azeban::Grid<dim_v> grid(N);
+    azeban::SmoothCutoff1D visc(0.05 / N, 1);
+    const auto equation = std::make_shared<
+        azeban::IncompressibleEulerNaive<dim_v, azeban::SmoothCutoff1D>>(
+        grid, visc, zisa::device_type::cuda);
+    const auto timestepper = std::make_shared<azeban::SSP_RK3<dim_v>>(
+        zisa::device_type::cuda,
+        grid.shape_fourier(equation->n_vars()),
+        equation);
+    azeban::CFL<dim_v> cfl(grid, 0.2);
+    azeban::Simulation<dim_v> simulation(grid.shape_fourier(equation->n_vars()),
+                                         cfl,
+                                         timestepper,
+                                         zisa::device_type::cuda);
 
-          initializer->initialize(simulation.u());
-          simulation.simulate_until(t);
-	  auto h_u_hat = zisa::array<azeban::complex_t, dim_v + 1>(grid.shape_fourier(dim_v));
-	  zisa::copy(h_u_hat, simulation.u());
-	  return std::move(h_u_hat);
-        };
+    initializer->initialize(simulation.u());
+    simulation.simulate_until(t);
+    auto h_u_hat
+        = zisa::array<azeban::complex_t, dim_v + 1>(grid.shape_fourier(dim_v));
+    zisa::copy(h_u_hat, simulation.u());
+    return std::move(h_u_hat);
+  };
 
   const auto u_ref_hat = solve_euler(N_ref);
 
@@ -80,7 +79,8 @@ static azeban::real_t measureConvergence(
 }
 
 static zisa::array<azeban::real_t, 3> read_reference() {
-  const std::string filename = "momentum8748_taylor_morinishi6_T0,01_reshaped.nc";
+  const std::string filename
+      = "momentum8748_taylor_morinishi6_T0,01_reshaped.nc";
   int status, ncid, varid;
   int dimids[3];
   size_t dims[3];
@@ -90,7 +90,7 @@ static zisa::array<azeban::real_t, 3> read_reference() {
   LOG_ERR_IF(status != NC_NOERR, "Failed to open dataset");
   status = nc_inq_vardimid(ncid, varid, dimids);
   LOG_ERR_IF(status != NC_NOERR, "Failed to get dimensions");
-  for (int i = 0 ; i < 3 ; ++i) {
+  for (int i = 0; i < 3; ++i) {
     status = nc_inq_dimlen(ncid, dimids[i], dims + i);
     LOG_ERR_IF(status != NC_NOERR, "Failed to get dimension length");
   }
@@ -246,7 +246,7 @@ TEST_CASE("Euler Naive Taylor Vortex 2D", "[slow]") {
         const azeban::real_t v_ref_interp = u_ref(1, i, j) / 16;
         const azeban::real_t du = u_pad(0, i, j) - u_ref_interp;
         const azeban::real_t dv = u_pad(1, i, j) - v_ref_interp;
-	const azeban::real_t err_loc = zisa::pow<2>(du) + zisa::pow<2>(dv);
+        const azeban::real_t err_loc = zisa::pow<2>(du) + zisa::pow<2>(dv);
         errL2 += err_loc;
       }
     }
@@ -273,7 +273,8 @@ TEST_CASE("Euler Naive Taylor Vortex 3D", "[slow]") {
   const auto u_ref = read_reference();
   const zisa::int_t N_ref = u_ref.shape(1);
 
-  auto u_pad_hat = zisa::array<azeban::complex_t, 4>({2, N_ref, N_ref, N_ref / 2 + 1});
+  auto u_pad_hat
+      = zisa::array<azeban::complex_t, 4>({2, N_ref, N_ref, N_ref / 2 + 1});
   auto u_pad = zisa::array<azeban::real_t, 4>({2, N_ref, N_ref, N_ref});
   const auto fft = azeban::make_fft<3>(u_pad_hat, u_pad);
 
@@ -309,32 +310,33 @@ TEST_CASE("Euler Naive Taylor Vortex 3D", "[slow]") {
       azeban::copy_to_padded(component(u_pad_hat, 2), component(h_u_hat, 2), 0);
       fft->backward();
       for (zisa::int_t i = 0; i < zisa::product(u_pad.shape()); ++i) {
-	u_pad[i] /= zisa::product(u_pad.shape()) / u_pad.shape(0);
-	u_pad[i] *= zisa::pow<3>(static_cast<azeban::real_t>(N_ref) / N);
+        u_pad[i] /= zisa::product(u_pad.shape()) / u_pad.shape(0);
+        u_pad[i] *= zisa::pow<3>(static_cast<azeban::real_t>(N_ref) / N);
       }
 
       azeban::real_t errL2 = 0;
       for (zisa::int_t i = 0; i < N_ref; ++i) {
-	for (zisa::int_t j = 0; j < N_ref; ++j) {
-	  for (zisa::int_t k = 0; k < N_ref; ++k) {
-	    azeban::real_t u_ref_interp[3];
-	    for (zisa::int_t d = 0 ; d < 3 ; ++d) {
-	      const zisa::int_t d2d = d < dim ? d : d - 1;
-	      const zisa::int_t i2d = dim > 0 ? i : j;
-	      const zisa::int_t j2d = dim > 1 ? j : k;
-	      if (d == dim) {
-		u_ref_interp[d] = 0;
-	      } else {
-		u_ref_interp[d] = u_ref(d2d, i2d, j2d);
-	      }
-	    }
-	    const azeban::real_t du = u_pad(0, i, j, k) - u_ref_interp[0];
-	    const azeban::real_t dv = u_pad(1, i, j, k) - u_ref_interp[1];
-	    const azeban::real_t dw = u_pad(2, i, j, k) - u_ref_interp[2];
-	    const azeban::real_t err_loc = zisa::pow<2>(du) + zisa::pow<2>(dv) + zisa::pow<2>(dw);
-	    errL2 += err_loc;
-	  }
-	}
+        for (zisa::int_t j = 0; j < N_ref; ++j) {
+          for (zisa::int_t k = 0; k < N_ref; ++k) {
+            azeban::real_t u_ref_interp[3];
+            for (zisa::int_t d = 0; d < 3; ++d) {
+              const zisa::int_t d2d = d < dim ? d : d - 1;
+              const zisa::int_t i2d = dim > 0 ? i : j;
+              const zisa::int_t j2d = dim > 1 ? j : k;
+              if (d == dim) {
+                u_ref_interp[d] = 0;
+              } else {
+                u_ref_interp[d] = u_ref(d2d, i2d, j2d);
+              }
+            }
+            const azeban::real_t du = u_pad(0, i, j, k) - u_ref_interp[0];
+            const azeban::real_t dv = u_pad(1, i, j, k) - u_ref_interp[1];
+            const azeban::real_t dw = u_pad(2, i, j, k) - u_ref_interp[2];
+            const azeban::real_t err_loc
+                = zisa::pow<2>(du) + zisa::pow<2>(dv) + zisa::pow<2>(dw);
+            errL2 += err_loc;
+          }
+        }
       }
       errL2 = zisa::sqrt(errL2) / (N_ref * N_ref * N_ref);
       Ns.push_back(N);
@@ -366,7 +368,8 @@ TEST_CASE("Euler Naive Double Shear Layer 2D", "[slow]") {
           std::make_shared<azeban::Delta<azeban::real_t>>(0.2)),
       azeban::RandomVariable<azeban::real_t>(
           std::make_shared<azeban::Delta<azeban::real_t>>(0.05)));
-  const azeban::real_t conv_rate = measureConvergence<2>(initializer, 512, 0.25);
+  const azeban::real_t conv_rate
+      = measureConvergence<2>(initializer, 512, 0.25);
   REQUIRE(conv_rate >= 1);
 }
 
@@ -378,7 +381,8 @@ TEST_CASE("Euler Naive Double Shear Layer 3D const. x", "[slow]") {
           std::make_shared<azeban::Delta<azeban::real_t>>(0.05)));
   const auto initializer
       = std::make_shared<azeban::Init3DFrom2D>(0, initializer2d);
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 0.25);
+  const azeban::real_t conv_rate
+      = measureConvergence<3>(initializer, 128, 0.25);
   REQUIRE(conv_rate >= 1);
 }
 
@@ -390,7 +394,8 @@ TEST_CASE("Euler Naive Double Shear Layer 3D const. y", "[slow]") {
           std::make_shared<azeban::Delta<azeban::real_t>>(0.05)));
   const auto initializer
       = std::make_shared<azeban::Init3DFrom2D>(1, initializer2d);
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 0.25);
+  const azeban::real_t conv_rate
+      = measureConvergence<3>(initializer, 128, 0.25);
   REQUIRE(conv_rate >= 1);
 }
 
@@ -402,7 +407,8 @@ TEST_CASE("Euler Naive Double Shear Layer 3D const. z", "[slow]") {
           std::make_shared<azeban::Delta<azeban::real_t>>(0.05)));
   const auto initializer
       = std::make_shared<azeban::Init3DFrom2D>(2, initializer2d);
-  const azeban::real_t conv_rate = measureConvergence<3>(initializer, 128, 0.25);
+  const azeban::real_t conv_rate
+      = measureConvergence<3>(initializer, 128, 0.25);
   REQUIRE(conv_rate >= 1);
 }
 

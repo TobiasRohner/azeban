@@ -5,14 +5,14 @@
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>
 
-
 namespace azeban {
 
-template<int Dim>
+template <int Dim>
 std::shared_ptr<Initializer<Dim>>
 make_const_fourier_tracer(const nlohmann::json &config) {
   if (!config.contains("rho")) {
-    fmt::print(stderr, "ConstFourier initialization is missing parameter \"rho\"");
+    fmt::print(stderr,
+               "ConstFourier initialization is missing parameter \"rho\"");
     exit(1);
   }
   real_t rho = config["rho"];
@@ -20,6 +20,5 @@ make_const_fourier_tracer(const nlohmann::json &config) {
 }
 
 }
-
 
 #endif

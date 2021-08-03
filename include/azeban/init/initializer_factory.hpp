@@ -2,6 +2,8 @@
 #define INITIALIZER_FACTORY_H_
 
 #include "brownian_motion_factory.hpp"
+#include "const_fourier_tracer_factory.hpp"
+#include "const_phys_factory.hpp"
 #include "discontinuous_double_shear_layer_factory.hpp"
 #include "discontinuous_vortex_patch_factory.hpp"
 #include "double_shear_layer_factory.hpp"
@@ -13,8 +15,6 @@
 #include "sphere_factory.hpp"
 #include "taylor_green_factory.hpp"
 #include "taylor_vortex_factory.hpp"
-#include "const_phys_factory.hpp"
-#include "const_fourier_tracer_factory.hpp"
 #include "velocity_and_tracer.hpp"
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>

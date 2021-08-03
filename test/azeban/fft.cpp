@@ -3,10 +3,10 @@
 #include <azeban/grid.hpp>
 #include <azeban/operations/fft.hpp>
 #include <fmt/core.h>
+#include <random>
 #include <zisa/cuda/memory/cuda_array.hpp>
 #include <zisa/math/basic_functions.hpp>
 #include <zisa/memory/array_view.hpp>
-#include <random>
 
 TEST_CASE("Learn the cufft API", "[cufft]") {
 
@@ -61,7 +61,7 @@ TEST_CASE("FFTW 1D scalar valued data", "[fft]") {
   std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
   u_hat_ref[0].x = dist(rng);
   u_hat_ref[0].y = 0;
-  for (zisa::int_t k = 1 ; k < n / 2 ; ++k) {
+  for (zisa::int_t k = 1; k < n / 2; ++k) {
     u_hat_ref[k].x = dist(rng);
     u_hat_ref[k].y = dist(rng);
   }
@@ -69,14 +69,15 @@ TEST_CASE("FFTW 1D scalar valued data", "[fft]") {
   u_hat_ref[n / 2].y = n % 2 ? dist(rng) : 0;
   for (zisa::int_t i = 0; i < n; ++i) {
     u_ref[i] = u_hat_ref[0].x / n;
-    for (zisa::int_t k = 1 ; k < n / 2 + 1 ; ++k) {
-      const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
-      const azeban::complex_t a = u_hat_ref[k] * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
+    for (zisa::int_t k = 1; k < n / 2 + 1; ++k) {
+      const azeban::real_t xi
+          = 2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
+      const azeban::complex_t a
+          = u_hat_ref[k] * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
       if (k == n / 2 && n % 2 == 0) {
-	u_ref[i] += a.x / n;
-      }
-      else {
-	u_ref[i] += 2 * a.x / n;
+        u_ref[i] += a.x / n;
+      } else {
+        u_ref[i] += 2 * a.x / n;
       }
     }
   }
@@ -110,10 +111,10 @@ TEST_CASE("FFTW 1D vector valued data", "[fft]") {
 
   std::mt19937 rng;
   std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  for (zisa::int_t d = 0 ; d < 2 ; ++d) {
+  for (zisa::int_t d = 0; d < 2; ++d) {
     u_hat_ref(d, 0).x = dist(rng);
     u_hat_ref(d, 0).y = 0;
-    for (zisa::int_t k = 1 ; k < n / 2 ; ++k) {
+    for (zisa::int_t k = 1; k < n / 2; ++k) {
       u_hat_ref(d, k).x = dist(rng);
       u_hat_ref(d, k).y = dist(rng);
     }
@@ -121,15 +122,16 @@ TEST_CASE("FFTW 1D vector valued data", "[fft]") {
     u_hat_ref(d, n / 2).y = n % 2 ? dist(rng) : 0;
     for (zisa::int_t i = 0; i < n; ++i) {
       u_ref(d, i) = u_hat_ref(d, 0).x / n;
-      for (zisa::int_t k = 1 ; k < n / 2 + 1 ; ++k) {
-	const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
-	const azeban::complex_t a = u_hat_ref(d, k) * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
-	if (k == n / 2 && n % 2 == 0) {
-	  u_ref(d, i) += a.x / n;
-	}
-	else {
-	  u_ref(d, i) += 2 * a.x / n;
-	}
+      for (zisa::int_t k = 1; k < n / 2 + 1; ++k) {
+        const azeban::real_t xi
+            = 2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
+        const azeban::complex_t a
+            = u_hat_ref(d, k) * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
+        if (k == n / 2 && n % 2 == 0) {
+          u_ref(d, i) += a.x / n;
+        } else {
+          u_ref(d, i) += 2 * a.x / n;
+        }
       }
     }
   }
@@ -166,53 +168,66 @@ TEST_CASE("FFTW 2D scalar valued data", "[fft]") {
 
   std::mt19937 rng;
   std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  for (zisa::int_t i = 0 ; i < n ; ++i) {
+  for (zisa::int_t i = 0; i < n; ++i) {
     if (i < n / 2 + 1) {
       u_hat_ref(0, i, 0).x = dist(rng);
-      u_hat_ref(0, i, 0).y = (i == 0 || (i == n / 2 && n % 2 == 0)) ? 0 : dist(rng);
+      u_hat_ref(0, i, 0).y
+          = (i == 0 || (i == n / 2 && n % 2 == 0)) ? 0 : dist(rng);
+    } else {
+      u_hat_ref(0, i, 0) = azeban::complex_t(u_hat_ref(0, n - i, 0).x,
+                                             -u_hat_ref(0, n - i, 0).y);
     }
-    else {
-      u_hat_ref(0, i, 0) = azeban::complex_t(u_hat_ref(0, n - i, 0).x, -u_hat_ref(0, n - i, 0).y);
-    }
-    for (zisa::int_t j = 1 ; j < n / 2 ; ++j) {
+    for (zisa::int_t j = 1; j < n / 2; ++j) {
       u_hat_ref(0, i, j).x = dist(rng);
       u_hat_ref(0, i, j).y = dist(rng);
     }
-    if ( i < n / 2 + 1) {
+    if (i < n / 2 + 1) {
       u_hat_ref(0, i, n / 2).x = dist(rng);
-      u_hat_ref(0, i, n / 2).y = (n % 2 == 0 && (i == 0 || (i == n / 2 && n % 2 == 0))) ? 0 : dist(rng);
-    }
-    else {
-      u_hat_ref(0, i, n / 2) = azeban::complex_t(u_hat_ref(0, n - i, n / 2).x, -u_hat_ref(0, n - i, n / 2).y);
+      u_hat_ref(0, i, n / 2).y
+          = (n % 2 == 0 && (i == 0 || (i == n / 2 && n % 2 == 0))) ? 0
+                                                                   : dist(rng);
+    } else {
+      u_hat_ref(0, i, n / 2) = azeban::complex_t(u_hat_ref(0, n - i, n / 2).x,
+                                                 -u_hat_ref(0, n - i, n / 2).y);
     }
   }
   for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0 ; j < n ; ++j) {
+    for (zisa::int_t j = 0; j < n; ++j) {
       u_ref(0, i, j) = 0;
-      for (zisa::int_t k = 0 ; k < n ; ++k) {
-	{
-	  const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-	  const azeban::real_t eta = 0;
-	  const azeban::complex_t a = u_hat_ref(0, k, 0) * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-	  u_ref(0, i, j) += a.x / (n * n);
-	}
-	for (zisa::int_t l = 1 ; l < n / 2 ; ++l) {
-	  const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-	  const azeban::real_t eta = 2 * zisa::pi * static_cast<azeban::real_t>(j * l) / n;
-	  const azeban::complex_t a = u_hat_ref(0, k, l) * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-	  u_ref(0, i, j) += 2 * a.x / (n * n);
-	}
-	{
-	  const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-	  const azeban::real_t eta = 2 * zisa::pi * static_cast<azeban::real_t>(j * (n / 2)) / n;
-	  const azeban::complex_t a = u_hat_ref(0, k, n / 2) * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-	  if (n % 2 == 0) {
-	    u_ref(0, i, j) += a.x / (n* n);
-	  }
-	  else {
-	    u_ref(0, i, j) += 2 * a.x / (n * n);
-	  }
-	}
+      for (zisa::int_t k = 0; k < n; ++k) {
+        {
+          const azeban::real_t xi
+              = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
+          const azeban::real_t eta = 0;
+          const azeban::complex_t a
+              = u_hat_ref(0, k, 0)
+                * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
+          u_ref(0, i, j) += a.x / (n * n);
+        }
+        for (zisa::int_t l = 1; l < n / 2; ++l) {
+          const azeban::real_t xi
+              = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
+          const azeban::real_t eta
+              = 2 * zisa::pi * static_cast<azeban::real_t>(j * l) / n;
+          const azeban::complex_t a
+              = u_hat_ref(0, k, l)
+                * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
+          u_ref(0, i, j) += 2 * a.x / (n * n);
+        }
+        {
+          const azeban::real_t xi
+              = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
+          const azeban::real_t eta
+              = 2 * zisa::pi * static_cast<azeban::real_t>(j * (n / 2)) / n;
+          const azeban::complex_t a
+              = u_hat_ref(0, k, n / 2)
+                * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
+          if (n % 2 == 0) {
+            u_ref(0, i, j) += a.x / (n * n);
+          } else {
+            u_ref(0, i, j) += 2 * a.x / (n * n);
+          }
+        }
       }
     }
   }
@@ -250,55 +265,69 @@ TEST_CASE("FFTW 2D vector valued data", "[fft]") {
 
   std::mt19937 rng;
   std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  for (zisa::int_t d = 0 ; d < 2 ; ++d) {
-    for (zisa::int_t i = 0 ; i < n ; ++i) {
+  for (zisa::int_t d = 0; d < 2; ++d) {
+    for (zisa::int_t i = 0; i < n; ++i) {
       if (i < n / 2 + 1) {
-	u_hat_ref(d, i, 0).x = dist(rng);
-	u_hat_ref(d, i, 0).y = (i == 0 || (i == n / 2 && n % 2 == 0)) ? 0 : dist(rng);
+        u_hat_ref(d, i, 0).x = dist(rng);
+        u_hat_ref(d, i, 0).y
+            = (i == 0 || (i == n / 2 && n % 2 == 0)) ? 0 : dist(rng);
+      } else {
+        u_hat_ref(d, i, 0) = azeban::complex_t(u_hat_ref(d, n - i, 0).x,
+                                               -u_hat_ref(d, n - i, 0).y);
       }
-      else {
-	u_hat_ref(d, i, 0) = azeban::complex_t(u_hat_ref(d, n - i, 0).x, -u_hat_ref(d, n - i, 0).y);
+      for (zisa::int_t j = 1; j < n / 2; ++j) {
+        u_hat_ref(d, i, j).x = dist(rng);
+        u_hat_ref(d, i, j).y = dist(rng);
       }
-      for (zisa::int_t j = 1 ; j < n / 2 ; ++j) {
-	u_hat_ref(d, i, j).x = dist(rng);
-	u_hat_ref(d, i, j).y = dist(rng);
-      }
-      if ( i < n / 2 + 1) {
-	u_hat_ref(d, i, n / 2).x = dist(rng);
-	u_hat_ref(d, i, n / 2).y = (n % 2 == 0 && (i == 0 || (i == n / 2 && n % 2 == 0))) ? 0 : dist(rng);
-      }
-      else {
-	u_hat_ref(d, i, n / 2) = azeban::complex_t(u_hat_ref(d, n - i, n / 2).x, -u_hat_ref(d, n - i, n / 2).y);
+      if (i < n / 2 + 1) {
+        u_hat_ref(d, i, n / 2).x = dist(rng);
+        u_hat_ref(d, i, n / 2).y
+            = (n % 2 == 0 && (i == 0 || (i == n / 2 && n % 2 == 0)))
+                  ? 0
+                  : dist(rng);
+      } else {
+        u_hat_ref(d, i, n / 2) = azeban::complex_t(
+            u_hat_ref(d, n - i, n / 2).x, -u_hat_ref(d, n - i, n / 2).y);
       }
     }
     for (zisa::int_t i = 0; i < n; ++i) {
-      for (zisa::int_t j = 0 ; j < n ; ++j) {
-	u_ref(d, i, j) = 0;
-	for (zisa::int_t k = 0 ; k < n ; ++k) {
-	  {
-	    const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-	    const azeban::real_t eta = 0;
-	    const azeban::complex_t a = u_hat_ref(d, k, 0) * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-	    u_ref(d, i, j) += a.x / (n * n);
-	  }
-	  for (zisa::int_t l = 1 ; l < n / 2 ; ++l) {
-	    const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-	    const azeban::real_t eta = 2 * zisa::pi * static_cast<azeban::real_t>(j * l) / n;
-	    const azeban::complex_t a = u_hat_ref(d, k, l) * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-	    u_ref(d, i, j) += 2 * a.x / (n * n);
-	  }
-	  {
-	    const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-	    const azeban::real_t eta = 2 * zisa::pi * static_cast<azeban::real_t>(j * (n / 2)) / n;
-	    const azeban::complex_t a = u_hat_ref(d, k, n / 2) * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-	    if (n % 2 == 0) {
-	      u_ref(d, i, j) += a.x / (n* n);
-	    }
-	    else {
-	      u_ref(d, i, j) += 2 * a.x / (n * n);
-	    }
-	  }
-	}
+      for (zisa::int_t j = 0; j < n; ++j) {
+        u_ref(d, i, j) = 0;
+        for (zisa::int_t k = 0; k < n; ++k) {
+          {
+            const azeban::real_t xi
+                = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
+            const azeban::real_t eta = 0;
+            const azeban::complex_t a
+                = u_hat_ref(d, k, 0)
+                  * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
+            u_ref(d, i, j) += a.x / (n * n);
+          }
+          for (zisa::int_t l = 1; l < n / 2; ++l) {
+            const azeban::real_t xi
+                = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
+            const azeban::real_t eta
+                = 2 * zisa::pi * static_cast<azeban::real_t>(j * l) / n;
+            const azeban::complex_t a
+                = u_hat_ref(d, k, l)
+                  * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
+            u_ref(d, i, j) += 2 * a.x / (n * n);
+          }
+          {
+            const azeban::real_t xi
+                = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
+            const azeban::real_t eta
+                = 2 * zisa::pi * static_cast<azeban::real_t>(j * (n / 2)) / n;
+            const azeban::complex_t a
+                = u_hat_ref(d, k, n / 2)
+                  * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
+            if (n % 2 == 0) {
+              u_ref(d, i, j) += a.x / (n * n);
+            } else {
+              u_ref(d, i, j) += 2 * a.x / (n * n);
+            }
+          }
+        }
       }
     }
   }
@@ -475,7 +504,7 @@ TEST_CASE("cuFFT 1D scalar valued data", "[cufft]") {
   std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
   h_u_hat_ref[0].x = dist(rng);
   h_u_hat_ref[0].y = 0;
-  for (zisa::int_t k = 1 ; k < n / 2 ; ++k) {
+  for (zisa::int_t k = 1; k < n / 2; ++k) {
     h_u_hat_ref[k].x = dist(rng);
     h_u_hat_ref[k].y = dist(rng);
   }
@@ -483,14 +512,15 @@ TEST_CASE("cuFFT 1D scalar valued data", "[cufft]") {
   h_u_hat_ref[n / 2].y = n % 2 ? dist(rng) : 0;
   for (zisa::int_t i = 0; i < n; ++i) {
     h_u_ref[i] = h_u_hat_ref[0].x / n;
-    for (zisa::int_t k = 1 ; k < n / 2 + 1 ; ++k) {
-      const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
-      const azeban::complex_t a = h_u_hat_ref[k] * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
+    for (zisa::int_t k = 1; k < n / 2 + 1; ++k) {
+      const azeban::real_t xi
+          = 2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
+      const azeban::complex_t a
+          = h_u_hat_ref[k] * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
       if (k == n / 2 && n % 2 == 0) {
-	h_u_ref[i] += a.x / n;
-      }
-      else {
-	h_u_ref[i] += 2 * a.x / n;
+        h_u_ref[i] += a.x / n;
+      } else {
+        h_u_ref[i] += 2 * a.x / n;
       }
     }
   }
@@ -527,10 +557,10 @@ TEST_CASE("cuFFT 1D vector valued data", "[cufft]") {
 
   std::mt19937 rng;
   std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  for (zisa::int_t d = 0 ; d < 2 ; ++d) {
+  for (zisa::int_t d = 0; d < 2; ++d) {
     h_u_hat_ref(d, 0).x = dist(rng);
     h_u_hat_ref(d, 0).y = 0;
-    for (zisa::int_t k = 1 ; k < n / 2 ; ++k) {
+    for (zisa::int_t k = 1; k < n / 2; ++k) {
       h_u_hat_ref(d, k).x = dist(rng);
       h_u_hat_ref(d, k).y = dist(rng);
     }
@@ -538,15 +568,17 @@ TEST_CASE("cuFFT 1D vector valued data", "[cufft]") {
     h_u_hat_ref(d, n / 2).y = n % 2 ? dist(rng) : 0;
     for (zisa::int_t i = 0; i < n; ++i) {
       h_u_ref(d, i) = h_u_hat_ref(d, 0).x / n;
-      for (zisa::int_t k = 1 ; k < n / 2 + 1 ; ++k) {
-	const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
-	const azeban::complex_t a = h_u_hat_ref(d, k) * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
-	if (k == n / 2 && n % 2 == 0) {
-	  h_u_ref(d, i) += a.x / n;
-	}
-	else {
-	  h_u_ref(d, i) += 2 * a.x / n;
-	}
+      for (zisa::int_t k = 1; k < n / 2 + 1; ++k) {
+        const azeban::real_t xi
+            = 2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
+        const azeban::complex_t a
+            = h_u_hat_ref(d, k)
+              * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
+        if (k == n / 2 && n % 2 == 0) {
+          h_u_ref(d, i) += a.x / n;
+        } else {
+          h_u_ref(d, i) += 2 * a.x / n;
+        }
       }
     }
   }
@@ -586,53 +618,66 @@ TEST_CASE("cuFFT 2D scalar valued data", "[cufft]") {
 
   std::mt19937 rng;
   std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  for (zisa::int_t i = 0 ; i < n ; ++i) {
+  for (zisa::int_t i = 0; i < n; ++i) {
     if (i < n / 2 + 1) {
       h_u_hat_ref(0, i, 0).x = dist(rng);
-      h_u_hat_ref(0, i, 0).y = (i == 0 || (i == n / 2 && n % 2 == 0)) ? 0 : dist(rng);
+      h_u_hat_ref(0, i, 0).y
+          = (i == 0 || (i == n / 2 && n % 2 == 0)) ? 0 : dist(rng);
+    } else {
+      h_u_hat_ref(0, i, 0) = azeban::complex_t(h_u_hat_ref(0, n - i, 0).x,
+                                               -h_u_hat_ref(0, n - i, 0).y);
     }
-    else {
-      h_u_hat_ref(0, i, 0) = azeban::complex_t(h_u_hat_ref(0, n - i, 0).x, -h_u_hat_ref(0, n - i, 0).y);
-    }
-    for (zisa::int_t j = 1 ; j < n / 2 ; ++j) {
+    for (zisa::int_t j = 1; j < n / 2; ++j) {
       h_u_hat_ref(0, i, j).x = dist(rng);
       h_u_hat_ref(0, i, j).y = dist(rng);
     }
-    if ( i < n / 2 + 1) {
+    if (i < n / 2 + 1) {
       h_u_hat_ref(0, i, n / 2).x = dist(rng);
-      h_u_hat_ref(0, i, n / 2).y = (n % 2 == 0 && (i == 0 || (i == n / 2 && n % 2 == 0))) ? 0 : dist(rng);
-    }
-    else {
-      h_u_hat_ref(0, i, n / 2) = azeban::complex_t(h_u_hat_ref(0, n - i, n / 2).x, -h_u_hat_ref(0, n - i, n / 2).y);
+      h_u_hat_ref(0, i, n / 2).y
+          = (n % 2 == 0 && (i == 0 || (i == n / 2 && n % 2 == 0))) ? 0
+                                                                   : dist(rng);
+    } else {
+      h_u_hat_ref(0, i, n / 2) = azeban::complex_t(
+          h_u_hat_ref(0, n - i, n / 2).x, -h_u_hat_ref(0, n - i, n / 2).y);
     }
   }
   for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0 ; j < n ; ++j) {
+    for (zisa::int_t j = 0; j < n; ++j) {
       h_u_ref(0, i, j) = 0;
-      for (zisa::int_t k = 0 ; k < n ; ++k) {
-	{
-	  const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-	  const azeban::real_t eta = 0;
-	  const azeban::complex_t a = h_u_hat_ref(0, k, 0) * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-	  h_u_ref(0, i, j) += a.x / (n * n);
-	}
-	for (zisa::int_t l = 1 ; l < n / 2 ; ++l) {
-	  const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-	  const azeban::real_t eta = 2 * zisa::pi * static_cast<azeban::real_t>(j * l) / n;
-	  const azeban::complex_t a = h_u_hat_ref(0, k, l) * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-	  h_u_ref(0, i, j) += 2 * a.x / (n * n);
-	}
-	{
-	  const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-	  const azeban::real_t eta = 2 * zisa::pi * static_cast<azeban::real_t>(j * (n / 2)) / n;
-	  const azeban::complex_t a = h_u_hat_ref(0, k, n / 2) * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-	  if (n % 2 == 0) {
-	    h_u_ref(0, i, j) += a.x / (n* n);
-	  }
-	  else {
-	    h_u_ref(0, i, j) += 2 * a.x / (n * n);
-	  }
-	}
+      for (zisa::int_t k = 0; k < n; ++k) {
+        {
+          const azeban::real_t xi
+              = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
+          const azeban::real_t eta = 0;
+          const azeban::complex_t a
+              = h_u_hat_ref(0, k, 0)
+                * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
+          h_u_ref(0, i, j) += a.x / (n * n);
+        }
+        for (zisa::int_t l = 1; l < n / 2; ++l) {
+          const azeban::real_t xi
+              = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
+          const azeban::real_t eta
+              = 2 * zisa::pi * static_cast<azeban::real_t>(j * l) / n;
+          const azeban::complex_t a
+              = h_u_hat_ref(0, k, l)
+                * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
+          h_u_ref(0, i, j) += 2 * a.x / (n * n);
+        }
+        {
+          const azeban::real_t xi
+              = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
+          const azeban::real_t eta
+              = 2 * zisa::pi * static_cast<azeban::real_t>(j * (n / 2)) / n;
+          const azeban::complex_t a
+              = h_u_hat_ref(0, k, n / 2)
+                * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
+          if (n % 2 == 0) {
+            h_u_ref(0, i, j) += a.x / (n * n);
+          } else {
+            h_u_ref(0, i, j) += 2 * a.x / (n * n);
+          }
+        }
       }
     }
   }
@@ -673,55 +718,69 @@ TEST_CASE("cuFFT 2D vector valued data", "[cufft]") {
 
   std::mt19937 rng;
   std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  for (zisa::int_t d =  0 ; d < 2 ; ++d) {
-    for (zisa::int_t i = 0 ; i < n ; ++i) {
+  for (zisa::int_t d = 0; d < 2; ++d) {
+    for (zisa::int_t i = 0; i < n; ++i) {
       if (i < n / 2 + 1) {
-	h_u_hat_ref(d, i, 0).x = dist(rng);
-	h_u_hat_ref(d, i, 0).y = (i == 0 || (i == n / 2 && n % 2 == 0)) ? 0 : dist(rng);
+        h_u_hat_ref(d, i, 0).x = dist(rng);
+        h_u_hat_ref(d, i, 0).y
+            = (i == 0 || (i == n / 2 && n % 2 == 0)) ? 0 : dist(rng);
+      } else {
+        h_u_hat_ref(d, i, 0) = azeban::complex_t(h_u_hat_ref(d, n - i, 0).x,
+                                                 -h_u_hat_ref(d, n - i, 0).y);
       }
-      else {
-	h_u_hat_ref(d, i, 0) = azeban::complex_t(h_u_hat_ref(d, n - i, 0).x, -h_u_hat_ref(d, n - i, 0).y);
+      for (zisa::int_t j = 1; j < n / 2; ++j) {
+        h_u_hat_ref(d, i, j).x = dist(rng);
+        h_u_hat_ref(d, i, j).y = dist(rng);
       }
-      for (zisa::int_t j = 1 ; j < n / 2 ; ++j) {
-	h_u_hat_ref(d, i, j).x = dist(rng);
-	h_u_hat_ref(d, i, j).y = dist(rng);
-      }
-      if ( i < n / 2 + 1) {
-	h_u_hat_ref(d, i, n / 2).x = dist(rng);
-	h_u_hat_ref(d, i, n / 2).y = (n % 2 == 0 && (i == 0 || (i == n / 2 && n % 2 == 0))) ? 0 : dist(rng);
-      }
-      else {
-	h_u_hat_ref(d, i, n / 2) = azeban::complex_t(h_u_hat_ref(d, n - i, n / 2).x, -h_u_hat_ref(d, n - i, n / 2).y);
+      if (i < n / 2 + 1) {
+        h_u_hat_ref(d, i, n / 2).x = dist(rng);
+        h_u_hat_ref(d, i, n / 2).y
+            = (n % 2 == 0 && (i == 0 || (i == n / 2 && n % 2 == 0)))
+                  ? 0
+                  : dist(rng);
+      } else {
+        h_u_hat_ref(d, i, n / 2) = azeban::complex_t(
+            h_u_hat_ref(d, n - i, n / 2).x, -h_u_hat_ref(d, n - i, n / 2).y);
       }
     }
     for (zisa::int_t i = 0; i < n; ++i) {
-      for (zisa::int_t j = 0 ; j < n ; ++j) {
-	h_u_ref(d, i, j) = 0;
-	for (zisa::int_t k = 0 ; k < n ; ++k) {
-	  {
-	    const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-	    const azeban::real_t eta = 0;
-	    const azeban::complex_t a = h_u_hat_ref(d, k, 0) * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-	    h_u_ref(d, i, j) += a.x / (n * n);
-	  }
-	  for (zisa::int_t l = 1 ; l < n / 2 ; ++l) {
-	    const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-	    const azeban::real_t eta = 2 * zisa::pi * static_cast<azeban::real_t>(j * l) / n;
-	    const azeban::complex_t a = h_u_hat_ref(d, k, l) * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-	    h_u_ref(d, i, j) += 2 * a.x / (n * n);
-	  }
-	  {
-	    const azeban::real_t xi = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-	    const azeban::real_t eta = 2 * zisa::pi * static_cast<azeban::real_t>(j * (n / 2)) / n;
-	    const azeban::complex_t a = h_u_hat_ref(d, k, n / 2) * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-	    if (n % 2 == 0) {
-	      h_u_ref(d, i, j) += a.x / (n* n);
-	    }
-	    else {
-	      h_u_ref(d, i, j) += 2 * a.x / (n * n);
-	    }
-	  }
-	}
+      for (zisa::int_t j = 0; j < n; ++j) {
+        h_u_ref(d, i, j) = 0;
+        for (zisa::int_t k = 0; k < n; ++k) {
+          {
+            const azeban::real_t xi
+                = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
+            const azeban::real_t eta = 0;
+            const azeban::complex_t a
+                = h_u_hat_ref(d, k, 0)
+                  * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
+            h_u_ref(d, i, j) += a.x / (n * n);
+          }
+          for (zisa::int_t l = 1; l < n / 2; ++l) {
+            const azeban::real_t xi
+                = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
+            const azeban::real_t eta
+                = 2 * zisa::pi * static_cast<azeban::real_t>(j * l) / n;
+            const azeban::complex_t a
+                = h_u_hat_ref(d, k, l)
+                  * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
+            h_u_ref(d, i, j) += 2 * a.x / (n * n);
+          }
+          {
+            const azeban::real_t xi
+                = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
+            const azeban::real_t eta
+                = 2 * zisa::pi * static_cast<azeban::real_t>(j * (n / 2)) / n;
+            const azeban::complex_t a
+                = h_u_hat_ref(d, k, n / 2)
+                  * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
+            if (n % 2 == 0) {
+              h_u_ref(d, i, j) += a.x / (n * n);
+            } else {
+              h_u_ref(d, i, j) += 2 * a.x / (n * n);
+            }
+          }
+        }
       }
     }
   }
