@@ -21,7 +21,7 @@
   },
   "timestepper": {
     "type": "SSP RK3",
-    "C": 0.2
+    "C": 0.5
   },
   "init": {
     "name": "Taylor Vortex"

@@ -1,5 +1,5 @@
 {
-  "output": "brownian_bridge_2D_N256_H0.5_T1.0.nc",
+  "output": "brownian_bridge_2D_N256_H0.5_T1.0",
   "device": "cuda",
   "dimension": 2,
   "num_samples": 64,
@@ -23,7 +23,7 @@
   },
   "timestepper": {
     "type": "SSP RK3",
-    "C": 0.2
+    "C": 0.5
   },
   "init": {
     "name": "Brownian Motion",

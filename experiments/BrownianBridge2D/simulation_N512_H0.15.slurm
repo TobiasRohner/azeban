@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --job-name=brownian_bridge
 #SBATCH --account="s1069"
-#SBATCH --time=02:00:00
+#SBATCH --time=03:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-core=1
 #SBATCH --ntasks-per-node=1

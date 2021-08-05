@@ -16,9 +16,9 @@ def analytic_sol(N, t):
 
 
 def read_sol(N, method):
-    with nc.Dataset('taylor_vortex_N{}_{}_T0.1.nc'.format(N, method)) as f:
-        u = f['sample_0_time_0.100000_u'][:]
-        v = f['sample_0_time_0.100000_v'][:]
+    with nc.Dataset('taylor_vortex_N{}_{}_T0.1/sample_0_time_0.100000.nc'.format(N, method)) as f:
+        u = f['u'][:]
+        v = f['v'][:]
     return u, v
 
 
