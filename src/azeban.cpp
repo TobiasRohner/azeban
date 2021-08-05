@@ -3,8 +3,8 @@
 #include <azeban/profiler.hpp>
 #include <azeban/sequence_factory.hpp>
 #include <azeban/simulation_factory.hpp>
-#include <filesystem>
 #include <cstdlib>
+#include <filesystem>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <fstream>
@@ -26,9 +26,8 @@
 using namespace azeban;
 
 template <int Dim>
-zisa::NetCDFSerialWriter
-make_nc_writer(const std::string &filename,
-               const Simulation<Dim> &simulation) {
+zisa::NetCDFSerialWriter make_nc_writer(const std::string &filename,
+                                        const Simulation<Dim> &simulation) {
   const Grid<Dim> &grid = simulation.grid();
 
   using nc_dim_t = std::tuple<std::string, size_t>;
@@ -118,8 +117,8 @@ static void runFromConfig(const nlohmann::json &config) {
       for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
         u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
       }
-      const std::string name
-          = "sample_" + std::to_string(sample) + "_time_" + std::to_string(t) + ".nc";
+      const std::string name = "sample_" + std::to_string(sample) + "_time_"
+                               + std::to_string(t) + ".nc";
       auto writer = make_nc_writer<dim_v>(output + "/" + name, simulation);
       if (dim_v == 1) {
         zisa::shape_t<1> slice_shape(grid.N_phys);
@@ -308,7 +307,7 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
       if (rank == 0) {
         const std::string name
             = "sample_" + std::to_string(sample) + "_time_" + std::to_string(t);
-	auto writer = make_nc_writer<dim_v>(output + "/" + name, simulation);
+        auto writer = make_nc_writer<dim_v>(output + "/" + name, simulation);
         if (dim_v == 1) {
           zisa::shape_t<1> slice_shape(grid.N_phys);
           zisa::array_const_view<real_t, 1> u(

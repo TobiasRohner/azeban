@@ -57,9 +57,9 @@ public:
 
 protected:
   virtual void
-  do_initialize(const zisa::array_view<real_t, Dim + 1> &/*u*/) override {}
-  virtual void
-  do_initialize(const zisa::array_view<complex_t, Dim + 1> &/*uhat*/) override {}
+  do_initialize(const zisa::array_view<real_t, Dim + 1> & /*u*/) override {}
+  virtual void do_initialize(
+      const zisa::array_view<complex_t, Dim + 1> & /*uhat*/) override {}
 
 private:
   real_t rho_;

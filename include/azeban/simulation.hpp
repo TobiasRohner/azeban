@@ -57,7 +57,7 @@ public:
     real_t dt = cfl_.dt(u_view_);
     while (time_ < t - dt) {
       if (dt <= 1e-10) {
-	fmt::print(stderr, "Warning: Timestep is tiny. dt = {}\n", dt);
+        fmt::print(stderr, "Warning: Timestep is tiny. dt = {}\n", dt);
       }
       timestepper_->integrate(dt, u_);
       time_ += dt;
@@ -83,7 +83,7 @@ public:
     real_t dt = cfl_.dt(u_view_, comm);
     while (time_ < t - dt) {
       if (rank == 0 && dt <= 1e-10) {
-	fmt::print(stderr, "Warning: Timestep is tiny. dt = {}\n", dt);
+        fmt::print(stderr, "Warning: Timestep is tiny. dt = {}\n", dt);
       }
       timestepper_->integrate(dt, u_);
       time_ += dt;

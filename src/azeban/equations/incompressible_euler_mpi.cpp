@@ -396,11 +396,14 @@ static auto get_padding_messages(const Grid<3> &grid, MPI_Comm comm) {
     const int i1_unpadded = grid.i_fourier(0, unpadded_rank + 1, comm);
     const int i0_padded = grid.i_fourier_pad(0, padded_rank, comm);
     const int i1_padded = grid.i_fourier_pad(0, padded_rank + 1, comm);
-    const int padded_last_sent = unpadded_last_sent >= zisa::integer_cast<int>(grid.N_fourier)
-                                     ? unpadded_last_sent + pad
-                                     : unpadded_last_sent;
+    const int padded_last_sent
+        = unpadded_last_sent >= zisa::integer_cast<int>(grid.N_fourier)
+              ? unpadded_last_sent + pad
+              : unpadded_last_sent;
     const int padded_pos
-        = unpadded_pos >= zisa::integer_cast<int>(grid.N_fourier) ? unpadded_pos + pad : unpadded_pos;
+        = unpadded_pos >= zisa::integer_cast<int>(grid.N_fourier)
+              ? unpadded_pos + pad
+              : unpadded_pos;
     bool sent = false;
     if (unpadded_pos == i1_unpadded || padded_pos == i1_padded
         || unpadded_pos == zisa::integer_cast<int>(grid.N_fourier)) {
