@@ -8,6 +8,7 @@
 #include "discontinuous_vortex_patch_factory.hpp"
 #include "double_shear_layer_factory.hpp"
 #include "init_3d_from_2d.hpp"
+#include "init_from_file_factory.hpp"
 #include "initializer.hpp"
 #include "shear_tube_factory.hpp"
 #include "shock_factory.hpp"
@@ -52,6 +53,8 @@ make_initializer_u(const nlohmann::json &config, RNG &rng) {
     return make_brownian_motion<Dim>(config, rng);
   } else if (name == "Const Phys") {
     return make_const_phys<Dim>(config, rng);
+  } else if (name == "Init From File") {
+    return make_init_from_file<Dim>(config);
   } else {
     fmt::print(stderr, "Unknown Initializer: \"{}\"\n", name);
     exit(1);
