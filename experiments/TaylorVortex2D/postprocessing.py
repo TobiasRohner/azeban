@@ -33,7 +33,7 @@ def pad_fourier(u_hat, N_pad):
     return (N_pad / N)**2 * u_pad_hat
 
 
-def compute_err(N, N_ref, method):
+def compute_diff(N, N_ref, method):
     u, v = read_sol(N, method)
     u_ref, v_ref = analytic_sol(N_ref, 0.1)
     u_hat = np.fft.fft2(u)
@@ -42,6 +42,11 @@ def compute_err(N, N_ref, method):
     v_pad_hat = pad_fourier(v_hat, N_ref)
     u_pad = np.real(np.fft.ifft2(u_pad_hat))
     v_pad = np.real(np.fft.ifft2(v_pad_hat))
+    return u_ref-u_pad, v_ref-v_pad
+
+
+def compute_err(N, N_ref, method):
+    u_diff, v_diff = compute_diff(N, N_ref, method)
     err2_u = np.sum(np.abs(u_ref - u_pad)**2)
     err2_v = np.sum(np.abs(v_ref - v_pad)**2)
     err = np.sqrt(err2_u + err2_v) / N_ref**2
