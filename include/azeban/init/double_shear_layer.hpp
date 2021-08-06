@@ -10,9 +10,11 @@ class DoubleShearLayer final : public Initializer<2> {
   using super = Initializer<2>;
 
 public:
-  DoubleShearLayer(const RandomVariable<real_t> &rho,
-                   const RandomVariable<real_t> &delta)
-      : rho_(rho), delta_(delta) {}
+  DoubleShearLayer(zisa::int_t N,
+		   const RandomVariable<real_t> &rho,
+                   const RandomVariable<real_t> &delta,
+		   const RandomVariable<real_t> &uniform)
+      : N_(N), rho_(rho), delta_(delta), uniform_(uniform) {}
   DoubleShearLayer(const DoubleShearLayer &) = default;
   DoubleShearLayer(DoubleShearLayer &&) = default;
 
@@ -27,8 +29,10 @@ protected:
   do_initialize(const zisa::array_view<complex_t, 3> &u_hat) override;
 
 private:
+  zisa::int_t N_;
   RandomVariable<real_t> rho_;
   RandomVariable<real_t> delta_;
+  RandomVariable<real_t> uniform_;
 };
 
 }

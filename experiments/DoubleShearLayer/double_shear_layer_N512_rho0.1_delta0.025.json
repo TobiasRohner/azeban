@@ -1,17 +1,17 @@
 {
-  "output": "double_shear_layer_2D_N1024_rho0.000001_T5.0",
+  "output": "double_shear_layer_2D_N512_rho0.1_delta0.025_T1.0",
   "device": "cuda",
   "dimension": 2,
-  "num_samples": 1,
+  "num_samples": 16,
   "seed": 1,
-  "time": 5,
+  "time": 1,
   "snapshots": {
     "start": 0,
-    "stop": 5,
-    "n": 500
+    "stop": 1,
+    "n": 10
   },
   "grid": {
-    "N_phys": 1024,
+    "N_phys": 512,
     "N_phys_pad": ""
   },
   "equation": {
@@ -28,7 +28,7 @@
   "init": {
     "name": "Double Shear Layer",
     "N": 10,
-    "rho": 0.05,
+    "rho": 0.1,
     "delta": 0.025,
     "tracer_": {
       "name": "Const Fourier",
