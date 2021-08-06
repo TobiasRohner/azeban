@@ -30,8 +30,8 @@ make_double_shear_layer(const nlohmann::json &config, RNG &rng) {
         = make_random_variable<real_t>(config["rho"], rng);
     RandomVariable<real_t> delta
         = make_random_variable<real_t>(config["delta"], rng);
-    RandomVariable<real_t> uniform
-	= RandomVariable<real_t>(std::make_shared<Uniform<real_t, RNG>>(0, 1, rng));
+    RandomVariable<real_t> uniform = RandomVariable<real_t>(
+        std::make_shared<Uniform<real_t, RNG>>(0, 1, rng));
     if constexpr (Dim == 2) {
       return std::make_shared<DoubleShearLayer>(N, rho, delta, uniform);
     } else {

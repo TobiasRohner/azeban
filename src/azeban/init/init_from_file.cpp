@@ -3,59 +3,83 @@
 #include <azeban/operations/fft.hpp>
 #include <zisa/io/netcdf_serial_writer.hpp>
 
-
 namespace azeban {
 
-template<int Dim>
+template <int Dim>
 void InitFromFile<Dim>::initialize(const zisa::array_view<real_t, Dim + 1> &u) {
   auto init = [&](auto &&u_) {
     int status, ncid;
     status = nc_open(filename().c_str(), 0, &ncid);
     AZEBAN_ERR_IF(status != NC_NOERR, "Failed to open initial conditions");
     zisa::shape_t<Dim> slice_shape;
-    for (int i = 0 ; i < Dim ; ++i) {
+    for (int i = 0; i < Dim; ++i) {
       slice_shape[i] = u_.shape(i + 1);
     }
-    read_component(ncid, "u", zisa::array_view<real_t, Dim>(slice_shape, u_.raw(), zisa::device_type::cpu));
+    read_component(ncid,
+                   "u",
+                   zisa::array_view<real_t, Dim>(
+                       slice_shape, u_.raw(), zisa::device_type::cpu));
     if (Dim > 1) {
-      read_component(ncid, "v", zisa::array_view<real_t, Dim>(slice_shape, u_.raw() + zisa::product(slice_shape), zisa::device_type::cpu));
+      read_component(
+          ncid,
+          "v",
+          zisa::array_view<real_t, Dim>(slice_shape,
+                                        u_.raw() + zisa::product(slice_shape),
+                                        zisa::device_type::cpu));
     }
     if (Dim > 2) {
-      read_component(ncid, "w", zisa::array_view<real_t, Dim>(slice_shape, u_.raw() + 2 * zisa::product(slice_shape), zisa::device_type::cpu));
+      read_component(ncid,
+                     "w",
+                     zisa::array_view<real_t, Dim>(
+                         slice_shape,
+                         u_.raw() + 2 * zisa::product(slice_shape),
+                         zisa::device_type::cpu));
     }
     status = nc_close(ncid);
     AZEBAN_ERR_IF(status != NC_NOERR, "Failed to close file");
   };
   if (u.memory_location() == zisa::device_type::cpu) {
     init(u);
-  }
-  else if (u.memory_location() == zisa::device_type::cuda) {
+  } else if (u.memory_location() == zisa::device_type::cuda) {
     auto h_u = zisa::array<real_t, Dim + 1>(u.shape(), zisa::device_type::cpu);
     init(h_u);
     zisa::copy(u, h_u);
-  }
-  else {
+  } else {
     AZEBAN_ERR("Unknown memory location");
   }
   ++sample_;
 }
 
-template<int Dim>
-void InitFromFile<Dim>::initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat) {
+template <int Dim>
+void InitFromFile<Dim>::initialize(
+    const zisa::array_view<complex_t, Dim + 1> &u_hat) {
   auto init = [&](auto &&u_) {
     int status, ncid;
     status = nc_open(filename().c_str(), 0, &ncid);
     AZEBAN_ERR_IF(status != NC_NOERR, "Failed to open initial conditions");
     zisa::shape_t<Dim> slice_shape;
-    for (int i = 0 ; i < Dim ; ++i) {
+    for (int i = 0; i < Dim; ++i) {
       slice_shape[i] = u_.shape(i + 1);
     }
-    read_component(ncid, "u", zisa::array_view<real_t, Dim>(slice_shape, u_.raw(), zisa::device_type::cpu));
+    read_component(ncid,
+                   "u",
+                   zisa::array_view<real_t, Dim>(
+                       slice_shape, u_.raw(), zisa::device_type::cpu));
     if (Dim > 1) {
-      read_component(ncid, "v", zisa::array_view<real_t, Dim>(slice_shape, u_.raw() + zisa::product(slice_shape), zisa::device_type::cpu));
+      read_component(
+          ncid,
+          "v",
+          zisa::array_view<real_t, Dim>(slice_shape,
+                                        u_.raw() + zisa::product(slice_shape),
+                                        zisa::device_type::cpu));
     }
     if (Dim > 2) {
-      read_component(ncid, "w", zisa::array_view<real_t, Dim>(slice_shape, u_.raw() + 2 * zisa::product(slice_shape), zisa::device_type::cpu));
+      read_component(ncid,
+                     "w",
+                     zisa::array_view<real_t, Dim>(
+                         slice_shape,
+                         u_.raw() + 2 * zisa::product(slice_shape),
+                         zisa::device_type::cpu));
     }
     status = nc_close(ncid);
     AZEBAN_ERR_IF(status != NC_NOERR, "Failed to close file");
@@ -70,32 +94,31 @@ void InitFromFile<Dim>::initialize(const zisa::array_view<complex_t, Dim + 1> &u
   AZEBAN_ERR_IF(status != NC_NOERR, "Failed to close file");
   zisa::shape_t<Dim + 1> u_shape;
   u_shape[0] = Dim;
-  for (int i = 0 ; i < Dim ; ++i) {
-    u_shape[i+ 1] = dims[i];
+  for (int i = 0; i < Dim; ++i) {
+    u_shape[i + 1] = dims[i];
   }
   auto u = zisa::array<real_t, Dim + 1>(u_shape, u_hat.memory_location());
   auto fft = make_fft<Dim>(u_hat, u);
   if (u.device() == zisa::device_type::cpu) {
     init(u);
-  }
-  else if (u.device() == zisa::device_type::cuda) {
+  } else if (u.device() == zisa::device_type::cuda) {
     auto h_u = zisa::array<real_t, Dim + 1>(u.shape(), zisa::device_type::cpu);
     init(h_u);
     zisa::copy(u, h_u);
-  }
-  else {
+  } else {
     AZEBAN_ERR("Unknown memory location");
   }
   fft->forward();
   ++sample_;
 }
 
-template<int Dim>
+template <int Dim>
 std::string InitFromFile<Dim>::filename() const {
-  return experiment_ + "/sample_" + std::to_string(sample_) + "_time_" + time_ + ".nc";
+  return experiment_ + "/sample_" + std::to_string(sample_) + "_time_" + time_
+         + ".nc";
 }
 
-template<int Dim>
+template <int Dim>
 std::vector<size_t> InitFromFile<Dim>::get_dims(int ncid, int varid) const {
   int status;
   int ndims;
@@ -105,21 +128,24 @@ std::vector<size_t> InitFromFile<Dim>::get_dims(int ncid, int varid) const {
   status = nc_inq_vardimid(ncid, varid, dimids);
   AZEBAN_ERR_IF(status != NC_NOERR, "Unable to read dimension IDs");
   std::vector<size_t> dims(ndims);
-  for (int i = 0 ; i < ndims ; ++i) {
+  for (int i = 0; i < ndims; ++i) {
     status = nc_inq_dimlen(ncid, dimids[i], &(dims[i]));
     AZEBAN_ERR_IF(status != NC_NOERR, "Unable to read dimension length");
   }
   return dims;
 }
 
-template<int Dim>
-void InitFromFile<Dim>::read_component(int ncid, const std::string &name, const zisa::array_view<real_t, Dim> &u) const {
+template <int Dim>
+void InitFromFile<Dim>::read_component(
+    int ncid,
+    const std::string &name,
+    const zisa::array_view<real_t, Dim> &u) const {
   int status, varid;
   status = nc_inq_varid(ncid, name.c_str(), &varid);
   AZEBAN_ERR_IF(status != NC_NOERR, "File does not contain variable");
   const auto dims = get_dims(ncid, varid);
   AZEBAN_ERR_IF(dims.size() != Dim, "Initial data has wrong dimension");
-  for (int i = 0 ; i < Dim ; ++i) {
+  for (int i = 0; i < Dim; ++i) {
     AZEBAN_ERR_IF(dims[i] != u.shape(i), "Given array has wrong shape");
   }
   status = nc_get_var(ncid, varid, u.raw());

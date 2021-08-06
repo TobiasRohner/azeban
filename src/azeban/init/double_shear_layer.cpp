@@ -1,7 +1,7 @@
 #include <azeban/init/double_shear_layer.hpp>
 #include <azeban/operations/fft.hpp>
-#include <zisa/memory/array.hpp>
 #include <vector>
+#include <zisa/memory/array.hpp>
 
 namespace azeban {
 
@@ -12,15 +12,15 @@ void DoubleShearLayer::do_initialize(const zisa::array_view<real_t, 3> &u) {
     const real_t delta = delta_.get();
     std::vector<real_t> alpha;
     std::vector<real_t> beta;
-    for (zisa::int_t i = 0 ; i < N_ ; ++i) {
+    for (zisa::int_t i = 0; i < N_; ++i) {
       alpha.push_back(delta * uniform_.get());
       beta.push_back(2 * zisa::pi * uniform_.get());
     }
     for (zisa::int_t i = 0; i < N; ++i) {
       const real_t x = static_cast<real_t>(i) / N;
       real_t sigma = 0;
-      for (zisa::int_t k = 0 ; k < N_ ; ++k) {
-	sigma += alpha[k] * zisa::sin(2 * zisa::pi * (k + 1) * x + beta[k]);
+      for (zisa::int_t k = 0; k < N_; ++k) {
+        sigma += alpha[k] * zisa::sin(2 * zisa::pi * (k + 1) * x + beta[k]);
       }
       for (zisa::int_t j = 0; j < N; ++j) {
         const real_t y = static_cast<real_t>(j) / N + sigma;

@@ -11,9 +11,9 @@ class DoubleShearLayer final : public Initializer<2> {
 
 public:
   DoubleShearLayer(zisa::int_t N,
-		   const RandomVariable<real_t> &rho,
+                   const RandomVariable<real_t> &rho,
                    const RandomVariable<real_t> &delta,
-		   const RandomVariable<real_t> &uniform)
+                   const RandomVariable<real_t> &uniform)
       : N_(N), rho_(rho), delta_(delta), uniform_(uniform) {}
   DoubleShearLayer(const DoubleShearLayer &) = default;
   DoubleShearLayer(DoubleShearLayer &&) = default;
