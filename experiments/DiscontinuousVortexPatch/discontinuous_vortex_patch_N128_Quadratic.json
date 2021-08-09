@@ -1,0 +1,28 @@
+{
+  "output": "discontinuous_vortex_patch_N128_Quadratic_T1.0",
+  "device": "cuda",
+  "dimension": 2,
+  "num_samples": 1,
+  "seed": 1,
+  "time": 1.0,
+  "snapshots_": [],
+  "snapshots": [1],
+  "grid": {
+    "N_phys": 128,
+    "N_phys_pad": ""
+  },
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "type": "Quadratic",
+      "eps": 0.05
+    }
+  },
+  "timestepper": {
+    "type": "SSP RK3",
+    "C": 0.5
+  },
+  "init": {
+    "name": "Discontinuous Vortex Patch"
+  }
+}

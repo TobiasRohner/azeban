@@ -6,17 +6,23 @@ import pickle
 import sys
 
 
-def analytic_sol(N, t):
-    x = np.linspace(-8, 8, N, False)
-    y = np.linspace(-8, 8, N, False)
+def analytic_sol(N):
+    x = np.linspace(-0.5, 0.5, N, False)
+    y = np.linspace(-0.5, 0.5, N, False)
     ym, xm = np.meshgrid(x, y)
-    u = -ym * np.exp(0.5 * (1 - (xm - 8*t)**2 - ym**2)) + 8
-    v = (xm - 8*t) * np.exp(0.5 * (1 - (xm - 8*t)**2 - ym**2))
-    return u/16, v/16
+    r = np.sqrt(xm**2 + ym**2)
+    u = np.zeros((N, N))
+    v = np.zeros((N, N))
+    for i in range(N):
+        for j in range(N):
+            if r[i,j] < 0.25:
+                u[i,j] = ym[i,j]
+                v[i,j] = xm[i,j]
+    return u, v
 
 
 def read_sol(N, method):
-    with nc.Dataset('taylor_vortex_N{}_{}_T0.1/sample_0_time_0.100000.nc'.format(N, method)) as f:
+    with nc.Dataset('discontinuous_vortex_patch_N{}_{}_T1.0/sample_0_time_1.000000.nc'.format(N, method)) as f:
         u = f['u'][:]
         v = f['v'][:]
     return u, v
@@ -35,7 +41,7 @@ def pad_fourier(u_hat, N_pad):
 
 def compute_diff(N, N_ref, method):
     u, v = read_sol(N, method)
-    u_ref, v_ref = analytic_sol(N_ref, 0.1)
+    u_ref, v_ref = analytic_sol(N_ref)
     u_hat = np.fft.fft2(u)
     v_hat = np.fft.fft2(v)
     u_pad_hat = pad_fourier(u_hat, N_ref)

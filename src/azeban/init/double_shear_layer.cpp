@@ -24,11 +24,16 @@ void DoubleShearLayer::do_initialize(const zisa::array_view<real_t, 3> &u) {
       }
       for (zisa::int_t j = 0; j < N; ++j) {
         const real_t y = static_cast<real_t>(j) / N + sigma;
-        if (y < 0.5) {
-          u_(0, i, j) = std::tanh(2 * zisa::pi * (y - 0.25) / rho);
-        } else {
-          u_(0, i, j) = std::tanh(2 * zisa::pi * (0.75 - y) / rho);
-        }
+	if (rho == 0) {
+	  u_(0, i, j) = (zisa::abs(y - 0.5) < 0.25) ? 1 : -1;
+	}
+	else {
+	  if (y < 0.5) {
+	    u_(0, i, j) = std::tanh(2 * zisa::pi * (y - 0.25) / rho);
+	  } else {
+	    u_(0, i, j) = std::tanh(2 * zisa::pi * (0.75 - y) / rho);
+	  }
+	}
         u_(1, i, j) = 0;
       }
     }

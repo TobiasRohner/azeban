@@ -1,0 +1,29 @@
+{
+  "output": "discontinuous_vortex_patch_N32_Step_T1.0",
+  "device": "cuda",
+  "dimension": 2,
+  "num_samples": 1,
+  "seed": 1,
+  "time": 1.0,
+  "snapshots_": [],
+  "snapshots": [1],
+  "grid": {
+    "N_phys": 32,
+    "N_phys_pad": ""
+  },
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "type": "Step",
+      "eps": 0.05,
+      "k0": 35.543
+    }
+  },
+  "timestepper": {
+    "type": "SSP RK3",
+    "C": 0.5
+  },
+  "init": {
+    "name": "Discontinuous Vortex Patch"
+  }
+}
