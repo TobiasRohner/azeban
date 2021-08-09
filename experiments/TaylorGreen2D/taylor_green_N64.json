@@ -1,12 +1,12 @@
 {
-  "output": "discontinuous_vortex_patch_N64_Smooth_T1.0",
+  "output": "taylor_green_N64_T0.1",
   "device": "cuda",
   "dimension": 2,
   "num_samples": 1,
   "seed": 1,
-  "time": 1.0,
+  "time": 0.1,
   "snapshots_": [],
-  "snapshots": [0, 1],
+  "snapshots": [0, 0.1],
   "grid": {
     "N_phys": 64,
     "N_phys_pad": ""
@@ -14,9 +14,8 @@
   "equation": {
     "name": "Euler",
     "visc": {
-      "type": "Smooth Cutoff",
-      "eps": 0.05,
-      "k0": 50.2655
+      "type": "Quadratic",
+      "eps": 0
     }
   },
   "timestepper": {
@@ -24,6 +23,6 @@
     "C": 0.5
   },
   "init": {
-    "name": "Discontinuous Vortex Patch"
+    "name": "Taylor Green"
   }
 }

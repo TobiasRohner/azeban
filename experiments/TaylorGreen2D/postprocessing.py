@@ -6,23 +6,17 @@ import pickle
 import sys
 
 
-def analytic_sol(N):
-    x = np.linspace(-0.5, 0.5, N, False)
-    y = np.linspace(-0.5, 0.5, N, False)
+def analytic_sol(N, t):
+    x = np.linspace(0, 2*np.pi, N, False)
+    y = np.linspace(0, 2*np.pi, N, False)
     ym, xm = np.meshgrid(x, y)
-    r = np.sqrt(xm**2 + ym**2)
-    u = np.zeros((N, N))
-    v = np.zeros((N, N))
-    for i in range(N):
-        for j in range(N):
-            if r[i,j] < 0.25:
-                u[i,j] = -0.5 * ym[i,j]
-                v[i,j] =  0.5 * xm[i,j]
+    u = np.cos(xm) * np.sin(ym)
+    v = -np.sin(xm) * np.cos(ym)
     return u, v
 
 
-def read_sol(N, method):
-    with nc.Dataset('discontinuous_vortex_patch_N{}_{}_T1.0/sample_0_time_1.000000.nc'.format(N, method)) as f:
+def read_sol(N):
+    with nc.Dataset('taylor_green_N{}_T0.1/sample_0_time_0.100000.nc'.format(N)) as f:
         u = f['u'][:]
         v = f['v'][:]
     return u, v
@@ -39,9 +33,9 @@ def pad_fourier(u_hat, N_pad):
     return (N_pad / N)**2 * u_pad_hat
 
 
-def compute_diff(N, N_ref, method):
-    u, v = read_sol(N, method)
-    u_ref, v_ref = analytic_sol(N_ref)
+def compute_diff(N, N_ref):
+    u, v = read_sol(N)
+    u_ref, v_ref = analytic_sol(N_ref, 0.1)
     u_hat = np.fft.fft2(u)
     v_hat = np.fft.fft2(v)
     u_pad_hat = pad_fourier(u_hat, N_ref)
@@ -51,8 +45,8 @@ def compute_diff(N, N_ref, method):
     return u_ref-u_pad, v_ref-v_pad
 
 
-def compute_err(N, N_ref, method):
-    u_diff, v_diff = compute_diff(N, N_ref, method)
+def compute_err(N, N_ref):
+    u_diff, v_diff = compute_diff(N, N_ref)
     err2_u = np.sum(np.abs(u_diff)**2)
     err2_v = np.sum(np.abs(v_diff)**2)
     err = np.sqrt(err2_u + err2_v) / N_ref**2
@@ -63,9 +57,8 @@ if __name__ == '__main__':
     Ns = [16, 32, 64, 128]
     N_ref = 1024
     to_dump = {}
-    for method in sys.argv[1:-1]:
-        errs = [compute_err(N, N_ref, method) for N in Ns]
-        to_dump[method] = list(zip(Ns, errs))
-        print('\n'.join([method]+['{}: {}'.format(N, err) for N, err in zip(Ns, errs)]))
-    with open(sys.argv[-1], 'wb') as f:
+    errs = [compute_err(N, N_ref) for N in Ns]
+    to_dump['No visc'] = list(zip(Ns, errs))
+    print('\n'.join(['{}: {}'.format(N, err) for N, err in zip(Ns, errs)]))
+    with open(sys.argv[1], 'wb') as f:
         pickle.dump(to_dump, f)

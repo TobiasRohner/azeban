@@ -6,7 +6,7 @@
   "seed": 1,
   "time": 1.0,
   "snapshots_": [],
-  "snapshots": [1],
+  "snapshots": [0, 1],
   "grid": {
     "N_phys": 128,
     "N_phys_pad": ""
