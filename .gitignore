@@ -6,3 +6,5 @@ rsync.include
 rsync.exclude
 reconnect_info
 start_jupyter_nb.sh
+data
+**/__pycache__
