@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --job-name=postprocess
 #SBATCH --account="s1069"
-#SBATCH --time=00:05:00
+#SBATCH --time=00:20:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-core=1
 #SBATCH --ntasks-per-node=1

@@ -1,5 +1,5 @@
 {
-  "output": "discontinuous_vortex_patch_N64_Step_T1.0",
+  "output": "discontinuous_vortex_patch_N512_Smooth_T1.0",
   "device": "cuda",
   "dimension": 2,
   "num_samples": 1,
@@ -8,15 +8,15 @@
   "snapshots_": [],
   "snapshots": [0, 1],
   "grid": {
-    "N_phys": 64,
+    "N_phys": 512,
     "N_phys_pad": ""
   },
   "equation": {
     "name": "Euler",
     "visc": {
-      "type": "Step",
+      "type": "Smooth Cutoff",
       "eps": 0.05,
-      "k0": 50.2655
+      "k0": 142.172
     }
   },
   "timestepper": {

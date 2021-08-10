@@ -1,5 +1,5 @@
 {
-  "output": "discontinuous_vortex_patch_N16_Smooth_T1.0",
+  "output": "discontinuous_vortex_patch_N256_Smooth_T1.0",
   "device": "cuda",
   "dimension": 2,
   "num_samples": 1,
@@ -8,7 +8,7 @@
   "snapshots_": [],
   "snapshots": [0, 1],
   "grid": {
-    "N_phys": 16,
+    "N_phys": 256,
     "N_phys_pad": ""
   },
   "equation": {
@@ -16,7 +16,7 @@
     "visc": {
       "type": "Smooth Cutoff",
       "eps": 0.05,
-      "k0": 25.1327
+      "k0": 100.531
     }
   },
   "timestepper": {
