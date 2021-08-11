@@ -31,7 +31,7 @@ public:
             const zisa::array_view<real_t, 3> &u,
             MPI_Comm comm,
             int direction = FFT_FORWARD | FFT_BACKWARD,
-	    void *work_area = nullptr);
+            void *work_area = nullptr);
 
   virtual ~CUFFT_MPI() override;
 
@@ -82,7 +82,7 @@ public:
             const zisa::array_view<real_t, 4> &u,
             MPI_Comm comm,
             int direction = FFT_FORWARD | FFT_BACKWARD,
-	    void *work_area = nullptr);
+            void *work_area = nullptr);
 
   virtual ~CUFFT_MPI() override;
 

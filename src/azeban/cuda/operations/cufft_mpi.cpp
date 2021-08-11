@@ -11,8 +11,11 @@ CUFFT_MPI<2>::CUFFT_MPI(const zisa::array_view<complex_t, 3> &u_hat,
                         const zisa::array_view<real_t, 3> &u,
                         MPI_Comm comm,
                         int direction,
-			void *work_area)
-    : super(u_hat, u, direction), comm_(comm), work_area_(work_area), free_work_area_(work_area == nullptr) {
+                        void *work_area)
+    : super(u_hat, u, direction),
+      comm_(comm),
+      work_area_(work_area),
+      free_work_area_(work_area == nullptr) {
   LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cuda,
              "Unsupported Memory Location");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cuda,
@@ -172,9 +175,7 @@ void CUFFT_MPI<2>::forward() {
   AZEBAN_PROFILE_STOP("CUFFT_MPI::forward", comm_);
 }
 
-void *CUFFT_MPI<2>::get_work_area() const {
-  return work_area_;
-}
+void *CUFFT_MPI<2>::get_work_area() const { return work_area_; }
 
 void CUFFT_MPI<2>::backward() {
   LOG_ERR_IF((direction_ & FFT_BACKWARD) == 0,
@@ -234,8 +235,11 @@ CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
                         const zisa::array_view<real_t, 4> &u,
                         MPI_Comm comm,
                         int direction,
-			void *work_area)
-    : super(u_hat, u, direction), comm_(comm), work_area_(work_area), free_work_area_(work_area == nullptr) {
+                        void *work_area)
+    : super(u_hat, u, direction),
+      comm_(comm),
+      work_area_(work_area),
+      free_work_area_(work_area == nullptr) {
   LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cuda,
              "Unsupported Memory Location");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cuda,
@@ -474,9 +478,7 @@ void CUFFT_MPI<3>::backward() {
   AZEBAN_PROFILE_STOP("CUFFT_MPI::backward", comm_);
 }
 
-void *CUFFT_MPI<3>::get_work_area() const {
-  return work_area_;
-}
+void *CUFFT_MPI<3>::get_work_area() const { return work_area_; }
 
 }
 #endif

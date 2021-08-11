@@ -14,10 +14,11 @@ make_fft_mpi(const zisa::array_view<complex_t, Dim + 1> &u_hat,
              const zisa::array_view<real_t, Dim + 1> &u,
              MPI_Comm comm,
              int direction = FFT_FORWARD | FFT_BACKWARD,
-	     void *work_area = nullptr) {
+             void *work_area = nullptr) {
   if (u_hat.memory_location() == zisa::device_type::cuda
       && u.memory_location() == zisa::device_type::cuda) {
-    return std::make_shared<CUFFT_MPI<Dim>>(u_hat, u, comm, direction, work_area);
+    return std::make_shared<CUFFT_MPI<Dim>>(
+        u_hat, u, comm, direction, work_area);
   } else {
     LOG_ERR("Unsupported memory loactions");
   }

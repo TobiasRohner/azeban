@@ -32,7 +32,8 @@ IncompressibleEuler_MPI_Base<2>::IncompressibleEuler_MPI_Base(
       zisa::device_type::cpu);
   B_hat_ = grid_.make_array_fourier(n_var_B, zisa::device_type::cpu, comm);
   fft_B_ = make_fft_mpi<2>(d_B_hat_pad_, B_pad_, comm, FFT_FORWARD);
-  fft_u_ = make_fft_mpi<2>(d_u_hat_pad_, u_pad_, comm, FFT_BACKWARD, fft_B_->get_work_area());
+  fft_u_ = make_fft_mpi<2>(
+      d_u_hat_pad_, u_pad_, comm, FFT_BACKWARD, fft_B_->get_work_area());
 }
 
 template <>

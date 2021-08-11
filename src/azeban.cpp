@@ -103,7 +103,9 @@ static void runFromConfig(const nlohmann::json &config) {
     std::filesystem::create_directories(sample_folder);
   }
 
-  for (zisa::int_t sample = sample_idx_start; sample < sample_idx_start + num_samples; ++sample) {
+  for (zisa::int_t sample = sample_idx_start;
+       sample < sample_idx_start + num_samples;
+       ++sample) {
     auto u_host
         = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
     auto u_hat_host
@@ -237,7 +239,9 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
     }
   }
 
-  for (zisa::int_t sample = sample_idx_start; sample < sample_idx_start + num_samples; ++sample) {
+  for (zisa::int_t sample = sample_idx_start;
+       sample < sample_idx_start + num_samples;
+       ++sample) {
     simulation = make_simulation_mpi<dim_v>(config, comm);
     const auto &grid = simulation.grid();
 
@@ -247,7 +251,11 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
         simulation.n_vars(), zisa::device_type::cuda, comm);
     auto u_hat_device = grid.make_array_fourier(
         simulation.n_vars(), zisa::device_type::cuda, comm);
-    auto fft = make_fft_mpi<dim_v>(u_hat_device, u_device, comm, FFT_FORWARD | FFT_BACKWARD, simulation.equation()->get_fft_work_area());
+    auto fft = make_fft_mpi<dim_v>(u_hat_device,
+                                   u_device,
+                                   comm,
+                                   FFT_FORWARD | FFT_BACKWARD,
+                                   simulation.equation()->get_fft_work_area());
 
     simulation.reset();
     zisa::array<real_t, dim_v + 1> u_init;
@@ -315,8 +323,8 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
       }
       MPI_Waitall(simulation.n_vars(), reqs.data(), MPI_STATUSES_IGNORE);
       if (rank == 0) {
-        const std::string name
-            = "sample_" + std::to_string(sample) + "_time_" + std::to_string(t) + ".nc";
+        const std::string name = "sample_" + std::to_string(sample) + "_time_"
+                                 + std::to_string(t) + ".nc";
         auto writer = make_nc_writer<dim_v>(output + "/" + name, simulation);
         if (dim_v == 1) {
           zisa::shape_t<1> slice_shape(grid.N_phys);
