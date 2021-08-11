@@ -44,6 +44,8 @@ public:
   const zisa::array_view<real_t, dim_v + 1> &u() { return u_; }
   const zisa::array_const_view<real_t, dim_v + 1> u() const { return u_; }
 
+  virtual void *get_work_area() const { return nullptr; }
+
 protected:
   zisa::array_view<complex_t, dim_v + 1> u_hat_;
   zisa::array_view<real_t, dim_v + 1> u_;

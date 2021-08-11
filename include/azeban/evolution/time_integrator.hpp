@@ -1,3 +1,4 @@
+
 #ifndef TIME_INTEGRATOR_H_
 #define TIME_INTEGRATOR_H_
 
@@ -31,7 +32,7 @@ public:
       = 0;
 
   zisa::device_type memory_location() const { return device_; }
-  const auto &equation() const { return equation_; }
+  std::shared_ptr<const Equation<dim_v>> equation() const { return equation_; }
 
 protected:
   zisa::device_type device_;

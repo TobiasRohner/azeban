@@ -10,8 +10,9 @@ namespace azeban {
 CUFFT_MPI<2>::CUFFT_MPI(const zisa::array_view<complex_t, 3> &u_hat,
                         const zisa::array_view<real_t, 3> &u,
                         MPI_Comm comm,
-                        int direction)
-    : super(u_hat, u, direction), comm_(comm) {
+                        int direction,
+			void *work_area)
+    : super(u_hat, u, direction), comm_(comm), work_area_(work_area), free_work_area_(work_area == nullptr) {
   LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cuda,
              "Unsupported Memory Location");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cuda,
@@ -87,7 +88,10 @@ CUFFT_MPI<2>::CUFFT_MPI(const zisa::array_view<complex_t, 3> &u_hat,
     workspace_size = std::max(workspace_size, bkw2_size);
   }
   // Allocate the shared work area
-  cudaMalloc((void **)(&work_area_), workspace_size);
+  if (work_area_ == nullptr) {
+    cudaError_t status = cudaMalloc((void **)(&work_area_), workspace_size);
+    cudaCheckError(status);
+  }
   if (direction_ & FFT_FORWARD) {
     cufftResult status = cufftSetWorkArea(plan_forward_r2c_, work_area_);
     cudaCheckError(status);
@@ -111,7 +115,9 @@ CUFFT_MPI<2>::~CUFFT_MPI() {
     cufftDestroy(plan_backward_c2r_);
     cufftDestroy(plan_backward_c2c_);
   }
-  cudaFree(work_area_);
+  if (free_work_area_) {
+    cudaFree(work_area_);
+  }
 }
 
 void CUFFT_MPI<2>::forward() {
@@ -164,6 +170,10 @@ void CUFFT_MPI<2>::forward() {
     cudaDeviceSynchronize();
   }
   AZEBAN_PROFILE_STOP("CUFFT_MPI::forward", comm_);
+}
+
+void *CUFFT_MPI<2>::get_work_area() const {
+  return work_area_;
 }
 
 void CUFFT_MPI<2>::backward() {
@@ -223,8 +233,9 @@ void CUFFT_MPI<2>::backward() {
 CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
                         const zisa::array_view<real_t, 4> &u,
                         MPI_Comm comm,
-                        int direction)
-    : super(u_hat, u, direction), comm_(comm) {
+                        int direction,
+			void *work_area)
+    : super(u_hat, u, direction), comm_(comm), work_area_(work_area), free_work_area_(work_area == nullptr) {
   LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cuda,
              "Unsupported Memory Location");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cuda,
@@ -321,7 +332,10 @@ CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
     workspace_size = std::max(workspace_size, bkw2_size);
   }
   // Allocate the shared work area
-  cudaMalloc((void **)(&work_area_), workspace_size);
+  if (work_area_ == nullptr) {
+    cudaError_t status = cudaMalloc((void **)(&work_area_), workspace_size);
+    cudaCheckError(status);
+  }
   if (direction_ & FFT_FORWARD) {
     cufftResult status = cufftSetWorkArea(plan_forward_r2c_, work_area_);
     cudaCheckError(status);
@@ -345,7 +359,9 @@ CUFFT_MPI<3>::~CUFFT_MPI() {
     cufftDestroy(plan_backward_c2r_);
     cufftDestroy(plan_backward_c2c_);
   }
-  cudaFree(work_area_);
+  if (free_work_area_) {
+    cudaFree(work_area_);
+  }
 }
 
 void CUFFT_MPI<3>::forward() {
@@ -456,6 +472,10 @@ void CUFFT_MPI<3>::backward() {
     cudaDeviceSynchronize();
   }
   AZEBAN_PROFILE_STOP("CUFFT_MPI::backward", comm_);
+}
+
+void *CUFFT_MPI<3>::get_work_area() const {
+  return work_area_;
 }
 
 }

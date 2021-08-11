@@ -25,6 +25,8 @@ public:
   // const Grid<Dim> &grid() const { return grid_; }
   virtual int n_vars() const = 0;
 
+  virtual void *get_fft_work_area() const { return nullptr; }
+
 protected:
   Grid<Dim> grid_;
 };

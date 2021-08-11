@@ -30,12 +30,15 @@ public:
   CUFFT_MPI(const zisa::array_view<complex_t, 3> &u_hat,
             const zisa::array_view<real_t, 3> &u,
             MPI_Comm comm,
-            int direction = FFT_FORWARD | FFT_BACKWARD);
+            int direction = FFT_FORWARD | FFT_BACKWARD,
+	    void *work_area = nullptr);
 
   virtual ~CUFFT_MPI() override;
 
   virtual void forward() override;
   virtual void backward() override;
+
+  virtual void *get_work_area() const override;
 
 protected:
   using super::data_dim_;
@@ -53,6 +56,7 @@ private:
   zisa::array<complex_t, 3> partial_u_hat_;
   zisa::array<complex_t, 3> mpi_send_buffer_;
   zisa::array<complex_t, 3> mpi_recv_buffer_;
+  bool free_work_area_;
 
   static constexpr cufftType type_forward_r2c
       = std::is_same_v<float, real_t> ? CUFFT_R2C : CUFFT_D2Z;
@@ -77,12 +81,15 @@ public:
   CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
             const zisa::array_view<real_t, 4> &u,
             MPI_Comm comm,
-            int direction = FFT_FORWARD | FFT_BACKWARD);
+            int direction = FFT_FORWARD | FFT_BACKWARD,
+	    void *work_area = nullptr);
 
   virtual ~CUFFT_MPI() override;
 
   virtual void forward() override;
   virtual void backward() override;
+
+  virtual void *get_work_area() const override;
 
 protected:
   using super::data_dim_;
@@ -100,6 +107,7 @@ private:
   zisa::array<complex_t, 4> partial_u_hat_;
   zisa::array<complex_t, 4> mpi_send_buffer_;
   zisa::array<complex_t, 4> mpi_recv_buffer_;
+  bool free_work_area_;
 
   static constexpr cufftType type_forward_r2c
       = std::is_same_v<float, real_t> ? CUFFT_R2C : CUFFT_D2Z;
