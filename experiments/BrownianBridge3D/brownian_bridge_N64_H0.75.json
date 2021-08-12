@@ -1,13 +1,13 @@
 {
-  "output": "brownian_bridge_3D_N128_H0.15_T1.0",
+  "output": "brownian_bridge_3D_N64_H0.75_T1.0",
   "device": "cuda",
   "dimension": 3,
-  "num_samples": 1,
+  "num_samples": 64,
   "seed": 1,
   "time": 1,
   "snapshots": [0, 1],
   "grid": {
-    "N_phys": 128,
+    "N_phys": 64,
     "N_phys_pad": ""
   },
   "equation": {
@@ -23,6 +23,6 @@
   },
   "init": {
     "name": "Brownian Motion",
-    "hurst": 0.15
+    "hurst": 0.75
   }
 }
