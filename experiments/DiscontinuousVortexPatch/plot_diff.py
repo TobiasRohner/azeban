@@ -19,8 +19,8 @@ def curl(x, y):
 
 
 if __name__ == '__main__':
-    Ns = [16, 32, 64, 128]
-    N_ref = 1024
+    Ns = [128, 256, 512, 1024]
+    N_ref = 8192
 
     for method in sys.argv[1:-1]:
         for N in Ns:
