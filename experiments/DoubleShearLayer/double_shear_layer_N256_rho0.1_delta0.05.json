@@ -1,0 +1,33 @@
+{
+  "output": "double_shear_layer_2D_N256_rho0.1_delta0.05_T1.0",
+  "device": "cuda",
+  "dimension": 2,
+  "num_samples": 1,
+  "seed": 1,
+  "time": 1,
+  "snapshots": {
+    "start": 0,
+    "stop": 1,
+    "n": 10
+  },
+  "grid": {
+    "N_phys": 256,
+    "N_phys_pad": ""
+  },
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "type": "Quadratic",
+      "eps": 0.05
+    }
+  },
+  "timestepper": {
+    "type": "SSP RK3",
+    "C": 0.5
+  },
+  "init": {
+    "name": "Double Shear Layer",
+    "rho": 0.1,
+    "delta": 0.05
+  }
+}

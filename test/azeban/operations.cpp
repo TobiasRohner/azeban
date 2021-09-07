@@ -76,9 +76,7 @@ TEST_CASE("Leray 2D CPU", "[operations]") {
       std::make_shared<azeban::Delta<azeban::real_t>>(0.2));
   azeban::RandomVariable<azeban::real_t> delta(
       std::make_shared<azeban::Delta<azeban::real_t>>(0.05));
-  azeban::RandomVariable<azeban::real_t> uniform(
-      std::make_shared<azeban::Delta<azeban::real_t>>(1));
-  azeban::DoubleShearLayer init(1, rho, delta, uniform);
+  azeban::DoubleShearLayer init(rho, delta);
   init.initialize(u);
   fft->forward();
   leray(uhat);
@@ -146,9 +144,7 @@ TEST_CASE("Leray 2D CUDA", "[operations]") {
       std::make_shared<azeban::Delta<azeban::real_t>>(0.2));
   azeban::RandomVariable<azeban::real_t> delta(
       std::make_shared<azeban::Delta<azeban::real_t>>(0.05));
-  azeban::RandomVariable<azeban::real_t> uniform(
-      std::make_shared<azeban::Delta<azeban::real_t>>(1));
-  azeban::DoubleShearLayer init(1, rho, delta, uniform);
+  azeban::DoubleShearLayer init(rho, delta);
   init.initialize(du);
   fft->forward();
   leray(uhat);

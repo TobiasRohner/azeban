@@ -10,12 +10,22 @@ void TaylorGreen<2>::do_initialize(const zisa::array_view<real_t, 3> &u) {
     const real_t A = 1;
     const real_t B = -1;
     const zisa::int_t N = u_.shape(1);
+    real_t deltas[8];
+    for (int i = 0 ; i < 8 ; ++i) {
+      deltas[i] = delta_.get() / 4;
+    }
     for (zisa::int_t i = 0; i < N; ++i) {
       for (zisa::int_t j = 0; j < N; ++j) {
         const real_t x = 2 * zisa::pi / N * i;
         const real_t y = 2 * zisa::pi / N * j;
         u_(0, i, j) = A * zisa::cos(x) * zisa::sin(y);
         u_(1, i, j) = B * zisa::sin(x) * zisa::cos(y);
+	for (int d = 0 ; d < 2 ; ++d) {
+	  u_(d, i, j) += deltas[0 + 4*d] * zisa::sin(2*x) * zisa::sin(2*y);
+	  u_(d, i, j) += deltas[1 + 4*d] * zisa::sin(2*x) * zisa::cos(2*y);
+	  u_(d, i, j) += deltas[2 + 4*d] * zisa::cos(2*x) * zisa::sin(2*y);
+	  u_(d, i, j) += deltas[3 + 4*d] * zisa::cos(2*x) * zisa::cos(2*y);
+	}
       }
     }
   };
@@ -46,6 +56,10 @@ void TaylorGreen<3>::do_initialize(const zisa::array_view<real_t, 4> &u) {
     const real_t B = -1;
     const real_t C = 0;
     const zisa::int_t N = u_.shape(1);
+    real_t deltas[24];
+    for (int i = 0 ; i < 24 ; ++i) {
+      deltas[i] = delta_.get() / 8;
+    }
     for (zisa::int_t i = 0; i < N; ++i) {
       for (zisa::int_t j = 0; j < N; ++j) {
         for (zisa::int_t k = 0; k < N; ++k) {
@@ -55,6 +69,16 @@ void TaylorGreen<3>::do_initialize(const zisa::array_view<real_t, 4> &u) {
           u_(0, i, j, k) = A * zisa::cos(x) * zisa::sin(y) * zisa::sin(z);
           u_(1, i, j, k) = B * zisa::sin(x) * zisa::cos(y) * zisa::sin(z);
           u_(2, i, j, k) = C * zisa::sin(x) * zisa::sin(y) * zisa::cos(z);
+	  for (int d = 0 ; d < 3 ; ++d) {
+	    u_(d, i, j, k) += deltas[0 + 8*d] * zisa::sin(2*x) * zisa::sin(2*y) + zisa::sin(2*z);
+	    u_(d, i, j, k) += deltas[1 + 8*d] * zisa::sin(2*x) * zisa::sin(2*y) + zisa::cos(2*z);
+	    u_(d, i, j, k) += deltas[2 + 8*d] * zisa::sin(2*x) * zisa::cos(2*y) + zisa::sin(2*z);
+	    u_(d, i, j, k) += deltas[3 + 8*d] * zisa::sin(2*x) * zisa::cos(2*y) + zisa::cos(2*z);
+	    u_(d, i, j, k) += deltas[4 + 8*d] * zisa::cos(2*x) * zisa::sin(2*y) + zisa::sin(2*z);
+	    u_(d, i, j, k) += deltas[5 + 8*d] * zisa::cos(2*x) * zisa::sin(2*y) + zisa::cos(2*z);
+	    u_(d, i, j, k) += deltas[6 + 8*d] * zisa::cos(2*x) * zisa::cos(2*y) + zisa::sin(2*z);
+	    u_(d, i, j, k) += deltas[7 + 8*d] * zisa::cos(2*x) * zisa::cos(2*y) + zisa::cos(2*z);
+	  }
         }
       }
     }

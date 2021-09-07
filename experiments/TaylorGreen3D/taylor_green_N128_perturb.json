@@ -1,0 +1,37 @@
+{
+  "output": "taylor_green_3D_N128_T5.0",
+  "device": "cuda",
+  "dimension": 3,
+  "num_samples": 4,
+  "sample_idx_start": <sis>,
+  "seed": <seed>,
+  "time": 5,
+  "snapshots": {
+    "start": 0,
+    "stop": 5,
+    "n": 50
+  },
+  "grid": {
+    "N_phys": 128,
+    "N_phys_pad": ""
+  },
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "type": "Quadratic",
+      "eps": 0.05
+    }
+  },
+  "timestepper": {
+    "type": "SSP RK3",
+    "C": 0.5
+  },
+  "init": {
+    "name": "Taylor Green",
+    "perturb": {
+      "name": "Uniform",
+      "min": -0.025,
+      "max": 0.025
+    }
+  }
+}

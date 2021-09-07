@@ -3,7 +3,8 @@
   "device": "cuda",
   "dimension": 2,
   "num_samples": 16,
-  "seed": 1,
+  "sample_idx_start": <sis>,
+  "seed": <seed>,
   "time": 1,
   "snapshots": {
     "start": 0,

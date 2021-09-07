@@ -104,26 +104,20 @@ static azeban::real_t measureConvergence(
 
 TEST_CASE("Convergence Double Shear Layer 2D", "[slow][initializer]") {
   const auto initializer = std::make_shared<azeban::DoubleShearLayer>(
-      1,
       azeban::RandomVariable<azeban::real_t>(
           std::make_shared<azeban::Delta<azeban::real_t>>(0.2)),
       azeban::RandomVariable<azeban::real_t>(
-          std::make_shared<azeban::Delta<azeban::real_t>>(0.05)),
-      azeban::RandomVariable<azeban::real_t>(
-          std::make_shared<azeban::Delta<azeban::real_t>>(1)));
+          std::make_shared<azeban::Delta<azeban::real_t>>(0.05)));
   const azeban::real_t conv_rate = measureConvergence<2>(initializer, 1024);
   REQUIRE(conv_rate > 1);
 }
 
 TEST_CASE("Convergence Double Shear Layer 3D const. x", "[slow][initializer]") {
   const auto initializer2d = std::make_shared<azeban::DoubleShearLayer>(
-      1,
       azeban::RandomVariable<azeban::real_t>(
           std::make_shared<azeban::Delta<azeban::real_t>>(0.2)),
       azeban::RandomVariable<azeban::real_t>(
-          std::make_shared<azeban::Delta<azeban::real_t>>(0.05)),
-      azeban::RandomVariable<azeban::real_t>(
-          std::make_shared<azeban::Delta<azeban::real_t>>(1)));
+          std::make_shared<azeban::Delta<azeban::real_t>>(0.05)));
   const auto initializer
       = std::make_shared<azeban::Init3DFrom2D>(0, initializer2d);
   const azeban::real_t conv_rate = measureConvergence<3>(initializer, 512);
@@ -132,13 +126,10 @@ TEST_CASE("Convergence Double Shear Layer 3D const. x", "[slow][initializer]") {
 
 TEST_CASE("Convergence Double Shear Layer 3D const. y", "[slow][initializer]") {
   const auto initializer2d = std::make_shared<azeban::DoubleShearLayer>(
-      1,
       azeban::RandomVariable<azeban::real_t>(
           std::make_shared<azeban::Delta<azeban::real_t>>(0.2)),
       azeban::RandomVariable<azeban::real_t>(
-          std::make_shared<azeban::Delta<azeban::real_t>>(0.05)),
-      azeban::RandomVariable<azeban::real_t>(
-          std::make_shared<azeban::Delta<azeban::real_t>>(1)));
+          std::make_shared<azeban::Delta<azeban::real_t>>(0.05)));
   const auto initializer
       = std::make_shared<azeban::Init3DFrom2D>(1, initializer2d);
   const azeban::real_t conv_rate = measureConvergence<3>(initializer, 512);
@@ -147,13 +138,10 @@ TEST_CASE("Convergence Double Shear Layer 3D const. y", "[slow][initializer]") {
 
 TEST_CASE("Convergence Double Shear Layer 3D const. z", "[slow][initializer]") {
   const auto initializer2d = std::make_shared<azeban::DoubleShearLayer>(
-      1,
       azeban::RandomVariable<azeban::real_t>(
           std::make_shared<azeban::Delta<azeban::real_t>>(0.2)),
       azeban::RandomVariable<azeban::real_t>(
-          std::make_shared<azeban::Delta<azeban::real_t>>(0.05)),
-      azeban::RandomVariable<azeban::real_t>(
-          std::make_shared<azeban::Delta<azeban::real_t>>(1)));
+          std::make_shared<azeban::Delta<azeban::real_t>>(0.05)));
   const auto initializer
       = std::make_shared<azeban::Init3DFrom2D>(2, initializer2d);
   const azeban::real_t conv_rate = measureConvergence<3>(initializer, 512);

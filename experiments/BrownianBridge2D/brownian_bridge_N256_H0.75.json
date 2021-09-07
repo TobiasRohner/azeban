@@ -2,7 +2,7 @@
   "output": "brownian_bridge_2D_N256_H0.75_T1.0",
   "device": "cuda",
   "dimension": 2,
-  "num_samples": 64,
+  "num_samples": 256,
   "seed": 1,
   "time": 1,
   "snapshots": {

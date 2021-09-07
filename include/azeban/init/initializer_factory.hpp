@@ -11,6 +11,7 @@
 #include "init_from_file_factory.hpp"
 #include "initializer.hpp"
 #include "shear_tube_factory.hpp"
+#include "discontinuous_shear_tube_factory.hpp"
 #include "shock_factory.hpp"
 #include "sine_1d_factory.hpp"
 #include "sphere_factory.hpp"
@@ -46,9 +47,11 @@ make_initializer_u(const nlohmann::json &config, RNG &rng) {
   } else if (name == "Discontinuous Vortex Patch") {
     return make_discontinuous_vortex_patch<Dim>(config);
   } else if (name == "Taylor Green") {
-    return make_taylor_green<Dim>();
+    return make_taylor_green<Dim>(config, rng);
   } else if (name == "Shear Tube") {
     return make_shear_tube<Dim>(config, rng);
+  } else if (name == "Discontinuous Shear Tube") {
+    return make_discontinuous_shear_tube<Dim>(config, rng);
   } else if (name == "Brownian Motion") {
     return make_brownian_motion<Dim>(config, rng);
   } else if (name == "Const Phys") {

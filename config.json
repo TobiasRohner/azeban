@@ -1,13 +1,17 @@
 {
-  "output": "brownian_bridge_3D_N128_H0.15_T1.0",
+  "output": "discontinuous_shear_tube_3D_N512_rho0.1_delta0.025_T1.0",
   "device": "cuda",
   "dimension": 3,
   "num_samples": 1,
   "seed": 1,
   "time": 1,
-  "snapshots": [0, 1],
+  "snapshots": {
+    "start": 0,
+    "stop": 1,
+    "n": 10
+  },
   "grid": {
-    "N_phys": 128,
+    "N_phys": 512,
     "N_phys_pad": ""
   },
   "equation": {
@@ -22,7 +26,9 @@
     "C": 0.5
   },
   "init": {
-    "name": "Brownian Motion",
-    "hurst": 0.15
+    "name": "Discontinuous Shear Tube",
+    "N": 10,
+    "rho": 0.1,
+    "delta": 0.025
   }
 }
