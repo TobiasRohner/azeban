@@ -70,14 +70,14 @@ void TaylorGreen<3>::do_initialize(const zisa::array_view<real_t, 4> &u) {
           u_(1, i, j, k) = B * zisa::sin(x) * zisa::cos(y) * zisa::sin(z);
           u_(2, i, j, k) = C * zisa::sin(x) * zisa::sin(y) * zisa::cos(z);
 	  for (int d = 0 ; d < 3 ; ++d) {
-	    u_(d, i, j, k) += deltas[0 + 8*d] * zisa::sin(2*x) * zisa::sin(2*y) + zisa::sin(2*z);
-	    u_(d, i, j, k) += deltas[1 + 8*d] * zisa::sin(2*x) * zisa::sin(2*y) + zisa::cos(2*z);
-	    u_(d, i, j, k) += deltas[2 + 8*d] * zisa::sin(2*x) * zisa::cos(2*y) + zisa::sin(2*z);
-	    u_(d, i, j, k) += deltas[3 + 8*d] * zisa::sin(2*x) * zisa::cos(2*y) + zisa::cos(2*z);
-	    u_(d, i, j, k) += deltas[4 + 8*d] * zisa::cos(2*x) * zisa::sin(2*y) + zisa::sin(2*z);
-	    u_(d, i, j, k) += deltas[5 + 8*d] * zisa::cos(2*x) * zisa::sin(2*y) + zisa::cos(2*z);
-	    u_(d, i, j, k) += deltas[6 + 8*d] * zisa::cos(2*x) * zisa::cos(2*y) + zisa::sin(2*z);
-	    u_(d, i, j, k) += deltas[7 + 8*d] * zisa::cos(2*x) * zisa::cos(2*y) + zisa::cos(2*z);
+	    u_(d, i, j, k) += deltas[0 + 8*d] * zisa::sin(2*x) * zisa::sin(2*y) * zisa::sin(2*z);
+	    u_(d, i, j, k) += deltas[1 + 8*d] * zisa::sin(2*x) * zisa::sin(2*y) * zisa::cos(2*z);
+	    u_(d, i, j, k) += deltas[2 + 8*d] * zisa::sin(2*x) * zisa::cos(2*y) * zisa::sin(2*z);
+	    u_(d, i, j, k) += deltas[3 + 8*d] * zisa::sin(2*x) * zisa::cos(2*y) * zisa::cos(2*z);
+	    u_(d, i, j, k) += deltas[4 + 8*d] * zisa::cos(2*x) * zisa::sin(2*y) * zisa::sin(2*z);
+	    u_(d, i, j, k) += deltas[5 + 8*d] * zisa::cos(2*x) * zisa::sin(2*y) * zisa::cos(2*z);
+	    u_(d, i, j, k) += deltas[6 + 8*d] * zisa::cos(2*x) * zisa::cos(2*y) * zisa::sin(2*z);
+	    u_(d, i, j, k) += deltas[7 + 8*d] * zisa::cos(2*x) * zisa::cos(2*y) * zisa::cos(2*z);
 	  }
         }
       }

@@ -12,4 +12,4 @@
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
-srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorGreen3D/taylor_green_N64.json
+srun /users/trohner/azeban/build_profile/azeban /users/trohner/azeban/experiments/TaylorGreen3D/taylor_green_N64_perturb.json

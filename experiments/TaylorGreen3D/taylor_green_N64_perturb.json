@@ -1,5 +1,5 @@
 {
-  "output": "taylor_green_3D_N64_T5.0",
+  "output": "taylor_green_3D_N64_perturb_T5.0",
   "device": "cuda",
   "dimension": 3,
   "num_samples": 64,

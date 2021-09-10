@@ -19,10 +19,8 @@ def curl(x, y):
     return 0.5 * (dx - dy) * x.shape[0]
 
 
-if __name__ == '__main__':
-    with nc.Dataset(sys.argv[1], 'r') as f:
-        u = f['u'][:]
-        v = f['v'][:]
+def plot(u, v, fname):
+    plt.clf()
     min_u = np.min(u)
     min_v = np.min(v)
     max_u = np.max(u)
@@ -32,12 +30,6 @@ if __name__ == '__main__':
     ax_curl = fig.add_subplot(ax[0:2,0:2])
     ax_u = fig.add_subplot(ax[2:3,0:1])
     ax_v = fig.add_subplot(ax[2:3,1:2])
-    #ax_curl.set_title('curl')
-    #ax_u.set_title('u')
-    #ax_v.set_title('v')
-    #img_curl = ax_curl.imshow(curl(u, v), origin='lower')
-    #img_u = ax_u.imshow(u, origin='lower')
-    #img_v = ax_v.imshow(v, origin='lower')
     pos = np.linspace(0, 1, num=u.shape[0]+1)
     X, Y = np.meshgrid(pos, pos)
     img_curl = ax_curl.pcolormesh(X, Y, np.transpose(curl(u, v)))
@@ -47,7 +39,42 @@ if __name__ == '__main__':
     img_v.set_clim(min(min_u, min_v), max(max_u, max_v))
     plt.colorbar(img_curl, ax=ax_curl, location='right')
     plt.colorbar(img_v, ax=ax_v, location='right')
-    if (len(sys.argv) > 2):
-        plt.savefig(sys.argv[2], dpi=300)
-    else:
-        plt.show()
+    plt.savefig(fname, dpi=300)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) <= 2:
+        print('Usage: ' + sys.argv[1] + ' output snapshots...')
+        exit(1)
+
+    # Plot first snapshot
+    with nc.Dataset(sys.argv[2], 'r') as f:
+        u = f['u'][:]
+        v = f['v'][:]
+    plot(u, v, sys.argv[1]+'_snapshot.png')
+
+    # Plot mean
+    u_mean = np.zeros_like(u)
+    v_mean = np.zeros_like(v)
+    for fname in sys.argv[2:]:
+        with nc.Dataset(fname, 'r') as f:
+            u = f['u'][:]
+            v = f['v'][:]
+        u_mean += u
+        v_mean += v
+    u_mean /= len(sys.argv[2:])
+    v_mean /= len(sys.argv[2:])
+    plot(u_mean, v_mean, sys.argv[1]+'_mean.png')
+
+    # Plot variance
+    u_var = np.zeros_like(u_mean)
+    v_var = np.zeros_like(v_mean)
+    for fname in sys.argv[2:]:
+        with nc.Dataset(fname, 'r') as f:
+            u = f['u'][:]
+            v = f['v'][:]
+        u_var += (u - u_mean)**2
+        v_var += (v - v_mean)**2
+    u_var /= len(sys.argv[2:])
+    v_var /= len(sys.argv[2:])
+    plot(u_var, v_var, sys.argv[1]+'_variance.png')

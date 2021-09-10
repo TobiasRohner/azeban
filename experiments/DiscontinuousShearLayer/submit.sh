@@ -11,3 +11,4 @@ ID7=$(sbatch --parsable ${path}/simulation_N512_rho0_delta0.025.slurm)
 ID8=$(sbatch --parsable ${path}/simulation_N1024_rho0_delta0.025.slurm)
 ID9=$(sbatch --parsable --dependency=afterok:${ID1},afterok:${ID2},afterok:${ID3},afterok:${ID4},afterok:${ID5},afterok:${ID6},afterok:${ID7},afterok:${ID8} ${path}/structure_function.slurm)
 sbatch --dependency=afterok:${ID9} ${path}/postprocess.slurm
+sbatch --parsable --dependency=afterok:${ID1},afterok:${ID2},afterok:${ID3},afterok:${ID4},afterok:${ID5},afterok:${ID6},afterok:${ID7},afterok:${ID8} ${path}/plot.slurm

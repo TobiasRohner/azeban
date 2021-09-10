@@ -47,10 +47,14 @@ def compute_diff(N, N_ref, method):
 
 def compute_err(N, N_ref, method):
     u_diff, v_diff = compute_diff(N, N_ref, method)
+    u_anal, v_anal = analytic_sol(N_ref, 0.1)
     err2_u = np.sum(np.abs(u_diff)**2)
     err2_v = np.sum(np.abs(v_diff)**2)
+    norm2_u_anal = np.sum(np.abs(u_anal)**2)
+    norm2_v_anal = np.sum(np.abs(v_anal)**2)
     err = np.sqrt(err2_u + err2_v) / N_ref**2
-    return err
+    norm = np.sqrt(norm2_u_anal + norm2_v_anal) / N_ref**2
+    return err / norm
 
 
 if __name__ == '__main__':
