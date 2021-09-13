@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --job-name=structure_function
 #SBATCH --account="s1069"
-#SBATCH --time=12:00:00
+#SBATCH --time=24:00:00
 #SBATCH --nodes=256
 #SBATCH --ntasks-per-core=1
 #SBATCH --ntasks-per-node=1
