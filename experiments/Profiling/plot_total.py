@@ -46,10 +46,10 @@ if __name__ == '__main__':
                       'FFT::backward':'FFTWFFT::backward',
                       'computeB':'IncompressibleEuler::computeB',
                       'computeDudt':'IncompressibleEuler::computeDudt',
-                      'pad':'copy_to_padded 2d'}
+                      'pad':'copy_to_padded 3d'}
     kernel_map_gpu = {'FFT::forward':'CUFFT::forward',
                       'FFT::backward':'CUFFT::backward',
                       'computeB':'IncompressibleEuler::computeB',
                       'computeDudt':'IncompressibleEuler::computeDudt',
-                      'pad':'copy_to_padded 2d'}
+                      'pad':'copy_to_padded 3d'}
     plot_timings(args.file_cpu, args.file_gpu, args.kernels, args.file_out, kernel_map_cpu, kernel_map_gpu)
