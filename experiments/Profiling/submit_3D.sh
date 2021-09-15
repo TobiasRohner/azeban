@@ -1,0 +1,20 @@
+#!/bin/bash
+
+mkdir profiling
+cd profiling
+mkdir discontinuous_shear_tube_N32_cpu
+sbatch --chdir=discontinuous_shear_tube_N32_cpu /users/trohner/azeban/experiments/Profiling/simulation_3D_N32_rho0.1_delta0.025_cpu.slurm
+mkdir discontinuous_shear_tube_N64_cpu
+sbatch --chdir=discontinuous_shear_tube_N64_cpu /users/trohner/azeban/experiments/Profiling/simulation_3D_N64_rho0.1_delta0.025_cpu.slurm
+mkdir discontinuous_shear_tube_N128_cpu
+sbatch --chdir=discontinuous_shear_tube_N128_cpu /users/trohner/azeban/experiments/Profiling/simulation_3D_N128_rho0.1_delta0.025_cpu.slurm
+mkdir discontinuous_shear_tube_N256_cpu
+sbatch --chdir=discontinuous_shear_tube_N256_cpu /users/trohner/azeban/experiments/Profiling/simulation_3D_N256_rho0.1_delta0.025_cpu.slurm
+mkdir discontinuous_shear_tube_N32_gpu
+sbatch --chdir=discontinuous_shear_tube_N32_gpu /users/trohner/azeban/experiments/Profiling/simulation_3D_N32_rho0.1_delta0.025_gpu.slurm
+mkdir discontinuous_shear_tube_N64_gpu
+sbatch --chdir=discontinuous_shear_tube_N64_gpu /users/trohner/azeban/experiments/Profiling/simulation_3D_N64_rho0.1_delta0.025_gpu.slurm
+mkdir discontinuous_shear_tube_N128_gpu
+sbatch --chdir=discontinuous_shear_tube_N128_gpu /users/trohner/azeban/experiments/Profiling/simulation_3D_N128_rho0.1_delta0.025_gpu.slurm
+mkdir discontinuous_shear_tube_N256_gpu
+sbatch --chdir=discontinuous_shear_tube_N256_gpu /users/trohner/azeban/experiments/Profiling/simulation_3D_N256_rho0.1_delta0.025_gpu.slurm

@@ -1,0 +1,34 @@
+{
+  "output": "discontinuous_shear_tube_3D_N128_rho0.1_delta0.025_T1.0",
+  "device": "cpu",
+  "dimension": 3,
+  "num_samples": 1,
+  "seed": 1,
+  "time": 0.1,
+  "snapshots": {
+    "start": 0,
+    "stop": 0.1,
+    "n": 10
+  },
+  "grid": {
+    "N_phys": 128,
+    "N_phys_pad": ""
+  },
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "type": "Quadratic",
+      "eps": 0.05
+    }
+  },
+  "timestepper": {
+    "type": "SSP RK3",
+    "C": 0.5
+  },
+  "init": {
+    "name": "Discontinuous Shear Tube",
+    "N": 10,
+    "rho": 0.1,
+    "delta": 0.025
+  }
+}
