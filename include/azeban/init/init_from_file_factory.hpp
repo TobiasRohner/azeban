@@ -16,7 +16,11 @@ make_init_from_file(const nlohmann::json &config) {
                 "InitFromFile is missing parameter \"time\"");
   const std::string experiment = config["experiment"];
   const std::string time = config["time"];
-  return std::make_shared<InitFromFile<Dim>>(experiment, time);
+  zisa::int_t sample_idx_start = 0;
+  if (config.contains("sample_idx_start")) {
+    sample_idx_start = config["sample_idx_start"];
+  }
+  return std::make_shared<InitFromFile<Dim>>(experiment, time, sample_idx_start);
 }
 
 }

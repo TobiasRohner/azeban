@@ -73,6 +73,11 @@ static void runFromConfig(const nlohmann::json &config) {
   }
   real_t t_final = config["time"];
 
+  real_t time_offset = 0;
+  if (config.contains("time_offset")) {
+    time_offset = config["time_offset"];
+  }
+
   std::vector<real_t> snapshots;
   if (config.contains("snapshots")) {
     snapshots = make_sequence<real_t>(config["snapshots"]);
@@ -125,7 +130,7 @@ static void runFromConfig(const nlohmann::json &config) {
         u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
       }
       const std::string name = "sample_" + std::to_string(sample) + "_time_"
-                               + std::to_string(t) + ".nc";
+                               + std::to_string(t+time_offset) + ".nc";
       auto writer = make_nc_writer<dim_v>(output + "/" + name, simulation);
       if (dim_v == 1) {
         zisa::shape_t<1> slice_shape(grid.N_phys);
@@ -207,6 +212,11 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
     exit(1);
   }
   real_t t_final = config["time"];
+
+  real_t time_offset = 0;
+  if (config.contains("time_offset")) {
+    time_offset = config["time_offset"];
+  }
 
   std::vector<real_t> snapshots;
   if (config.contains("snapshots")) {
@@ -324,7 +334,7 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
       MPI_Waitall(simulation.n_vars(), reqs.data(), MPI_STATUSES_IGNORE);
       if (rank == 0) {
         const std::string name = "sample_" + std::to_string(sample) + "_time_"
-                                 + std::to_string(t) + ".nc";
+                                 + std::to_string(t+time_offset) + ".nc";
         auto writer = make_nc_writer<dim_v>(output + "/" + name, simulation);
         if (dim_v == 1) {
           zisa::shape_t<1> slice_shape(grid.N_phys);
