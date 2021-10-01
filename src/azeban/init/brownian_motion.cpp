@@ -124,11 +124,7 @@ void BrownianMotion<2>::generate_step(const zisa::array_view<real_t, 2> &u,
   if (j1 < N) {
     u(im, j1) = 0.5 * (ui0j1 + ui1j1) + sigma * normal_.get();
   }
-  const real_t ui0jm = u(i0, jm);
-  const real_t uimj0 = u(im, j0);
-  const real_t ui1jm = u(i1 % N, jm);
-  const real_t uimj1 = u(im, j1 % N);
-  u(im, jm) = 0.25 * (ui0jm + uimj0 + ui1jm + uimj1) + sigma * normal_.get();
+  u(im, jm) = 0.25 * (ui0j0 + ui0j1 + ui1j0 + ui1j1) + sigma * normal_.get();
   generate_step(u, H, i0, im, j0, jm);
   generate_step(u, H, i0, im, jm, j1);
   generate_step(u, H, im, i1, j0, jm);
@@ -236,51 +232,33 @@ void BrownianMotion<3>::generate_step(const zisa::array_view<real_t, 3> &u,
     u(i1, jm, k1) = 0.5 * (ui1j0k1 + ui1j1k1) + sigma * normal_.get();
   }
   // Faces
-  const real_t ui0j0km = u(i0, j0, km);
-  const real_t ui0jmk0 = u(i0, jm, k0);
-  const real_t ui0j1km = u(i0, j1 % N, km);
-  const real_t ui0jmk1 = u(i0, jm, k1 % N);
-  const real_t uimj0k0 = u(im, j0, k0);
-  const real_t uimj0k1 = u(im, j0, k1 % N);
-  const real_t uimj1k0 = u(im, j1 % N, k0);
-  const real_t uimj1k1 = u(im, j1 % N, k1 % N);
-  const real_t ui1j0km = u(i1 % N, j0, km);
-  const real_t ui1jmk0 = u(i1 % N, jm, k0);
-  const real_t ui1j1km = u(i1 % N, j1 % N, km);
-  const real_t ui1jmk1 = u(i1 % N, jm, k1 % N);
   if (i0 == 0) {
-    u(i0, jm, km) = 0.25 * (ui0j0km + ui0j1km + ui0jmk0 + ui0jmk1)
+    u(i0, jm, km) = 0.25 * (ui0j0k0 + ui0j0k1 + ui0j1k0 + ui0j1k1)
                     + sigma * normal_.get();
   }
   if (j0 == 0) {
-    u(im, j0, km) = 0.25 * (ui0j0km + ui1j0km + uimj0k0 + uimj0k1)
+    u(im, j0, km) = 0.25 * (ui0j0k0 + ui0j0k1 + ui1j0k0 + ui1j0k1)
                     + sigma * normal_.get();
   }
   if (k0 == 0) {
-    u(im, jm, k0) = 0.25 * (ui0jmk0 + ui1jmk0 + uimj0k0 + uimj1k0)
+    u(im, jm, k0) = 0.25 * (ui0j0k0 + ui0j1k0 + ui1j0k0 + ui1j1k0)
                     + sigma * normal_.get();
   }
   if (i1 < N) {
-    u(i1, jm, km) = 0.25 * (ui1j0km + ui1j1km + ui1jmk0 + ui1jmk1)
+    u(i1, jm, km) = 0.25 * (ui1j0k0 + ui1j0k1 + ui1j1k0 + ui1j1k1)
                     + sigma * normal_.get();
   }
   if (j1 < N) {
-    u(im, j1, km) = 0.25 * (ui0j1km + ui1j1km + uimj1k0 + uimj1k1)
+    u(im, j1, km) = 0.25 * (ui0j1k0 + ui0j1k1 + ui1j1k0 + ui1j1k1)
                     + sigma * normal_.get();
   }
   if (k1 < N) {
-    u(im, jm, k1) = 0.25 * (ui0jmk1 + ui1jmk1 + uimj0k1 + uimj1k1)
+    u(im, jm, k1) = 0.25 * (ui0j0k1 + ui0j1k1 + ui1j0k1 + ui1j1k1)
                     + sigma * normal_.get();
   }
   // Volume
-  const real_t ui0jmkm = u(i0, jm, km);
-  const real_t uimj0km = u(im, j0, km);
-  const real_t uimjmk0 = u(im, jm, k0);
-  const real_t ui1jmkm = u(i1 % N, jm, km);
-  const real_t uimj1km = u(im, j1 % N, km);
-  const real_t uimjmk1 = u(im, jm, k1 % N);
   u(im, jm, km)
-      = (ui0jmkm + uimj0km + uimjmk0 + ui1jmkm + uimj1km + uimjmk1) / 6
+      = 0.125 * (ui0j0k0 + ui0j0k1 + ui0j1k0 + ui0j1k1 + ui1j0k0 + ui1j0k1 + ui1j1k0 + ui1j1k1)
         + sigma * normal_.get();
   // Recursion
   generate_step(u, H, i0, im, j0, jm, k0, km);

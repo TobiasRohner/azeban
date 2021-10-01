@@ -6,6 +6,7 @@
   "sample_idx_start": <sis>,
   "seed": <seed>,
   "time": 2,
+  "time_offset": 3,
   "snapshots": {
     "start": 0,
     "stop": 2,
@@ -27,11 +28,9 @@
     "C": 0.5
   },
   "init": {
-    "name": "Taylor Green",
-    "perturb": {
-      "name": "Uniform",
-      "min": -0.025,
-      "max": 0.025
-    }
+    "name": "Init From File",
+    "experiment": "taylor_green_3D_N256_perturb_T5.0",
+    "time": "3.000000",
+    "sample_idx_start": <sis>
   }
 }

@@ -1,18 +1,17 @@
 {
-  "output": "taylor_green_3D_N256_perturb_T5.0",
+  "output": "discontinuous_shear_tube_3D_N64_rho0_delta0.025_T1.0",
   "device": "cuda",
   "dimension": 3,
-  "num_samples": 1,
-  "sample_idx_start": <sis>,
-  "seed": <seed>,
-  "time": 2,
+  "num_samples": 64,
+  "seed": 1,
+  "time": 1,
   "snapshots": {
     "start": 0,
-    "stop": 2,
-    "n": 20
+    "stop": 1,
+    "n": 10
   },
   "grid": {
-    "N_phys": 256,
+    "N_phys": 64,
     "N_phys_pad": ""
   },
   "equation": {
@@ -27,11 +26,9 @@
     "C": 0.5
   },
   "init": {
-    "name": "Taylor Green",
-    "perturb": {
-      "name": "Uniform",
-      "min": -0.025,
-      "max": 0.025
-    }
+    "name": "Discontinuous Shear Tube",
+    "N": 10,
+    "rho": 0,
+    "delta": 0.025
   }
 }
