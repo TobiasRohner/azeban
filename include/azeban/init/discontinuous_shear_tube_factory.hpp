@@ -9,8 +9,8 @@
 namespace azeban {
 
 template <int Dim, typename RNG>
-std::shared_ptr<Initializer<Dim>> make_discontinuous_shear_tube(const nlohmann::json &config,
-                                                  RNG &rng) {
+std::shared_ptr<Initializer<Dim>>
+make_discontinuous_shear_tube(const nlohmann::json &config, RNG &rng) {
   if constexpr (Dim == 3) {
     zisa::int_t N = 1;
     if (config.contains("N")) {

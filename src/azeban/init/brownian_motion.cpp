@@ -257,9 +257,10 @@ void BrownianMotion<3>::generate_step(const zisa::array_view<real_t, 3> &u,
                     + sigma * normal_.get();
   }
   // Volume
-  u(im, jm, km)
-      = 0.125 * (ui0j0k0 + ui0j0k1 + ui0j1k0 + ui0j1k1 + ui1j0k0 + ui1j0k1 + ui1j1k0 + ui1j1k1)
-        + sigma * normal_.get();
+  u(im, jm, km) = 0.125
+                      * (ui0j0k0 + ui0j0k1 + ui0j1k0 + ui0j1k1 + ui1j0k0
+                         + ui1j0k1 + ui1j1k0 + ui1j1k1)
+                  + sigma * normal_.get();
   // Recursion
   generate_step(u, H, i0, im, j0, jm, k0, km);
   generate_step(u, H, i0, im, j0, jm, km, k1);

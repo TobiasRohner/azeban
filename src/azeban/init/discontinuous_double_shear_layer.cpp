@@ -5,7 +5,8 @@
 
 namespace azeban {
 
-void DiscontinuousDoubleShearLayer::do_initialize(const zisa::array_view<real_t, 3> &u) {
+void DiscontinuousDoubleShearLayer::do_initialize(
+    const zisa::array_view<real_t, 3> &u) {
   const auto init = [&](auto &&u_) {
     const zisa::int_t N = u_.shape(1);
     const real_t rho = rho_.get();

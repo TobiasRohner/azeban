@@ -11,7 +11,9 @@ class InitFromFile : public Initializer<Dim> {
   using super = Initializer<Dim>;
 
 public:
-  InitFromFile(const std::string &experiment, const std::string &time, zisa::int_t sample_idx_start=0)
+  InitFromFile(const std::string &experiment,
+               const std::string &time,
+               zisa::int_t sample_idx_start = 0)
       : sample_(sample_idx_start), experiment_(experiment), time_(time) {}
   InitFromFile(const InitFromFile &) = default;
   InitFromFile(InitFromFile &&) = default;

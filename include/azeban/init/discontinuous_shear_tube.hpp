@@ -11,9 +11,9 @@ class DiscontinuousShearTube final : public Initializer<3> {
 
 public:
   DiscontinuousShearTube(zisa::int_t N,
-	    const RandomVariable<real_t> &rho,
-            const RandomVariable<real_t> &delta,
-	    const RandomVariable<real_t> &uniform)
+                         const RandomVariable<real_t> &rho,
+                         const RandomVariable<real_t> &delta,
+                         const RandomVariable<real_t> &uniform)
       : N_(N), rho_(rho), delta_(delta), uniform_(uniform) {}
   DiscontinuousShearTube(const DiscontinuousShearTube &) = default;
   DiscontinuousShearTube(DiscontinuousShearTube &&) = default;

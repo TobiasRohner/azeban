@@ -33,14 +33,16 @@ make_discontinuous_double_shear_layer(const nlohmann::json &config, RNG &rng) {
     RandomVariable<real_t> uniform = RandomVariable<real_t>(
         std::make_shared<Uniform<real_t, RNG>>(0, 1, rng));
     if constexpr (Dim == 2) {
-      return std::make_shared<DiscontinuousDoubleShearLayer>(N, rho, delta, uniform);
+      return std::make_shared<DiscontinuousDoubleShearLayer>(
+          N, rho, delta, uniform);
     } else {
       AZEBAN_ERR_IF(
           !config.contains("dimension"),
           "Must specify constant \"dimension\" to generalize from 2D to 3D\n");
 
       const int dim = config["dimension"];
-      auto init2d = std::make_shared<DiscontinuousDoubleShearLayer>(N, rho, delta, uniform);
+      auto init2d = std::make_shared<DiscontinuousDoubleShearLayer>(
+          N, rho, delta, uniform);
       return std::make_shared<Init3DFrom2D>(dim, init2d);
     }
   }

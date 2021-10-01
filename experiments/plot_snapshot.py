@@ -44,7 +44,7 @@ def plot(u, v, fname):
 
 if __name__ == '__main__':
     if len(sys.argv) <= 2:
-        print('Usage: ' + sys.argv[1] + ' output snapshots...')
+        print('Usage: ' + sys.argv[0] + ' output snapshots...')
         exit(1)
 
     # Plot first snapshot

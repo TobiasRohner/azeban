@@ -20,7 +20,8 @@ make_init_from_file(const nlohmann::json &config) {
   if (config.contains("sample_idx_start")) {
     sample_idx_start = config["sample_idx_start"];
   }
-  return std::make_shared<InitFromFile<Dim>>(experiment, time, sample_idx_start);
+  return std::make_shared<InitFromFile<Dim>>(
+      experiment, time, sample_idx_start);
 }
 
 }

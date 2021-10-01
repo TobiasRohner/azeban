@@ -11,17 +11,21 @@ class DiscontinuousDoubleShearLayer final : public Initializer<2> {
 
 public:
   DiscontinuousDoubleShearLayer(zisa::int_t N,
-                   const RandomVariable<real_t> &rho,
-                   const RandomVariable<real_t> &delta,
-                   const RandomVariable<real_t> &uniform)
+                                const RandomVariable<real_t> &rho,
+                                const RandomVariable<real_t> &delta,
+                                const RandomVariable<real_t> &uniform)
       : N_(N), rho_(rho), delta_(delta), uniform_(uniform) {}
-  DiscontinuousDoubleShearLayer(const DiscontinuousDoubleShearLayer &) = default;
+  DiscontinuousDoubleShearLayer(const DiscontinuousDoubleShearLayer &)
+      = default;
   DiscontinuousDoubleShearLayer(DiscontinuousDoubleShearLayer &&) = default;
 
   virtual ~DiscontinuousDoubleShearLayer() override = default;
 
-  DiscontinuousDoubleShearLayer &operator=(const DiscontinuousDoubleShearLayer &) = default;
-  DiscontinuousDoubleShearLayer &operator=(DiscontinuousDoubleShearLayer &&) = default;
+  DiscontinuousDoubleShearLayer &
+  operator=(const DiscontinuousDoubleShearLayer &)
+      = default;
+  DiscontinuousDoubleShearLayer &operator=(DiscontinuousDoubleShearLayer &&)
+      = default;
 
 protected:
   virtual void do_initialize(const zisa::array_view<real_t, 3> &u) override;
