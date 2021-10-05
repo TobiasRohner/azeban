@@ -21,8 +21,8 @@ if __name__ == '__main__':
     u = np.empty((N, N))
     v = np.empty((N, N))
     for sample in tqdm(range(N)):
-        fbm.generate_fourier_sample(u, H)
-        fbm.generate_fourier_sample(v, H)
+        fbm.generate_fourier_efficient_sample(u, H)
+        fbm.generate_fourier_efficient_sample(v, H)
         fname = os.path.join(output, 'sample_{}_time_0.000000.nc'.format(sample))
         with nc.Dataset(fname, 'w', format='NETCDF4') as f:
             f.createDimension('N', N)

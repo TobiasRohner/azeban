@@ -69,6 +69,32 @@ def generate_fourier(u, H):
         generate_fourier_sample(u[i,:,:], H)
 
 
+def generate_fourier_efficient_sample(u, H):
+    N = u.shape[0]
+    N_fourier = N // 2 + 1
+    u_hat = np.empty((N, N_fourier), dtype=complex)
+    u_hat[0,0] = 0
+    for k1 in range(0, N_fourier):
+        for k2 in range(0, N_fourier):
+            if k1 == 0 and k2 == 0:
+                continue
+            alpha = np.random.uniform(-1, 1, (4,))
+            cc = alpha[0]
+            cs = alpha[1]
+            sc = alpha[2]
+            ss = alpha[3]
+            fac = N*N / (4*np.pi**2 * (k1*k1 + k2*k2))**((H + 1) / 2)
+            u_hat[k1,k2] = fac * complex(cc - ss, cs + sc)
+            if k1 > 0:
+                u_hat[N-k1, k2] = fac * complex(cc + ss, cs - sc)
+    u[:,:] = np.fft.irfft2(u_hat)
+
+
+def generate_fourier_efficient(u, H):
+    for i in tqdm(range(u.shape[0])):
+        generate_fourier_efficient_sample(u[i,:,:], H)
+
+
 
 
 if __name__ == '__main__':
@@ -76,7 +102,7 @@ if __name__ == '__main__':
     H = float(sys.argv[2])
 
     u = np.empty((N, N, N))
-    generate_fourier(u, H)
+    generate_fourier_efficient(u, H)
 
     m = np.mean(u, axis=0)
     v = np.var(u, axis=0)

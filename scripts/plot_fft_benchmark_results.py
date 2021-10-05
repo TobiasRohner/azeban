@@ -40,4 +40,4 @@ if __name__ == '__main__':
     plt.xlabel('N')
     plt.ylabel('t [us]')
     plt.legend()
-    plt.show()
+    plt.savefig('fft_benchmark.png', dpi=300)
