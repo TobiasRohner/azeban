@@ -3,6 +3,7 @@
 
 #include "initializer.hpp"
 #include <azeban/random/normal.hpp>
+#include <azeban/random/uniform.hpp>
 #include <azeban/random/random_variable.hpp>
 
 namespace azeban {
@@ -49,7 +50,7 @@ public:
   template <typename RNG>
   BrownianMotion(const RandomVariable<real_t> &hurst, RNG &rng)
       : hurst_(hurst),
-        normal_(std::make_shared<Normal<real_t, RNG>>(0, 1, rng)) {}
+        uniform_(std::make_shared<Uniform<real_t, RNG>>(-1, 1, rng)) {}
   BrownianMotion(const BrownianMotion &) = default;
   BrownianMotion(BrownianMotion &&) = default;
 
@@ -65,13 +66,7 @@ protected:
 
 private:
   RandomVariable<real_t> hurst_;
-  RandomVariable<real_t> normal_;
-  void generate_step(const zisa::array_view<real_t, 2> &u,
-                     real_t H,
-                     zisa::int_t i0,
-                     zisa::int_t i1,
-                     zisa::int_t j0,
-                     zisa::int_t j1);
+  RandomVariable<real_t> uniform_;
 };
 
 template <>
@@ -82,7 +77,7 @@ public:
   template <typename RNG>
   BrownianMotion(const RandomVariable<real_t> &hurst, RNG &rng)
       : hurst_(hurst),
-        normal_(std::make_shared<Normal<real_t, RNG>>(0, 1, rng)) {}
+        uniform_(std::make_shared<Uniform<real_t, RNG>>(-1, 1, rng)) {}
   BrownianMotion(const BrownianMotion &) = default;
   BrownianMotion(BrownianMotion &&) = default;
 
@@ -98,15 +93,7 @@ protected:
 
 private:
   RandomVariable<real_t> hurst_;
-  RandomVariable<real_t> normal_;
-  void generate_step(const zisa::array_view<real_t, 3> &u,
-                     real_t H,
-                     zisa::int_t i0,
-                     zisa::int_t i1,
-                     zisa::int_t j0,
-                     zisa::int_t j1,
-                     zisa::int_t k0,
-                     zisa::int_t k1);
+  RandomVariable<real_t> uniform_;
 };
 
 }
