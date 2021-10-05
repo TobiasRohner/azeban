@@ -3,8 +3,8 @@
 
 #include "initializer.hpp"
 #include <azeban/random/normal.hpp>
-#include <azeban/random/uniform.hpp>
 #include <azeban/random/random_variable.hpp>
+#include <azeban/random/uniform.hpp>
 
 namespace azeban {
 

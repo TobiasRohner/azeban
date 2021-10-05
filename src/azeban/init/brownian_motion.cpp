@@ -60,33 +60,37 @@ void BrownianMotion<1>::generate_step(const zisa::array_view<real_t, 1> &u,
 void BrownianMotion<2>::do_initialize(const zisa::array_view<real_t, 3> &u) {
   const zisa::int_t N = u.shape(1);
   auto u_hat = zisa::array<complex_t, 3>(zisa::shape_t<3>(2, N, N / 2 + 1),
-                                      u.memory_location());
+                                         u.memory_location());
   auto fft = make_fft<2>(u_hat, u);
   initialize(u_hat);
   fft->backward();
 }
 
-void BrownianMotion<2>::do_initialize(const zisa::array_view<complex_t, 3> &u_hat) {
+void BrownianMotion<2>::do_initialize(
+    const zisa::array_view<complex_t, 3> &u_hat) {
   const auto init = [&](auto &&u_hat_, real_t H) {
     const zisa::int_t N = u_hat_.shape(1);
     const zisa::int_t N_fourier = N / 2 + 1;
-    for (int d = 0 ; d < 2 ; ++d) {
+    for (int d = 0; d < 2; ++d) {
       u_hat_(d, 0, 0) = 0;
-      for (zisa::int_t k1 = 0 ; k1 < N_fourier ; ++k1) {
-	for (zisa::int_t k2 = 0 ; k2 < N_fourier ; ++k2) {
-	  if (k1 == 0 && k2 == 0) {
-	    continue;
-	  }
-	  const real_t cc = uniform_.get();
-	  const real_t cs = uniform_.get();
-	  const real_t sc = uniform_.get();
-	  const real_t ss = uniform_.get();
-	  const real_t fac = static_cast<real_t>(N * N) / zisa::pow(4 * zisa::pi * zisa::pi * (k1 * k1 + k2 * k2), (H + 1) / 2);
-	  u_hat_(d, k1, k2) = fac * complex_t(cc - ss, cs + sc);
-	  if (k1 > 0) {
-	    u_hat_(d, N - k1, k2) = fac * complex_t(cc + ss, cs - sc);
-	  }
-	}
+      for (zisa::int_t k1 = 0; k1 < N_fourier; ++k1) {
+        for (zisa::int_t k2 = 0; k2 < N_fourier; ++k2) {
+          if (k1 == 0 && k2 == 0) {
+            continue;
+          }
+          const real_t cc = uniform_.get();
+          const real_t cs = uniform_.get();
+          const real_t sc = uniform_.get();
+          const real_t ss = uniform_.get();
+          const real_t fac
+              = static_cast<real_t>(N * N)
+                / zisa::pow(4 * zisa::pi * zisa::pi * (k1 * k1 + k2 * k2),
+                            (H + 1) / 2);
+          u_hat_(d, k1, k2) = fac * complex_t(cc - ss, cs + sc);
+          if (k1 > 0) {
+            u_hat_(d, N - k1, k2) = fac * complex_t(cc + ss, cs - sc);
+          }
+        }
       }
     }
   };
@@ -94,7 +98,8 @@ void BrownianMotion<2>::do_initialize(const zisa::array_view<complex_t, 3> &u_ha
   if (u_hat.memory_location() == zisa::device_type::cpu) {
     init(u_hat, H);
   } else if (u_hat.memory_location() == zisa::device_type::cuda) {
-    auto h_u_hat = zisa::array<complex_t, 3>(u_hat.shape(), zisa::device_type::cpu);
+    auto h_u_hat
+        = zisa::array<complex_t, 3>(u_hat.shape(), zisa::device_type::cpu);
     init(h_u_hat, H);
     zisa::copy(u_hat, h_u_hat);
   } else {
@@ -105,45 +110,56 @@ void BrownianMotion<2>::do_initialize(const zisa::array_view<complex_t, 3> &u_ha
 void BrownianMotion<3>::do_initialize(const zisa::array_view<real_t, 4> &u) {
   const zisa::int_t N = u.shape(1);
   auto u_hat = zisa::array<complex_t, 4>(zisa::shape_t<4>(3, N, N, N / 2 + 1),
-                                      u.memory_location());
+                                         u.memory_location());
   auto fft = make_fft<3>(u_hat, u);
   initialize(u_hat);
   fft->backward();
 }
 
-void BrownianMotion<3>::do_initialize(const zisa::array_view<complex_t, 4> &u_hat) {
+void BrownianMotion<3>::do_initialize(
+    const zisa::array_view<complex_t, 4> &u_hat) {
   const auto init = [&](auto &&u_hat_, real_t H) {
     const zisa::int_t N = u_hat_.shape(1);
     const zisa::int_t N_fourier = N / 2 + 1;
-    for (int d = 0 ; d < 3 ; ++d) {
+    for (int d = 0; d < 3; ++d) {
       u_hat_(d, 0, 0, 0) = 0;
-      for (zisa::int_t k1 = 0 ; k1 < N_fourier ; ++k1) {
-	for (zisa::int_t k2 = 0 ; k2 < N_fourier ; ++k2) {
-	  for (zisa::int_t k3 = 0 ; k3 < N_fourier ; ++k3) {
-	    if (k1 == 0 && k2 == 0 && k3 == 0) {
-	      continue;
-	    }
-	    const real_t ccc = uniform_.get();
-	    const real_t ccs = uniform_.get();
-	    const real_t csc = uniform_.get();
-	    const real_t css = uniform_.get();
-	    const real_t scc = uniform_.get();
-	    const real_t scs = uniform_.get();
-	    const real_t ssc = uniform_.get();
-	    const real_t sss = uniform_.get();
-	    const real_t fac = static_cast<real_t>(N * N * N) / zisa::pow(4 * zisa::pi * zisa::pi * (k1 * k1 + k2 * k2 + k3 * k3), (H + 1) / 2);
-	    u_hat_(d, k1, k2, k3) = fac * complex_t(ccc - css - scs - ssc, ccs + csc + scc - sss);
-	    if (k2 > 0) {
-	      u_hat_(d, k1, N-k2, k3) = fac * complex_t(ccc + css - scs + ssc, ccs - csc + scc + sss);
-	    }
-	    if (k1 > 0) {
-	      u_hat_(d, N-k1, k2, k3) = fac * complex_t(ccc - css + scs + ssc, ccs + csc - scc + sss);
-	    }
-	    if (k1 > 0 && k2 > 0) {
-	      u_hat_(d, N-k1, N-k2, k3) = fac * complex_t(ccc + css + scs - ssc, ccs - csc - scc - sss);
-	    }
-	  }
-	}
+      for (zisa::int_t k1 = 0; k1 < N_fourier; ++k1) {
+        for (zisa::int_t k2 = 0; k2 < N_fourier; ++k2) {
+          for (zisa::int_t k3 = 0; k3 < N_fourier; ++k3) {
+            if (k1 == 0 && k2 == 0 && k3 == 0) {
+              continue;
+            }
+            const real_t ccc = uniform_.get();
+            const real_t ccs = uniform_.get();
+            const real_t csc = uniform_.get();
+            const real_t css = uniform_.get();
+            const real_t scc = uniform_.get();
+            const real_t scs = uniform_.get();
+            const real_t ssc = uniform_.get();
+            const real_t sss = uniform_.get();
+            const real_t fac = static_cast<real_t>(N * N * N)
+                               / zisa::pow(4 * zisa::pi * zisa::pi
+                                               * (k1 * k1 + k2 * k2 + k3 * k3),
+                                           (H + 1) / 2);
+            u_hat_(d, k1, k2, k3)
+                = fac * complex_t(ccc - css - scs - ssc, ccs + csc + scc - sss);
+            if (k2 > 0) {
+              u_hat_(d, k1, N - k2, k3)
+                  = fac
+                    * complex_t(ccc + css - scs + ssc, ccs - csc + scc + sss);
+            }
+            if (k1 > 0) {
+              u_hat_(d, N - k1, k2, k3)
+                  = fac
+                    * complex_t(ccc - css + scs + ssc, ccs + csc - scc + sss);
+            }
+            if (k1 > 0 && k2 > 0) {
+              u_hat_(d, N - k1, N - k2, k3)
+                  = fac
+                    * complex_t(ccc + css + scs - ssc, ccs - csc - scc - sss);
+            }
+          }
+        }
       }
     }
   };
@@ -151,7 +167,8 @@ void BrownianMotion<3>::do_initialize(const zisa::array_view<complex_t, 4> &u_ha
   if (u_hat.memory_location() == zisa::device_type::cpu) {
     init(u_hat, H);
   } else if (u_hat.memory_location() == zisa::device_type::cuda) {
-    auto h_u_hat = zisa::array<complex_t, 4>(u_hat.shape(), zisa::device_type::cpu);
+    auto h_u_hat
+        = zisa::array<complex_t, 4>(u_hat.shape(), zisa::device_type::cpu);
     init(h_u_hat, H);
     zisa::copy(u_hat, h_u_hat);
   } else {
