@@ -25,13 +25,15 @@ def parse_data(fname):
 
 def plot_data(fname):
     data = parse_data(fname)
-    plt.figure(figsize=(10, 10))
+    plt.figure(figsize=(5, 5))
     for i in range(len(data['k'])):
         N = len(data['data'][i])
         col = 'C{}'.format(i)
         t = np.asarray([t*data['dt'] for t in range(1, N+1)])
         plt.semilogy(t, [d[0] for d in data['data'][i]], label='k = ({0}, {0})'.format(data['k'][i]), color=col)
-        plt.semilogy(t, np.exp(data['nu'][i] * t), label='exp({}*t)'.format(data['nu'][i]), color=col, linestyle='--')
+        #plt.semilogy(t, np.exp(data['nu'][i] * t), label='exp({}*t)'.format(data['nu'][i]), color=col, linestyle='--')
+    plt.xlabel('t')
+    plt.ylabel('\\rho')
     plt.title(os.path.splitext(os.path.basename(fname))[0])
     plt.legend()
     plt.grid()
@@ -42,5 +44,5 @@ def plot_data(fname):
 if __name__ == '__main__':
     for method in ['Step1D_cutoff_0', 'Step1D_cutoff_sqrt(N)', 'Step1D_cutoff_N', 'SmoothCutoff1D_cutoff_1', 'SmoothCutoff1D_cutoff_sqrt(N)', 'SmoothCutoff1D_cutoff_N', 'Quadratic']:
         for N in [16, 32, 64, 128, 256]:
-            fname = os.path.join(PATH, '../results', 'heat_{}_N{}.txt'.format(method, N))
+            fname = 'heat_{}_N{}.txt'.format(method, N)
             plot_data(fname)
