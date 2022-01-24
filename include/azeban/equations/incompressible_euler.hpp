@@ -1,18 +1,18 @@
-/* 
+/*
  * This file is part of azeban (https://github.com/TobiasRohner/azeban).
  * Copyright (c) 2021 Tobias Rohner.
- * 
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
+ * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #ifndef INCOMPRESSIBLE_EULER_H_
@@ -22,6 +22,7 @@
 #include "equation.hpp"
 #include "incompressible_euler_functions.hpp"
 #include <azeban/config.hpp>
+#include <azeban/forcing/no_forcing.hpp>
 #include <azeban/grid.hpp>
 #include <azeban/operations/convolve.hpp>
 #include <azeban/operations/fft.hpp>
@@ -29,10 +30,11 @@
 #include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
 #endif
 #include <azeban/profiler.hpp>
+#include <type_traits>
 
 namespace azeban {
 
-template <int Dim, typename SpectralViscosity>
+template <int Dim, typename SpectralViscosity, typename Forcing = NoForcing>
 class IncompressibleEuler final : public Equation<Dim> {
   using super = Equation<Dim>;
   static_assert(Dim == 2 || Dim == 3,
@@ -42,11 +44,17 @@ public:
   using scalar_t = complex_t;
   static constexpr int dim_v = Dim;
 
+  template <bool enable = std::is_same_v<Forcing, NoForcing>,
+            typename = std::enable_if_t<enable>>
   IncompressibleEuler(const Grid<dim_v> &grid,
                       const SpectralViscosity &visc,
                       zisa::device_type device,
                       bool has_tracer = false)
-      : super(grid), device_(device), visc_(visc), has_tracer_(has_tracer) {
+      : super(grid),
+        device_(device),
+        visc_(visc),
+        forcing_(),
+        has_tracer_(has_tracer) {
     u_hat_ = grid.make_array_fourier_pad(dim_v + (has_tracer ? 1 : 0), device);
     u_ = grid.make_array_phys_pad(dim_v + (has_tracer ? 1 : 0), device);
     B_hat_ = grid.make_array_fourier_pad(
@@ -93,6 +101,7 @@ private:
   std::shared_ptr<FFT<dim_v>> fft_u_;
   std::shared_ptr<FFT<dim_v>> fft_B_;
   SpectralViscosity visc_;
+  Forcing forcing_;
   bool has_tracer_;
 
   template <typename Scalar>
@@ -214,12 +223,15 @@ private:
         const real_t k1 = 2 * zisa::pi * i_;
         const real_t k2 = 2 * zisa::pi * j;
         const real_t absk2 = k1 * k1 + k2 * k2;
+        complex_t force1, force2;
+        forcing_(0, k1, k2, &force1, &force2);
         complex_t L1_hat, L2_hat;
         // clang-format off
         incompressible_euler_2d_compute_L(
             k1, k2,
             absk2,
             stride_B, idx_B, B_hat_.raw(),
+	    force1, force2,
             &L1_hat, &L2_hat
         );
         // clang-format on
@@ -267,12 +279,15 @@ private:
           const real_t k2 = 2 * zisa::pi * j_;
           const real_t k3 = 2 * zisa::pi * k;
           const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
+          complex_t force1, force2, force3;
+          forcing_(0, k1, k2, k3, &force1, &force2, &force3);
           complex_t L1_hat, L2_hat, L3_hat;
           // clang-format off
           incompressible_euler_3d_compute_L(
               k1, k2, k3,
               absk2,
               stride_B, idx_B, B_hat_.raw(),
+	      force1, force2, force3,
               &L1_hat, &L2_hat, &L3_hat
           );
 
@@ -308,15 +323,15 @@ private:
     else if (device_ == zisa::device_type::cuda) {
       if (has_tracer_) {
         if constexpr (dim_v == 2) {
-          incompressible_euler_2d_tracer_cuda(B_hat_, u_hat, visc_);
+          incompressible_euler_2d_tracer_cuda(B_hat_, u_hat, visc_, forcing_);
         } else {
-          incompressible_euler_3d_tracer_cuda(B_hat_, u_hat, visc_);
+          incompressible_euler_3d_tracer_cuda(B_hat_, u_hat, visc_, forcing_);
         }
       } else {
         if constexpr (dim_v == 2) {
-          incompressible_euler_2d_cuda(B_hat_, u_hat, visc_);
+          incompressible_euler_2d_cuda(B_hat_, u_hat, visc_, forcing_);
         } else {
-          incompressible_euler_3d_cuda(B_hat_, u_hat, visc_);
+          incompressible_euler_3d_cuda(B_hat_, u_hat, visc_, forcing_);
         }
       }
     }

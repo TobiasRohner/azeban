@@ -1,18 +1,18 @@
-/* 
+/*
  * This file is part of azeban (https://github.com/TobiasRohner/azeban).
  * Copyright (c) 2021 Tobias Rohner.
- * 
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
+ * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #ifndef INCOMPRESSIBLE_EULER_MPI_H_
@@ -178,8 +178,16 @@ private:
         const real_t k2 = 2 * zisa::pi * j_;
         const real_t absk2 = k1 * k1 + k2 * k2;
         complex_t L1_hat, L2_hat;
-        incompressible_euler_2d_compute_L(
-            k2, k1, absk2, stride_B, idx_B, B_hat_.raw(), &L1_hat, &L2_hat);
+        incompressible_euler_2d_compute_L(k2,
+                                          k1,
+                                          absk2,
+                                          stride_B,
+                                          idx_B,
+                                          B_hat_.raw(),
+                                          0,
+                                          0,
+                                          &L1_hat,
+                                          &L2_hat);
         const real_t v = visc_.eval(zisa::sqrt(absk2));
         u_hat(0, i, j) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j);
         u_hat(1, i, j) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j);
@@ -297,6 +305,9 @@ private:
                                             stride_B,
                                             idx_B,
                                             B_hat_.raw(),
+                                            0,
+                                            0,
+                                            0,
                                             &L1_hat,
                                             &L2_hat,
                                             &L3_hat);

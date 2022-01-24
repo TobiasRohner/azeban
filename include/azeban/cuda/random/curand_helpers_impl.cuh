@@ -2,23 +2,26 @@
 #define AZEBAN_CUDA_RANDOM_CURAND_HELPERS_IMPL_HPP_
 
 #include "curand_helpers.hpp"
-#include <curand_kernel.h>
 #include <azeban/cuda/cuda_check_error.hpp>
+#include <curand_kernel.h>
 #include <zisa/math/basic_functions.hpp>
-
 
 namespace azeban {
 
-template<typename RNG>
-__global__ void curand_init_state_kernel(typename RNGTraits<RNG>::state_t state, size_t N, unsigned long long seed) {
+template <typename RNG>
+__global__ void curand_init_state_kernel(typename RNGTraits<RNG>::state_t state,
+                                         size_t N,
+                                         unsigned long long seed) {
   const unsigned long long id = threadIdx.x + blockIdx.x * blockDim.x;
   if (id < N) {
     curand_init(seed, id, 0, &state[id]);
   }
 }
 
-template<typename RNG, typename>
-void curand_allocate_state(typename RNGTraits<RNG>::state_t &state, size_t N, unsigned long long seed) {
+template <typename RNG, typename>
+void curand_allocate_state(typename RNGTraits<RNG>::state_t &state,
+                           size_t N,
+                           unsigned long long seed) {
   using state_t = typename RNGTraits<RNG>::state_t;
   const auto err = cudaMalloc(&state, N * sizeof(state_t));
   cudaCheckError(err);
@@ -29,12 +32,11 @@ void curand_allocate_state(typename RNGTraits<RNG>::state_t &state, size_t N, un
   cudaDeviceSynchronize();
 }
 
-template<typename RNG, typename>
+template <typename RNG, typename>
 void curand_free_state(typename RNGTraits<RNG>::state_t &state) {
   cudaFree(state);
 }
 
 }
-
 
 #endif
