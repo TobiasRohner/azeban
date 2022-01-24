@@ -7,3 +7,4 @@ target_sources(azeban_cuda_obj
 endif()
 add_subdirectory(equations)
 add_subdirectory(operations)
+add_subdirectory(random)

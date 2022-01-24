@@ -24,11 +24,13 @@
 #define cudaCheckError(err)                                                    \
   azeban::internal::cudaCheckErrorImpl(err, __FILE__, __LINE__)
 
-namespace azeban::internal {
+namespace azeban {
+namespace internal {
 
 void cudaCheckErrorImpl(cudaError err, const char *file, int line);
 void cudaCheckErrorImpl(cufftResult err, const char *file, int line);
 
+}
 }
 
 #endif
