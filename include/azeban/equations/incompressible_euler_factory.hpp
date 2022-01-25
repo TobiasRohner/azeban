@@ -24,15 +24,17 @@
 
 namespace azeban {
 
-template <int Dim, typename SpectralViscosity>
+template <int Dim, typename SpectralViscosity, typename Forcing>
 std::shared_ptr<Equation<Dim>>
 make_incompressible_euler(const Grid<Dim> &grid,
                           const SpectralViscosity &visc,
+                          Forcing &forcing,
                           bool has_tracer,
                           zisa::device_type device) {
   if constexpr (Dim == 2 || Dim == 3) {
-    return std::make_shared<IncompressibleEuler<Dim, SpectralViscosity>>(
-        grid, visc, device, has_tracer);
+    return std::make_shared<
+        IncompressibleEuler<Dim, SpectralViscosity, Forcing>>(
+        grid, visc, forcing, device, has_tracer);
   } else {
     ZISA_UNUSED(grid);
     ZISA_UNUSED(visc);

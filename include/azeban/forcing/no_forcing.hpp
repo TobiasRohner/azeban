@@ -5,17 +5,17 @@ namespace azeban {
 
 class NoForcing {
 public:
-  ANY_DEVICE_INLINE void operator()(real_t t, zisa::int_t, complex_t *f1) {
+  ANY_DEVICE_INLINE void operator()(real_t, zisa::int_t, complex_t *f1) {
     *f1 = 0;
   }
 
   ANY_DEVICE_INLINE void
-  operator()(real_t t, zisa::int_t, zisa::int_t, complex_t *f1, complex_t *f2) {
+  operator()(real_t, zisa::int_t, zisa::int_t, complex_t *f1, complex_t *f2) {
     *f1 = 0;
     *f2 = 0;
   }
 
-  ANY_DEVICE_INLINE void operator()(real_t t,
+  ANY_DEVICE_INLINE void operator()(real_t,
                                     zisa::int_t,
                                     zisa::int_t,
                                     zisa::int_t,
@@ -26,6 +26,8 @@ public:
     *f2 = 0;
     *f3 = 0;
   }
+
+  void destroy() {}
 };
 
 }

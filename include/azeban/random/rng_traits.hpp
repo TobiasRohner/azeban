@@ -90,43 +90,43 @@ struct RNGTraits<std::random_device> {
 template <>
 struct RNGTraits<curandStateMtgp32_t> {
   static constexpr zisa::device_type location = zisa::device_type::cuda;
-  using state_t = curandStateMtgp32_t *;
+  using state_t = curandStateMtgp32_t;
 };
 
 template <>
 struct RNGTraits<curandStateScrambledSobol64_t> {
   static constexpr zisa::device_type location = zisa::device_type::cuda;
-  using state_t = curandStateScrambledSobol64_t *;
+  using state_t = curandStateScrambledSobol64_t;
 };
 
 template <>
 struct RNGTraits<curandStateSobol64_t> {
   static constexpr zisa::device_type location = zisa::device_type::cuda;
-  using state_t = curandStateSobol64_t *;
+  using state_t = curandStateSobol64_t;
 };
 
 template <>
 struct RNGTraits<curandStateScrambledSobol32_t> {
   static constexpr zisa::device_type location = zisa::device_type::cuda;
-  using state_t = curandStateScrambledSobol32_t *;
+  using state_t = curandStateScrambledSobol32_t;
 };
 
 template <>
 struct RNGTraits<curandStateSobol32_t> {
   static constexpr zisa::device_type location = zisa::device_type::cuda;
-  using state_t = curandStateSobol32_t *;
+  using state_t = curandStateSobol32_t;
 };
 
 template <>
 struct RNGTraits<curandStateMRG32k3a_t> {
   static constexpr zisa::device_type location = zisa::device_type::cuda;
-  using state_t = curandStateMRG32k3a_t *;
+  using state_t = curandStateMRG32k3a_t;
 };
 
 template <>
 struct RNGTraits<curandStateXORWOW_t> {
   static constexpr zisa::device_type location = zisa::device_type::cuda;
-  using state_t = curandStateXORWOW_t *;
+  using state_t = curandStateXORWOW_t;
 };
 
 #endif

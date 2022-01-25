@@ -50,10 +50,16 @@ public:
                       const SpectralViscosity &visc,
                       zisa::device_type device,
                       bool has_tracer = false)
+      : IncompressibleEuler(grid, visc, Forcing{}, device, has_tracer) {}
+  IncompressibleEuler(const Grid<dim_v> &grid,
+                      const SpectralViscosity &visc,
+                      const Forcing &forcing,
+                      zisa::device_type device,
+                      bool has_tracer = false)
       : super(grid),
         device_(device),
         visc_(visc),
-        forcing_(),
+        forcing_(std::move(forcing)),
         has_tracer_(has_tracer) {
     u_hat_ = grid.make_array_fourier_pad(dim_v + (has_tracer ? 1 : 0), device);
     u_ = grid.make_array_phys_pad(dim_v + (has_tracer ? 1 : 0), device);

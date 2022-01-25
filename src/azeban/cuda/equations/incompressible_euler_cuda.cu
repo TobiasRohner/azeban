@@ -59,9 +59,32 @@ AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_COMPUTE_B_CUDA(3)
       FORCING &);
 
 AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Step1D, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Step1D,
+                                             WhiteNoise<curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Step1D,
+                                             WhiteNoise<curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Step1D, WhiteNoise<std::mt19937>)
 AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(SmoothCutoff1D, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(SmoothCutoff1D,
+                                             WhiteNoise<curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(SmoothCutoff1D,
+                                             WhiteNoise<curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(SmoothCutoff1D,
+                                             WhiteNoise<std::mt19937>)
 AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Quadratic, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Quadratic,
+                                             WhiteNoise<curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Quadratic,
+                                             WhiteNoise<curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Quadratic,
+                                             WhiteNoise<std::mt19937>)
 AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(NoViscosity, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(NoViscosity,
+                                             WhiteNoise<curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(NoViscosity,
+                                             WhiteNoise<curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(NoViscosity,
+                                             WhiteNoise<std::mt19937>)
 
 #undef AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA
 

@@ -21,6 +21,7 @@
 #include <azeban/config.hpp>
 #include <azeban/equations/spectral_viscosity.hpp>
 #include <azeban/forcing/no_forcing.hpp>
+#include <azeban/forcing/white_noise.hpp>
 #include <azeban/grid.hpp>
 #include <zisa/memory/array_view.hpp>
 
@@ -89,9 +90,32 @@ void incompressible_euler_3d_tracer_cuda(
       FORCING &);
 
 AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Step1D, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Step1D,
+                                             WhiteNoise<curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Step1D,
+                                             WhiteNoise<curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Step1D, WhiteNoise<std::mt19937>)
 AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(SmoothCutoff1D, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(SmoothCutoff1D,
+                                             WhiteNoise<curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(SmoothCutoff1D,
+                                             WhiteNoise<curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(SmoothCutoff1D,
+                                             WhiteNoise<std::mt19937>)
 AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Quadratic, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Quadratic,
+                                             WhiteNoise<curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Quadratic,
+                                             WhiteNoise<curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Quadratic,
+                                             WhiteNoise<std::mt19937>)
 AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(NoViscosity, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(NoViscosity,
+                                             WhiteNoise<curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(NoViscosity,
+                                             WhiteNoise<curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(NoViscosity,
+                                             WhiteNoise<std::mt19937>)
 
 #undef AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA
 

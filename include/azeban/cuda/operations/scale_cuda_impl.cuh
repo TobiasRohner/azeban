@@ -37,8 +37,8 @@ void scale_cuda(const Scalar &a, const zisa::array_view<Scalar, 1> &x) {
   const int block_dims
       = zisa::div_up(static_cast<int>(x.shape(0)), thread_dims);
   scale_cuda_kernel<<<block_dims, thread_dims>>>(a, x);
-  ZISA_CHECK_CUDA_DEBUG;
   cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 }

@@ -364,8 +364,8 @@ void incompressible_euler_compute_B_cuda<2>(
       1);
   incompressible_euler_compute_B_cuda_kernel<2>
       <<<block_dims, thread_dims>>>(B, u, grid);
-  ZISA_CHECK_CUDA_DEBUG;
   cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 template <>
@@ -385,8 +385,8 @@ void incompressible_euler_compute_B_cuda<3>(
       zisa::div_up(static_cast<int>(u.shape(3)), thread_dims.z));
   incompressible_euler_compute_B_cuda_kernel<3>
       <<<block_dims, thread_dims>>>(B, u, grid);
-  ZISA_CHECK_CUDA_DEBUG;
   cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 template <int Dim>
@@ -412,8 +412,8 @@ void incompressible_euler_compute_B_tracer_cuda<2>(
       1);
   incompressible_euler_compute_B_tracer_cuda_kernel<2>
       <<<block_dims, thread_dims>>>(B, u, grid);
-  ZISA_CHECK_CUDA_DEBUG;
   cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 template <>
@@ -433,8 +433,8 @@ void incompressible_euler_compute_B_tracer_cuda<3>(
       zisa::div_up(static_cast<int>(u.shape(3)), thread_dims.z));
   incompressible_euler_compute_B_tracer_cuda_kernel<3>
       <<<block_dims, thread_dims>>>(B, u, grid);
-  ZISA_CHECK_CUDA_DEBUG;
   cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 template <typename SpectralViscosity, typename Forcing>
@@ -454,8 +454,8 @@ void incompressible_euler_2d_cuda(
 
   incompressible_euler_2d_cuda_kernel<<<block_dims, thread_dims>>>(
       B_hat, u_hat, visc, forcing);
-  ZISA_CHECK_CUDA_DEBUG;
   cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 template <typename SpectralViscosity, typename Forcing>
@@ -473,8 +473,8 @@ void incompressible_euler_3d_cuda(
       zisa::div_up(static_cast<int>(u_hat.shape(3)), thread_dims.z));
   incompressible_euler_3d_cuda_kernel<<<block_dims, thread_dims>>>(
       B_hat, u_hat, visc, forcing);
-  ZISA_CHECK_CUDA_DEBUG;
   cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 template <typename SpectralViscosity, typename Forcing>
@@ -494,8 +494,8 @@ void incompressible_euler_2d_tracer_cuda(
 
   incompressible_euler_2d_tracer_cuda_kernel<<<block_dims, thread_dims>>>(
       B_hat, u_hat, visc, forcing);
-  ZISA_CHECK_CUDA_DEBUG;
   cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 template <typename SpectralViscosity, typename Forcing>
@@ -513,8 +513,8 @@ void incompressible_euler_3d_tracer_cuda(
       zisa::div_up(static_cast<int>(u_hat.shape(3)), thread_dims.z));
   incompressible_euler_3d_tracer_cuda_kernel<<<block_dims, thread_dims>>>(
       B_hat, u_hat, visc, forcing);
-  ZISA_CHECK_CUDA_DEBUG;
   cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 }

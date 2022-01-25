@@ -47,8 +47,8 @@ void burgers_cuda(const zisa::array_view<complex_t, 2> &u,
   const int block_dims
       = zisa::div_up(static_cast<int>(u.shape(1)), thread_dims);
   burgers_cuda_kernel<<<block_dims, thread_dims>>>(u, u_squared, visc);
-  ZISA_CHECK_CUDA_DEBUG;
   cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 }
