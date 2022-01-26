@@ -4,7 +4,6 @@
 #include "curand_helpers.hpp"
 #include <azeban/cuda/cuda_check_error.hpp>
 #include <curand_kernel.h>
-#include <iostream>
 #include <zisa/math/basic_functions.hpp>
 
 namespace azeban {
@@ -26,14 +25,12 @@ void curand_allocate_state(typename RNGTraits<RNG>::state_t **state,
                            unsigned long long seed) {
   using state_t = typename RNGTraits<RNG>::state_t;
   const auto err = cudaMalloc(state, N * sizeof(state_t));
-  std::cout << "state = " << *state << std::endl;
   cudaCheckError(err);
   const dim3 thread_dims(1024, 1, 1);
   const dim3 block_dims(zisa::div_up(static_cast<int>(N), thread_dims.x), 1, 1);
   curand_init_state_kernel<RNG><<<block_dims, thread_dims>>>(*state, N, seed);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
-  std::cout << "state = " << *state << std::endl;
 }
 
 template <typename RNG, typename>

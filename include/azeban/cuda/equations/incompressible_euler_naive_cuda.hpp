@@ -34,21 +34,25 @@ void incompressible_euler_naive_compute_B_cuda(
 template <typename SpectralViscosity>
 void incompressible_euler_naive_2d_cuda(
     const zisa::array_const_view<complex_t, 3> &B_hat,
-    const zisa::array_view<complex_t, 3> &u_hat,
+    const zisa::array_const_view<complex_t, 3> &u_hat,
+    const zisa::array_view<complex_t, 3> &dudt_hat,
     const SpectralViscosity &visc);
 
 template <typename SpectralViscosity>
 void incompressible_euler_naive_3d_cuda(
     const zisa::array_const_view<complex_t, 4> &B_hat,
-    const zisa::array_view<complex_t, 4> &u_hat,
+    const zisa::array_const_view<complex_t, 4> &u_hat,
+    const zisa::array_view<complex_t, 4> &dudt_hat,
     const SpectralViscosity &visc);
 
 #define AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_NAIVE_CUDA(TYPE)               \
   extern template void incompressible_euler_naive_2d_cuda<TYPE>(               \
       const zisa::array_const_view<complex_t, 3> &,                            \
+      const zisa::array_const_view<complex_t, 3> &,                            \
       const zisa::array_view<complex_t, 3> &,                                  \
       const TYPE &);                                                           \
   extern template void incompressible_euler_naive_3d_cuda<TYPE>(               \
+      const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_view<complex_t, 4> &,                                  \
       const TYPE &);

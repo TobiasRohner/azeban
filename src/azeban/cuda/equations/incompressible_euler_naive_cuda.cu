@@ -34,9 +34,11 @@ AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_NAIVE_COMPUTE_B_CUDA(3)
 #define AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_NAIVE_CUDA(TYPE)               \
   template void incompressible_euler_naive_2d_cuda<TYPE>(                      \
       const zisa::array_const_view<complex_t, 3> &,                            \
+      const zisa::array_const_view<complex_t, 3> &,                            \
       const zisa::array_view<complex_t, 3> &,                                  \
       const TYPE &);                                                           \
   template void incompressible_euler_naive_3d_cuda<TYPE>(                      \
+      const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_view<complex_t, 4> &,                                  \
       const TYPE &);

@@ -37,7 +37,9 @@ public:
   Equation &operator=(Equation &&) = default;
 
   // Replaces the contents of u with its time derivative
-  virtual void dudt(const zisa::array_view<complex_t, dim_v + 1> &u) = 0;
+  virtual void dudt(const zisa::array_view<complex_t, dim_v + 1> &dudt,
+                    const zisa::array_const_view<complex_t, dim_v + 1> &u)
+      = 0;
 
   // const Grid<Dim> &grid() const { return grid_; }
   virtual int n_vars() const = 0;

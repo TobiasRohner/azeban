@@ -22,7 +22,7 @@
     },
     "forcing": {
       "type": "White Noise",
-      "sigma": 100
+      "sigma": 10
     }
   },
   "timestepper": {

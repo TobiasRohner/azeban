@@ -77,7 +77,10 @@ public:
   IncompressibleEuler &operator=(IncompressibleEuler &&) = default;
 
   virtual void
-  dudt(const zisa::array_view<complex_t, dim_v + 1> &u_hat) override {
+  dudt(const zisa::array_view<complex_t, dim_v + 1> &dudt_hat,
+       const zisa::array_const_view<complex_t, dim_v + 1> &u_hat) override {
+    LOG_ERR_IF(dudt_hat.shape(0) != u_hat_.shape(0),
+               "Wrong number of variables");
     LOG_ERR_IF(u_hat.shape(0) != u_hat_.shape(0), "Wrong number of variables");
     AZEBAN_PROFILE_START("IncompressibleEuler::dudt");
     for (int i = 0; i < n_vars(); ++i) {
@@ -89,7 +92,7 @@ public:
     fft_u_->backward();
     computeB();
     fft_B_->forward();
-    computeDudt(u_hat);
+    computeDudt(dudt_hat, u_hat);
     AZEBAN_PROFILE_STOP("IncompressibleEuler::dudt");
   }
 
@@ -216,7 +219,9 @@ private:
     AZEBAN_PROFILE_STOP("IncompressibleEuler::computeB");
   }
 
-  void computeDudt_cpu_2d(const zisa::array_view<complex_t, Dim + 1> &u_hat) {
+  void
+  computeDudt_cpu_2d(const zisa::array_view<complex_t, Dim + 1> &dudt_hat,
+                     const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
     const unsigned stride_B = B_hat_.shape(1) * B_hat_.shape(2);
 #pragma omp parallel for collapse(2)
     for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
@@ -245,8 +250,8 @@ private:
         );
         // clang-format on
         const real_t v = visc_.eval(zisa::sqrt(absk2));
-        u_hat(0, i, j) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j);
-        u_hat(1, i, j) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j);
+        dudt_hat(0, i, j) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j);
+        dudt_hat(1, i, j) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j);
         if (has_tracer_) {
           complex_t L3_hat;
           // clang-format off
@@ -256,13 +261,15 @@ private:
               &L3_hat
           );
           // clang-format on
-          u_hat(2, i, j) = -L3_hat + v * u_hat(2, i, j);
+          dudt_hat(2, i, j) = -L3_hat + v * u_hat(2, i, j);
         }
       }
     }
   }
 
-  void computeDudt_cpu_3d(const zisa::array_view<complex_t, Dim + 1> &u_hat) {
+  void
+  computeDudt_cpu_3d(const zisa::array_view<complex_t, Dim + 1> &dudt_hat,
+                     const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
     const unsigned stride_B
         = B_hat_.shape(1) * B_hat_.shape(2) * B_hat_.shape(3);
 #pragma omp parallel for collapse(3)
@@ -302,9 +309,9 @@ private:
           );
 
           const real_t v = visc_.eval(zisa::sqrt(absk2));
-          u_hat(0, i, j, k) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j, k);
-          u_hat(1, i, j, k) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j, k);
-          u_hat(2, i, j, k) = absk2 == 0 ? 0 : -L3_hat + v * u_hat(2, i, j, k);
+          dudt_hat(0, i, j, k) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j, k);
+          dudt_hat(1, i, j, k) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j, k);
+          dudt_hat(2, i, j, k) = absk2 == 0 ? 0 : -L3_hat + v * u_hat(2, i, j, k);
           if (has_tracer_) {
             complex_t L4_hat;
             advection_3d(
@@ -312,7 +319,7 @@ private:
                 stride_B, idx_B, B_hat_.raw() + 6 * stride_B,
                 &L4_hat
             );
-            u_hat(3, i, j, k) = -L4_hat + v * u_hat(3, i, j, k);
+            dudt_hat(3, i, j, k) = -L4_hat + v * u_hat(3, i, j, k);
           }
           // clang-format on
         }
@@ -320,28 +327,33 @@ private:
     }
   }
 
-  void computeDudt(const zisa::array_view<complex_t, Dim + 1> &u_hat) {
+  void computeDudt(const zisa::array_view<complex_t, Dim + 1> &dudt_hat,
+                   const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
     AZEBAN_PROFILE_START("IncompressibleEuler::computeDudt");
     if (device_ == zisa::device_type::cpu) {
       if constexpr (dim_v == 2) {
-        computeDudt_cpu_2d(u_hat);
+        computeDudt_cpu_2d(dudt_hat, u_hat);
       } else {
-        computeDudt_cpu_3d(u_hat);
+        computeDudt_cpu_3d(dudt_hat, u_hat);
       }
     }
 #if ZISA_HAS_CUDA
     else if (device_ == zisa::device_type::cuda) {
       if (has_tracer_) {
         if constexpr (dim_v == 2) {
-          incompressible_euler_2d_tracer_cuda(B_hat_, u_hat, visc_, forcing_);
+          incompressible_euler_2d_tracer_cuda(
+              B_hat_, u_hat, dudt_hat, visc_, forcing_);
         } else {
-          incompressible_euler_3d_tracer_cuda(B_hat_, u_hat, visc_, forcing_);
+          incompressible_euler_3d_tracer_cuda(
+              B_hat_, u_hat, dudt_hat, visc_, forcing_);
         }
       } else {
         if constexpr (dim_v == 2) {
-          incompressible_euler_2d_cuda(B_hat_, u_hat, visc_, forcing_);
+          incompressible_euler_2d_cuda(
+              B_hat_, u_hat, dudt_hat, visc_, forcing_);
         } else {
-          incompressible_euler_3d_cuda(B_hat_, u_hat, visc_, forcing_);
+          incompressible_euler_3d_cuda(
+              B_hat_, u_hat, dudt_hat, visc_, forcing_);
         }
       }
     }

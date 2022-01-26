@@ -53,7 +53,8 @@ public:
   Burgers &operator=(Burgers &&) = default;
 
   virtual void
-  dudt(const zisa::array_view<scalar_t, dim_v + 1> &u_hat) override {
+  dudt(const zisa::array_view<scalar_t, dim_v + 1> &dudt_hat,
+       const zisa::array_const_view<scalar_t, dim_v + 1> &u_hat) override {
     copy_to_padded(
         zisa::array_view<complex_t, 1>(
             zisa::shape_t<1>(u_hat_.shape(1)), u_hat_.raw(), u_hat_.device()),
@@ -70,12 +71,13 @@ public:
       for (zisa::int_t k = 0; k < u_hat.shape(1); ++k) {
         const real_t k_ = 2 * zisa::pi * k;
         const real_t v = visc_.eval(k_);
-        u_hat[k] = complex_t(0, -k_ / 2) * u_hat_[k] + v * u_hat[k];
+        dudt_hat[k] = complex_t(0, -k_ / 2) * u_hat_[k] + v * u_hat[k];
       }
     }
 #if ZISA_HAS_CUDA
     else if (device_ == zisa::device_type::cuda) {
-      burgers_cuda(u_hat, zisa::array_const_view<complex_t, 2>(u_hat_), visc_);
+      burgers_cuda(
+          dudt_hat, u_hat, zisa::array_const_view<complex_t, 2>(u_hat_), visc_);
     }
 #endif
     else {

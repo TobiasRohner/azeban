@@ -125,7 +125,8 @@ __global__ void incompressible_euler_compute_B_tracer_cuda_kernel<3>(
 template <typename SpectralViscosity, typename Forcing>
 __global__ void
 incompressible_euler_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
-                                    zisa::array_view<complex_t, 3> u_hat,
+                                    zisa::array_const_view<complex_t, 3> u_hat,
+                                    zisa::array_view<complex_t, 3> dudt_hat,
                                     SpectralViscosity visc,
                                     Forcing forcing) {
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -161,9 +162,9 @@ incompressible_euler_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
                                       &L2_hat);
 
     const real_t v = visc.eval(zisa::sqrt(absk2));
-    u_hat[0 * stride_u + idx_u]
+    dudt_hat[0 * stride_u + idx_u]
         = absk2 == 0 ? 0 : -L1_hat + v * u_hat[0 * stride_u + idx_u];
-    u_hat[1 * stride_u + idx_u]
+    dudt_hat[1 * stride_u + idx_u]
         = absk2 == 0 ? 0 : -L2_hat + v * u_hat[1 * stride_u + idx_u];
   }
 }
@@ -171,7 +172,8 @@ incompressible_euler_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
 template <typename SpectralViscosity, typename Forcing>
 __global__ void
 incompressible_euler_3d_cuda_kernel(zisa::array_const_view<complex_t, 4> B_hat,
-                                    zisa::array_view<complex_t, 4> u_hat,
+                                    zisa::array_const_view<complex_t, 4> u_hat,
+                                    zisa::array_view<complex_t, 4> dudt_hat,
                                     SpectralViscosity visc,
                                     Forcing forcing) {
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -220,11 +222,11 @@ incompressible_euler_3d_cuda_kernel(zisa::array_const_view<complex_t, 4> B_hat,
                                       &L3_hat);
 
     const real_t v = visc.eval(zisa::sqrt(absk2));
-    u_hat[0 * stride_u + idx_u]
+    dudt_hat[0 * stride_u + idx_u]
         = absk2 == 0 ? 0 : -L1_hat + v * u_hat[0 * stride_u + idx_u];
-    u_hat[1 * stride_u + idx_u]
+    dudt_hat[1 * stride_u + idx_u]
         = absk2 == 0 ? 0 : -L2_hat + v * u_hat[1 * stride_u + idx_u];
-    u_hat[2 * stride_u + idx_u]
+    dudt_hat[2 * stride_u + idx_u]
         = absk2 == 0 ? 0 : -L3_hat + v * u_hat[2 * stride_u + idx_u];
   }
 }
@@ -232,7 +234,8 @@ incompressible_euler_3d_cuda_kernel(zisa::array_const_view<complex_t, 4> B_hat,
 template <typename SpectralViscosity, typename Forcing>
 __global__ void incompressible_euler_2d_tracer_cuda_kernel(
     zisa::array_const_view<complex_t, 3> B_hat,
-    zisa::array_view<complex_t, 3> u_hat,
+    zisa::array_const_view<complex_t, 3> u_hat,
+    zisa::array_view<complex_t, 3> dudt_hat,
     SpectralViscosity visc,
     Forcing forcing) {
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -269,18 +272,19 @@ __global__ void incompressible_euler_2d_tracer_cuda_kernel(
     advection_2d(k1, k2, stride_B, idx_B, B_hat.raw() + 3 * stride_B, &L3_hat);
 
     const real_t v = visc.eval(zisa::sqrt(absk2));
-    u_hat[0 * stride_u + idx_u]
+    dudt_hat[0 * stride_u + idx_u]
         = absk2 == 0 ? 0 : -L1_hat + v * u_hat[0 * stride_u + idx_u];
-    u_hat[1 * stride_u + idx_u]
+    dudt_hat[1 * stride_u + idx_u]
         = absk2 == 0 ? 0 : -L2_hat + v * u_hat[1 * stride_u + idx_u];
-    u_hat[2 * stride_u + idx_u] = -L3_hat + v * u_hat[2 * stride_u + idx_u];
+    dudt_hat[2 * stride_u + idx_u] = -L3_hat + v * u_hat[2 * stride_u + idx_u];
   }
 }
 
 template <typename SpectralViscosity, typename Forcing>
 __global__ void incompressible_euler_3d_tracer_cuda_kernel(
     zisa::array_const_view<complex_t, 4> B_hat,
-    zisa::array_view<complex_t, 4> u_hat,
+    zisa::array_const_view<complex_t, 4> u_hat,
+    zisa::array_view<complex_t, 4> dudt_hat,
     SpectralViscosity visc,
     Forcing forcing) {
   const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -331,13 +335,13 @@ __global__ void incompressible_euler_3d_tracer_cuda_kernel(
         k1, k2, k3, stride_B, idx_B, B_hat.raw() + 6 * stride_B, &L4_hat);
 
     const real_t v = visc.eval(zisa::sqrt(absk2));
-    u_hat[0 * stride_u + idx_u]
+    dudt_hat[0 * stride_u + idx_u]
         = absk2 == 0 ? 0 : -L1_hat + v * u_hat[0 * stride_u + idx_u];
-    u_hat[1 * stride_u + idx_u]
+    dudt_hat[1 * stride_u + idx_u]
         = absk2 == 0 ? 0 : -L2_hat + v * u_hat[1 * stride_u + idx_u];
-    u_hat[2 * stride_u + idx_u]
+    dudt_hat[2 * stride_u + idx_u]
         = absk2 == 0 ? 0 : -L3_hat + v * u_hat[2 * stride_u + idx_u];
-    u_hat[3 * stride_u + idx_u] = -L4_hat + v * u_hat[3 * stride_u + idx_u];
+    dudt_hat[3 * stride_u + idx_u] = -L4_hat + v * u_hat[3 * stride_u + idx_u];
   }
 }
 
@@ -440,7 +444,8 @@ void incompressible_euler_compute_B_tracer_cuda<3>(
 template <typename SpectralViscosity, typename Forcing>
 void incompressible_euler_2d_cuda(
     const zisa::array_const_view<complex_t, 3> &B_hat,
-    const zisa::array_view<complex_t, 3> &u_hat,
+    const zisa::array_const_view<complex_t, 3> &u_hat,
+    const zisa::array_view<complex_t, 3> &dudt_hat,
     const SpectralViscosity &visc,
     Forcing &forcing) {
   assert(B_hat.memory_location() == zisa::device_type::cuda);
@@ -453,7 +458,7 @@ void incompressible_euler_2d_cuda(
       1);
 
   incompressible_euler_2d_cuda_kernel<<<block_dims, thread_dims>>>(
-      B_hat, u_hat, visc, forcing);
+      B_hat, u_hat, dudt_hat, visc, forcing);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
 }
@@ -461,7 +466,8 @@ void incompressible_euler_2d_cuda(
 template <typename SpectralViscosity, typename Forcing>
 void incompressible_euler_3d_cuda(
     const zisa::array_const_view<complex_t, 4> &B_hat,
-    const zisa::array_view<complex_t, 4> &u_hat,
+    const zisa::array_const_view<complex_t, 4> &u_hat,
+    const zisa::array_view<complex_t, 4> &dudt_hat,
     const SpectralViscosity &visc,
     Forcing &forcing) {
   assert(B_hat.memory_location() == zisa::device_type::cuda);
@@ -472,7 +478,7 @@ void incompressible_euler_3d_cuda(
       zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.y),
       zisa::div_up(static_cast<int>(u_hat.shape(3)), thread_dims.z));
   incompressible_euler_3d_cuda_kernel<<<block_dims, thread_dims>>>(
-      B_hat, u_hat, visc, forcing);
+      B_hat, u_hat, dudt_hat, visc, forcing);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
 }
@@ -480,7 +486,8 @@ void incompressible_euler_3d_cuda(
 template <typename SpectralViscosity, typename Forcing>
 void incompressible_euler_2d_tracer_cuda(
     const zisa::array_const_view<complex_t, 3> &B_hat,
-    const zisa::array_view<complex_t, 3> &u_hat,
+    const zisa::array_const_view<complex_t, 3> &u_hat,
+    const zisa::array_view<complex_t, 3> &dudt_hat,
     const SpectralViscosity &visc,
     Forcing &forcing) {
   assert(B_hat.memory_location() == zisa::device_type::cuda);
@@ -493,7 +500,7 @@ void incompressible_euler_2d_tracer_cuda(
       1);
 
   incompressible_euler_2d_tracer_cuda_kernel<<<block_dims, thread_dims>>>(
-      B_hat, u_hat, visc, forcing);
+      B_hat, u_hat, dudt_hat, visc, forcing);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
 }
@@ -501,7 +508,8 @@ void incompressible_euler_2d_tracer_cuda(
 template <typename SpectralViscosity, typename Forcing>
 void incompressible_euler_3d_tracer_cuda(
     const zisa::array_const_view<complex_t, 4> &B_hat,
-    const zisa::array_view<complex_t, 4> &u_hat,
+    const zisa::array_const_view<complex_t, 4> &u_hat,
+    const zisa::array_view<complex_t, 4> &dudt_hat,
     const SpectralViscosity &visc,
     Forcing &forcing) {
   assert(B_hat.memory_location() == zisa::device_type::cuda);
@@ -512,7 +520,7 @@ void incompressible_euler_3d_tracer_cuda(
       zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.y),
       zisa::div_up(static_cast<int>(u_hat.shape(3)), thread_dims.z));
   incompressible_euler_3d_tracer_cuda_kernel<<<block_dims, thread_dims>>>(
-      B_hat, u_hat, visc, forcing);
+      B_hat, u_hat, dudt_hat, visc, forcing);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
 }

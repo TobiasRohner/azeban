@@ -49,21 +49,12 @@ public:
   integrate(real_t dt,
             const zisa::array_view<complex_t, dim_v + 1> &u) override {
     AZEBAN_PROFILE_START("SSP_RK3::integrate");
-    AZEBAN_PROFILE_START("SSP_RK3::copy");
-    zisa::copy(u1_, u);
-    AZEBAN_PROFILE_STOP("SSP_RK3::copy");
-    equation_->dudt(u1_);
+    equation_->dudt(u1_, u);
     axpby<complex_t, dim_v + 1>(1, u, dt, u1_);
-    AZEBAN_PROFILE_START("SSP_RK3::copy");
-    zisa::copy(u2_, u1_);
-    AZEBAN_PROFILE_STOP("SSP_RK3::copy");
-    equation_->dudt(u2_);
+    equation_->dudt(u2_, u1_);
     axpby<complex_t, dim_v + 1>(1, u1_, dt, u2_);
     axpby<complex_t, dim_v + 1>(3. / 4, u, 1. / 4, u2_);
-    AZEBAN_PROFILE_START("SSP_RK3::copy");
-    zisa::copy(u1_, u2_);
-    AZEBAN_PROFILE_STOP("SSP_RK3::copy");
-    equation_->dudt(u1_);
+    equation_->dudt(u1_, u2_);
     axpby<complex_t, dim_v + 1>(1, u2_, dt, u1_);
     axpby<complex_t, dim_v + 1>(2. / 3, u1_, 1. / 3, u);
     AZEBAN_PROFILE_STOP("SSP_RK3::integrate");

@@ -28,25 +28,27 @@ namespace azeban {
 
 template <typename SpectralViscosity>
 __global__ void
-burgers_cuda_kernel(zisa::array_view<complex_t, 2> u,
+burgers_cuda_kernel(zisa::array_view<complex_t, 2> dudt,
+                    zisa::array_const_view<complex_t, 2> u,
                     zisa::array_const_view<complex_t, 2> u_squared,
                     SpectralViscosity visc) {
   const int k = blockIdx.x * blockDim.x + threadIdx.x;
   if (k < u.shape(1)) {
     const real_t k_ = 2 * zisa::pi * k;
     const real_t v = visc.eval(k_);
-    u[k] = complex_t(0, -k_ / 2) * u_squared[k] + v * u[k];
+    dudt[k] = complex_t(0, -k_ / 2) * u_squared[k] + v * u[k];
   }
 }
 
 template <typename SpectralViscosity>
-void burgers_cuda(const zisa::array_view<complex_t, 2> &u,
+void burgers_cuda(const zisa::array_view<complex_t, 2> &dudt,
+                  const zisa::array_const_view<complex_t, 2> &u,
                   const zisa::array_const_view<complex_t, 2> &u_squared,
                   const SpectralViscosity &visc) {
   const int thread_dims = 1024;
   const int block_dims
       = zisa::div_up(static_cast<int>(u.shape(1)), thread_dims);
-  burgers_cuda_kernel<<<block_dims, thread_dims>>>(u, u_squared, visc);
+  burgers_cuda_kernel<<<block_dims, thread_dims>>>(dudt, u, u_squared, visc);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
 }

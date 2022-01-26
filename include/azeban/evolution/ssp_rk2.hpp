@@ -48,16 +48,15 @@ public:
   integrate(real_t dt,
             const zisa::array_view<complex_t, dim_v + 1> &u) override {
     AZEBAN_PROFILE_START("SSP_RK2::integrate");
-    zisa::copy(dudt_, u);
     zisa::copy(u_star_, u);
-    equation_->dudt(dudt_);
+    equation_->dudt(dudt_, u);
     axpy(complex_t(0.5 * dt),
          zisa::array_const_view<complex_t, dim_v + 1>(dudt_),
          u);
     axpy(complex_t(dt),
          zisa::array_const_view<complex_t, dim_v + 1>(dudt_),
          zisa::array_view<complex_t, dim_v + 1>(u_star_));
-    equation_->dudt(u_star_);
+    equation_->dudt(u_star_, u_star_);
     axpy(complex_t(0.5 * dt),
          zisa::array_const_view<complex_t, dim_v + 1>(u_star_),
          u);

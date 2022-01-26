@@ -59,7 +59,8 @@ public:
   IncompressibleEulerNaive &operator=(IncompressibleEulerNaive &&) = default;
 
   virtual void
-  dudt(const zisa::array_view<complex_t, dim_v + 1> &u_hat) override {
+  dudt(const zisa::array_view<complex_t, dim_v + 1> &dudt_hat,
+       const zisa::array_const_view<complex_t, dim_v + 1> &u_hat) override {
     AZEBAN_PROFILE_START("IncompressibleEulerNaive::dudt");
     for (int i = 0; i < dim_v; ++i) {
       copy_to_padded(
@@ -97,8 +98,8 @@ public:
             const complex_t L2_hat = (0. - (k2 * k1) / absk2) * b1_hat
                                      + (1. - (k2 * k2) / absk2) * b2_hat;
             const real_t v = visc_.eval(zisa::sqrt(absk2));
-            u_hat(0, i, j) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j);
-            u_hat(1, i, j) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j);
+            dudt_hat(0, i, j) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j);
+            dudt_hat(1, i, j) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j);
           }
         }
       } else {
@@ -148,11 +149,11 @@ public:
                                        + (0. - (k3 * k2) / absk2) * b2_hat
                                        + (1. - (k3 * k3) / absk2) * b3_hat;
               const real_t v = visc_.eval(zisa::sqrt(absk2));
-              u_hat(0, i, j, k)
+              dudt_hat(0, i, j, k)
                   = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j, k);
-              u_hat(1, i, j, k)
+              dudt_hat(1, i, j, k)
                   = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j, k);
-              u_hat(2, i, j, k)
+              dudt_hat(2, i, j, k)
                   = absk2 == 0 ? 0 : -L3_hat + v * u_hat(2, i, j, k);
             }
           }
@@ -162,9 +163,9 @@ public:
 #if ZISA_HAS_CUDA
     else if (device_ == zisa::device_type::cuda) {
       if constexpr (dim_v == 2) {
-        incompressible_euler_naive_2d_cuda(B_hat_, u_hat, visc_);
+        incompressible_euler_naive_2d_cuda(B_hat_, u_hat, dudt_hat, visc_);
       } else {
-        incompressible_euler_naive_3d_cuda(B_hat_, u_hat, visc_);
+        incompressible_euler_naive_3d_cuda(B_hat_, u_hat, dudt_hat, visc_);
       }
     }
 #endif

@@ -25,13 +25,15 @@
 namespace azeban {
 
 template <typename SpectralViscosity>
-void burgers_cuda(const zisa::array_view<complex_t, 2> &u,
+void burgers_cuda(const zisa::array_view<complex_t, 2> &dudt,
+                  const zisa::array_const_view<complex_t, 2> &u,
                   const zisa::array_const_view<complex_t, 2> &u_squared,
                   const SpectralViscosity &visc);
 
 #define AZEBAN_INSTANTIATE_BURGERS_CUDA(TYPE)                                  \
   extern template void burgers_cuda<TYPE>(                                     \
       const zisa::array_view<complex_t, 2> &,                                  \
+      const zisa::array_const_view<complex_t, 2> &,                            \
       const zisa::array_const_view<complex_t, 2> &,                            \
       const TYPE &);
 

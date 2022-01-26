@@ -138,7 +138,6 @@ public:
     }
     const size_t N = zisa::pow<Dim - 1>(grid.N_phys) * grid.N_fourier;
     curand_allocate_state<RNG>(&state_, N, seed);
-    std::cout << "state_ = " << state_ << std::endl;
   }
   WhiteNoise(const WhiteNoise &) = default;
   WhiteNoise(WhiteNoise &&) = default;

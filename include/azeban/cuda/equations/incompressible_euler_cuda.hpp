@@ -42,48 +42,56 @@ void incompressible_euler_compute_B_tracer_cuda(
 template <typename SpectralViscosity, typename Forcing>
 void incompressible_euler_2d_cuda(
     const zisa::array_const_view<complex_t, 3> &B_hat,
-    const zisa::array_view<complex_t, 3> &u_hat,
+    const zisa::array_const_view<complex_t, 3> &u_hat,
+    const zisa::array_view<complex_t, 3> &dudt_hat,
     const SpectralViscosity &visc,
     Forcing &forcing);
 
 template <typename SpectralViscosity, typename Forcing>
 void incompressible_euler_3d_cuda(
     const zisa::array_const_view<complex_t, 4> &B_hat,
-    const zisa::array_view<complex_t, 4> &u_hat,
+    const zisa::array_const_view<complex_t, 4> &u_hat,
+    const zisa::array_view<complex_t, 4> &dudt_hat,
     const SpectralViscosity &visc,
     Forcing &forcing);
 
 template <typename SpectralViscosity, typename Forcing>
 void incompressible_euler_2d_tracer_cuda(
     const zisa::array_const_view<complex_t, 3> &B_hat,
-    const zisa::array_view<complex_t, 3> &u_hat,
+    const zisa::array_const_view<complex_t, 3> &u_hat,
+    const zisa::array_view<complex_t, 3> &dudt_hat,
     const SpectralViscosity &visc,
     Forcing &forcing);
 
 template <typename SpectralViscosity, typename Forcing>
 void incompressible_euler_3d_tracer_cuda(
     const zisa::array_const_view<complex_t, 4> &B_hat,
-    const zisa::array_view<complex_t, 4> &u_hat,
+    const zisa::array_const_view<complex_t, 4> &u_hat,
+    const zisa::array_view<complex_t, 4> &dudt_hat,
     const SpectralViscosity &visc,
     Forcing &forcing);
 
 #define AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(VISC, FORCING)            \
   extern template void incompressible_euler_2d_cuda<VISC, FORCING>(            \
       const zisa::array_const_view<complex_t, 3> &,                            \
+      const zisa::array_const_view<complex_t, 3> &,                            \
       const zisa::array_view<complex_t, 3> &,                                  \
       const VISC &,                                                            \
       FORCING &);                                                              \
   extern template void incompressible_euler_3d_cuda<VISC, FORCING>(            \
+      const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_view<complex_t, 4> &,                                  \
       const VISC &,                                                            \
       FORCING &);                                                              \
   extern template void incompressible_euler_2d_tracer_cuda<VISC, FORCING>(     \
       const zisa::array_const_view<complex_t, 3> &,                            \
+      const zisa::array_const_view<complex_t, 3> &,                            \
       const zisa::array_view<complex_t, 3> &,                                  \
       const VISC &,                                                            \
       FORCING &);                                                              \
   extern template void incompressible_euler_3d_tracer_cuda<VISC, FORCING>(     \
+      const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_view<complex_t, 4> &,                                  \
       const VISC &,                                                            \

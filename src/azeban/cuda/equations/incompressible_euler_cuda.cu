@@ -39,20 +39,24 @@ AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_COMPUTE_B_CUDA(3)
 #define AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(VISC, FORCING)            \
   template void incompressible_euler_2d_cuda<VISC, FORCING>(                   \
       const zisa::array_const_view<complex_t, 3> &,                            \
+      const zisa::array_const_view<complex_t, 3> &,                            \
       const zisa::array_view<complex_t, 3> &,                                  \
       const VISC &,                                                            \
       FORCING &);                                                              \
   template void incompressible_euler_3d_cuda<VISC, FORCING>(                   \
+      const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_view<complex_t, 4> &,                                  \
       const VISC &,                                                            \
       FORCING &);                                                              \
   template void incompressible_euler_2d_tracer_cuda<VISC, FORCING>(            \
       const zisa::array_const_view<complex_t, 3> &,                            \
+      const zisa::array_const_view<complex_t, 3> &,                            \
       const zisa::array_view<complex_t, 3> &,                                  \
       const VISC &,                                                            \
       FORCING &);                                                              \
   template void incompressible_euler_3d_tracer_cuda<VISC, FORCING>(            \
+      const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_view<complex_t, 4> &,                                  \
       const VISC &,                                                            \

@@ -48,12 +48,7 @@ public:
   integrate(real_t dt,
             const zisa::array_view<complex_t, dim_v + 1> &u) override {
     AZEBAN_PROFILE_START("forward_euler::integrate");
-    zisa::internal::copy(dudt_.raw(),
-                         dudt_.device(),
-                         u.raw(),
-                         u.memory_location(),
-                         zisa::product(dudt_.shape()));
-    equation_->dudt(dudt_);
+    equation_->dudt(dudt_, u);
     axpy(complex_t(dt), zisa::array_const_view<complex_t, dim_v + 1>(dudt_), u);
     AZEBAN_PROFILE_STOP("forward_euler::integrate");
   }

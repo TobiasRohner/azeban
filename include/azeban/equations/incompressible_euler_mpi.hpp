@@ -122,10 +122,16 @@ public:
   IncompressibleEuler_MPI &operator=(const IncompressibleEuler_MPI &) = delete;
   IncompressibleEuler_MPI &operator=(IncompressibleEuler_MPI &&) = default;
 
-  virtual void dudt(const zisa::array_view<complex_t, 3> &u_hat) override {
+  virtual void
+  dudt(const zisa::array_view<complex_t, 3> &dudt_hat,
+       const zisa::array_const_view<complex_t, 3> &u_hat) override {
     LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cpu,
                "Euler MPI needs CPU arrays");
     LOG_ERR_IF(u_hat.shape(0) != h_u_hat_pad_.shape(0),
+               "Wrong number of variables");
+    LOG_ERR_IF(dudt_hat.memory_location() != zisa::device_type::cpu,
+               "Euler MPI needs CPU arrays");
+    LOG_ERR_IF(dudt_hat.shape(0) != h_u_hat_pad_.shape(0),
                "Wrong number of variables");
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::dudt");
     pad_u_hat(u_hat);
@@ -135,7 +141,7 @@ public:
     fft_B_->forward();
     zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
     unpad_B_hat();
-    computeDudt(u_hat);
+    computeDudt(dudt_hat, u_hat);
     AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::dudt");
   }
 
@@ -164,7 +170,8 @@ private:
   SpectralViscosity visc_;
   Forcing forcing_;
 
-  void computeDudt(const zisa::array_view<complex_t, 3> &u_hat) {
+  void computeDudt(const zisa::array_view<complex_t, 3> &dudt_hat,
+                   const zisa::array_const_view<complex_t, 3> &u_hat) {
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
@@ -201,13 +208,13 @@ private:
                                           &L1_hat,
                                           &L2_hat);
         const real_t v = visc_.eval(zisa::sqrt(absk2));
-        u_hat(0, i, j) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j);
-        u_hat(1, i, j) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j);
+        dudt_hat(0, i, j) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j);
+        dudt_hat(1, i, j) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j);
         if (has_tracer_) {
           complex_t L3_hat;
           advection_2d(
               k2, k1, stride_B, idx_B, B_hat_.raw() + 3 * stride_B, &L3_hat);
-          u_hat(2, i, j) = -L3_hat + v * u_hat(2, i, j);
+          dudt_hat(2, i, j) = -L3_hat + v * u_hat(2, i, j);
         }
       }
     }
@@ -243,10 +250,16 @@ public:
   IncompressibleEuler_MPI &operator=(const IncompressibleEuler_MPI &) = delete;
   IncompressibleEuler_MPI &operator=(IncompressibleEuler_MPI &&) = default;
 
-  virtual void dudt(const zisa::array_view<complex_t, 4> &u_hat) override {
+  virtual void
+  dudt(const zisa::array_view<complex_t, 4> &dudt_hat,
+       const zisa::array_const_view<complex_t, 4> &u_hat) override {
     LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cpu,
                "Euler MPI needs CPU arrays");
     LOG_ERR_IF(u_hat.shape(0) != h_u_hat_pad_.shape(0),
+               "Wrong number of variables");
+    LOG_ERR_IF(dudt_hat.memory_location() != zisa::device_type::cpu,
+               "Euler MPI needs CPU arrays");
+    LOG_ERR_IF(dudt_hat.shape(0) != h_u_hat_pad_.shape(0),
                "Wrong number of variables");
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::dudt");
     pad_u_hat(u_hat);
@@ -256,7 +269,7 @@ public:
     fft_B_->forward();
     zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
     unpad_B_hat();
-    computeDudt(u_hat);
+    computeDudt(dudt_hat, u_hat);
     AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::dudt");
   }
 
@@ -285,7 +298,8 @@ private:
   SpectralViscosity visc_;
   Forcing forcing_;
 
-  void computeDudt(const zisa::array_view<complex_t, 4> &u_hat) {
+  void computeDudt(const zisa::array_view<complex_t, 4> &dudt_hat,
+                   const zisa::array_const_view<complex_t, 4> &u_hat) {
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
@@ -335,9 +349,12 @@ private:
                                             &L2_hat,
                                             &L3_hat);
           const real_t v = visc_.eval(zisa::sqrt(absk2));
-          u_hat(0, i, j, k) = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j, k);
-          u_hat(1, i, j, k) = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j, k);
-          u_hat(2, i, j, k) = absk2 == 0 ? 0 : -L3_hat + v * u_hat(2, i, j, k);
+          dudt_hat(0, i, j, k)
+              = absk2 == 0 ? 0 : -L1_hat + v * u_hat(0, i, j, k);
+          dudt_hat(1, i, j, k)
+              = absk2 == 0 ? 0 : -L2_hat + v * u_hat(1, i, j, k);
+          dudt_hat(2, i, j, k)
+              = absk2 == 0 ? 0 : -L3_hat + v * u_hat(2, i, j, k);
           if (has_tracer_) {
             complex_t L4_hat;
             advection_3d(k3,
@@ -347,7 +364,7 @@ private:
                          idx_B,
                          B_hat_.raw() + 6 * stride_B,
                          &L4_hat);
-            u_hat(3, i, j, k) = -L4_hat + v * u_hat(3, i, j, k);
+            dudt_hat(3, i, j, k) = -L4_hat + v * u_hat(3, i, j, k);
           }
         }
       }
