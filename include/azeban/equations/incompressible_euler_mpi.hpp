@@ -23,6 +23,7 @@
 #include "incompressible_euler_functions.hpp"
 #include <azeban/config.hpp>
 #include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
+#include <azeban/forcing/no_forcing.hpp>
 #include <azeban/operations/fft_mpi_factory.hpp>
 #include <azeban/profiler.hpp>
 #include <fmt/core.h>
@@ -87,14 +88,14 @@ protected:
   void unpad_B_hat();
 };
 
-template <int Dim, typename SpectralViscosity>
+template <int Dim, typename SpectralViscosity, typename Forcing = NoForcing>
 class IncompressibleEuler_MPI {
   static_assert(Dim == 2 || Dim == 3,
                 "Incompressible Euler is only implemented for 2D and 3D");
 };
 
-template <typename SpectralViscosity>
-class IncompressibleEuler_MPI<2, SpectralViscosity>
+template <typename SpectralViscosity, typename Forcing>
+class IncompressibleEuler_MPI<2, SpectralViscosity, Forcing>
     : public IncompressibleEuler_MPI_Base<2> {
   using super = IncompressibleEuler_MPI_Base<2>;
 
@@ -102,11 +103,19 @@ public:
   using scalar_t = complex_t;
   static constexpr int dim_v = 2;
 
+  template <bool enable = std::is_same_v<Forcing, NoForcing>,
+            typename = std::enable_if_t<enable>>
   IncompressibleEuler_MPI(const Grid<2> &grid,
                           MPI_Comm comm,
                           const SpectralViscosity &visc,
                           bool has_tracer = false)
-      : super(grid, comm, has_tracer), visc_(visc) {}
+      : IncompressibleEuler_MPI(grid, comm, visc, NoForcing{}, has_tracer) {}
+  IncompressibleEuler_MPI(const Grid<2> &grid,
+                          MPI_Comm comm,
+                          const SpectralViscosity &visc,
+                          const Forcing &forcing,
+                          bool has_tracer = false)
+      : super(grid, comm, has_tracer), visc_(visc), forcing_(forcing) {}
   IncompressibleEuler_MPI(const IncompressibleEuler_MPI &) = delete;
   IncompressibleEuler_MPI(IncompressibleEuler_MPI &&) = default;
   virtual ~IncompressibleEuler_MPI() = default;
@@ -153,6 +162,7 @@ protected:
 
 private:
   SpectralViscosity visc_;
+  Forcing forcing_;
 
   void computeDudt(const zisa::array_view<complex_t, 3> &u_hat) {
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
@@ -177,6 +187,8 @@ private:
         const real_t k1 = 2 * zisa::pi * i_;
         const real_t k2 = 2 * zisa::pi * j_;
         const real_t absk2 = k1 * k1 + k2 * k2;
+        complex_t force1, force2;
+        forcing_(0, k1, k2, &force1, &force2);
         complex_t L1_hat, L2_hat;
         incompressible_euler_2d_compute_L(k2,
                                           k1,
@@ -184,8 +196,8 @@ private:
                                           stride_B,
                                           idx_B,
                                           B_hat_.raw(),
-                                          0,
-                                          0,
+                                          force1,
+                                          force2,
                                           &L1_hat,
                                           &L2_hat);
         const real_t v = visc_.eval(zisa::sqrt(absk2));
@@ -203,8 +215,8 @@ private:
   }
 };
 
-template <typename SpectralViscosity>
-class IncompressibleEuler_MPI<3, SpectralViscosity>
+template <typename SpectralViscosity, typename Forcing>
+class IncompressibleEuler_MPI<3, SpectralViscosity, Forcing>
     : public IncompressibleEuler_MPI_Base<3> {
   using super = IncompressibleEuler_MPI_Base<3>;
 
@@ -212,11 +224,19 @@ public:
   using scalar_t = complex_t;
   static constexpr int dim_v = 3;
 
+  template <bool enable = std::is_same_v<Forcing, NoForcing>,
+            typename = std::enable_if_t<enable>>
   IncompressibleEuler_MPI(const Grid<3> &grid,
                           MPI_Comm comm,
                           const SpectralViscosity &visc,
                           bool has_tracer = false)
-      : super(grid, comm, has_tracer), visc_(visc) {}
+      : IncompressibleEuler_MPI(grid, comm, visc, NoForcing{}, has_tracer) {}
+  IncompressibleEuler_MPI(const Grid<3> &grid,
+                          MPI_Comm comm,
+                          const SpectralViscosity &visc,
+                          const Forcing &forcing,
+                          bool has_tracer = false)
+      : super(grid, comm, has_tracer), visc_(visc), forcing_(forcing) {}
   IncompressibleEuler_MPI(const IncompressibleEuler_MPI &) = delete;
   IncompressibleEuler_MPI(IncompressibleEuler_MPI &&) = default;
   virtual ~IncompressibleEuler_MPI() = default;
@@ -263,6 +283,7 @@ protected:
 
 private:
   SpectralViscosity visc_;
+  Forcing forcing_;
 
   void computeDudt(const zisa::array_view<complex_t, 4> &u_hat) {
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
@@ -297,6 +318,8 @@ private:
           const real_t k2 = 2 * zisa::pi * j_;
           const real_t k3 = 2 * zisa::pi * k_;
           const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
+          complex_t force1, force2, force3;
+          forcing_(0, k1, k2, k3, &force1, &force2, &force3);
           complex_t L1_hat, L2_hat, L3_hat;
           incompressible_euler_3d_compute_L(k3,
                                             k2,
@@ -305,9 +328,9 @@ private:
                                             stride_B,
                                             idx_B,
                                             B_hat_.raw(),
-                                            0,
-                                            0,
-                                            0,
+                                            force1,
+                                            force2,
+                                            force3,
                                             &L1_hat,
                                             &L2_hat,
                                             &L3_hat);

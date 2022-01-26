@@ -28,7 +28,7 @@ template <int Dim, typename SpectralViscosity, typename Forcing>
 std::shared_ptr<Equation<Dim>>
 make_incompressible_euler(const Grid<Dim> &grid,
                           const SpectralViscosity &visc,
-                          Forcing &forcing,
+                          const Forcing &forcing,
                           bool has_tracer,
                           zisa::device_type device) {
   if constexpr (Dim == 2 || Dim == 3) {

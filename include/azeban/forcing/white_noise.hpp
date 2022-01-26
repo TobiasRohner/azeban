@@ -6,7 +6,9 @@
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/random/curand_helpers.hpp>
 #endif
-#include <iostream>
+#include <numeric>
+#include <omp.h>
+#include <vector>
 
 namespace azeban {
 
@@ -18,6 +20,14 @@ class WhiteNoise {
 template <typename RNG>
 class WhiteNoise<RNG, zisa::device_type::cpu> {
   using state_t = typename RNGTraits<RNG>::state_t;
+  struct padded_state_t {
+    static constexpr int cacheline_size = 64;
+    static constexpr int size_diff
+        = cacheline_size - static_cast<int>(sizeof(state_t));
+    static constexpr int padding_size = size_diff < 0 ? 0 : size_diff;
+    state_t state;
+    char pad[padding_size];
+  };
 
 #ifdef __NVCC__
 public:
@@ -37,10 +47,29 @@ public:
   explicit WhiteNoise(const Grid<Dim> &grid,
                       real_t sigma,
                       unsigned long long seed)
-      : state_(seed),
+      : state_(),
         dist_(0,
               zisa::sqrt(zisa::pow<Dim>(static_cast<real_t>(grid.N_phys) / 2))
-                  * sigma) {}
+                  * sigma) {
+    int n_threads;
+#pragma omp parallel
+    {
+      if (omp_get_thread_num() == 0) {
+        n_threads = omp_get_num_threads();
+      }
+    }
+    state_.resize(n_threads);
+    std::vector<size_t> idxs(n_threads);
+    std::iota(begin(idxs), end(idxs), seed);
+    std::seed_seq seq(begin(idxs), end(idxs));
+    std::vector<size_t> seeds(n_threads);
+    seq.generate(begin(seeds), end(seeds));
+#pragma omp parallel
+    {
+      const int tid = omp_get_thread_num();
+      state_[tid].state.seed(seeds[tid]);
+    }
+  }
   WhiteNoise(const WhiteNoise &) = default;
   WhiteNoise(WhiteNoise &&) = default;
 
@@ -70,13 +99,14 @@ public:
   }
 
 private:
-  state_t state_;
+  std::vector<padded_state_t> state_;
   std::normal_distribution<real_t> dist_;
 
   complex_t generate() {
+    state_t &state = state_[omp_get_thread_num()].state;
     complex_t res;
-    res.x = dist_(state_);
-    res.y = dist_(state_);
+    res.x = dist_(state);
+    res.y = dist_(state);
     return res;
   }
 #endif

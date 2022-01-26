@@ -160,6 +160,7 @@ private:
                              * zisa::pow<dim_v>(grid_.N_phys_pad));
       if constexpr (dim_v == 2) {
         const unsigned stride = grid_.N_phys_pad * grid_.N_phys_pad;
+#pragma omp parallel for collapse(2)
         for (zisa::int_t i = 0; i < u_.shape(1); ++i) {
           for (zisa::int_t j = 0; j < u_.shape(2); ++j) {
             const unsigned idx = i * grid_.N_phys_pad + j;
@@ -177,6 +178,7 @@ private:
       } else {
         const unsigned stride
             = grid_.N_phys_pad * grid_.N_phys_pad * grid_.N_phys_pad;
+#pragma omp parallel for collapse(3)
         for (zisa::int_t i = 0; i < u_.shape(1); ++i) {
           for (zisa::int_t j = 0; j < u_.shape(2); ++j) {
             for (zisa::int_t k = 0; k < u_.shape(3); ++k) {
@@ -216,11 +218,12 @@ private:
 
   void computeDudt_cpu_2d(const zisa::array_view<complex_t, Dim + 1> &u_hat) {
     const unsigned stride_B = B_hat_.shape(1) * B_hat_.shape(2);
+#pragma omp parallel for collapse(2)
     for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
-      const int i_B = i >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)
-                          ? B_hat_.shape(1) - u_hat.shape(1) + i
-                          : i;
       for (int j = 0; j < zisa::integer_cast<int>(u_hat.shape(2)); ++j) {
+        const int i_B = i >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)
+                            ? B_hat_.shape(1) - u_hat.shape(1) + i
+                            : i;
         const unsigned idx_B = i_B * B_hat_.shape(2) + j;
         int i_ = i;
         if (i >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)) {
@@ -262,15 +265,16 @@ private:
   void computeDudt_cpu_3d(const zisa::array_view<complex_t, Dim + 1> &u_hat) {
     const unsigned stride_B
         = B_hat_.shape(1) * B_hat_.shape(2) * B_hat_.shape(3);
+#pragma omp parallel for collapse(3)
     for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
-      const int i_B = i >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)
-                          ? B_hat_.shape(1) - u_hat.shape(1) + i
-                          : i;
       for (int j = 0; j < zisa::integer_cast<int>(u_hat.shape(2)); ++j) {
-        const int j_B = j >= zisa::integer_cast<int>(u_hat.shape(2) / 2 + 1)
-                            ? B_hat_.shape(2) - u_hat.shape(2) + j
-                            : j;
         for (int k = 0; k < zisa::integer_cast<int>(u_hat.shape(3)); ++k) {
+          const int i_B = i >= zisa::integer_cast<int>(u_hat.shape(1) / 2 + 1)
+                              ? B_hat_.shape(1) - u_hat.shape(1) + i
+                              : i;
+          const int j_B = j >= zisa::integer_cast<int>(u_hat.shape(2) / 2 + 1)
+                              ? B_hat_.shape(2) - u_hat.shape(2) + j
+                              : j;
           const unsigned idx_B = i_B * B_hat_.shape(2) * B_hat_.shape(3)
                                  + j_B * B_hat_.shape(3) + k;
           int i_ = i;
