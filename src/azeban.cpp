@@ -16,7 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <azeban/init/initializer_factory.hpp>
-#include <azeban/operations/fft.hpp>
+#include <azeban/operations/fft_factory.hpp>
+#include <azeban/operations/fft_mpi_factory.hpp>
 #include <azeban/profiler.hpp>
 #include <azeban/sequence_factory.hpp>
 #include <azeban/simulation_factory.hpp>
