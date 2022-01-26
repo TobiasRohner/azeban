@@ -24,6 +24,7 @@
 #include <azeban/config.hpp>
 #include <azeban/forcing/no_forcing.hpp>
 #include <azeban/grid.hpp>
+#include <azeban/memory/workspace.hpp>
 #include <azeban/operations/convolve.hpp>
 #include <azeban/operations/fft.hpp>
 #if ZISA_HAS_CUDA
@@ -58,15 +59,36 @@ public:
                       bool has_tracer = false)
       : super(grid),
         device_(device),
+        workspace_(),
+        u_hat_({}, nullptr),
+        u_({}, nullptr),
+        B_hat_({}, nullptr),
+        B_({}, nullptr),
         visc_(visc),
         forcing_(std::move(forcing)),
         has_tracer_(has_tracer) {
-    u_hat_ = grid.make_array_fourier_pad(dim_v + (has_tracer ? 1 : 0), device);
-    u_ = grid.make_array_phys_pad(dim_v + (has_tracer ? 1 : 0), device);
-    B_hat_ = grid.make_array_fourier_pad(
-        (dim_v * dim_v + dim_v) / 2 + (has_tracer ? dim_v : 0), device);
-    B_ = grid.make_array_phys_pad(
-        (dim_v * dim_v + dim_v) / 2 + (has_tracer ? dim_v : 0), device);
+    const int n_vars_u = dim_v + (has_tracer ? 1 : 0);
+    const int n_vars_B = (dim_v * dim_v + dim_v) / 2 + (has_tracer ? dim_v : 0);
+    const auto shape_u_hat = grid.shape_fourier_pad(n_vars_u);
+    const auto shape_u = grid.shape_phys_pad(n_vars_u);
+    const auto shape_B_hat = grid.shape_fourier_pad(n_vars_B);
+    const auto shape_B = grid.shape_phys_pad(n_vars_B);
+    // Overlap buffer u_ with B_hat_ and u_hat_ with B_ in workspace
+    const size_t size_u_hat = sizeof(complex_t) * zisa::product(shape_u_hat);
+    const size_t size_u = sizeof(real_t) * zisa::product(shape_u);
+    const size_t size_B_hat = sizeof(complex_t) * zisa::product(shape_B_hat);
+    const size_t size_B = sizeof(real_t) * zisa::product(shape_B);
+    const size_t size_u_and_B_hat = zisa::max(size_u, size_B_hat);
+    const size_t size_u_hat_and_B = zisa::max(size_u_hat, size_B);
+    const size_t u_and_B_hat_offset = 0;
+    const size_t u_hat_and_B_offset
+        = 256 * zisa::div_up(size_u_and_B_hat, size_t(256));
+    const size_t size_workspace = u_hat_and_B_offset + size_u_hat_and_B;
+    workspace_ = Workspace(size_workspace, device);
+    u_hat_ = workspace_.get_view<complex_t>(u_hat_and_B_offset, shape_u_hat);
+    u_ = workspace_.get_view<real_t>(u_and_B_hat_offset, shape_u);
+    B_hat_ = workspace_.get_view<complex_t>(u_and_B_hat_offset, shape_B_hat);
+    B_ = workspace_.get_view<real_t>(u_hat_and_B_offset, shape_B);
     fft_u_ = make_fft<dim_v>(u_hat_, u_, FFT_BACKWARD);
     fft_B_ = make_fft<dim_v>(B_hat_, B_, FFT_FORWARD);
   }
@@ -103,10 +125,11 @@ protected:
 
 private:
   zisa::device_type device_;
-  zisa::array<complex_t, dim_v + 1> u_hat_;
-  zisa::array<real_t, dim_v + 1> u_;
-  zisa::array<complex_t, dim_v + 1> B_hat_;
-  zisa::array<real_t, dim_v + 1> B_;
+  Workspace workspace_;
+  zisa::array_view<complex_t, dim_v + 1> u_hat_;
+  zisa::array_view<real_t, dim_v + 1> u_;
+  zisa::array_view<complex_t, dim_v + 1> B_hat_;
+  zisa::array_view<real_t, dim_v + 1> B_;
   std::shared_ptr<FFT<dim_v>> fft_u_;
   std::shared_ptr<FFT<dim_v>> fft_B_;
   SpectralViscosity visc_;

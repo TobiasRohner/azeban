@@ -14,6 +14,11 @@ Workspace::Workspace(void *ptr, zisa::device_type loc)
 Workspace::Workspace(size_t size, zisa::device_type loc)
     : Workspace(allocate(size, loc), loc) {}
 
+Workspace::Workspace(Workspace &&other)
+    : ptr_(other.ptr_), location_(other.location_) {
+  other.ptr_ = nullptr;
+}
+
 Workspace::~Workspace() {
   if (ptr_) {
     deallocate(ptr_, location_);
@@ -29,6 +34,7 @@ Workspace &Workspace::operator=(Workspace &&other) {
   }
   ptr_ = other.ptr_;
   location_ = other.location_;
+  other.ptr_ = nullptr;
   return *this;
 }
 
