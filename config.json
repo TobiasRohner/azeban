@@ -1,5 +1,5 @@
 {
-  "output": "discontinuous_shear_tube_3D_N512_rho0.1_delta0.025_T1.0",
+  "output": "discontinuous_shear_tube_3D_N64_rho0.1_delta0.025_T1.0",
   "device": "cuda",
   "dimension": 3,
   "num_samples": 1,
@@ -8,10 +8,10 @@
   "snapshots": {
     "start": 0,
     "stop": 1,
-    "n": 10
+    "n": 100
   },
   "grid": {
-    "N_phys": 512,
+    "N_phys": 64,
     "N_phys_pad": ""
   },
   "equation": {
@@ -19,6 +19,10 @@
     "visc": {
       "type": "Quadratic",
       "eps": 0.05
+    },
+    "forcing": {
+      "type": "White Noise",
+      "sigma": 100
     }
   },
   "timestepper": {
@@ -26,9 +30,9 @@
     "C": 0.5
   },
   "init": {
-    "name": "Discontinuous Shear Tube",
-    "N": 10,
-    "rho": 0.1,
-    "delta": 0.025
+    "name": "Const Phys",
+    "u": 0,
+    "v": 0,
+    "w": 0
   }
 }

@@ -1,18 +1,18 @@
-/* 
+/*
  * This file is part of azeban (https://github.com/TobiasRohner/azeban).
  * Copyright (c) 2021 Tobias Rohner.
- * 
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
+ * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #ifndef NNORM_CUDA_IMPL_H_
@@ -78,16 +78,16 @@ real_t norm_cuda(const zisa::array_const_view<Scalar, 1> &data, real_t p) {
   auto out_data = zisa::cuda_array<real_t, 1>(zisa::shape_t<1>(block_dims));
   norm_cuda_kernel<<<block_dims, thread_dims, thread_dims * sizeof(real_t)>>>(
       data, zisa::array_view<real_t, 1>(out_data), p);
-  ZISA_CHECK_CUDA_DEBUG;
   cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
   while (block_dims > 1) {
     block_dims = zisa::div_up(static_cast<int>(block_dims), 2 * thread_dims);
     norm_cuda_kernel<<<block_dims, thread_dims, thread_dims * sizeof(real_t)>>>(
         zisa::array_const_view<real_t, 1>(out_data),
         zisa::array_view<real_t, 1>(out_data),
         p);
-    ZISA_CHECK_CUDA_DEBUG;
     cudaDeviceSynchronize();
+    ZISA_CHECK_CUDA_DEBUG;
   }
   zisa::array<real_t, 1> value(zisa::shape_t<1>(1));
   zisa::internal::copy(

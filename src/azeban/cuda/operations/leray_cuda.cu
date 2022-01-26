@@ -1,18 +1,18 @@
-/* 
+/*
  * This file is part of azeban (https://github.com/TobiasRohner/azeban).
  * Copyright (c) 2021 Tobias Rohner.
- * 
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
+ * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <azeban/config.hpp>
@@ -90,8 +90,8 @@ void leray_cuda(const zisa::array_view<complex_t, 3> &u_hat) {
       zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.y),
       1);
   leray_cuda_kernel<<<block_dims, thread_dims>>>(u_hat);
-  ZISA_CHECK_CUDA_DEBUG;
   cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 void leray_cuda(const zisa::array_view<complex_t, 4> &u_hat) {
@@ -101,8 +101,8 @@ void leray_cuda(const zisa::array_view<complex_t, 4> &u_hat) {
       zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.y),
       zisa::div_up(static_cast<int>(u_hat.shape(3)), thread_dims.z));
   leray_cuda_kernel<<<block_dims, thread_dims>>>(u_hat);
-  ZISA_CHECK_CUDA_DEBUG;
   cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
 }
 
 }

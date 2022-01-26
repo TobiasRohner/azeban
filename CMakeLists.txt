@@ -72,6 +72,7 @@ if(ZISA_HAS_CUDA)
   )
   target_link_libraries(azeban_dependencies INTERFACE CUDA::cudart)
   target_link_libraries(azeban_dependencies INTERFACE CUDA::cufft)
+  target_link_libraries(azeban_dependencies INTERFACE CUDA::curand)
 endif()
 
 # -- internal ----------------------------------------------------------------------
@@ -173,6 +174,8 @@ if(AZEBAN_HAS_BENCHMARK)
     target_link_libraries(system_properties PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
   endif()
   target_link_libraries(system_properties PRIVATE fmt::fmt)
+  target_link_libraries(system_properties PRIVATE azeban_lib)
+  target_link_libraries(system_properties PRIVATE azeban_warning_flags)
 endif()
 
 # -- Subdirectories ------------------------------------------------------------
