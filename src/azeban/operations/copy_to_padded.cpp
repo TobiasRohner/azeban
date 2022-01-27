@@ -28,12 +28,13 @@ template <bool pad_x, int compact_dim>
 void copy_to_padded_cpu(const zisa::array_view<complex_t, 1> &dst,
                         const zisa::array_const_view<complex_t, 1> &src,
                         const complex_t &pad_value) {
-  for (zisa::int_t i = 0 ; i < dst.shape(0) ; ++i) {
+  for (zisa::int_t i = 0; i < dst.shape(0); ++i) {
     const auto src_shape = src.shape();
     const auto dst_shape = dst.shape();
     const int idx_dst = zisa::row_major<1>::linear_index(dst_shape, i);
     int i_src = i;
-    if (pad_dim<pad_x, compact_dim == 0>(dst, idx_dst, src_shape[0], dst_shape[0], i, pad_value, &i_src)) {
+    if (pad_dim<pad_x, compact_dim == 0>(
+            dst, idx_dst, src_shape[0], dst_shape[0], i, pad_value, &i_src)) {
       continue;
     }
     const int idx_src = zisa::row_major<1>::linear_index(src_shape, i_src);
@@ -52,13 +53,16 @@ void copy_to_padded_cpu(const zisa::array_view<complex_t, 2> &dst,
       const int idx_dst = zisa::row_major<2>::linear_index(dst_shape, i, j);
       int i_src = i;
       int j_src = j;
-      if (pad_dim<pad_x, compact_dim == 0>(dst, idx_dst, src_shape[0], dst_shape[0], i, pad_value, &i_src)) {
-	continue;
+      if (pad_dim<pad_x, compact_dim == 0>(
+              dst, idx_dst, src_shape[0], dst_shape[0], i, pad_value, &i_src)) {
+        continue;
       }
-      if (pad_dim<pad_y, compact_dim == 1>(dst, idx_dst, src_shape[1], dst_shape[1], j, pad_value, &j_src)) {
-	continue;
+      if (pad_dim<pad_y, compact_dim == 1>(
+              dst, idx_dst, src_shape[1], dst_shape[1], j, pad_value, &j_src)) {
+        continue;
       }
-      const int idx_src = zisa::row_major<2>::linear_index(src_shape, i_src, j_src);
+      const int idx_src
+          = zisa::row_major<2>::linear_index(src_shape, i_src, j_src);
       dst[idx_dst] = src[idx_src];
     }
   }
@@ -78,26 +82,44 @@ void copy_to_padded_cpu(const zisa::array_view<complex_t, 3> &dst,
         int i_src = i;
         int j_src = j;
         int k_src = k;
-	if (pad_dim<pad_x, compact_dim == 0>(dst, idx_dst, src_shape[0], dst_shape[0], i, pad_value, &i_src)) {
-	  continue;
-	}
-	if (pad_dim<pad_y, compact_dim == 1>(dst, idx_dst, src_shape[1], dst_shape[1], j, pad_value, &j_src)) {
-	  continue;
-	}
-	if (pad_dim<pad_z, compact_dim == 2>(dst, idx_dst, src_shape[2], dst_shape[2], k, pad_value, &k_src)) {
-	  continue;
-	}
+        if (pad_dim<pad_x, compact_dim == 0>(dst,
+                                             idx_dst,
+                                             src_shape[0],
+                                             dst_shape[0],
+                                             i,
+                                             pad_value,
+                                             &i_src)) {
+          continue;
+        }
+        if (pad_dim<pad_y, compact_dim == 1>(dst,
+                                             idx_dst,
+                                             src_shape[1],
+                                             dst_shape[1],
+                                             j,
+                                             pad_value,
+                                             &j_src)) {
+          continue;
+        }
+        if (pad_dim<pad_z, compact_dim == 2>(dst,
+                                             idx_dst,
+                                             src_shape[2],
+                                             dst_shape[2],
+                                             k,
+                                             pad_value,
+                                             &k_src)) {
+          continue;
+        }
         const int idx_src
-            = zisa::row_major<3>::linear_index(src_shape, i_src, j_src, k);
+            = zisa::row_major<3>::linear_index(src_shape, i_src, j_src, k_src);
         dst[idx_dst] = src[idx_src];
       }
     }
   }
 }
 
-template<int compact_dim>
+template <int compact_dim>
 void copy_to_padded_cpu(bool pad_x,
-		        const zisa::array_view<complex_t, 1> &dst,
+                        const zisa::array_view<complex_t, 1> &dst,
                         const zisa::array_const_view<complex_t, 1> &src,
                         const complex_t &pad_value) {
   if (pad_x) {
@@ -109,24 +131,24 @@ void copy_to_padded_cpu(bool pad_x,
 }
 
 void copy_to_padded_cpu(bool pad_x,
-			int compact_dim,
-		        const zisa::array_view<complex_t, 1> &dst,
+                        int compact_dim,
+                        const zisa::array_view<complex_t, 1> &dst,
                         const zisa::array_const_view<complex_t, 1> &src,
                         const complex_t &pad_value) {
   switch (compact_dim) {
-    case 0:
-      copy_to_padded_cpu<0>(pad_x, dst, src, pad_value);
-      return;
-    default:
-      copy_to_padded_cpu<-1>(pad_x, dst, src, pad_value);
-      return;
+  case 0:
+    copy_to_padded_cpu<0>(pad_x, dst, src, pad_value);
+    return;
+  default:
+    copy_to_padded_cpu<-1>(pad_x, dst, src, pad_value);
+    return;
   }
 }
 
-template<int compact_dim>
+template <int compact_dim>
 void copy_to_padded_cpu(bool pad_x,
-			bool pad_y,
-			const zisa::array_view<complex_t, 2> &dst,
+                        bool pad_y,
+                        const zisa::array_view<complex_t, 2> &dst,
                         const zisa::array_const_view<complex_t, 2> &src,
                         const complex_t &pad_value) {
   if (pad_x && pad_y) {
@@ -144,29 +166,29 @@ void copy_to_padded_cpu(bool pad_x,
 }
 
 void copy_to_padded_cpu(bool pad_x,
-			bool pad_y,
-			int compact_dim,
-			const zisa::array_view<complex_t, 2> &dst,
-			const zisa::array_const_view<complex_t, 2> &src,
-			const complex_t &pad_value) {
+                        bool pad_y,
+                        int compact_dim,
+                        const zisa::array_view<complex_t, 2> &dst,
+                        const zisa::array_const_view<complex_t, 2> &src,
+                        const complex_t &pad_value) {
   switch (compact_dim) {
-    case 0:
-      copy_to_padded_cpu<0>(pad_x, pad_y, dst, src, pad_value);
-      return;
-    case 1:
-      copy_to_padded_cpu<1>(pad_x, pad_y, dst, src, pad_value);
-      return;
-    default:
-      copy_to_padded_cpu<-1>(pad_x, pad_y, dst, src, pad_value);
-      return;
+  case 0:
+    copy_to_padded_cpu<0>(pad_x, pad_y, dst, src, pad_value);
+    return;
+  case 1:
+    copy_to_padded_cpu<1>(pad_x, pad_y, dst, src, pad_value);
+    return;
+  default:
+    copy_to_padded_cpu<-1>(pad_x, pad_y, dst, src, pad_value);
+    return;
   }
 }
 
-template<int compact_dim>
+template <int compact_dim>
 void copy_to_padded_cpu(bool pad_x,
-			bool pad_y,
-			bool pad_z,
-			const zisa::array_view<complex_t, 3> &dst,
+                        bool pad_y,
+                        bool pad_z,
+                        const zisa::array_view<complex_t, 3> &dst,
                         const zisa::array_const_view<complex_t, 3> &src,
                         const complex_t &pad_value) {
   if (pad_x && pad_y && pad_z) {
@@ -196,31 +218,31 @@ void copy_to_padded_cpu(bool pad_x,
 }
 
 void copy_to_padded_cpu(bool pad_x,
-			bool pad_y,
-			bool pad_z,
-			int compact_dim,
-			const zisa::array_view<complex_t, 3> &dst,
-			const zisa::array_const_view<complex_t, 3> &src,
-			const complex_t &pad_value) {
+                        bool pad_y,
+                        bool pad_z,
+                        int compact_dim,
+                        const zisa::array_view<complex_t, 3> &dst,
+                        const zisa::array_const_view<complex_t, 3> &src,
+                        const complex_t &pad_value) {
   switch (compact_dim) {
-    case 0:
-      copy_to_padded_cpu<0>(pad_x, pad_y, pad_z, dst, src, pad_value);
-      return;
-    case 1:
-      copy_to_padded_cpu<1>(pad_x, pad_y, pad_z, dst, src, pad_value);
-      return;
-    case 2:
-      copy_to_padded_cpu<2>(pad_x, pad_y, pad_z, dst, src, pad_value);
-      return;
-    default:
-      copy_to_padded_cpu<-1>(pad_x, pad_y, pad_z, dst, src, pad_value);
-      return;
+  case 0:
+    copy_to_padded_cpu<0>(pad_x, pad_y, pad_z, dst, src, pad_value);
+    return;
+  case 1:
+    copy_to_padded_cpu<1>(pad_x, pad_y, pad_z, dst, src, pad_value);
+    return;
+  case 2:
+    copy_to_padded_cpu<2>(pad_x, pad_y, pad_z, dst, src, pad_value);
+    return;
+  default:
+    copy_to_padded_cpu<-1>(pad_x, pad_y, pad_z, dst, src, pad_value);
+    return;
   }
 }
 
 void copy_to_padded(bool pad_x,
-		    int compact_dim,
-		    const zisa::array_view<complex_t, 1> &dst,
+                    int compact_dim,
+                    const zisa::array_view<complex_t, 1> &dst,
                     const zisa::array_const_view<complex_t, 1> &src,
                     const complex_t &pad_value) {
   AZEBAN_PROFILE_START("copy_to_padded");
@@ -247,9 +269,9 @@ void copy_to_padded(const zisa::array_view<complex_t, 1> &dst,
 }
 
 void copy_to_padded(bool pad_x,
-		    bool pad_y,
-		    int compact_dim,
-		    const zisa::array_view<complex_t, 2> &dst,
+                    bool pad_y,
+                    int compact_dim,
+                    const zisa::array_view<complex_t, 2> &dst,
                     const zisa::array_const_view<complex_t, 2> &src,
                     const complex_t &pad_value) {
   AZEBAN_PROFILE_START("copy_to_padded");
@@ -276,10 +298,10 @@ void copy_to_padded(const zisa::array_view<complex_t, 2> &dst,
 }
 
 void copy_to_padded(bool pad_x,
-		    bool pad_y,
-		    bool pad_z,
-		    int compact_dim,
-		    const zisa::array_view<complex_t, 3> &dst,
+                    bool pad_y,
+                    bool pad_z,
+                    int compact_dim,
+                    const zisa::array_view<complex_t, 3> &dst,
                     const zisa::array_const_view<complex_t, 3> &src,
                     const complex_t &pad_value) {
   AZEBAN_PROFILE_START("copy_to_padded");

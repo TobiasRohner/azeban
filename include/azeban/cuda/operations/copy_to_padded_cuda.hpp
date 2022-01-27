@@ -24,27 +24,27 @@
 namespace azeban {
 
 void copy_to_padded_cuda(bool pad_x,
-			 int compact_dim,
-			 const zisa::array_view<complex_t, 1> &,
+                         int compact_dim,
+                         const zisa::array_view<complex_t, 1> &,
                          const zisa::array_const_view<complex_t, 1> &,
                          const complex_t &);
 void copy_to_padded_cuda(const zisa::array_view<complex_t, 1> &,
                          const zisa::array_const_view<complex_t, 1> &,
                          const complex_t &);
 void copy_to_padded_cuda(bool pad_x,
-			 bool pad_y,
-			 int compact_dim,
-			 const zisa::array_view<complex_t, 2> &,
+                         bool pad_y,
+                         int compact_dim,
+                         const zisa::array_view<complex_t, 2> &,
                          const zisa::array_const_view<complex_t, 2> &,
                          const complex_t &);
 void copy_to_padded_cuda(const zisa::array_view<complex_t, 2> &,
                          const zisa::array_const_view<complex_t, 2> &,
                          const complex_t &);
 void copy_to_padded_cuda(bool pad_x,
-			 bool pad_y,
-			 bool pad_z,
-			 int compact_dim,
-			 const zisa::array_view<complex_t, 3> &,
+                         bool pad_y,
+                         bool pad_z,
+                         int compact_dim,
+                         const zisa::array_view<complex_t, 3> &,
                          const zisa::array_const_view<complex_t, 3> &,
                          const complex_t &);
 void copy_to_padded_cuda(const zisa::array_view<complex_t, 3> &,

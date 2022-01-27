@@ -24,27 +24,27 @@
 namespace azeban {
 
 void copy_to_padded(bool pad_x,
-		    int compact_dim,
-		    const zisa::array_view<complex_t, 1> &dst,
+                    int compact_dim,
+                    const zisa::array_view<complex_t, 1> &dst,
                     const zisa::array_const_view<complex_t, 1> &src,
                     const complex_t &pad_value = 0);
 void copy_to_padded(const zisa::array_view<complex_t, 1> &dst,
                     const zisa::array_const_view<complex_t, 1> &src,
                     const complex_t &pad_value = 0);
 void copy_to_padded(bool pad_x,
-		    bool pad_y,
-		    int compact_dim,
-		    const zisa::array_view<complex_t, 2> &dst,
+                    bool pad_y,
+                    int compact_dim,
+                    const zisa::array_view<complex_t, 2> &dst,
                     const zisa::array_const_view<complex_t, 2> &src,
                     const complex_t &pad_value = 0);
 void copy_to_padded(const zisa::array_view<complex_t, 2> &dst,
                     const zisa::array_const_view<complex_t, 2> &src,
                     const complex_t &pad_value = 0);
 void copy_to_padded(bool pad_x,
-		    bool pad_y,
-		    bool pad_z,
-		    int compact_dim,
-		    const zisa::array_view<complex_t, 3> &dst,
+                    bool pad_y,
+                    bool pad_z,
+                    int compact_dim,
+                    const zisa::array_view<complex_t, 3> &dst,
                     const zisa::array_const_view<complex_t, 3> &src,
                     const complex_t &pad_value = 0);
 void copy_to_padded(const zisa::array_view<complex_t, 3> &dst,
