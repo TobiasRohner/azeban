@@ -15,34 +15,37 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef COPY_PADDED_H_
-#define COPY_PADDED_H_
+#ifndef AZEBAN_OPERATIONS_COPY_TO_PADDED_H_
+#define AZEBAN_OPERATIONS_COPY_TO_PADDED_H_
 
 #include <azeban/config.hpp>
 #include <zisa/memory/array_view.hpp>
 
 namespace azeban {
 
-void copy_to_padded(const zisa::array_view<complex_t, 1> &dst,
+void copy_to_padded(bool pad_x,
+		    int compact_dim,
+		    const zisa::array_view<complex_t, 1> &dst,
                     const zisa::array_const_view<complex_t, 1> &src,
-                    bool pad_x,
                     const complex_t &pad_value = 0);
 void copy_to_padded(const zisa::array_view<complex_t, 1> &dst,
                     const zisa::array_const_view<complex_t, 1> &src,
+                    const complex_t &pad_value = 0);
+void copy_to_padded(bool pad_x,
+		    bool pad_y,
+		    int compact_dim,
+		    const zisa::array_view<complex_t, 2> &dst,
+                    const zisa::array_const_view<complex_t, 2> &src,
                     const complex_t &pad_value = 0);
 void copy_to_padded(const zisa::array_view<complex_t, 2> &dst,
                     const zisa::array_const_view<complex_t, 2> &src,
-                    bool pad_x,
-                    bool pad_y,
                     const complex_t &pad_value = 0);
-void copy_to_padded(const zisa::array_view<complex_t, 2> &dst,
-                    const zisa::array_const_view<complex_t, 2> &src,
-                    const complex_t &pad_value = 0);
-void copy_to_padded(const zisa::array_view<complex_t, 3> &dst,
+void copy_to_padded(bool pad_x,
+		    bool pad_y,
+		    bool pad_z,
+		    int compact_dim,
+		    const zisa::array_view<complex_t, 3> &dst,
                     const zisa::array_const_view<complex_t, 3> &src,
-                    bool pad_x,
-                    bool pad_y,
-                    bool pad_z,
                     const complex_t &pad_value = 0);
 void copy_to_padded(const zisa::array_view<complex_t, 3> &dst,
                     const zisa::array_const_view<complex_t, 3> &src,

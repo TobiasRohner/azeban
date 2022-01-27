@@ -21,7 +21,7 @@
 #include <azeban/grid.hpp>
 #include <azeban/init/double_shear_layer.hpp>
 #include <azeban/init/shear_tube.hpp>
-#include <azeban/operations/copy_padded.hpp>
+#include <azeban/operations/copy_to_padded.hpp>
 #include <azeban/operations/fft.hpp>
 #include <azeban/operations/leray.hpp>
 #include <azeban/operations/operations.hpp>

@@ -19,7 +19,7 @@
 #define TEST_AZEBAN_UTILS_HPP
 
 #include <azeban/config.hpp>
-#include <azeban/operations/copy_padded.hpp>
+#include <azeban/operations/copy_to_padded.hpp>
 #include <zisa/memory/array.hpp>
 #include <zisa/memory/array_view.hpp>
 

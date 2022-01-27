@@ -24,7 +24,7 @@
 #include <azeban/init/shear_tube.hpp>
 #include <azeban/init/taylor_green.hpp>
 #include <azeban/init/taylor_vortex.hpp>
-#include <azeban/operations/copy_padded.hpp>
+#include <azeban/operations/copy_to_padded.hpp>
 #include <azeban/random/delta.hpp>
 #include <iostream>
 #include <vector>
