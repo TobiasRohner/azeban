@@ -327,7 +327,7 @@ static void test_zero_padding(zisa::int_t N_unpadded,
   }
 
   zisa::copy(unpadded_arr, h_unpadded_arr);
-  azeban::copy_to_padded(padded_arr, unpadded_arr, 0);
+  azeban::copy_to_padded(padded_arr, unpadded_arr, azeban::complex_t(0));
   zisa::copy(h_padded_arr, padded_arr);
 
   test_is_zero_padded(h_unpadded_arr, h_padded_arr);

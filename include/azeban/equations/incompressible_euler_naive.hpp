@@ -63,10 +63,7 @@ public:
        const zisa::array_const_view<complex_t, dim_v + 1> &u_hat) override {
     AZEBAN_PROFILE_START("IncompressibleEulerNaive::dudt");
     for (int i = 0; i < dim_v; ++i) {
-      copy_to_padded(
-          component(u_hat_, i),
-          zisa::array_const_view<complex_t, dim_v>(component(u_hat, i)),
-          complex_t(0));
+      copy_to_padded(component(u_hat_, i), component(u_hat, i));
     }
     fft_u_->backward();
     computeB();

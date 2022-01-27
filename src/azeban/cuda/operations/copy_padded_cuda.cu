@@ -21,18 +21,24 @@
 
 namespace azeban {
 
+template <bool pad_x>
 __global__ void
 copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 1> dst,
                            zisa::array_const_view<complex_t, 1> src,
                            complex_t pad_value) {
   const int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  if (idx >= dst.shape(0)) {
+    return;
+  }
+
   if (idx < src.shape(0)) {
     dst[idx] = src[idx];
-  } else if (idx < dst.shape(0)) {
+  } else if (pad_x) {
     dst[idx] = pad_value;
   }
 }
 
+template <bool pad_x, bool pad_y>
 __global__ void
 copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 2> dst,
                            zisa::array_const_view<complex_t, 2> src,
@@ -41,25 +47,39 @@ copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 2> dst,
   const int j = blockIdx.y * blockDim.y + threadIdx.y;
   const auto src_shape = src.shape();
   const auto dst_shape = dst.shape();
-  const int idx_dst = zisa::row_major<2>::linear_index(dst_shape, i, j);
-  if (j < src_shape[1]) {
-    if (i < dst_shape[0]) {
-      if (i < src_shape[0] / 2 + 1) {
-        const int idx_src = zisa::row_major<2>::linear_index(src_shape, i, j);
-        dst[idx_dst] = src[idx_src];
-      } else if (i < src_shape[0] / 2 + 1 + dst_shape[0] - src_shape[0]) {
-        dst[idx_dst] = pad_value;
-      } else {
-        const int idx_src = zisa::row_major<2>::linear_index(
-            src_shape, i + src_shape[0] - dst_shape[0], j);
-        dst[idx_dst] = src[idx_src];
-      }
-    }
-  } else if (i < dst_shape[0] && j < dst_shape[1]) {
-    dst[idx_dst] = pad_value;
+  if (i >= dst_shape[0]) {
+    return;
   }
+  if (j >= dst_shape[1]) {
+    return;
+  }
+
+  const int idx_dst = zisa::row_major<2>::linear_index(dst_shape, i, j);
+  int i_src = i;
+
+  if (pad_y) {
+    if (j >= src_shape[1]) {
+      dst[idx_dst] = pad_value;
+      return;
+    }
+  }
+
+  if (pad_x) {
+    if (i < src_shape[0] / 2 + 1) {
+      i_src = i;
+    } else if (i < src_shape[0] / 2 + 1 + dst_shape[0] - src_shape[0]) {
+      dst[idx_dst] = pad_value;
+      return;
+    } else {
+      i_src = i + src_shape[0] - dst_shape[0];
+    }
+  }
+
+  const int idx_src = zisa::row_major<2>::linear_index(src_shape, i_src, j);
+  dst[idx_dst] = src[idx_src];
 }
 
+template <bool pad_x, bool pad_y, bool pad_z>
 __global__ void
 copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 3> dst,
                            zisa::array_const_view<complex_t, 3> src,
@@ -69,34 +89,47 @@ copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 3> dst,
   const int k = blockIdx.z * blockDim.z + threadIdx.z;
   const auto src_shape = src.shape();
   const auto dst_shape = dst.shape();
+  if (i >= dst_shape[0]) {
+    return;
+  }
+  if (j >= dst_shape[1]) {
+    return;
+  }
+  if (k >= dst_shape[2]) {
+    return;
+  }
+
   const int idx_dst = zisa::row_major<3>::linear_index(dst_shape, i, j, k);
-  int i_src, j_src;
+  int i_src = i;
+  int j_src = j;
 
-  if (i >= dst_shape[0] || j >= dst_shape[1] || k >= dst_shape[2]) {
-    return;
+  if (pad_z) {
+    if (k >= src_shape[2]) {
+      dst[idx_dst] = pad_value;
+      return;
+    }
   }
 
-  if (k >= src_shape[2]) {
-    dst[idx_dst] = pad_value;
-    return;
+  if (pad_y) {
+    if (j < src_shape[1] / 2 + 1) {
+      j_src = j;
+    } else if (j < src_shape[1] / 2 + 1 + dst_shape[1] - src_shape[1]) {
+      dst[idx_dst] = pad_value;
+      return;
+    } else {
+      j_src = j + src_shape[1] - dst_shape[1];
+    }
   }
 
-  if (j < src_shape[1] / 2 + 1) {
-    j_src = j;
-  } else if (j < src_shape[1] / 2 + 1 + dst_shape[1] - src_shape[1]) {
-    dst[idx_dst] = pad_value;
-    return;
-  } else {
-    j_src = j + src_shape[1] - dst_shape[1];
-  }
-
-  if (i < src_shape[0] / 2 + 1) {
-    i_src = i;
-  } else if (i < src_shape[0] / 2 + 1 + dst_shape[0] - src_shape[0]) {
-    dst[idx_dst] = pad_value;
-    return;
-  } else {
-    i_src = i + src_shape[0] - dst_shape[0];
+  if (pad_x) {
+    if (i < src_shape[0] / 2 + 1) {
+      i_src = i;
+    } else if (i < src_shape[0] / 2 + 1 + dst_shape[0] - src_shape[0]) {
+      dst[idx_dst] = pad_value;
+      return;
+    } else {
+      i_src = i + src_shape[0] - dst_shape[0];
+    }
   }
 
   const int idx_src
@@ -104,6 +137,7 @@ copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 3> dst,
   dst[idx_dst] = src[idx_src];
 }
 
+template <bool pad_x>
 void copy_to_padded_cuda(const zisa::array_view<complex_t, 1> &dst,
                          const zisa::array_const_view<complex_t, 1> &src,
                          const complex_t &pad_value) {
@@ -113,11 +147,31 @@ void copy_to_padded_cuda(const zisa::array_view<complex_t, 1> &dst,
   const int thread_dims = 1024;
   const int block_dims = zisa::min(
       zisa::div_up(static_cast<int>(dst.shape(0)), thread_dims), 1024);
-  copy_to_padded_cuda_kernel<<<block_dims, thread_dims>>>(dst, src, pad_value);
+  copy_to_padded_cuda_kernel<pad_x>
+      <<<block_dims, thread_dims>>>(dst, src, pad_value);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
 }
 
+void copy_to_padded_cuda(const zisa::array_view<complex_t, 1> &dst,
+                         const zisa::array_const_view<complex_t, 1> &src,
+                         bool pad_x,
+                         const complex_t &pad_value) {
+  if (pad_x) {
+    copy_to_padded_cuda<true>(dst, src, pad_value);
+  }
+  if (!pad_x) {
+    copy_to_padded_cuda<false>(dst, src, pad_value);
+  }
+}
+
+void copy_to_padded_cuda(const zisa::array_view<complex_t, 1> &dst,
+                         const zisa::array_const_view<complex_t, 1> &src,
+                         const complex_t &pad_value) {
+  copy_to_padded_cuda<true>(dst, src, pad_value);
+}
+
+template <bool pad_x, bool pad_y>
 void copy_to_padded_cuda(const zisa::array_view<complex_t, 2> &dst,
                          const zisa::array_const_view<complex_t, 2> &src,
                          const complex_t &pad_value) {
@@ -132,11 +186,38 @@ void copy_to_padded_cuda(const zisa::array_view<complex_t, 2> &dst,
       zisa::min(zisa::div_up(static_cast<int>(dst.shape(1)), thread_dims.y),
                 1024),
       1);
-  copy_to_padded_cuda_kernel<<<block_dims, thread_dims>>>(dst, src, pad_value);
+  copy_to_padded_cuda_kernel<pad_x, pad_y>
+      <<<block_dims, thread_dims>>>(dst, src, pad_value);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
 }
 
+void copy_to_padded_cuda(const zisa::array_view<complex_t, 2> &dst,
+                         const zisa::array_const_view<complex_t, 2> &src,
+                         bool pad_x,
+                         bool pad_y,
+                         const complex_t &pad_value) {
+  if (pad_x && pad_y) {
+    copy_to_padded_cuda<true, true>(dst, src, pad_value);
+  }
+  if (pad_x && !pad_y) {
+    copy_to_padded_cuda<true, false>(dst, src, pad_value);
+  }
+  if (!pad_x && pad_y) {
+    copy_to_padded_cuda<false, true>(dst, src, pad_value);
+  }
+  if (!pad_x && !pad_y) {
+    copy_to_padded_cuda<false, false>(dst, src, pad_value);
+  }
+}
+
+void copy_to_padded_cuda(const zisa::array_view<complex_t, 2> &dst,
+                         const zisa::array_const_view<complex_t, 2> &src,
+                         const complex_t &pad_value) {
+  copy_to_padded_cuda<true, true>(dst, src, pad_value);
+}
+
+template <bool pad_x, bool pad_y, bool pad_z>
 void copy_to_padded_cuda(const zisa::array_view<complex_t, 3> &dst,
                          const zisa::array_const_view<complex_t, 3> &src,
                          const complex_t &pad_value) {
@@ -153,9 +234,48 @@ void copy_to_padded_cuda(const zisa::array_view<complex_t, 3> &dst,
                 1024),
       zisa::min(zisa::div_up(static_cast<int>(dst.shape(2)), thread_dims.z),
                 1024));
-  copy_to_padded_cuda_kernel<<<block_dims, thread_dims>>>(dst, src, pad_value);
+  copy_to_padded_cuda_kernel<pad_x, pad_y, pad_z>
+      <<<block_dims, thread_dims>>>(dst, src, pad_value);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
+}
+
+void copy_to_padded_cuda(const zisa::array_view<complex_t, 3> &dst,
+                         const zisa::array_const_view<complex_t, 3> &src,
+                         bool pad_x,
+                         bool pad_y,
+                         bool pad_z,
+                         const complex_t &pad_value) {
+  if (pad_x && pad_y && pad_z) {
+    copy_to_padded_cuda<true, true, true>(dst, src, pad_value);
+  }
+  if (pad_x && pad_y && !pad_z) {
+    copy_to_padded_cuda<true, true, false>(dst, src, pad_value);
+  }
+  if (pad_x && !pad_y && pad_z) {
+    copy_to_padded_cuda<true, false, true>(dst, src, pad_value);
+  }
+  if (pad_x && !pad_y && !pad_z) {
+    copy_to_padded_cuda<true, false, false>(dst, src, pad_value);
+  }
+  if (!pad_x && pad_y && pad_z) {
+    copy_to_padded_cuda<false, true, true>(dst, src, pad_value);
+  }
+  if (!pad_x && pad_y && !pad_z) {
+    copy_to_padded_cuda<false, true, false>(dst, src, pad_value);
+  }
+  if (!pad_x && !pad_y && pad_z) {
+    copy_to_padded_cuda<false, false, true>(dst, src, pad_value);
+  }
+  if (!pad_x && !pad_y && !pad_z) {
+    copy_to_padded_cuda<false, false, false>(dst, src, pad_value);
+  }
+}
+
+void copy_to_padded_cuda(const zisa::array_view<complex_t, 3> &dst,
+                         const zisa::array_const_view<complex_t, 3> &src,
+                         const complex_t &pad_value) {
+  copy_to_padded_cuda<true, true, true>(dst, src, pad_value);
 }
 
 }

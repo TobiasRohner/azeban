@@ -106,10 +106,7 @@ public:
     LOG_ERR_IF(u_hat.shape(0) != u_hat_.shape(0), "Wrong number of variables");
     AZEBAN_PROFILE_START("IncompressibleEuler::dudt");
     for (int i = 0; i < n_vars(); ++i) {
-      copy_to_padded(
-          component(u_hat_, i),
-          zisa::array_const_view<complex_t, dim_v>(component(u_hat, i)),
-          complex_t(0));
+      copy_to_padded(component(u_hat_, i), component(u_hat, i));
     }
     fft_u_->backward();
     computeB();
@@ -156,26 +153,6 @@ private:
     }
     return {
         shape, arr.raw() + dim * zisa::product(shape), arr.memory_location()};
-  }
-
-  template <typename Scalar>
-  static zisa::array_view<Scalar, dim_v>
-  component(zisa::array<Scalar, dim_v + 1> &arr, int dim) {
-    zisa::shape_t<dim_v> shape;
-    for (int i = 0; i < dim_v; ++i) {
-      shape[i] = arr.shape(i + 1);
-    }
-    return {shape, arr.raw() + dim * zisa::product(shape), arr.device()};
-  }
-
-  template <typename Scalar>
-  static zisa::array_const_view<Scalar, dim_v>
-  component(const zisa::array<Scalar, dim_v + 1> &arr, int dim) {
-    zisa::shape_t<dim_v> shape;
-    for (int i = 0; i < dim_v; ++i) {
-      shape[i] = arr.shape(i + 1);
-    }
-    return {shape, arr.raw() + dim * zisa::product(shape), arr.device()};
   }
 
   void computeB() {
