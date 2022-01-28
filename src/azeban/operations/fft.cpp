@@ -1,20 +1,3 @@
-/*
- * This file is part of azeban (https://github.com/TobiasRohner/azeban).
- * Copyright (c) 2021 Tobias Rohner.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
 #include <algorithm>
 #include <azeban/operations/fft.hpp>
 #include <fstream>
@@ -22,6 +5,7 @@
 #include <stdio.h>
 #include <tuple>
 #include <vector>
+#include <zisa/utils/logging.hpp>
 
 namespace azeban {
 
@@ -122,5 +106,43 @@ zisa::int_t optimal_fft_size(const std::string &benchmark_file,
       = std::min_element(candidates.begin(), candidates.end(), cmp);
   return std::get<0>(*min_it);
 }
+
+template <int Dim, typename ScalarU>
+zisa::shape_t<Dim + 1> FFT<Dim, ScalarU>::output_shape(
+    const zisa::shape_t<Dim + 1> &input_shape) const {
+  if (std::is_same_v<ScalarU, real_t>) {
+    int last_transform_dim = 0;
+    for (int i = 0; i < Dim; ++i) {
+      if (transform_dims_[i]) {
+        last_transform_dim = i;
+      }
+    }
+    zisa::shape_t<Dim + 1> result = input_shape;
+    result[last_transform_dim + 1]
+        = input_shape[last_transform_dim + 1] / 2 + 1;
+    return result;
+  } else {
+    return input_shape;
+  }
+}
+
+template <int Dim, typename ScalarU>
+void FFT<Dim, ScalarU>::initialize(
+    const zisa::array_view<complex_t, Dim + 1> &u_hat,
+    const zisa::array_view<scalar_u_t, Dim + 1> &u) {
+  LOG_ERR_IF(u_hat.shape(0) != u.shape(0),
+             "Number of variables does not match");
+  u_hat_ = u_hat;
+  u_ = u;
+  data_dim_ = u_hat_.shape(0);
+  do_initialize(u_hat, u);
+}
+
+template class FFT<1, real_t>;
+template class FFT<1, complex_t>;
+template class FFT<2, real_t>;
+template class FFT<2, complex_t>;
+template class FFT<3, real_t>;
+template class FFT<3, complex_t>;
 
 }

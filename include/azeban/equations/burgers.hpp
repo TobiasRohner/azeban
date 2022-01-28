@@ -23,7 +23,7 @@
 #include <azeban/config.hpp>
 #include <azeban/grid.hpp>
 #include <azeban/operations/convolve.hpp>
-#include <azeban/operations/fft.hpp>
+#include <azeban/operations/fft_factory.hpp>
 #ifdef ZISA_HAS_CUDA
 #include <azeban/cuda/equations/burgers_cuda.hpp>
 #endif

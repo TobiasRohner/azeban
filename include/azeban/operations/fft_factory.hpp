@@ -19,7 +19,7 @@
 #define FFT_FACTORY_H_
 
 #include <azeban/config.hpp>
-#include <azeban/operations/fft_base.hpp>
+#include <azeban/operations/fft.hpp>
 #include <zisa/memory/array_view.hpp>
 
 namespace azeban {

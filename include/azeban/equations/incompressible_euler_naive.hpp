@@ -22,7 +22,7 @@
 #include <azeban/config.hpp>
 #include <azeban/grid.hpp>
 #include <azeban/operations/convolve.hpp>
-#include <azeban/operations/fft.hpp>
+#include <azeban/operations/fft_factory.hpp>
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/equations/incompressible_euler_naive_cuda.hpp>
 #endif

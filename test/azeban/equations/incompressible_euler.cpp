@@ -28,7 +28,7 @@
 #include <azeban/init/taylor_green.hpp>
 #include <azeban/init/taylor_vortex.hpp>
 #include <azeban/operations/copy_to_padded.hpp>
-#include <azeban/operations/fft.hpp>
+#include <azeban/operations/fft_factory.hpp>
 #include <azeban/operations/operations.hpp>
 #include <azeban/random/delta.hpp>
 #include <azeban/simulation.hpp>

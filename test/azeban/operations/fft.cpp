@@ -17,15 +17,20 @@
  */
 #include <azeban/catch.hpp>
 
+#include <azeban/cuda/operations/cufft.hpp>
+#include <azeban/cuda/operations/cufft_mpi.hpp>
 #include <azeban/grid.hpp>
 #include <azeban/operations/fft.hpp>
+#include <azeban/operations/fftwfft.hpp>
 #include <fmt/core.h>
+#include <iostream>
 #include <random>
 #include <zisa/cuda/memory/cuda_array.hpp>
 #include <zisa/math/basic_functions.hpp>
 #include <zisa/memory/array_view.hpp>
 
-TEST_CASE("Learn the cufft API", "[cufft]") {
+TEST_CASE("Learn the cufft API", "[operations][fft]") {
+  std::cout << "TESTING: Learn the cufft API [operations][fft]" << std::endl;
 
   zisa::int_t n = 128;
   auto shape = zisa::shape_t<1>{n};
@@ -53,16 +58,11 @@ TEST_CASE("Learn the cufft API", "[cufft]") {
 
   auto u2 = zisa::array<cufftComplex, 1>(shape);
   zisa::copy(u2, d_u2);
-  std::cout << uhat[0].x << ", " << uhat[1].x << ", " << uhat[2].x << "\n";
-  std::cout << u2[0].x / n << ", " << u2[1].x / n << ", " << u2[2].x / n
-            << "\n";
-  std::cout << u[0].x << ", " << u[1].x << ", " << u[2].x << "\n";
-
-  std::cout << (u2[0].x / n) - u[0].x << ", " << (u2[1].x / n) - u[1].x << ", "
-            << (u2[2].x / n) - u[2].x << ", " << (u2[3].x / n) - u[3].x << "\n";
 }
 
-TEST_CASE("FFTW 1D scalar valued data", "[fft]") {
+TEST_CASE("FFTW 1D scalar valued data", "[operations][fft]") {
+  std::cout << "TESTING: FFTW 1D scalar valued data [operations][fft]"
+            << std::endl;
   zisa::int_t n = 128;
   zisa::shape_t<2> rshape{1, n};
   zisa::shape_t<2> cshape{1, n / 2 + 1};
@@ -114,7 +114,9 @@ TEST_CASE("FFTW 1D scalar valued data", "[fft]") {
   }
 }
 
-TEST_CASE("FFTW 1D vector valued data", "[fft]") {
+TEST_CASE("FFTW 1D vector valued data", "[operations][fft]") {
+  std::cout << "TESTING: FFTW 1D vector valued data [operations][fft]"
+            << std::endl;
   zisa::int_t n = 128;
   zisa::shape_t<2> rshape{2, n};
   zisa::shape_t<2> cshape{2, n / 2 + 1};
@@ -171,7 +173,9 @@ TEST_CASE("FFTW 1D vector valued data", "[fft]") {
   }
 }
 
-TEST_CASE("FFTW 2D scalar valued data", "[fft]") {
+TEST_CASE("FFTW 2D scalar valued data", "[operations][fft]") {
+  std::cout << "TESTING: FFTW 2D scalar valued data [operations][fft]"
+            << std::endl;
   zisa::int_t n = 128;
   zisa::shape_t<3> rshape{1, n, n};
   zisa::shape_t<3> cshape{1, n, n / 2 + 1};
@@ -268,7 +272,9 @@ TEST_CASE("FFTW 2D scalar valued data", "[fft]") {
   }
 }
 
-TEST_CASE("FFTW 2D vector valued data", "[fft]") {
+TEST_CASE("FFTW 2D vector valued data", "[operations][fft]") {
+  std::cout << "TESTING: FFTW 2D vector valued data [operations][fft]"
+            << std::endl;
   zisa::int_t n = 128;
   zisa::shape_t<3> rshape{2, n, n};
   zisa::shape_t<3> cshape{2, n, n / 2 + 1};
@@ -371,7 +377,9 @@ TEST_CASE("FFTW 2D vector valued data", "[fft]") {
   }
 }
 
-TEST_CASE("FFTW 3D scalar valued data", "[fft]") {
+TEST_CASE("FFTW 3D scalar valued data", "[operations][fft]") {
+  std::cout << "TESTING: FFTW 3D scalar valued data [operations][fft]"
+            << std::endl;
   zisa::int_t n = 128;
   zisa::shape_t<4> rshape{1, n, n, n};
   zisa::shape_t<4> cshape{1, n, n, n / 2 + 1};
@@ -425,7 +433,9 @@ TEST_CASE("FFTW 3D scalar valued data", "[fft]") {
   }
 }
 
-TEST_CASE("FFTW 3D vector valued data", "[fft]") {
+TEST_CASE("FFTW 3D vector valued data", "[operations][fft]") {
+  std::cout << "TESTING: FFTW 3D vector valued data [operations][fft]"
+            << std::endl;
   zisa::int_t n = 128;
   zisa::shape_t<4> rshape{3, n, n, n};
   zisa::shape_t<4> cshape{3, n, n, n / 2 + 1};
@@ -503,7 +513,9 @@ TEST_CASE("FFTW 3D vector valued data", "[fft]") {
   }
 }
 
-TEST_CASE("cuFFT 1D scalar valued data", "[cufft]") {
+TEST_CASE("cuFFT 1D scalar valued data", "[operations][fft]") {
+  std::cout << "TESTING: cuFFT 1D scalar valued data [operations][fft]"
+            << std::endl;
   zisa::int_t n = 128;
   zisa::shape_t<2> rshape{1, n};
   zisa::shape_t<2> cshape{1, n / 2 + 1};
@@ -558,7 +570,9 @@ TEST_CASE("cuFFT 1D scalar valued data", "[cufft]") {
   }
 }
 
-TEST_CASE("cuFFT 1D vector valued data", "[cufft]") {
+TEST_CASE("cuFFT 1D vector valued data", "[operations][fft]") {
+  std::cout << "TESTING: cuFFT 1D vector valued data [operations][fft]"
+            << std::endl;
   zisa::int_t n = 128;
   zisa::shape_t<2> rshape{2, n};
   zisa::shape_t<2> cshape{2, n / 2 + 1};
@@ -619,7 +633,9 @@ TEST_CASE("cuFFT 1D vector valued data", "[cufft]") {
   }
 }
 
-TEST_CASE("cuFFT 2D scalar valued data", "[cufft]") {
+TEST_CASE("cuFFT 2D scalar valued data", "[operations][fft]") {
+  std::cout << "TESTING: cuFFT 2D scalar valued data [operations][fft]"
+            << std::endl;
   zisa::int_t n = 128;
   zisa::shape_t<3> rshape{1, n, n};
   zisa::shape_t<3> cshape{1, n, n / 2 + 1};
@@ -719,7 +735,9 @@ TEST_CASE("cuFFT 2D scalar valued data", "[cufft]") {
   }
 }
 
-TEST_CASE("cuFFT 2D vector valued data", "[cufft]") {
+TEST_CASE("cuFFT 2D vector valued data", "[operations][fft]") {
+  std::cout << "TESTING: cuFFT 2D vector valued data [operations][fft]"
+            << std::endl;
   zisa::int_t n = 128;
   zisa::shape_t<3> rshape{2, n, n};
   zisa::shape_t<3> cshape{2, n, n / 2 + 1};
@@ -825,7 +843,9 @@ TEST_CASE("cuFFT 2D vector valued data", "[cufft]") {
   }
 }
 
-TEST_CASE("cuFFT 3D scalar valued data", "[cufft]") {
+TEST_CASE("cuFFT 3D scalar valued data", "[operations][fft]") {
+  std::cout << "TESTING: cuFFT 3D scalar valued data [operations][fft]"
+            << std::endl;
   zisa::int_t n = 128;
   zisa::shape_t<4> rshape{1, n, n, n};
   zisa::shape_t<4> cshape{1, n, n, n / 2 + 1};
@@ -873,7 +893,9 @@ TEST_CASE("cuFFT 3D scalar valued data", "[cufft]") {
   }
 }
 
-TEST_CASE("cuFFT 3D vector valued data", "[cufft]") {
+TEST_CASE("cuFFT 3D vector valued data", "[operations][fft]") {
+  std::cout << "TESTING: cuFFT 3D vector valued data [operations][fft]"
+            << std::endl;
   zisa::int_t n = 128;
   zisa::shape_t<4> rshape{3, n, n, n};
   zisa::shape_t<4> cshape{3, n, n, n / 2 + 1};
@@ -940,7 +962,9 @@ TEST_CASE("cuFFT 3D vector valued data", "[cufft]") {
 }
 
 #if AZEBAN_HAS_MPI
-TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
+TEST_CASE("cuFFT MPI 2d scalar valued data", "[operations][fft][mpi]") {
+  std::cout << "TESTING: cuFFT MPI 2d scalar valued data [operations][fft][mpi]"
+            << std::endl;
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -996,7 +1020,9 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[mpi]") {
   }
 }
 
-TEST_CASE("cuFFT MPI 2d vector valued data", "[mpi]") {
+TEST_CASE("cuFFT MPI 2d vector valued data", "[operations][fft][mpi]") {
+  std::cout << "TESTING: cuFFT MPI 2d vector valued data [operations][fft][mpi]"
+            << std::endl;
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -1062,7 +1088,9 @@ TEST_CASE("cuFFT MPI 2d vector valued data", "[mpi]") {
   }
 }
 
-TEST_CASE("cuFFT MPI 3d scalar valued data", "[mpi]") {
+TEST_CASE("cuFFT MPI 3d scalar valued data", "[operations][fft][mpi]") {
+  std::cout << "TESTING: cuFFT MPI 3d scalar valued data [operations][fft][mpi]"
+            << std::endl;
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -1129,7 +1157,9 @@ TEST_CASE("cuFFT MPI 3d scalar valued data", "[mpi]") {
   }
 }
 
-TEST_CASE("cuFFT MPI 3d vector valued data", "[mpi]") {
+TEST_CASE("cuFFT MPI 3d vector valued data", "[operations][fft][mpi]") {
+  std::cout << "TESTING: cuFFT MPI 3d vector valued data [operations][fft][mpi]"
+            << std::endl;
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);

@@ -18,7 +18,7 @@
 #ifndef FFTWFFT_H_
 #define FFTWFFT_H_
 
-#include <azeban/operations/fft_base.hpp>
+#include <azeban/operations/fft.hpp>
 #include <azeban/profiler.hpp>
 #include <fftw3.h>
 
@@ -77,51 +77,8 @@ public:
   FFTWFFT(const zisa::array_view<complex_t, dim_v + 1> &u_hat,
           const zisa::array_view<real_t, dim_v + 1> &u,
           int direction = FFT_FORWARD | FFT_BACKWARD)
-      : super(u_hat, u, direction) {
-    assert(u_hat.memory_location() == zisa::device_type::cpu
-           && "FFTW is CPU only!");
-    assert(u.memory_location() == zisa::device_type::cpu
-           && "FFTW is CPU only!");
-    int rdist = 1;
-    int cdist = 1;
-    int n[dim_v];
-    for (int i = 0; i < dim_v; ++i) {
-      rdist *= u_.shape()[i + 1];
-      cdist *= u_hat_.shape()[i + 1];
-      n[i] = u_.shape()[i + 1];
-    }
-    // Create a plan for the forward operation
-    if (direction_ & FFT_FORWARD) {
-      plan_forward_ = plan_many_dft_r2c(
-          dim_v,                                        // rank
-          n,                                            // n
-          data_dim_,                                    // howmany
-          u.raw(),                                      // in
-          NULL,                                         // inembed
-          1,                                            // istride
-          rdist,                                        // idist
-          reinterpret_cast<real_t(*)[2]>(u_hat_.raw()), // out
-          NULL,                                         // onembed
-          1,                                            // ostride
-          cdist,                                        // odist
-          FFTW_MEASURE);                                // flags
-    }
-    if (direction_ & FFT_BACKWARD) {
-      // Create a plan for the backward operation
-      plan_backward_ = plan_many_dft_c2r(
-          dim_v,                                        // rank
-          n,                                            // n
-          data_dim_,                                    // howmany
-          reinterpret_cast<real_t(*)[2]>(u_hat_.raw()), // in
-          NULL,                                         // inembed
-          1,                                            // istride
-          cdist,                                        // idist
-          u_.raw(),                                     // out
-          NULL,                                         // onembed
-          1,                                            // ostride
-          rdist,                                        // odist
-          FFTW_MEASURE);                                // flags
-    }
+      : super(direction) {
+    initialize(u_hat, u);
   }
 
   virtual ~FFTWFFT() override {
@@ -132,6 +89,8 @@ public:
       destroy_plan(plan_backward_);
     }
   }
+
+  using super::initialize;
 
   virtual void forward() override {
     LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
@@ -154,6 +113,55 @@ protected:
   using super::direction_;
   using super::u_;
   using super::u_hat_;
+
+  virtual void
+  do_initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat,
+                const zisa::array_view<real_t, Dim + 1> &u) override {
+    assert(u_hat.memory_location() == zisa::device_type::cpu
+           && "FFTW is CPU only!");
+    assert(u.memory_location() == zisa::device_type::cpu
+           && "FFTW is CPU only!");
+    int rdist = 1;
+    int cdist = 1;
+    int n[dim_v];
+    for (int i = 0; i < dim_v; ++i) {
+      rdist *= u.shape()[i + 1];
+      cdist *= u_hat.shape()[i + 1];
+      n[i] = u.shape()[i + 1];
+    }
+    // Create a plan for the forward operation
+    if (direction_ & FFT_FORWARD) {
+      plan_forward_ = plan_many_dft_r2c(
+          dim_v,                                       // rank
+          n,                                           // n
+          data_dim_,                                   // howmany
+          u.raw(),                                     // in
+          NULL,                                        // inembed
+          1,                                           // istride
+          rdist,                                       // idist
+          reinterpret_cast<real_t(*)[2]>(u_hat.raw()), // out
+          NULL,                                        // onembed
+          1,                                           // ostride
+          cdist,                                       // odist
+          FFTW_MEASURE);                               // flags
+    }
+    if (direction_ & FFT_BACKWARD) {
+      // Create a plan for the backward operation
+      plan_backward_
+          = plan_many_dft_c2r(dim_v,     // rank
+                              n,         // n
+                              data_dim_, // howmany
+                              reinterpret_cast<real_t(*)[2]>(u_hat.raw()), // in
+                              NULL,          // inembed
+                              1,             // istride
+                              cdist,         // idist
+                              u.raw(),       // out
+                              NULL,          // onembed
+                              1,             // ostride
+                              rdist,         // odist
+                              FFTW_MEASURE); // flags
+    }
+  }
 
 private:
   fftw_plan_t plan_forward_;

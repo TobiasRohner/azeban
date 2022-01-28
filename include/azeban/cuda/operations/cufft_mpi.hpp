@@ -19,7 +19,7 @@
 #define CUFFT_MPI_H_
 
 #include <azeban/cuda/cuda_check_error.hpp>
-#include <azeban/operations/fft_base.hpp>
+#include <azeban/operations/fft.hpp>
 #include <azeban/profiler.hpp>
 #include <cufft.h>
 #include <mpi.h>
@@ -52,16 +52,20 @@ public:
 
   virtual ~CUFFT_MPI() override;
 
+  using super::initialize;
+
   virtual void forward() override;
   virtual void backward() override;
 
   virtual void *get_work_area() const override;
 
 protected:
-  using super::data_dim_;
   using super::direction_;
   using super::u_;
   using super::u_hat_;
+
+  virtual void do_initialize(const zisa::array_view<complex_t, 3> &u_hat,
+                             const zisa::array_view<real_t, 3> &u) override;
 
 private:
   cufftHandle plan_forward_r2c_;
@@ -103,16 +107,20 @@ public:
 
   virtual ~CUFFT_MPI() override;
 
+  using super::initialize;
+
   virtual void forward() override;
   virtual void backward() override;
 
   virtual void *get_work_area() const override;
 
 protected:
-  using super::data_dim_;
   using super::direction_;
   using super::u_;
   using super::u_hat_;
+
+  virtual void do_initialize(const zisa::array_view<complex_t, 4> &u_hat,
+                             const zisa::array_view<real_t, 4> &u) override;
 
 private:
   cufftHandle plan_forward_r2c_;

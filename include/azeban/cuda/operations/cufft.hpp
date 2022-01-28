@@ -19,7 +19,7 @@
 #define CUFFT_H_
 
 #include <azeban/cuda/cuda_check_error.hpp>
-#include <azeban/operations/fft_base.hpp>
+#include <azeban/operations/fft.hpp>
 #include <azeban/profiler.hpp>
 #include <cufft.h>
 
@@ -38,7 +38,74 @@ public:
   CUFFT(const zisa::array_view<complex_t, dim_v + 1> &u_hat,
         const zisa::array_view<real_t, dim_v + 1> &u,
         int direction = FFT_FORWARD | FFT_BACKWARD)
-      : super(u_hat, u, direction) {
+      : super(direction) {
+    initialize(u_hat, u);
+  }
+
+  virtual ~CUFFT() override {
+    if (direction_ & FFT_FORWARD) {
+      cufftDestroy(plan_forward_);
+    }
+    if (direction_ & FFT_BACKWARD) {
+      cufftDestroy(plan_backward_);
+    }
+    cudaFree(work_area_);
+  }
+
+  using super::initialize;
+
+  virtual void forward() override {
+    LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
+               "Forward operation was not initialized");
+    AZEBAN_PROFILE_START("CUFFT::forward");
+    if constexpr (std::is_same_v<float, real_t>) {
+      auto status
+          = cufftExecR2C(plan_forward_,
+                         u_.raw(),
+                         reinterpret_cast<cufftComplex *>(u_hat_.raw()));
+      cudaCheckError(status);
+      cudaDeviceSynchronize();
+    } else {
+      auto status
+          = cufftExecD2Z(plan_forward_,
+                         u_.raw(),
+                         reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()));
+      cudaCheckError(status);
+      cudaDeviceSynchronize();
+    }
+    AZEBAN_PROFILE_STOP("CUFFT::forward");
+  }
+
+  virtual void backward() override {
+    LOG_ERR_IF((direction_ & FFT_BACKWARD) == 0,
+               "Backward operation was not initialized");
+    AZEBAN_PROFILE_START("CUFFT::backward");
+    if constexpr (std::is_same_v<float, real_t>) {
+      auto status = cufftExecC2R(plan_backward_,
+                                 reinterpret_cast<cufftComplex *>(u_hat_.raw()),
+                                 u_.raw());
+      cudaCheckError(status);
+      cudaDeviceSynchronize();
+    } else {
+      auto status
+          = cufftExecZ2D(plan_backward_,
+                         reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()),
+                         u_.raw());
+      cudaCheckError(status);
+      cudaDeviceSynchronize();
+    }
+    AZEBAN_PROFILE_STOP("CUFFT::backward");
+  }
+
+protected:
+  using super::data_dim_;
+  using super::direction_;
+  using super::u_;
+  using super::u_hat_;
+
+  virtual void
+  do_initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat,
+                const zisa::array_view<real_t, Dim + 1> &u) override {
     assert(u_hat.memory_location() == zisa::device_type::cuda
            && "cuFFT is GPU only!");
     assert(u.memory_location() == zisa::device_type::cuda
@@ -47,9 +114,9 @@ public:
     int cdist = 1;
     int n[dim_v];
     for (int i = 0; i < dim_v; ++i) {
-      rdist *= u_.shape(i + 1);
-      cdist *= u_hat_.shape(i + 1);
-      n[i] = u_.shape(i + 1);
+      rdist *= u.shape(i + 1);
+      cdist *= u_hat.shape(i + 1);
+      n[i] = u.shape(i + 1);
     }
     size_t workspace_size = 0;
     // Create a plan for the forward operation
@@ -100,74 +167,15 @@ public:
     }
     // Allocate the shared work area
     cudaMalloc((void **)(&work_area_), workspace_size);
-    if (direction & FFT_FORWARD) {
+    if (direction_ & FFT_FORWARD) {
       cufftResult status = cufftSetWorkArea(plan_forward_, work_area_);
       cudaCheckError(status);
     }
-    if (direction & FFT_BACKWARD) {
+    if (direction_ & FFT_BACKWARD) {
       cufftResult status = cufftSetWorkArea(plan_backward_, work_area_);
       cudaCheckError(status);
     }
   }
-
-  virtual ~CUFFT() override {
-    if (direction_ & FFT_FORWARD) {
-      cufftDestroy(plan_forward_);
-    }
-    if (direction_ & FFT_BACKWARD) {
-      cufftDestroy(plan_backward_);
-    }
-    cudaFree(work_area_);
-  }
-
-  virtual void forward() override {
-    LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
-               "Forward operation was not initialized");
-    AZEBAN_PROFILE_START("CUFFT::forward");
-    if constexpr (std::is_same_v<float, real_t>) {
-      auto status
-          = cufftExecR2C(plan_forward_,
-                         u_.raw(),
-                         reinterpret_cast<cufftComplex *>(u_hat_.raw()));
-      cudaCheckError(status);
-      cudaDeviceSynchronize();
-    } else {
-      auto status
-          = cufftExecD2Z(plan_forward_,
-                         u_.raw(),
-                         reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()));
-      cudaCheckError(status);
-      cudaDeviceSynchronize();
-    }
-    AZEBAN_PROFILE_STOP("CUFFT::forward");
-  }
-
-  virtual void backward() override {
-    LOG_ERR_IF((direction_ & FFT_BACKWARD) == 0,
-               "Backward operation was not initialized");
-    AZEBAN_PROFILE_START("CUFFT::backward");
-    if constexpr (std::is_same_v<float, real_t>) {
-      auto status = cufftExecC2R(plan_backward_,
-                                 reinterpret_cast<cufftComplex *>(u_hat_.raw()),
-                                 u_.raw());
-      cudaCheckError(status);
-      cudaDeviceSynchronize();
-    } else {
-      auto status
-          = cufftExecZ2D(plan_backward_,
-                         reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()),
-                         u_.raw());
-      cudaCheckError(status);
-      cudaDeviceSynchronize();
-    }
-    AZEBAN_PROFILE_STOP("CUFFT::backward");
-  }
-
-protected:
-  using super::data_dim_;
-  using super::direction_;
-  using super::u_;
-  using super::u_hat_;
 
 private:
   cufftHandle plan_forward_;
