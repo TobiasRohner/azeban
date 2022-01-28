@@ -83,6 +83,9 @@ public:
   virtual void forward() = 0;
   virtual void backward() = 0;
 
+  bool is_forward() const { return direction_ & FFT_FORWARD; }
+  bool is_backward() const { return direction_ & FFT_BACKWARD; }
+
   decltype(auto) shape() const { return u_.shape(); }
   decltype(auto) shape(zisa::int_t i) const { return u_.shape(i); }
 

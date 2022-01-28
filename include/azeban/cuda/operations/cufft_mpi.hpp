@@ -80,13 +80,13 @@ private:
   bool free_work_area_;
 
   static constexpr cufftType type_forward_r2c
-      = std::is_same_v<float, real_t> ? CUFFT_R2C : CUFFT_D2Z;
+      = std::is_same_v<float, real_t> ? ::CUFFT_R2C : ::CUFFT_D2Z;
   static constexpr cufftType type_backward_c2r
-      = std::is_same_v<float, real_t> ? CUFFT_C2R : CUFFT_Z2D;
+      = std::is_same_v<float, real_t> ? ::CUFFT_C2R : ::CUFFT_Z2D;
   static constexpr cufftType type_forward_c2c
-      = std::is_same_v<float, real_t> ? CUFFT_C2C : CUFFT_Z2Z;
+      = std::is_same_v<float, real_t> ? ::CUFFT_C2C : ::CUFFT_Z2Z;
   static constexpr cufftType type_backward_c2c
-      = std::is_same_v<float, real_t> ? CUFFT_C2C : CUFFT_Z2Z;
+      = std::is_same_v<float, real_t> ? ::CUFFT_C2C : ::CUFFT_Z2Z;
 };
 
 template <>
@@ -135,13 +135,13 @@ private:
   bool free_work_area_;
 
   static constexpr cufftType type_forward_r2c
-      = std::is_same_v<float, real_t> ? CUFFT_R2C : CUFFT_D2Z;
+      = std::is_same_v<float, real_t> ? ::CUFFT_R2C : ::CUFFT_D2Z;
   static constexpr cufftType type_backward_c2r
-      = std::is_same_v<float, real_t> ? CUFFT_C2R : CUFFT_Z2D;
+      = std::is_same_v<float, real_t> ? ::CUFFT_C2R : ::CUFFT_Z2D;
   static constexpr cufftType type_forward_c2c
-      = std::is_same_v<float, real_t> ? CUFFT_C2C : CUFFT_Z2Z;
+      = std::is_same_v<float, real_t> ? ::CUFFT_C2C : ::CUFFT_Z2Z;
   static constexpr cufftType type_backward_c2c
-      = std::is_same_v<float, real_t> ? CUFFT_C2C : CUFFT_Z2Z;
+      = std::is_same_v<float, real_t> ? ::CUFFT_C2C : ::CUFFT_Z2Z;
 };
 
 }

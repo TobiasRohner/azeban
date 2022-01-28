@@ -15,8 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef FFT_FACTORY_H_
-#define FFT_FACTORY_H_
+#ifndef AZEBAN_OPERATIONS_FFT_FACTORY_HPP_
+#define AZEBAN_OPERATIONS_FFT_FACTORY_HPP_
 
 #include <azeban/config.hpp>
 #include <azeban/operations/fft.hpp>
@@ -25,9 +25,14 @@
 namespace azeban {
 
 template <int Dim>
-std::shared_ptr<FFT<Dim>>
+std::shared_ptr<FFT<Dim, real_t>>
 make_fft(const zisa::array_view<complex_t, Dim + 1> &u_hat,
          const zisa::array_view<real_t, Dim + 1> &u,
+         int direction = FFT_FORWARD | FFT_BACKWARD);
+template <int Dim>
+std::shared_ptr<FFT<Dim, complex_t>>
+make_fft(const zisa::array_view<complex_t, Dim + 1> &u_hat,
+         const zisa::array_view<complex_t, Dim + 1> &u,
          int direction = FFT_FORWARD | FFT_BACKWARD);
 
 }
