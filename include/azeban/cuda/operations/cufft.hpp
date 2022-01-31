@@ -46,6 +46,7 @@ public:
 protected:
   using super::data_dim_;
   using super::direction_;
+  using super::transform_dims_;
   using super::u_;
   using super::u_hat_;
 
@@ -87,6 +88,7 @@ public:
 protected:
   using super::data_dim_;
   using super::direction_;
+  using super::transform_dims_;
   using super::u_;
   using super::u_hat_;
 

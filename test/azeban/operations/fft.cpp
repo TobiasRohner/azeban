@@ -20,7 +20,7 @@
 #include <azeban/cuda/operations/cufft.hpp>
 #include <azeban/cuda/operations/cufft_mpi.hpp>
 #include <azeban/grid.hpp>
-#include <azeban/operations/fft.hpp>
+#include <azeban/operations/fft_factory.hpp>
 #include <azeban/operations/fftwfft.hpp>
 #include <fmt/core.h>
 #include <iostream>
@@ -29,936 +29,227 @@
 #include <zisa/math/basic_functions.hpp>
 #include <zisa/memory/array_view.hpp>
 
-TEST_CASE("Learn the cufft API", "[operations][fft]") {
-  std::cout << "TESTING: Learn the cufft API [operations][fft]" << std::endl;
-
-  zisa::int_t n = 128;
-  auto shape = zisa::shape_t<1>{n};
-  auto u = zisa::array<cufftComplex, 1>(shape);
-  auto uhat = zisa::array<cufftComplex, 1>(shape);
-
-  for (zisa::int_t i = 0; i < n; ++i) {
-    u[i].x = zisa::cos(2.0 * zisa::pi * i / n);
-    u[i].y = 0.0;
+static void dft(const zisa::array_const_view<azeban::real_t, 1> &in,
+                const zisa::array_view<azeban::complex_t, 1> &out) {
+  const zisa::int_t n = in.size();
+  for (zisa::int_t i = 0; i < n / 2 + 1; ++i) {
+    out[i] = 0;
+    for (zisa::int_t k = 0; k < n; ++k) {
+      const azeban::real_t xi
+          = -2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
+      out[i] += in[k] * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
+    }
   }
+}
 
-  cufftHandle plan;
-  auto status = cufftPlan1d(&plan, shape[0], CUFFT_C2C, 1);
-  REQUIRE(status == CUFFT_SUCCESS);
+static void dft(const zisa::array_const_view<azeban::complex_t, 1> &in,
+                const zisa::array_view<azeban::complex_t, 1> &out) {
+  const zisa::int_t n = in.size();
+  for (zisa::int_t i = 0; i < n; ++i) {
+    out[i] = 0;
+    for (zisa::int_t k = 0; k < n; ++k) {
+      const azeban::real_t xi
+          = -2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
+      out[i] += in[k] * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
+    }
+  }
+}
 
-  auto d_u = zisa::cuda_array<cufftComplex, 1>(shape);
-  auto d_uhat = zisa::cuda_array<cufftComplex, 1>(shape);
+static void dft(const zisa::array_const_view<azeban::real_t, 2> &in,
+                const zisa::array_view<azeban::complex_t, 2> &out) {
+  const zisa::int_t Nx = in.shape(0);
+  const zisa::int_t Ny = in.shape(1);
+  zisa::array<azeban::complex_t, 2> tmp(out.shape(), zisa::device_type::cpu);
+  zisa::array<azeban::complex_t, 1> x_buf_in(zisa::shape_t<1>(Nx),
+                                             zisa::device_type::cpu);
+  zisa::array<azeban::complex_t, 1> x_buf_out(zisa::shape_t<1>(Nx),
+                                              zisa::device_type::cpu);
+  for (zisa::int_t i = 0; i < Nx; ++i) {
+    zisa::array_const_view<azeban::real_t, 1> y_buf_in(
+        zisa::shape_t<1>(Ny), &in(i, 0), zisa::device_type::cpu);
+    zisa::array_view<azeban::complex_t, 1> y_buf_out(
+        zisa::shape_t<1>(Ny / 2 + 1), &tmp(i, 0), zisa::device_type::cpu);
+    dft(y_buf_in, y_buf_out);
+  }
+  for (zisa::int_t i = 0; i < Ny / 2 + 1; ++i) {
+    for (zisa::int_t j = 0; j < Nx; ++j) {
+      x_buf_in[j] = tmp(j, i);
+    }
+    dft(x_buf_in, x_buf_out);
+    for (zisa::int_t j = 0; j < Nx; ++j) {
+      out(j, i) = x_buf_out[j];
+    }
+  }
+}
 
-  zisa::copy(d_u, u);
-  cufftExecC2C(plan, d_u.raw(), d_uhat.raw(), CUFFT_FORWARD);
-  zisa::copy(uhat, d_uhat);
+static void dft(const zisa::array_const_view<azeban::real_t, 3> &in,
+                const zisa::array_view<azeban::complex_t, 3> &out) {
+  const zisa::int_t Nx = in.shape(0);
+  const zisa::int_t Ny = in.shape(1);
+  const zisa::int_t Nz = in.shape(2);
+  zisa::array<azeban::complex_t, 3> tmp(out.shape(), zisa::device_type::cpu);
+  zisa::array<azeban::complex_t, 1> x_buf_in(zisa::shape_t<1>(Nx),
+                                             zisa::device_type::cpu);
+  zisa::array<azeban::complex_t, 1> x_buf_out(zisa::shape_t<1>(Nx),
+                                              zisa::device_type::cpu);
+  for (zisa::int_t i = 0; i < Nx; ++i) {
+    zisa::array_const_view<azeban::real_t, 2> yz_buf_in(
+        zisa::shape_t<2>(Ny, Nz), &in(i, 0, 0), zisa::device_type::cpu);
+    zisa::array_view<azeban::complex_t, 2> yz_buf_out(
+        zisa::shape_t<2>(Ny, Nz / 2 + 1),
+        &tmp(i, 0, 0),
+        zisa::device_type::cpu);
+    dft(yz_buf_in, yz_buf_out);
+  }
+  for (zisa::int_t i = 0; i < Ny; ++i) {
+    for (zisa::int_t j = 0; j < Nz / 2 + 1; ++j) {
+      for (zisa::int_t k = 0; k < Nx; ++k) {
+        x_buf_in[k] = tmp(k, i, j);
+      }
+      dft(x_buf_in, x_buf_out);
+      for (zisa::int_t k = 0; k < Nx; ++k) {
+        out(k, i, j) = x_buf_out[k];
+      }
+    }
+  }
+}
 
-  auto d_u2 = zisa::cuda_array<cufftComplex, 1>(shape);
-  cufftExecC2C(plan, d_uhat.raw(), d_u2.raw(), CUFFT_INVERSE);
+template <int Dim>
+static void init(const zisa::array_view<azeban::real_t, Dim> &u) {
+  std::mt19937 rng;
+  std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
+  for (zisa::int_t i = 0; i < u.size(); ++i) {
+    u[i] = dist(rng);
+  }
+}
 
-  auto u2 = zisa::array<cufftComplex, 1>(shape);
-  zisa::copy(u2, d_u2);
+template <int Dim>
+static void test_fft(zisa::int_t n,
+                     zisa::int_t D,
+                     zisa::device_type device = zisa::device_type::cpu) {
+  zisa::shape_t<Dim + 1> rshape;
+  zisa::shape_t<Dim + 1> cshape;
+  rshape[0] = D;
+  cshape[0] = D;
+  for (int i = 0; i < Dim; ++i) {
+    rshape[i + 1] = n;
+    cshape[i + 1] = n;
+  }
+  cshape[Dim] = n / 2 + 1;
+  auto h_u = zisa::array<azeban::real_t, Dim + 1>(rshape);
+  auto h_u_ref = zisa::array<azeban::real_t, Dim + 1>(rshape);
+  auto h_u_hat = zisa::array<azeban::complex_t, Dim + 1>(cshape);
+  auto h_u_hat_ref = zisa::array<azeban::complex_t, Dim + 1>(cshape);
+  auto d_u = zisa::array<azeban::real_t, Dim + 1>(rshape, device);
+  auto d_u_hat = zisa::array<azeban::complex_t, Dim + 1>(cshape, device);
+
+  std::shared_ptr<azeban::FFT<Dim>> fft = azeban::make_fft<Dim>(d_u_hat, d_u);
+
+  zisa::shape_t<Dim> u_ref_view_shape;
+  for (int i = 0; i < Dim; ++i) {
+    u_ref_view_shape[i] = n;
+  }
+  zisa::shape_t<Dim> u_hat_ref_view_shape = u_ref_view_shape;
+  u_hat_ref_view_shape[Dim - 1] = n / 2 + 1;
+  for (zisa::int_t d = 0; d < D; ++d) {
+    zisa::array_view<azeban::real_t, Dim> u_ref_view(
+        u_ref_view_shape,
+        h_u_ref.raw() + d * zisa::product(u_ref_view_shape),
+        zisa::device_type::cpu);
+    zisa::array_view<azeban::complex_t, Dim> u_hat_ref_view(
+        u_hat_ref_view_shape,
+        h_u_hat_ref.raw() + d * zisa::product(u_hat_ref_view_shape),
+        zisa::device_type::cpu);
+    init(u_ref_view);
+    dft(u_ref_view, u_hat_ref_view);
+  }
+  zisa::copy(h_u, h_u_ref);
+
+  zisa::copy(d_u, h_u);
+  fft->forward();
+  zisa::copy(h_u_hat, d_u_hat);
+  fft->backward();
+  zisa::copy(h_u, d_u);
+
+  for (zisa::int_t i = 0; i < zisa::product(cshape); ++i) {
+    REQUIRE(std::fabs(h_u_hat[i].x - h_u_hat_ref[i].x) <= 1e-8);
+    REQUIRE(std::fabs(h_u_hat[i].y - h_u_hat_ref[i].y) <= 1e-8);
+  }
+  for (zisa::int_t i = 0; i < zisa::product(rshape); ++i) {
+    REQUIRE(std::fabs(h_u[i] / zisa::pow<Dim>(n) - h_u_ref[i]) <= 1e-8);
+  }
 }
 
 TEST_CASE("FFTW 1D scalar valued data", "[operations][fft]") {
   std::cout << "TESTING: FFTW 1D scalar valued data [operations][fft]"
             << std::endl;
-  zisa::int_t n = 128;
-  zisa::shape_t<2> rshape{1, n};
-  zisa::shape_t<2> cshape{1, n / 2 + 1};
-  zisa::array<azeban::real_t, 2> u(rshape);
-  zisa::array<azeban::real_t, 2> u_ref(rshape);
-  zisa::array<azeban::complex_t, 2> u_hat(cshape);
-  zisa::array<azeban::complex_t, 2> u_hat_ref(cshape);
-
-  std::shared_ptr<azeban::FFT<1>> fft
-      = std::make_shared<azeban::FFTWFFT<1>>(u_hat, u);
-
-  std::mt19937 rng;
-  std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  u_hat_ref[0].x = dist(rng);
-  u_hat_ref[0].y = 0;
-  for (zisa::int_t k = 1; k < n / 2; ++k) {
-    u_hat_ref[k].x = dist(rng);
-    u_hat_ref[k].y = dist(rng);
-  }
-  u_hat_ref[n / 2].x = dist(rng);
-  u_hat_ref[n / 2].y = n % 2 ? dist(rng) : 0;
-  for (zisa::int_t i = 0; i < n; ++i) {
-    u_ref[i] = u_hat_ref[0].x / n;
-    for (zisa::int_t k = 1; k < n / 2 + 1; ++k) {
-      const azeban::real_t xi
-          = 2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
-      const azeban::complex_t a
-          = u_hat_ref[k] * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
-      if (k == n / 2 && n % 2 == 0) {
-        u_ref[i] += a.x / n;
-      } else {
-        u_ref[i] += 2 * a.x / n;
-      }
-    }
-  }
-  zisa::copy(u, u_ref);
-
-  fft->forward();
-
-  for (zisa::int_t i = 0; i < n / 2 + 1; ++i) {
-    REQUIRE(std::fabs(u_hat[i].x - u_hat_ref[i].x) <= 1e-10);
-    REQUIRE(std::fabs(u_hat[i].y - u_hat_ref[i].y) <= 1e-10);
-  }
-
-  fft->backward();
-
-  for (zisa::int_t i = 0; i < n; ++i) {
-    REQUIRE(std::fabs(u[i] / n - u_ref[i]) <= 1e-10);
-  }
+  test_fft<1>(128, 1);
 }
 
 TEST_CASE("FFTW 1D vector valued data", "[operations][fft]") {
   std::cout << "TESTING: FFTW 1D vector valued data [operations][fft]"
             << std::endl;
-  zisa::int_t n = 128;
-  zisa::shape_t<2> rshape{2, n};
-  zisa::shape_t<2> cshape{2, n / 2 + 1};
-  auto u = zisa::array<azeban::real_t, 2>(rshape);
-  auto u_ref = zisa::array<azeban::real_t, 2>(rshape);
-  auto u_hat = zisa::array<azeban::complex_t, 2>(cshape);
-  auto u_hat_ref = zisa::array<azeban::complex_t, 2>(cshape);
-
-  std::shared_ptr<azeban::FFT<1>> fft
-      = std::make_shared<azeban::FFTWFFT<1>>(u_hat, u);
-
-  std::mt19937 rng;
-  std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  for (zisa::int_t d = 0; d < 2; ++d) {
-    u_hat_ref(d, 0).x = dist(rng);
-    u_hat_ref(d, 0).y = 0;
-    for (zisa::int_t k = 1; k < n / 2; ++k) {
-      u_hat_ref(d, k).x = dist(rng);
-      u_hat_ref(d, k).y = dist(rng);
-    }
-    u_hat_ref(d, n / 2).x = dist(rng);
-    u_hat_ref(d, n / 2).y = n % 2 ? dist(rng) : 0;
-    for (zisa::int_t i = 0; i < n; ++i) {
-      u_ref(d, i) = u_hat_ref(d, 0).x / n;
-      for (zisa::int_t k = 1; k < n / 2 + 1; ++k) {
-        const azeban::real_t xi
-            = 2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
-        const azeban::complex_t a
-            = u_hat_ref(d, k) * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
-        if (k == n / 2 && n % 2 == 0) {
-          u_ref(d, i) += a.x / n;
-        } else {
-          u_ref(d, i) += 2 * a.x / n;
-        }
-      }
-    }
-  }
-  zisa::copy(u, u_ref);
-
-  fft->forward();
-
-  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
-    REQUIRE(std::fabs(u_hat(0, i).x - u_hat_ref(0, i).x) <= 1e-10);
-    REQUIRE(std::fabs(u_hat(0, i).y - u_hat_ref(0, i).y) <= 1e-10);
-    REQUIRE(std::fabs(u_hat(1, i).x - u_hat_ref(1, i).x) <= 1e-10);
-    REQUIRE(std::fabs(u_hat(1, i).y - u_hat_ref(1, i).y) <= 1e-10);
-  }
-
-  fft->backward();
-
-  for (zisa::int_t i = 0; i < rshape[1]; ++i) {
-    REQUIRE(std::fabs(u(0, i) / n - u_ref(0, i)) <= 1e-10);
-    REQUIRE(std::fabs(u(1, i) / n - u_ref(1, i)) <= 1e-10);
-  }
+  test_fft<1>(128, 2);
 }
 
 TEST_CASE("FFTW 2D scalar valued data", "[operations][fft]") {
   std::cout << "TESTING: FFTW 2D scalar valued data [operations][fft]"
             << std::endl;
-  zisa::int_t n = 128;
-  zisa::shape_t<3> rshape{1, n, n};
-  zisa::shape_t<3> cshape{1, n, n / 2 + 1};
-  auto u = zisa::array<azeban::real_t, 3>(rshape);
-  auto u_ref = zisa::array<azeban::real_t, 3>(rshape);
-  auto u_hat = zisa::array<azeban::complex_t, 3>(cshape);
-  auto u_hat_ref = zisa::array<azeban::complex_t, 3>(cshape);
-
-  std::shared_ptr<azeban::FFT<2>> fft
-      = std::make_shared<azeban::FFTWFFT<2>>(u_hat, u);
-
-  std::mt19937 rng;
-  std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  for (zisa::int_t i = 0; i < n; ++i) {
-    if (i < n / 2 + 1) {
-      u_hat_ref(0, i, 0).x = dist(rng);
-      u_hat_ref(0, i, 0).y
-          = (i == 0 || (i == n / 2 && n % 2 == 0)) ? 0 : dist(rng);
-    } else {
-      u_hat_ref(0, i, 0) = azeban::complex_t(u_hat_ref(0, n - i, 0).x,
-                                             -u_hat_ref(0, n - i, 0).y);
-    }
-    for (zisa::int_t j = 1; j < n / 2; ++j) {
-      u_hat_ref(0, i, j).x = dist(rng);
-      u_hat_ref(0, i, j).y = dist(rng);
-    }
-    if (i < n / 2 + 1) {
-      u_hat_ref(0, i, n / 2).x = dist(rng);
-      u_hat_ref(0, i, n / 2).y
-          = (n % 2 == 0 && (i == 0 || (i == n / 2 && n % 2 == 0))) ? 0
-                                                                   : dist(rng);
-    } else {
-      u_hat_ref(0, i, n / 2) = azeban::complex_t(u_hat_ref(0, n - i, n / 2).x,
-                                                 -u_hat_ref(0, n - i, n / 2).y);
-    }
-  }
-  for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0; j < n; ++j) {
-      u_ref(0, i, j) = 0;
-      for (zisa::int_t k = 0; k < n; ++k) {
-        {
-          const azeban::real_t xi
-              = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-          const azeban::real_t eta = 0;
-          const azeban::complex_t a
-              = u_hat_ref(0, k, 0)
-                * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-          u_ref(0, i, j) += a.x / (n * n);
-        }
-        for (zisa::int_t l = 1; l < n / 2; ++l) {
-          const azeban::real_t xi
-              = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-          const azeban::real_t eta
-              = 2 * zisa::pi * static_cast<azeban::real_t>(j * l) / n;
-          const azeban::complex_t a
-              = u_hat_ref(0, k, l)
-                * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-          u_ref(0, i, j) += 2 * a.x / (n * n);
-        }
-        {
-          const azeban::real_t xi
-              = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-          const azeban::real_t eta
-              = 2 * zisa::pi * static_cast<azeban::real_t>(j * (n / 2)) / n;
-          const azeban::complex_t a
-              = u_hat_ref(0, k, n / 2)
-                * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-          if (n % 2 == 0) {
-            u_ref(0, i, j) += a.x / (n * n);
-          } else {
-            u_ref(0, i, j) += 2 * a.x / (n * n);
-          }
-        }
-      }
-    }
-  }
-  zisa::copy(u, u_ref);
-
-  fft->forward();
-
-  for (zisa::int_t k = 0; k < cshape[1]; ++k) {
-    for (zisa::int_t l = 0; l < cshape[2]; ++l) {
-      REQUIRE(std::fabs(u_hat(0, k, l).x - u_hat_ref(0, k, l).x) <= 1e-10);
-      REQUIRE(std::fabs(u_hat(0, k, l).y - u_hat_ref(0, k, l).y) <= 1e-10);
-    }
-  }
-
-  fft->backward();
-
-  for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0; j < n; ++j) {
-      REQUIRE(std::fabs(u(0, i, j) / (n * n) - u_ref(0, i, j)) <= 1e-8);
-    }
-  }
+  test_fft<2>(128, 1);
 }
 
 TEST_CASE("FFTW 2D vector valued data", "[operations][fft]") {
   std::cout << "TESTING: FFTW 2D vector valued data [operations][fft]"
             << std::endl;
-  zisa::int_t n = 128;
-  zisa::shape_t<3> rshape{2, n, n};
-  zisa::shape_t<3> cshape{2, n, n / 2 + 1};
-  auto u = zisa::array<azeban::real_t, 3>(rshape);
-  auto u_ref = zisa::array<azeban::real_t, 3>(rshape);
-  auto u_hat = zisa::array<azeban::complex_t, 3>(cshape);
-  auto u_hat_ref = zisa::array<azeban::complex_t, 3>(cshape);
-
-  std::shared_ptr<azeban::FFT<2>> fft
-      = std::make_shared<azeban::FFTWFFT<2>>(u_hat, u);
-
-  std::mt19937 rng;
-  std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  for (zisa::int_t d = 0; d < 2; ++d) {
-    for (zisa::int_t i = 0; i < n; ++i) {
-      if (i < n / 2 + 1) {
-        u_hat_ref(d, i, 0).x = dist(rng);
-        u_hat_ref(d, i, 0).y
-            = (i == 0 || (i == n / 2 && n % 2 == 0)) ? 0 : dist(rng);
-      } else {
-        u_hat_ref(d, i, 0) = azeban::complex_t(u_hat_ref(d, n - i, 0).x,
-                                               -u_hat_ref(d, n - i, 0).y);
-      }
-      for (zisa::int_t j = 1; j < n / 2; ++j) {
-        u_hat_ref(d, i, j).x = dist(rng);
-        u_hat_ref(d, i, j).y = dist(rng);
-      }
-      if (i < n / 2 + 1) {
-        u_hat_ref(d, i, n / 2).x = dist(rng);
-        u_hat_ref(d, i, n / 2).y
-            = (n % 2 == 0 && (i == 0 || (i == n / 2 && n % 2 == 0)))
-                  ? 0
-                  : dist(rng);
-      } else {
-        u_hat_ref(d, i, n / 2) = azeban::complex_t(
-            u_hat_ref(d, n - i, n / 2).x, -u_hat_ref(d, n - i, n / 2).y);
-      }
-    }
-    for (zisa::int_t i = 0; i < n; ++i) {
-      for (zisa::int_t j = 0; j < n; ++j) {
-        u_ref(d, i, j) = 0;
-        for (zisa::int_t k = 0; k < n; ++k) {
-          {
-            const azeban::real_t xi
-                = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-            const azeban::real_t eta = 0;
-            const azeban::complex_t a
-                = u_hat_ref(d, k, 0)
-                  * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-            u_ref(d, i, j) += a.x / (n * n);
-          }
-          for (zisa::int_t l = 1; l < n / 2; ++l) {
-            const azeban::real_t xi
-                = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-            const azeban::real_t eta
-                = 2 * zisa::pi * static_cast<azeban::real_t>(j * l) / n;
-            const azeban::complex_t a
-                = u_hat_ref(d, k, l)
-                  * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-            u_ref(d, i, j) += 2 * a.x / (n * n);
-          }
-          {
-            const azeban::real_t xi
-                = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-            const azeban::real_t eta
-                = 2 * zisa::pi * static_cast<azeban::real_t>(j * (n / 2)) / n;
-            const azeban::complex_t a
-                = u_hat_ref(d, k, n / 2)
-                  * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-            if (n % 2 == 0) {
-              u_ref(d, i, j) += a.x / (n * n);
-            } else {
-              u_ref(d, i, j) += 2 * a.x / (n * n);
-            }
-          }
-        }
-      }
-    }
-  }
-  zisa::copy(u, u_ref);
-
-  fft->forward();
-
-  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
-    for (zisa::int_t j = 0; j < cshape[2]; ++j) {
-      REQUIRE(std::fabs(u_hat(0, i, j).x - u_hat_ref(0, i, j).x) <= 1e-10);
-      REQUIRE(std::fabs(u_hat(0, i, j).x - u_hat_ref(0, i, j).x) <= 1e-10);
-      REQUIRE(std::fabs(u_hat(1, i, j).y - u_hat_ref(1, i, j).y) <= 1e-10);
-      REQUIRE(std::fabs(u_hat(1, i, j).y - u_hat_ref(1, i, j).y) <= 1e-10);
-    }
-  }
-
-  fft->backward();
-
-  for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0; j < n; ++j) {
-      REQUIRE(std::fabs(u(0, i, j) / (n * n) - u_ref(0, i, j)) <= 1e-8);
-      REQUIRE(std::fabs(u(1, i, j) / (n * n) - u_ref(1, i, j)) <= 1e-8);
-    }
-  }
+  test_fft<2>(128, 2);
 }
 
 TEST_CASE("FFTW 3D scalar valued data", "[operations][fft]") {
   std::cout << "TESTING: FFTW 3D scalar valued data [operations][fft]"
             << std::endl;
-  zisa::int_t n = 128;
-  zisa::shape_t<4> rshape{1, n, n, n};
-  zisa::shape_t<4> cshape{1, n, n, n / 2 + 1};
-  auto u = zisa::array<azeban::real_t, 4>(rshape);
-  auto u_hat = zisa::array<azeban::complex_t, 4>(cshape);
-
-  std::shared_ptr<azeban::FFT<3>> fft
-      = std::make_shared<azeban::FFTWFFT<3>>(u_hat, u);
-
-  for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0; j < n; ++j) {
-      for (zisa::int_t k = 0; k < n; ++k) {
-        u(0, i, j, k) = zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
-      }
-    }
-  }
-
-  fft->forward();
-
-  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
-    for (zisa::int_t j = 0; j < cshape[2]; ++j) {
-      for (zisa::int_t k = 0; k < cshape[3]; ++k) {
-        const int i_ = i >= n / 2 + 1 ? zisa::integer_cast<int>(i) - n
-                                      : zisa::integer_cast<int>(i);
-        const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
-                                      : zisa::integer_cast<int>(j);
-        const int k_ = k >= n / 2 + 1 ? zisa::integer_cast<int>(k) - n
-                                      : zisa::integer_cast<int>(k);
-        azeban::complex_t expected;
-        expected.x = (i_ == 1 && j_ == 1 && k_ == 1)
-                             || (i_ == -1 && j_ == -1 && k_ == -1)
-                         ? n * n * n / 2.0
-                         : 0.0;
-        expected.y = 0;
-        REQUIRE(std::fabs(u_hat(0, i, j, k).x - expected.x) <= 1e-9);
-        REQUIRE(std::fabs(u_hat(0, i, j, k).y - expected.y) <= 1e-9);
-      }
-    }
-  }
-
-  fft->backward();
-
-  for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0; j < n; ++j) {
-      for (zisa::int_t k = 0; k < n; ++k) {
-        const azeban::real_t expected
-            = n * n * n * zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
-        REQUIRE(std::fabs(u(0, i, j, k) - expected) <= 1e-8);
-      }
-    }
-  }
+  test_fft<3>(128, 1);
 }
 
 TEST_CASE("FFTW 3D vector valued data", "[operations][fft]") {
   std::cout << "TESTING: FFTW 3D vector valued data [operations][fft]"
             << std::endl;
-  zisa::int_t n = 128;
-  zisa::shape_t<4> rshape{3, n, n, n};
-  zisa::shape_t<4> cshape{3, n, n, n / 2 + 1};
-  auto u = zisa::array<azeban::real_t, 4>(rshape);
-  auto u_hat = zisa::array<azeban::complex_t, 4>(cshape);
-
-  std::shared_ptr<azeban::FFT<3>> fft
-      = std::make_shared<azeban::FFTWFFT<3>>(u_hat, u);
-
-  for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0; j < n; ++j) {
-      for (zisa::int_t k = 0; k < n; ++k) {
-        u(0, i, j, k) = zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
-        u(1, i, j, k) = zisa::cos(4.0 * zisa::pi * (i + j + k) / n);
-        u(2, i, j, k) = zisa::cos(6.0 * zisa::pi * (i + j + k) / n);
-      }
-    }
-  }
-
-  fft->forward();
-
-  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
-    for (zisa::int_t j = 0; j < cshape[2]; ++j) {
-      for (zisa::int_t k = 0; k < cshape[3]; ++k) {
-        const int i_ = i >= n / 2 + 1 ? zisa::integer_cast<int>(i) - n
-                                      : zisa::integer_cast<int>(i);
-        const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
-                                      : zisa::integer_cast<int>(j);
-        const int k_ = k >= n / 2 + 1 ? zisa::integer_cast<int>(k) - n
-                                      : zisa::integer_cast<int>(k);
-        azeban::complex_t expected_0;
-        azeban::complex_t expected_1;
-        azeban::complex_t expected_2;
-        expected_0.x = (i_ == 1 && j_ == 1 && k_ == 1)
-                               || (i_ == -1 && j_ == -1 && k_ == -1)
-                           ? n * n * n / 2.0
-                           : 0.0;
-        expected_0.y = 0;
-        expected_1.x = (i_ == 2 && j_ == 2 && k_ == 2)
-                               || (i_ == -2 && j_ == -2 && k_ == -2)
-                           ? n * n * n / 2.0
-                           : 0.0;
-        expected_1.y = 0;
-        expected_2.x = (i_ == 3 && j_ == 3 && k_ == 3)
-                               || (i_ == -3 && j_ == -3 && k_ == -3)
-                           ? n * n * n / 2.0
-                           : 0.0;
-        expected_2.y = 0;
-        REQUIRE(std::fabs(u_hat(0, i, j, k).x - expected_0.x) <= 1e-8);
-        REQUIRE(std::fabs(u_hat(0, i, j, k).y - expected_0.y) <= 1e-8);
-        REQUIRE(std::fabs(u_hat(1, i, j, k).x - expected_1.x) <= 1e-8);
-        REQUIRE(std::fabs(u_hat(1, i, j, k).y - expected_1.y) <= 1e-8);
-        REQUIRE(std::fabs(u_hat(2, i, j, k).x - expected_2.x) <= 1e-8);
-        REQUIRE(std::fabs(u_hat(2, i, j, k).y - expected_2.y) <= 1e-8);
-      }
-    }
-  }
-
-  fft->backward();
-
-  for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0; j < n; ++j) {
-      for (zisa::int_t k = 0; k < n; ++k) {
-        const azeban::real_t expected1
-            = n * n * n * zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
-        const azeban::real_t expected2
-            = n * n * n * zisa::cos(4.0 * zisa::pi * (i + j + k) / n);
-        const azeban::real_t expected3
-            = n * n * n * zisa::cos(6.0 * zisa::pi * (i + j + k) / n);
-        REQUIRE(std::fabs(u(0, i, j, k) - expected1) <= 1e-8);
-        REQUIRE(std::fabs(u(1, i, j, k) - expected2) <= 1e-8);
-        REQUIRE(std::fabs(u(2, i, j, k) - expected3) <= 1e-8);
-      }
-    }
-  }
+  test_fft<3>(128, 2);
 }
 
 TEST_CASE("cuFFT 1D scalar valued data", "[operations][fft]") {
   std::cout << "TESTING: cuFFT 1D scalar valued data [operations][fft]"
             << std::endl;
-  zisa::int_t n = 128;
-  zisa::shape_t<2> rshape{1, n};
-  zisa::shape_t<2> cshape{1, n / 2 + 1};
-  auto h_u = zisa::array<azeban::real_t, 2>(rshape);
-  auto h_u_ref = zisa::array<azeban::real_t, 2>(rshape);
-  auto h_u_hat = zisa::array<azeban::complex_t, 2>(cshape);
-  auto h_u_hat_ref = zisa::array<azeban::complex_t, 2>(cshape);
-  auto d_u = zisa::cuda_array<azeban::real_t, 2>(rshape);
-  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 2>(cshape);
-
-  std::shared_ptr<azeban::FFT<1>> fft
-      = std::make_shared<azeban::CUFFT<1>>(d_u_hat, d_u);
-
-  std::mt19937 rng;
-  std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  h_u_hat_ref[0].x = dist(rng);
-  h_u_hat_ref[0].y = 0;
-  for (zisa::int_t k = 1; k < n / 2; ++k) {
-    h_u_hat_ref[k].x = dist(rng);
-    h_u_hat_ref[k].y = dist(rng);
-  }
-  h_u_hat_ref[n / 2].x = dist(rng);
-  h_u_hat_ref[n / 2].y = n % 2 ? dist(rng) : 0;
-  for (zisa::int_t i = 0; i < n; ++i) {
-    h_u_ref[i] = h_u_hat_ref[0].x / n;
-    for (zisa::int_t k = 1; k < n / 2 + 1; ++k) {
-      const azeban::real_t xi
-          = 2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
-      const azeban::complex_t a
-          = h_u_hat_ref[k] * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
-      if (k == n / 2 && n % 2 == 0) {
-        h_u_ref[i] += a.x / n;
-      } else {
-        h_u_ref[i] += 2 * a.x / n;
-      }
-    }
-  }
-  zisa::copy(h_u, h_u_ref);
-
-  zisa::copy(d_u, h_u);
-  fft->forward();
-  zisa::copy(h_u_hat, d_u_hat);
-  fft->backward();
-  zisa::copy(h_u, d_u);
-
-  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
-    REQUIRE(std::fabs(h_u_hat[i].x - h_u_hat_ref[i].x) <= 1e-10);
-    REQUIRE(std::fabs(h_u_hat[i].y - h_u_hat_ref[i].y) <= 1e-10);
-  }
-  for (zisa::int_t i = 0; i < rshape[1]; ++i) {
-    REQUIRE(std::fabs(h_u[i] / n - h_u_ref[i]) <= 1e-10);
-  }
+  test_fft<1>(128, 1, zisa::device_type::cuda);
 }
 
 TEST_CASE("cuFFT 1D vector valued data", "[operations][fft]") {
   std::cout << "TESTING: cuFFT 1D vector valued data [operations][fft]"
             << std::endl;
-  zisa::int_t n = 128;
-  zisa::shape_t<2> rshape{2, n};
-  zisa::shape_t<2> cshape{2, n / 2 + 1};
-  auto h_u = zisa::array<azeban::real_t, 2>(rshape);
-  auto h_u_ref = zisa::array<azeban::real_t, 2>(rshape);
-  auto h_u_hat = zisa::array<azeban::complex_t, 2>(cshape);
-  auto h_u_hat_ref = zisa::array<azeban::complex_t, 2>(cshape);
-  auto d_u = zisa::cuda_array<azeban::real_t, 2>(rshape);
-  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 2>(cshape);
-
-  std::shared_ptr<azeban::FFT<1>> fft
-      = std::make_shared<azeban::CUFFT<1>>(d_u_hat, d_u);
-
-  std::mt19937 rng;
-  std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  for (zisa::int_t d = 0; d < 2; ++d) {
-    h_u_hat_ref(d, 0).x = dist(rng);
-    h_u_hat_ref(d, 0).y = 0;
-    for (zisa::int_t k = 1; k < n / 2; ++k) {
-      h_u_hat_ref(d, k).x = dist(rng);
-      h_u_hat_ref(d, k).y = dist(rng);
-    }
-    h_u_hat_ref(d, n / 2).x = dist(rng);
-    h_u_hat_ref(d, n / 2).y = n % 2 ? dist(rng) : 0;
-    for (zisa::int_t i = 0; i < n; ++i) {
-      h_u_ref(d, i) = h_u_hat_ref(d, 0).x / n;
-      for (zisa::int_t k = 1; k < n / 2 + 1; ++k) {
-        const azeban::real_t xi
-            = 2 * zisa::pi * static_cast<azeban::real_t>(k * i) / n;
-        const azeban::complex_t a
-            = h_u_hat_ref(d, k)
-              * azeban::complex_t(zisa::cos(xi), zisa::sin(xi));
-        if (k == n / 2 && n % 2 == 0) {
-          h_u_ref(d, i) += a.x / n;
-        } else {
-          h_u_ref(d, i) += 2 * a.x / n;
-        }
-      }
-    }
-  }
-  zisa::copy(h_u, h_u_ref);
-
-  zisa::copy(d_u, h_u);
-  fft->forward();
-  zisa::copy(h_u_hat, d_u_hat);
-  fft->backward();
-  zisa::copy(h_u, d_u);
-
-  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
-    REQUIRE(std::fabs(h_u_hat(0, i).x - h_u_hat_ref(0, i).x) <= 1e-10);
-    REQUIRE(std::fabs(h_u_hat(0, i).y - h_u_hat_ref(0, i).y) <= 1e-10);
-    REQUIRE(std::fabs(h_u_hat(1, i).x - h_u_hat_ref(1, i).x) <= 1e-10);
-    REQUIRE(std::fabs(h_u_hat(1, i).y - h_u_hat_ref(1, i).y) <= 1e-10);
-  }
-  for (zisa::int_t i = 0; i < rshape[1]; ++i) {
-    REQUIRE(std::fabs(h_u(0, i) / n - h_u_ref(0, i)) <= 1e-10);
-    REQUIRE(std::fabs(h_u(1, i) / n - h_u_ref(1, i)) <= 1e-10);
-  }
+  test_fft<1>(128, 2, zisa::device_type::cuda);
 }
 
 TEST_CASE("cuFFT 2D scalar valued data", "[operations][fft]") {
   std::cout << "TESTING: cuFFT 2D scalar valued data [operations][fft]"
             << std::endl;
-  zisa::int_t n = 128;
-  zisa::shape_t<3> rshape{1, n, n};
-  zisa::shape_t<3> cshape{1, n, n / 2 + 1};
-  auto h_u = zisa::array<azeban::real_t, 3>(rshape);
-  auto h_u_ref = zisa::array<azeban::real_t, 3>(rshape);
-  auto h_u_hat = zisa::array<azeban::complex_t, 3>(cshape);
-  auto h_u_hat_ref = zisa::array<azeban::complex_t, 3>(cshape);
-  auto d_u = zisa::cuda_array<azeban::real_t, 3>(rshape);
-  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 3>(cshape);
-
-  std::shared_ptr<azeban::FFT<2>> fft
-      = std::make_shared<azeban::CUFFT<2>>(d_u_hat, d_u);
-
-  std::mt19937 rng;
-  std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  for (zisa::int_t i = 0; i < n; ++i) {
-    if (i < n / 2 + 1) {
-      h_u_hat_ref(0, i, 0).x = dist(rng);
-      h_u_hat_ref(0, i, 0).y
-          = (i == 0 || (i == n / 2 && n % 2 == 0)) ? 0 : dist(rng);
-    } else {
-      h_u_hat_ref(0, i, 0) = azeban::complex_t(h_u_hat_ref(0, n - i, 0).x,
-                                               -h_u_hat_ref(0, n - i, 0).y);
-    }
-    for (zisa::int_t j = 1; j < n / 2; ++j) {
-      h_u_hat_ref(0, i, j).x = dist(rng);
-      h_u_hat_ref(0, i, j).y = dist(rng);
-    }
-    if (i < n / 2 + 1) {
-      h_u_hat_ref(0, i, n / 2).x = dist(rng);
-      h_u_hat_ref(0, i, n / 2).y
-          = (n % 2 == 0 && (i == 0 || (i == n / 2 && n % 2 == 0))) ? 0
-                                                                   : dist(rng);
-    } else {
-      h_u_hat_ref(0, i, n / 2) = azeban::complex_t(
-          h_u_hat_ref(0, n - i, n / 2).x, -h_u_hat_ref(0, n - i, n / 2).y);
-    }
-  }
-  for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0; j < n; ++j) {
-      h_u_ref(0, i, j) = 0;
-      for (zisa::int_t k = 0; k < n; ++k) {
-        {
-          const azeban::real_t xi
-              = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-          const azeban::real_t eta = 0;
-          const azeban::complex_t a
-              = h_u_hat_ref(0, k, 0)
-                * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-          h_u_ref(0, i, j) += a.x / (n * n);
-        }
-        for (zisa::int_t l = 1; l < n / 2; ++l) {
-          const azeban::real_t xi
-              = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-          const azeban::real_t eta
-              = 2 * zisa::pi * static_cast<azeban::real_t>(j * l) / n;
-          const azeban::complex_t a
-              = h_u_hat_ref(0, k, l)
-                * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-          h_u_ref(0, i, j) += 2 * a.x / (n * n);
-        }
-        {
-          const azeban::real_t xi
-              = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-          const azeban::real_t eta
-              = 2 * zisa::pi * static_cast<azeban::real_t>(j * (n / 2)) / n;
-          const azeban::complex_t a
-              = h_u_hat_ref(0, k, n / 2)
-                * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-          if (n % 2 == 0) {
-            h_u_ref(0, i, j) += a.x / (n * n);
-          } else {
-            h_u_ref(0, i, j) += 2 * a.x / (n * n);
-          }
-        }
-      }
-    }
-  }
-  zisa::copy(h_u, h_u_ref);
-
-  zisa::copy(d_u, h_u);
-  fft->forward();
-  zisa::copy(h_u_hat, d_u_hat);
-  fft->backward();
-  zisa::copy(h_u, d_u);
-
-  for (zisa::int_t k = 0; k < cshape[1]; ++k) {
-    for (zisa::int_t l = 0; l < cshape[2]; ++l) {
-      REQUIRE(std::fabs(h_u_hat(0, k, l).x - h_u_hat_ref(0, k, l).x) <= 1e-10);
-      REQUIRE(std::fabs(h_u_hat(0, k, l).y - h_u_hat_ref(0, k, l).y) <= 1e-10);
-    }
-  }
-  for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0; j < n; ++j) {
-      REQUIRE(std::fabs(h_u(0, i, j) / (n * n) - h_u_ref(0, i, j)) <= 1e-8);
-    }
-  }
+  test_fft<2>(128, 1, zisa::device_type::cuda);
 }
 
 TEST_CASE("cuFFT 2D vector valued data", "[operations][fft]") {
   std::cout << "TESTING: cuFFT 2D vector valued data [operations][fft]"
             << std::endl;
-  zisa::int_t n = 128;
-  zisa::shape_t<3> rshape{2, n, n};
-  zisa::shape_t<3> cshape{2, n, n / 2 + 1};
-  auto h_u = zisa::array<azeban::real_t, 3>(rshape);
-  auto h_u_ref = zisa::array<azeban::real_t, 3>(rshape);
-  auto h_u_hat = zisa::array<azeban::complex_t, 3>(cshape);
-  auto h_u_hat_ref = zisa::array<azeban::complex_t, 3>(cshape);
-  auto d_u = zisa::cuda_array<azeban::real_t, 3>(rshape);
-  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 3>(cshape);
-
-  std::shared_ptr<azeban::FFT<2>> fft
-      = std::make_shared<azeban::CUFFT<2>>(d_u_hat, d_u);
-
-  std::mt19937 rng;
-  std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
-  for (zisa::int_t d = 0; d < 2; ++d) {
-    for (zisa::int_t i = 0; i < n; ++i) {
-      if (i < n / 2 + 1) {
-        h_u_hat_ref(d, i, 0).x = dist(rng);
-        h_u_hat_ref(d, i, 0).y
-            = (i == 0 || (i == n / 2 && n % 2 == 0)) ? 0 : dist(rng);
-      } else {
-        h_u_hat_ref(d, i, 0) = azeban::complex_t(h_u_hat_ref(d, n - i, 0).x,
-                                                 -h_u_hat_ref(d, n - i, 0).y);
-      }
-      for (zisa::int_t j = 1; j < n / 2; ++j) {
-        h_u_hat_ref(d, i, j).x = dist(rng);
-        h_u_hat_ref(d, i, j).y = dist(rng);
-      }
-      if (i < n / 2 + 1) {
-        h_u_hat_ref(d, i, n / 2).x = dist(rng);
-        h_u_hat_ref(d, i, n / 2).y
-            = (n % 2 == 0 && (i == 0 || (i == n / 2 && n % 2 == 0)))
-                  ? 0
-                  : dist(rng);
-      } else {
-        h_u_hat_ref(d, i, n / 2) = azeban::complex_t(
-            h_u_hat_ref(d, n - i, n / 2).x, -h_u_hat_ref(d, n - i, n / 2).y);
-      }
-    }
-    for (zisa::int_t i = 0; i < n; ++i) {
-      for (zisa::int_t j = 0; j < n; ++j) {
-        h_u_ref(d, i, j) = 0;
-        for (zisa::int_t k = 0; k < n; ++k) {
-          {
-            const azeban::real_t xi
-                = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-            const azeban::real_t eta = 0;
-            const azeban::complex_t a
-                = h_u_hat_ref(d, k, 0)
-                  * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-            h_u_ref(d, i, j) += a.x / (n * n);
-          }
-          for (zisa::int_t l = 1; l < n / 2; ++l) {
-            const azeban::real_t xi
-                = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-            const azeban::real_t eta
-                = 2 * zisa::pi * static_cast<azeban::real_t>(j * l) / n;
-            const azeban::complex_t a
-                = h_u_hat_ref(d, k, l)
-                  * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-            h_u_ref(d, i, j) += 2 * a.x / (n * n);
-          }
-          {
-            const azeban::real_t xi
-                = 2 * zisa::pi * static_cast<azeban::real_t>(i * k) / n;
-            const azeban::real_t eta
-                = 2 * zisa::pi * static_cast<azeban::real_t>(j * (n / 2)) / n;
-            const azeban::complex_t a
-                = h_u_hat_ref(d, k, n / 2)
-                  * azeban::complex_t(zisa::cos(xi + eta), zisa::sin(xi + eta));
-            if (n % 2 == 0) {
-              h_u_ref(d, i, j) += a.x / (n * n);
-            } else {
-              h_u_ref(d, i, j) += 2 * a.x / (n * n);
-            }
-          }
-        }
-      }
-    }
-  }
-  zisa::copy(h_u, h_u_ref);
-
-  zisa::copy(d_u, h_u);
-  fft->forward();
-  zisa::copy(h_u_hat, d_u_hat);
-  fft->backward();
-  zisa::copy(h_u, d_u);
-
-  for (zisa::int_t k = 0; k < cshape[1]; ++k) {
-    for (zisa::int_t l = 0; l < cshape[2]; ++l) {
-      REQUIRE(std::fabs(h_u_hat(0, k, l).x - h_u_hat_ref(0, k, l).x) <= 1e-10);
-      REQUIRE(std::fabs(h_u_hat(0, k, l).y - h_u_hat_ref(0, k, l).y) <= 1e-10);
-      REQUIRE(std::fabs(h_u_hat(1, k, l).x - h_u_hat_ref(1, k, l).x) <= 1e-10);
-      REQUIRE(std::fabs(h_u_hat(1, k, l).y - h_u_hat_ref(1, k, l).y) <= 1e-10);
-    }
-  }
-  for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0; j < n; ++j) {
-      REQUIRE(std::fabs(h_u(0, i, j) / (n * n) - h_u_ref(0, i, j)) <= 1e-8);
-      REQUIRE(std::fabs(h_u(1, i, j) / (n * n) - h_u_ref(1, i, j)) <= 1e-8);
-    }
-  }
+  test_fft<2>(128, 2, zisa::device_type::cuda);
 }
 
 TEST_CASE("cuFFT 3D scalar valued data", "[operations][fft]") {
   std::cout << "TESTING: cuFFT 3D scalar valued data [operations][fft]"
             << std::endl;
-  zisa::int_t n = 128;
-  zisa::shape_t<4> rshape{1, n, n, n};
-  zisa::shape_t<4> cshape{1, n, n, n / 2 + 1};
-  auto h_u = zisa::array<azeban::real_t, 4>(rshape);
-  auto h_u_hat = zisa::array<azeban::complex_t, 4>(cshape);
-  auto d_u = zisa::cuda_array<azeban::real_t, 4>(rshape);
-  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 4>(cshape);
-
-  std::shared_ptr<azeban::FFT<3>> fft
-      = std::make_shared<azeban::CUFFT<3>>(d_u_hat, d_u);
-
-  for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0; j < n; ++j) {
-      for (zisa::int_t k = 0; k < n; ++k) {
-        h_u(0, i, j, k) = zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
-      }
-    }
-  }
-
-  zisa::copy(d_u, h_u);
-  fft->forward();
-  zisa::copy(h_u_hat, d_u_hat);
-  fft->backward();
-  zisa::copy(h_u, d_u);
-
-  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
-    for (zisa::int_t j = 0; j < cshape[2]; ++j) {
-      for (zisa::int_t k = 0; k < cshape[3]; ++k) {
-        const int i_ = i >= n / 2 + 1 ? zisa::integer_cast<int>(i) - n
-                                      : zisa::integer_cast<int>(i);
-        const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
-                                      : zisa::integer_cast<int>(j);
-        const int k_ = k >= n / 2 + 1 ? zisa::integer_cast<int>(k) - n
-                                      : zisa::integer_cast<int>(k);
-        azeban::complex_t expected;
-        expected.x = (i_ == 1 && j_ == 1 && k_ == 1)
-                             || (i_ == -1 && j_ == -1 && k_ == -1)
-                         ? n * n * n / 2.0
-                         : 0.0;
-        expected.y = 0;
-        REQUIRE(std::fabs(h_u_hat(0, i, j, k).x - expected.x) <= 1e-9);
-        REQUIRE(std::fabs(h_u_hat(0, i, j, k).y - expected.y) <= 1e-9);
-      }
-    }
-  }
+  test_fft<3>(128, 1, zisa::device_type::cuda);
 }
 
 TEST_CASE("cuFFT 3D vector valued data", "[operations][fft]") {
   std::cout << "TESTING: cuFFT 3D vector valued data [operations][fft]"
             << std::endl;
-  zisa::int_t n = 128;
-  zisa::shape_t<4> rshape{3, n, n, n};
-  zisa::shape_t<4> cshape{3, n, n, n / 2 + 1};
-  auto h_u = zisa::array<azeban::real_t, 4>(rshape);
-  auto h_u_hat = zisa::array<azeban::complex_t, 4>(cshape);
-  auto d_u = zisa::cuda_array<azeban::real_t, 4>(rshape);
-  auto d_u_hat = zisa::cuda_array<azeban::complex_t, 4>(cshape);
-
-  std::shared_ptr<azeban::FFT<3>> fft
-      = std::make_shared<azeban::CUFFT<3>>(d_u_hat, d_u);
-
-  for (zisa::int_t i = 0; i < n; ++i) {
-    for (zisa::int_t j = 0; j < n; ++j) {
-      for (zisa::int_t k = 0; k < n; ++k) {
-        h_u(0, i, j, k) = zisa::cos(2.0 * zisa::pi * (i + j + k) / n);
-        h_u(1, i, j, k) = zisa::cos(4.0 * zisa::pi * (i + j + k) / n);
-        h_u(2, i, j, k) = zisa::cos(6.0 * zisa::pi * (i + j + k) / n);
-      }
-    }
-  }
-
-  zisa::copy(d_u, h_u);
-  fft->forward();
-  zisa::copy(h_u_hat, d_u_hat);
-  fft->backward();
-  zisa::copy(h_u, d_u);
-
-  for (zisa::int_t i = 0; i < cshape[1]; ++i) {
-    for (zisa::int_t j = 0; j < cshape[2]; ++j) {
-      for (zisa::int_t k = 0; k < cshape[3]; ++k) {
-        const int i_ = i >= n / 2 + 1 ? zisa::integer_cast<int>(i) - n
-                                      : zisa::integer_cast<int>(i);
-        const int j_ = j >= n / 2 + 1 ? zisa::integer_cast<int>(j) - n
-                                      : zisa::integer_cast<int>(j);
-        const int k_ = k >= n / 2 + 1 ? zisa::integer_cast<int>(k) - n
-                                      : zisa::integer_cast<int>(k);
-        azeban::complex_t expected_0;
-        azeban::complex_t expected_1;
-        azeban::complex_t expected_2;
-        expected_0.x = (i_ == 1 && j_ == 1 && k_ == 1)
-                               || (i_ == -1 && j_ == -1 && k_ == -1)
-                           ? n * n * n / 2.0
-                           : 0.0;
-        expected_0.y = 0;
-        expected_1.x = (i_ == 2 && j_ == 2 && k_ == 2)
-                               || (i_ == -2 && j_ == -2 && k_ == -2)
-                           ? n * n * n / 2.0
-                           : 0.0;
-        expected_1.y = 0;
-        expected_2.x = (i_ == 3 && j_ == 3 && k_ == 3)
-                               || (i_ == -3 && j_ == -3 && k_ == -3)
-                           ? n * n * n / 2.0
-                           : 0.0;
-        expected_2.y = 0;
-        REQUIRE(std::fabs(h_u_hat(0, i, j, k).x - expected_0.x) <= 1e-8);
-        REQUIRE(std::fabs(h_u_hat(0, i, j, k).y - expected_0.y) <= 1e-8);
-        REQUIRE(std::fabs(h_u_hat(1, i, j, k).x - expected_1.x) <= 1e-8);
-        REQUIRE(std::fabs(h_u_hat(1, i, j, k).y - expected_1.y) <= 1e-8);
-        REQUIRE(std::fabs(h_u_hat(2, i, j, k).x - expected_2.x) <= 1e-8);
-        REQUIRE(std::fabs(h_u_hat(2, i, j, k).y - expected_2.y) <= 1e-8);
-      }
-    }
-  }
+  test_fft<3>(128, 2, zisa::device_type::cuda);
 }
 
 #if AZEBAN_HAS_MPI

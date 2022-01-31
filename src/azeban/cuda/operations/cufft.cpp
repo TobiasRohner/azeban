@@ -106,14 +106,46 @@ void CUFFT_R2C<Dim>::do_initialize(
              "cuFFT is GPU only!");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cuda,
              "cuFFT is GPU only!");
+
+  int rank = 0;
+  for (int i = 0; i < Dim; ++i) {
+    rank += transform_dims_[i] ? 1 : 0;
+  }
+
+  std::vector<int> n;
+  for (int i = 0; i < Dim; ++i) {
+    if (transform_dims_[i]) {
+      n.push_back(u.shape(i + 1));
+    }
+  }
+
+  int howmany = data_dim_;
+  for (int i = 0; i < Dim; ++i) {
+    if (!transform_dims_[i]) {
+      howmany *= u.shape(i + 1);
+    }
+  }
+
+  int rstride = 1;
+  int cstride = 1;
+  for (int i = Dim - 1; i >= 0; --i) {
+    if (transform_dims_[i]) {
+      break;
+    }
+    rstride *= u.shape(i + 1);
+    cstride *= u_hat.shape(i + 1);
+  }
+
   int rdist = 1;
   int cdist = 1;
-  int n[dim_v];
   for (int i = 0; i < dim_v; ++i) {
+    if (!transform_dims_[i]) {
+      break;
+    }
     rdist *= u.shape(i + 1);
     cdist *= u_hat.shape(i + 1);
-    n[i] = u.shape(i + 1);
   }
+
   size_t workspace_size = 0;
   // Create a plan for the forward operation
   if (is_forward()) {
@@ -122,16 +154,16 @@ void CUFFT_R2C<Dim>::do_initialize(
     status = cufftSetAutoAllocation(plan_forward_, false);
     cudaCheckError(status);
     status = cufftPlanMany(&plan_forward_, // plan
-                           dim_v,          // rank
-                           n,              // n
+                           rank,           // rank
+                           n.data(),       // n
                            NULL,           // inembed
-                           1,              // istride
+                           rstride,        // istride
                            rdist,          // idist
                            NULL,           // onembed
-                           1,              // ostride
+                           cstride,        // ostride
                            cdist,          // odist
                            type_forward,   // type
-                           u.shape(0));    // batch
+                           howmany);       // batch
     cudaCheckError(status);
     size_t fwd_size;
     status = cufftGetSize(plan_forward_, &fwd_size);
@@ -145,16 +177,16 @@ void CUFFT_R2C<Dim>::do_initialize(
     status = cufftSetAutoAllocation(plan_backward_, false);
     cudaCheckError(status);
     status = cufftPlanMany(&plan_backward_, // plan
-                           dim_v,           // rank
-                           n,               // n
+                           rank,            // rank
+                           n.data(),        // n
                            NULL,            // inembed
-                           1,               // istride
+                           cstride,         // istride
                            cdist,           // idist
                            NULL,            // onembed
-                           1,               // ostride
+                           rstride,         // ostride
                            rdist,           // odist
                            type_backward,   // type
-                           u.shape(0));     // batch
+                           howmany);        // batch
     cudaCheckError(status);
     size_t bkw_size;
     status = cufftGetSize(plan_backward_, &bkw_size);
@@ -221,34 +253,86 @@ void CUFFT_C2C<Dim>::do_initialize(
              "cuFFT is GPU only!");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cuda,
              "cuFFT is GPU only!");
+
+  int rank = 0;
+  for (int i = 0; i < Dim; ++i) {
+    rank += transform_dims_[i] ? 1 : 0;
+  }
+
+  std::vector<int> n;
+  for (int i = 0; i < Dim; ++i) {
+    if (transform_dims_[i]) {
+      n.push_back(u.shape(i + 1));
+    }
+  }
+
+  int howmany = data_dim_;
+  for (int i = 0; i < Dim; ++i) {
+    if (!transform_dims_[i]) {
+      howmany *= u.shape(i + 1);
+    }
+  }
+
+  int rstride = 1;
+  int cstride = 1;
+  for (int i = Dim - 1; i >= 0; --i) {
+    if (transform_dims_[i]) {
+      break;
+    }
+    rstride *= u.shape(i + 1);
+    cstride *= u_hat.shape(i + 1);
+  }
+
   int rdist = 1;
   int cdist = 1;
-  int n[dim_v];
   for (int i = 0; i < dim_v; ++i) {
+    if (!transform_dims_[i]) {
+      break;
+    }
     rdist *= u.shape(i + 1);
     cdist *= u_hat.shape(i + 1);
-    n[i] = u.shape(i + 1);
   }
+
   size_t workspace_size = 0;
   // Create a plan for the forward operation
-  if (direction_ & FFT_FORWARD) {
+  if (is_forward()) {
     cufftResult status = cufftCreate(&plan_forward_);
     cudaCheckError(status);
     status = cufftSetAutoAllocation(plan_forward_, false);
     cudaCheckError(status);
-    // TODO: Implement
+    status = cufftPlanMany(&plan_forward_, // plan
+                           rank,           // rank
+                           n.data(),       // n
+                           NULL,           // inembed
+                           rstride,        // istride
+                           rdist,          // idist
+                           NULL,           // onembed
+                           cstride,        // ostride
+                           cdist,          // odist
+                           type_forward,   // type
+                           howmany);       // batch
     size_t fwd_size;
     status = cufftGetSize(plan_forward_, &fwd_size);
     cudaCheckError(status);
     workspace_size = std::max(workspace_size, fwd_size);
   }
   // Create a plan for the backward operation
-  if (direction_ & FFT_BACKWARD) {
+  if (is_backward()) {
     cufftResult status = cufftCreate(&plan_backward_);
     cudaCheckError(status);
     status = cufftSetAutoAllocation(plan_backward_, false);
     cudaCheckError(status);
-    // TODO: Implement
+    status = cufftPlanMany(&plan_backward_, // plan
+                           rank,            // rank
+                           n.data(),        // n
+                           NULL,            // inembed
+                           cstride,         // istride
+                           cdist,           // idist
+                           NULL,            // onembed
+                           rstride,         // ostride
+                           rdist,           // odist
+                           type_backward,   // type
+                           howmany);        // batch
     size_t bkw_size;
     status = cufftGetSize(plan_backward_, &bkw_size);
     cudaCheckError(status);
