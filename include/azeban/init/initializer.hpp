@@ -19,7 +19,7 @@
 #define INITIALIZER_H_
 
 #include <azeban/config.hpp>
-#include <azeban/operations/fft.hpp>
+#include <azeban/operations/fft_factory.hpp>
 #include <azeban/operations/leray.hpp>
 #include <azeban/operations/scale.hpp>
 #include <fmt/core.h>
