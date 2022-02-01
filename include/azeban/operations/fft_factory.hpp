@@ -34,6 +34,30 @@ std::shared_ptr<FFT<Dim, complex_t>>
 make_fft(const zisa::array_view<complex_t, Dim + 1> &u_hat,
          const zisa::array_view<complex_t, Dim + 1> &u,
          int direction = FFT_FORWARD | FFT_BACKWARD);
+template <int Dim,
+          typename ScalarU = real_t,
+          typename = std::enable_if_t<Dim == 1>>
+std::shared_ptr<FFT<Dim, ScalarU>> make_fft(zisa::device_type device,
+                                            int direction
+                                            = FFT_FORWARD | FFT_BACKWARD,
+                                            bool transform_x = true);
+template <int Dim,
+          typename ScalarU = real_t,
+          typename = std::enable_if_t<Dim == 2>>
+std::shared_ptr<FFT<Dim, ScalarU>> make_fft(zisa::device_type device,
+                                            int direction
+                                            = FFT_FORWARD | FFT_BACKWARD,
+                                            bool transform_x = true,
+                                            bool transform_y = true);
+template <int Dim,
+          typename ScalarU = real_t,
+          typename = std::enable_if_t<Dim == 3>>
+std::shared_ptr<FFT<Dim, ScalarU>> make_fft(zisa::device_type device,
+                                            int direction
+                                            = FFT_FORWARD | FFT_BACKWARD,
+                                            bool transform_x = true,
+                                            bool transform_y = true,
+                                            bool transform_z = true);
 
 }
 

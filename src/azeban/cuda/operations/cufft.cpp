@@ -59,11 +59,56 @@ execute_c2r(cufftHandle plan, Complex<double> *idata, double *odata) {
       plan, reinterpret_cast<cufftDoubleComplex *>(idata), odata);
 }
 
-template <int Dim>
-CUFFT_R2C<Dim>::CUFFT_R2C(const zisa::array_view<complex_t, dim_v + 1> &u_hat,
-                          const zisa::array_view<real_t, dim_v + 1> &u,
-                          int direction)
-    : super(direction) {
+template <>
+template <>
+CUFFT_R2C<1>::CUFFT_R2C<true, void>(int direction, bool transform_x)
+    : super(direction, transform_x) {}
+
+template <>
+template <>
+CUFFT_R2C<1>::CUFFT_R2C<true, void>(const zisa::array_view<complex_t, 2> &u_hat,
+                                    const zisa::array_view<real_t, 2> &u,
+                                    int direction,
+                                    bool transform_x)
+    : CUFFT_R2C(direction, transform_x) {
+  initialize(u_hat, u);
+}
+
+template <>
+template <>
+CUFFT_R2C<2>::CUFFT_R2C<true, void>(int direction,
+                                    bool transform_x,
+                                    bool transform_y)
+    : super(direction, transform_x, transform_y) {}
+
+template <>
+template <>
+CUFFT_R2C<2>::CUFFT_R2C<true, void>(const zisa::array_view<complex_t, 3> &u_hat,
+                                    const zisa::array_view<real_t, 3> &u,
+                                    int direction,
+                                    bool transform_x,
+                                    bool transform_y)
+    : CUFFT_R2C(direction, transform_x, transform_y) {
+  initialize(u_hat, u);
+}
+
+template <>
+template <>
+CUFFT_R2C<3>::CUFFT_R2C<true, void>(int direction,
+                                    bool transform_x,
+                                    bool transform_y,
+                                    bool transform_z)
+    : super(direction, transform_x, transform_y, transform_z) {}
+
+template <>
+template <>
+CUFFT_R2C<3>::CUFFT_R2C<true, void>(const zisa::array_view<complex_t, 4> &u_hat,
+                                    const zisa::array_view<real_t, 4> &u,
+                                    int direction,
+                                    bool transform_x,
+                                    bool transform_y,
+                                    bool transform_z)
+    : CUFFT_R2C(direction, transform_x, transform_y, transform_z) {
   initialize(u_hat, u);
 }
 
@@ -138,7 +183,7 @@ void CUFFT_R2C<Dim>::do_initialize(
 
   int rdist = 1;
   int cdist = 1;
-  for (int i = 0; i < dim_v; ++i) {
+  for (int i = Dim - 1; i >= 0; --i) {
     if (!transform_dims_[i]) {
       break;
     }
@@ -205,11 +250,56 @@ void CUFFT_R2C<Dim>::do_initialize(
   }
 }
 
-template <int Dim>
-CUFFT_C2C<Dim>::CUFFT_C2C(const zisa::array_view<complex_t, dim_v + 1> &u_hat,
-                          const zisa::array_view<complex_t, dim_v + 1> &u,
-                          int direction)
-    : super(direction) {
+template <>
+template <>
+CUFFT_C2C<1>::CUFFT_C2C<true, void>(int direction, bool transform_x)
+    : super(direction, transform_x) {}
+
+template <>
+template <>
+CUFFT_C2C<1>::CUFFT_C2C<true, void>(const zisa::array_view<complex_t, 2> &u_hat,
+                                    const zisa::array_view<complex_t, 2> &u,
+                                    int direction,
+                                    bool transform_x)
+    : CUFFT_C2C(direction, transform_x) {
+  initialize(u_hat, u);
+}
+
+template <>
+template <>
+CUFFT_C2C<2>::CUFFT_C2C<true, void>(int direction,
+                                    bool transform_x,
+                                    bool transform_y)
+    : super(direction, transform_x, transform_y) {}
+
+template <>
+template <>
+CUFFT_C2C<2>::CUFFT_C2C<true, void>(const zisa::array_view<complex_t, 3> &u_hat,
+                                    const zisa::array_view<complex_t, 3> &u,
+                                    int direction,
+                                    bool transform_x,
+                                    bool transform_y)
+    : CUFFT_C2C(direction, transform_x, transform_y) {
+  initialize(u_hat, u);
+}
+
+template <>
+template <>
+CUFFT_C2C<3>::CUFFT_C2C<true, void>(int direction,
+                                    bool transform_x,
+                                    bool transform_y,
+                                    bool transform_z)
+    : super(direction, transform_x, transform_y, transform_z) {}
+
+template <>
+template <>
+CUFFT_C2C<3>::CUFFT_C2C<true, void>(const zisa::array_view<complex_t, 4> &u_hat,
+                                    const zisa::array_view<complex_t, 4> &u,
+                                    int direction,
+                                    bool transform_x,
+                                    bool transform_y,
+                                    bool transform_z)
+    : CUFFT_C2C(direction, transform_x, transform_y, transform_z) {
   initialize(u_hat, u);
 }
 
@@ -285,7 +375,7 @@ void CUFFT_C2C<Dim>::do_initialize(
 
   int rdist = 1;
   int cdist = 1;
-  for (int i = 0; i < dim_v; ++i) {
+  for (int i = Dim - 1; i >= 0; --i) {
     if (!transform_dims_[i]) {
       break;
     }

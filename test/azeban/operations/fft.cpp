@@ -17,11 +17,9 @@
  */
 #include <azeban/catch.hpp>
 
-#include <azeban/cuda/operations/cufft.hpp>
 #include <azeban/cuda/operations/cufft_mpi.hpp>
 #include <azeban/grid.hpp>
 #include <azeban/operations/fft_factory.hpp>
-#include <azeban/operations/fftwfft.hpp>
 #include <fmt/core.h>
 #include <iostream>
 #include <random>
@@ -55,63 +53,143 @@ static void dft(const zisa::array_const_view<azeban::complex_t, 1> &in,
   }
 }
 
-static void dft(const zisa::array_const_view<azeban::real_t, 2> &in,
-                const zisa::array_view<azeban::complex_t, 2> &out) {
-  const zisa::int_t Nx = in.shape(0);
-  const zisa::int_t Ny = in.shape(1);
-  zisa::array<azeban::complex_t, 2> tmp(out.shape(), zisa::device_type::cpu);
-  zisa::array<azeban::complex_t, 1> x_buf_in(zisa::shape_t<1>(Nx),
-                                             zisa::device_type::cpu);
-  zisa::array<azeban::complex_t, 1> x_buf_out(zisa::shape_t<1>(Nx),
-                                              zisa::device_type::cpu);
-  for (zisa::int_t i = 0; i < Nx; ++i) {
-    zisa::array_const_view<azeban::real_t, 1> y_buf_in(
-        zisa::shape_t<1>(Ny), &in(i, 0), zisa::device_type::cpu);
-    zisa::array_view<azeban::complex_t, 1> y_buf_out(
-        zisa::shape_t<1>(Ny / 2 + 1), &tmp(i, 0), zisa::device_type::cpu);
-    dft(y_buf_in, y_buf_out);
-  }
-  for (zisa::int_t i = 0; i < Ny / 2 + 1; ++i) {
-    for (zisa::int_t j = 0; j < Nx; ++j) {
-      x_buf_in[j] = tmp(j, i);
+template <int Axis, int Dim, typename ScalarU>
+static void dft_axis(const zisa::array_const_view<ScalarU, Dim> &in,
+                     const zisa::array_view<azeban::complex_t, Dim> &out) {
+  if constexpr (Axis == 0) {
+    for (int i = 1; i < Dim; ++i) {
+      if (in.shape(i) != out.shape(i)) {
+        fmt::print("Error: Shape mismatch: in.shape({0}) = {1}, out.shape({0}) "
+                   "= {2}\n",
+                   i,
+                   in.shape(i),
+                   out.shape(i));
+        LOG_ERR("Mismatching shapes");
+      }
     }
-    dft(x_buf_in, x_buf_out);
-    for (zisa::int_t j = 0; j < Nx; ++j) {
-      out(j, i) = x_buf_out[j];
+    zisa::array<ScalarU, 1> in_buf(zisa::shape_t<1>(in.shape(0)),
+                                   zisa::device_type::cpu);
+    zisa::array<azeban::complex_t, 1> out_buf(zisa::shape_t<1>(out.shape(0)),
+                                              zisa::device_type::cpu);
+    const zisa::int_t stride = zisa::product(in.shape()) / in.shape(0);
+    for (zisa::int_t i = 0; i < stride; ++i) {
+      for (zisa::int_t j = 0; j < in.shape(0); ++j) {
+        in_buf[j] = in[i + j * stride];
+      }
+      dft(in_buf, out_buf);
+      for (zisa::int_t j = 0; j < out.shape(0); ++j) {
+        out[i + j * stride] = out_buf[j];
+      }
+    }
+  } else {
+    zisa::shape_t<Dim - 1> in_slice_shape;
+    zisa::shape_t<Dim - 1> out_slice_shape;
+    for (int i = 0; i < Dim - 1; ++i) {
+      in_slice_shape[i] = in.shape(i + 1);
+      out_slice_shape[i] = out.shape(i + 1);
+    }
+    LOG_ERR_IF(in.shape(0) != out.shape(0), "Shape mismatch");
+    for (zisa::int_t i = 0; i < in.shape(0); ++i) {
+      zisa::array_const_view<ScalarU, Dim - 1> in_slice(
+          in_slice_shape,
+          in.raw() + i * zisa::product(in_slice_shape),
+          zisa::device_type::cpu);
+      zisa::array_view<azeban::complex_t, Dim - 1> out_slice(
+          out_slice_shape,
+          out.raw() + i * zisa::product(out_slice_shape),
+          zisa::device_type::cpu);
+      dft_axis<Axis - 1, Dim - 1, ScalarU>(in_slice, out_slice);
     }
   }
 }
 
+template <bool transform_x = true>
+static void dft(const zisa::array_const_view<azeban::real_t, 1> &in,
+                const zisa::array_view<azeban::complex_t, 1> &out) {
+  dft_axis<0, 1, azeban::real_t>(in, out);
+}
+
+template <bool transform_x = true, bool transform_y = true>
+static void dft(const zisa::array_const_view<azeban::real_t, 2> &in,
+                const zisa::array_view<azeban::complex_t, 2> &out);
+
+template <>
+void dft<true, true>(const zisa::array_const_view<azeban::real_t, 2> &in,
+                     const zisa::array_view<azeban::complex_t, 2> &out) {
+  zisa::array<azeban::complex_t, 2> buf(out.shape(), zisa::device_type::cpu);
+  dft_axis<1, 2, azeban::real_t>(in, buf);
+  dft_axis<0, 2, azeban::complex_t>(buf, out);
+}
+
+template <>
+void dft<true, false>(const zisa::array_const_view<azeban::real_t, 2> &in,
+                      const zisa::array_view<azeban::complex_t, 2> &out) {
+  dft_axis<0, 2, azeban::real_t>(in, out);
+}
+
+template <>
+void dft<false, true>(const zisa::array_const_view<azeban::real_t, 2> &in,
+                      const zisa::array_view<azeban::complex_t, 2> &out) {
+  dft_axis<1, 2, azeban::real_t>(in, out);
+}
+
+template <bool transform_x = true,
+          bool transform_y = true,
+          bool transform_z = true>
 static void dft(const zisa::array_const_view<azeban::real_t, 3> &in,
                 const zisa::array_view<azeban::complex_t, 3> &out) {
-  const zisa::int_t Nx = in.shape(0);
-  const zisa::int_t Ny = in.shape(1);
-  const zisa::int_t Nz = in.shape(2);
-  zisa::array<azeban::complex_t, 3> tmp(out.shape(), zisa::device_type::cpu);
-  zisa::array<azeban::complex_t, 1> x_buf_in(zisa::shape_t<1>(Nx),
-                                             zisa::device_type::cpu);
-  zisa::array<azeban::complex_t, 1> x_buf_out(zisa::shape_t<1>(Nx),
-                                              zisa::device_type::cpu);
-  for (zisa::int_t i = 0; i < Nx; ++i) {
-    zisa::array_const_view<azeban::real_t, 2> yz_buf_in(
-        zisa::shape_t<2>(Ny, Nz), &in(i, 0, 0), zisa::device_type::cpu);
-    zisa::array_view<azeban::complex_t, 2> yz_buf_out(
-        zisa::shape_t<2>(Ny, Nz / 2 + 1),
-        &tmp(i, 0, 0),
-        zisa::device_type::cpu);
-    dft(yz_buf_in, yz_buf_out);
-  }
-  for (zisa::int_t i = 0; i < Ny; ++i) {
-    for (zisa::int_t j = 0; j < Nz / 2 + 1; ++j) {
-      for (zisa::int_t k = 0; k < Nx; ++k) {
-        x_buf_in[k] = tmp(k, i, j);
-      }
-      dft(x_buf_in, x_buf_out);
-      for (zisa::int_t k = 0; k < Nx; ++k) {
-        out(k, i, j) = x_buf_out[k];
-      }
-    }
-  }
+  zisa::array<azeban::complex_t, 3> buf1(out.shape(), zisa::device_type::cpu);
+  zisa::array<azeban::complex_t, 3> buf2(out.shape(), zisa::device_type::cpu);
+  dft_axis<2, 3, azeban::real_t>(in, buf1);
+  dft_axis<1, 3, azeban::complex_t>(buf1, buf2);
+  dft_axis<0, 3, azeban::complex_t>(buf2, out);
+}
+
+template <>
+void dft<true, true, true>(const zisa::array_const_view<azeban::real_t, 3> &in,
+                           const zisa::array_view<azeban::complex_t, 3> &out) {
+  zisa::array<azeban::complex_t, 3> buf1(out.shape(), zisa::device_type::cpu);
+  zisa::array<azeban::complex_t, 3> buf2(out.shape(), zisa::device_type::cpu);
+  dft_axis<2, 3, azeban::real_t>(in, buf1);
+  dft_axis<1, 3, azeban::complex_t>(buf1, buf2);
+  dft_axis<0, 3, azeban::complex_t>(buf2, out);
+}
+
+template <>
+void dft<true, true, false>(const zisa::array_const_view<azeban::real_t, 3> &in,
+                            const zisa::array_view<azeban::complex_t, 3> &out) {
+  zisa::array<azeban::complex_t, 3> buf1(out.shape(), zisa::device_type::cpu);
+  dft_axis<1, 3, azeban::real_t>(in, buf1);
+  dft_axis<0, 3, azeban::complex_t>(buf1, out);
+}
+
+template <>
+void dft<false, true, true>(const zisa::array_const_view<azeban::real_t, 3> &in,
+                            const zisa::array_view<azeban::complex_t, 3> &out) {
+  zisa::array<azeban::complex_t, 3> buf2(out.shape(), zisa::device_type::cpu);
+  dft_axis<2, 3, azeban::real_t>(in, buf2);
+  dft_axis<1, 3, azeban::complex_t>(buf2, out);
+}
+
+template <>
+void dft<true, false, false>(
+    const zisa::array_const_view<azeban::real_t, 3> &in,
+    const zisa::array_view<azeban::complex_t, 3> &out) {
+  dft_axis<0, 3, azeban::real_t>(in, out);
+}
+template <>
+
+void dft<false, true, false>(
+    const zisa::array_const_view<azeban::real_t, 3> &in,
+    const zisa::array_view<azeban::complex_t, 3> &out) {
+  dft_axis<1, 3, azeban::real_t>(in, out);
+}
+
+template <>
+void dft<false, false, true>(
+    const zisa::array_const_view<azeban::real_t, 3> &in,
+    const zisa::array_view<azeban::complex_t, 3> &out) {
+  dft_axis<2, 3, azeban::real_t>(in, out);
 }
 
 template <int Dim>
@@ -124,18 +202,33 @@ static void init(const zisa::array_view<azeban::real_t, Dim> &u) {
 }
 
 template <int Dim>
+static void init(const zisa::array_view<azeban::complex_t, Dim> &u) {
+  std::mt19937 rng;
+  std::uniform_real_distribution<azeban::real_t> dist(-1, 1);
+  for (zisa::int_t i = 0; i < u.size(); ++i) {
+    u[i].x = dist(rng);
+    u[i].y = dist(rng);
+  }
+}
+
+template <int Dim, bool... transform>
 static void test_fft(zisa::int_t n,
                      zisa::int_t D,
                      zisa::device_type device = zisa::device_type::cpu) {
+  static_assert(sizeof...(transform) == Dim, "");
+  static constexpr int num_transformed_dims = (... + !!transform);
+
+  const int direction = azeban::FFT_FORWARD | azeban::FFT_BACKWARD;
+  std::shared_ptr<azeban::FFT<Dim>> fft
+      = azeban::make_fft<Dim>(device, direction, transform...);
+
   zisa::shape_t<Dim + 1> rshape;
-  zisa::shape_t<Dim + 1> cshape;
   rshape[0] = D;
-  cshape[0] = D;
   for (int i = 0; i < Dim; ++i) {
     rshape[i + 1] = n;
-    cshape[i + 1] = n;
   }
-  cshape[Dim] = n / 2 + 1;
+  const zisa::shape_t<Dim + 1> cshape = fft->output_shape(rshape);
+
   auto h_u = zisa::array<azeban::real_t, Dim + 1>(rshape);
   auto h_u_ref = zisa::array<azeban::real_t, Dim + 1>(rshape);
   auto h_u_hat = zisa::array<azeban::complex_t, Dim + 1>(cshape);
@@ -143,14 +236,14 @@ static void test_fft(zisa::int_t n,
   auto d_u = zisa::array<azeban::real_t, Dim + 1>(rshape, device);
   auto d_u_hat = zisa::array<azeban::complex_t, Dim + 1>(cshape, device);
 
-  std::shared_ptr<azeban::FFT<Dim>> fft = azeban::make_fft<Dim>(d_u_hat, d_u);
+  fft->initialize(d_u_hat, d_u);
 
   zisa::shape_t<Dim> u_ref_view_shape;
+  zisa::shape_t<Dim> u_hat_ref_view_shape;
   for (int i = 0; i < Dim; ++i) {
-    u_ref_view_shape[i] = n;
+    u_ref_view_shape[i] = rshape[i + 1];
+    u_hat_ref_view_shape[i] = cshape[i + 1];
   }
-  zisa::shape_t<Dim> u_hat_ref_view_shape = u_ref_view_shape;
-  u_hat_ref_view_shape[Dim - 1] = n / 2 + 1;
   for (zisa::int_t d = 0; d < D; ++d) {
     zisa::array_view<azeban::real_t, Dim> u_ref_view(
         u_ref_view_shape,
@@ -161,7 +254,7 @@ static void test_fft(zisa::int_t n,
         h_u_hat_ref.raw() + d * zisa::product(u_hat_ref_view_shape),
         zisa::device_type::cpu);
     init(u_ref_view);
-    dft(u_ref_view, u_hat_ref_view);
+    dft<transform...>(u_ref_view, u_hat_ref_view);
   }
   zisa::copy(h_u, h_u_ref);
 
@@ -176,81 +269,87 @@ static void test_fft(zisa::int_t n,
     REQUIRE(std::fabs(h_u_hat[i].y - h_u_hat_ref[i].y) <= 1e-8);
   }
   for (zisa::int_t i = 0; i < zisa::product(rshape); ++i) {
-    REQUIRE(std::fabs(h_u[i] / zisa::pow<Dim>(n) - h_u_ref[i]) <= 1e-8);
+    REQUIRE(std::fabs(h_u[i] / zisa::pow<num_transformed_dims>(n) - h_u_ref[i])
+            <= 1e-8);
   }
 }
 
-TEST_CASE("FFTW 1D scalar valued data", "[operations][fft]") {
-  std::cout << "TESTING: FFTW 1D scalar valued data [operations][fft]"
-            << std::endl;
-  test_fft<1>(128, 1);
-}
+#define REGISTER_1D_TEST_CASE(NVARS, TRANSX, DEV)                              \
+  TEST_CASE("FFT 1D n_vars=" #NVARS " transform=(" #TRANSX "), device=" #DEV,  \
+            "[operations][fft]") {                                             \
+    std::cout << "TESTING: FFT 1D n_vars=" #NVARS " axes=(" #TRANSX            \
+                 "), device=" #DEV " [operations][fft]"                        \
+              << std::endl;                                                    \
+    test_fft<1, TRANSX>(128, NVARS, DEV);                                      \
+  }
 
-TEST_CASE("FFTW 1D vector valued data", "[operations][fft]") {
-  std::cout << "TESTING: FFTW 1D vector valued data [operations][fft]"
-            << std::endl;
-  test_fft<1>(128, 2);
-}
+#define REGISTER_2D_TEST_CASE(NVARS, TRANSX, TRANSY, DEV)                      \
+  TEST_CASE("FFT 2D n_vars=" #NVARS " transform=(" #TRANSX ", " #TRANSY        \
+            "), device=" #DEV,                                                 \
+            "[operations][fft]") {                                             \
+    std::cout << "TESTING: FFT 2D n_vars=" #NVARS " axes=(" #TRANSX            \
+                 ", " #TRANSY "), device=" #DEV " [operations][fft]"           \
+              << std::endl;                                                    \
+    test_fft<2, TRANSX, TRANSY>(128, NVARS, DEV);                              \
+  }
 
-TEST_CASE("FFTW 2D scalar valued data", "[operations][fft]") {
-  std::cout << "TESTING: FFTW 2D scalar valued data [operations][fft]"
-            << std::endl;
-  test_fft<2>(128, 1);
-}
+#define REGISTER_3D_TEST_CASE(NVARS, TRANSX, TRANSY, TRANSZ, DEV)              \
+  TEST_CASE("FFT 3D n_vars=" #NVARS " transform=(" #TRANSX ", " #TRANSY        \
+            ", " #TRANSZ "), device=" #DEV,                                    \
+            "[operations][fft]") {                                             \
+    std::cout << "TESTING: FFT 3D n_vars=" #NVARS " axes=(" #TRANSX            \
+                 ", " #TRANSY ", " #TRANSZ "), device=" #DEV                   \
+                 " [operations][fft]"                                          \
+              << std::endl;                                                    \
+    test_fft<3, TRANSX, TRANSY, TRANSZ>(128, NVARS, DEV);                      \
+  }
 
-TEST_CASE("FFTW 2D vector valued data", "[operations][fft]") {
-  std::cout << "TESTING: FFTW 2D vector valued data [operations][fft]"
-            << std::endl;
-  test_fft<2>(128, 2);
-}
+REGISTER_1D_TEST_CASE(1, true, zisa::device_type::cpu);
+REGISTER_1D_TEST_CASE(1, true, zisa::device_type::cuda);
+REGISTER_1D_TEST_CASE(2, true, zisa::device_type::cpu);
+REGISTER_1D_TEST_CASE(2, true, zisa::device_type::cuda);
 
-TEST_CASE("FFTW 3D scalar valued data", "[operations][fft]") {
-  std::cout << "TESTING: FFTW 3D scalar valued data [operations][fft]"
-            << std::endl;
-  test_fft<3>(128, 1);
-}
+REGISTER_2D_TEST_CASE(1, true, true, zisa::device_type::cpu);
+REGISTER_2D_TEST_CASE(1, true, true, zisa::device_type::cuda);
+REGISTER_2D_TEST_CASE(2, true, true, zisa::device_type::cpu);
+REGISTER_2D_TEST_CASE(2, true, true, zisa::device_type::cuda);
+// REGISTER_2D_TEST_CASE(1, true, false, zisa::device_type::cpu);
+// REGISTER_2D_TEST_CASE(1, true, false, zisa::device_type::cuda);
+// REGISTER_2D_TEST_CASE(2, true, false, zisa::device_type::cpu);
+// REGISTER_2D_TEST_CASE(2, true, false, zisa::device_type::cuda);
+REGISTER_2D_TEST_CASE(1, false, true, zisa::device_type::cpu);
+REGISTER_2D_TEST_CASE(1, false, true, zisa::device_type::cuda);
+REGISTER_2D_TEST_CASE(2, false, true, zisa::device_type::cpu);
+REGISTER_2D_TEST_CASE(2, false, true, zisa::device_type::cuda);
 
-TEST_CASE("FFTW 3D vector valued data", "[operations][fft]") {
-  std::cout << "TESTING: FFTW 3D vector valued data [operations][fft]"
-            << std::endl;
-  test_fft<3>(128, 2);
-}
+REGISTER_3D_TEST_CASE(1, true, true, true, zisa::device_type::cpu);
+REGISTER_3D_TEST_CASE(1, true, true, true, zisa::device_type::cuda);
+REGISTER_3D_TEST_CASE(2, true, true, true, zisa::device_type::cpu);
+REGISTER_3D_TEST_CASE(2, true, true, true, zisa::device_type::cuda);
+// REGISTER_3D_TEST_CASE(1, true, true, false, zisa::device_type::cpu);
+// REGISTER_3D_TEST_CASE(1, true, true, false, zisa::device_type::cuda);
+// REGISTER_3D_TEST_CASE(2, true, true, false, zisa::device_type::cpu);
+// REGISTER_3D_TEST_CASE(2, true, true, false, zisa::device_type::cuda);
+REGISTER_3D_TEST_CASE(1, false, true, true, zisa::device_type::cpu);
+REGISTER_3D_TEST_CASE(1, false, true, true, zisa::device_type::cuda);
+REGISTER_3D_TEST_CASE(2, false, true, true, zisa::device_type::cpu);
+REGISTER_3D_TEST_CASE(2, false, true, true, zisa::device_type::cuda);
+// REGISTER_3D_TEST_CASE(1, true, false, false, zisa::device_type::cpu);
+// REGISTER_3D_TEST_CASE(1, true, false, false, zisa::device_type::cuda);
+// REGISTER_3D_TEST_CASE(2, true, false, false, zisa::device_type::cpu);
+// REGISTER_3D_TEST_CASE(2, true, false, false, zisa::device_type::cuda);
+REGISTER_3D_TEST_CASE(1, false, false, true, zisa::device_type::cpu);
+REGISTER_3D_TEST_CASE(1, false, false, true, zisa::device_type::cuda);
+REGISTER_3D_TEST_CASE(2, false, false, true, zisa::device_type::cpu);
+REGISTER_3D_TEST_CASE(2, false, false, true, zisa::device_type::cuda);
+// REGISTER_3D_TEST_CASE(1, false, true, false, zisa::device_type::cpu);
+// REGISTER_3D_TEST_CASE(1, false, true, false, zisa::device_type::cuda);
+// REGISTER_3D_TEST_CASE(2, false, true, false, zisa::device_type::cpu);
+// REGISTER_3D_TEST_CASE(2, false, true, false, zisa::device_type::cuda);
 
-TEST_CASE("cuFFT 1D scalar valued data", "[operations][fft]") {
-  std::cout << "TESTING: cuFFT 1D scalar valued data [operations][fft]"
-            << std::endl;
-  test_fft<1>(128, 1, zisa::device_type::cuda);
-}
-
-TEST_CASE("cuFFT 1D vector valued data", "[operations][fft]") {
-  std::cout << "TESTING: cuFFT 1D vector valued data [operations][fft]"
-            << std::endl;
-  test_fft<1>(128, 2, zisa::device_type::cuda);
-}
-
-TEST_CASE("cuFFT 2D scalar valued data", "[operations][fft]") {
-  std::cout << "TESTING: cuFFT 2D scalar valued data [operations][fft]"
-            << std::endl;
-  test_fft<2>(128, 1, zisa::device_type::cuda);
-}
-
-TEST_CASE("cuFFT 2D vector valued data", "[operations][fft]") {
-  std::cout << "TESTING: cuFFT 2D vector valued data [operations][fft]"
-            << std::endl;
-  test_fft<2>(128, 2, zisa::device_type::cuda);
-}
-
-TEST_CASE("cuFFT 3D scalar valued data", "[operations][fft]") {
-  std::cout << "TESTING: cuFFT 3D scalar valued data [operations][fft]"
-            << std::endl;
-  test_fft<3>(128, 1, zisa::device_type::cuda);
-}
-
-TEST_CASE("cuFFT 3D vector valued data", "[operations][fft]") {
-  std::cout << "TESTING: cuFFT 3D vector valued data [operations][fft]"
-            << std::endl;
-  test_fft<3>(128, 2, zisa::device_type::cuda);
-}
+#undef REGISTER_1D_TEST_CASE
+#undef REGISTER_2D_TEST_CASE
+#undef REGISTER_3D_TEST_CASE
 
 #if AZEBAN_HAS_MPI
 TEST_CASE("cuFFT MPI 2d scalar valued data", "[operations][fft][mpi]") {

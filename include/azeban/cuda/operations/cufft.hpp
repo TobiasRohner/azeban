@@ -33,9 +33,36 @@ class CUFFT_R2C final : public FFT<Dim, real_t> {
 public:
   static constexpr int dim_v = Dim;
 
-  CUFFT_R2C(const zisa::array_view<complex_t, dim_v + 1> &u_hat,
-            const zisa::array_view<real_t, dim_v + 1> &u,
-            int direction = FFT_FORWARD | FFT_BACKWARD);
+  template <bool enable = Dim == 1, typename = std::enable_if_t<enable>>
+  CUFFT_R2C(int direction = FFT_FORWARD | FFT_BACKWARD,
+            bool transform_x = true);
+  template <bool enable = Dim == 2, typename = std::enable_if_t<enable>>
+  CUFFT_R2C(int direction = FFT_FORWARD | FFT_BACKWARD,
+            bool transform_x = true,
+            bool transform_y = true);
+  template <bool enable = Dim == 3, typename = std::enable_if_t<enable>>
+  CUFFT_R2C(int direction = FFT_FORWARD | FFT_BACKWARD,
+            bool transform_x = true,
+            bool transform_y = true,
+            bool transform_z = true);
+  template <bool enable = Dim == 1, typename = std::enable_if_t<enable>>
+  CUFFT_R2C(const zisa::array_view<complex_t, Dim + 1> &u_hat,
+            const zisa::array_view<real_t, Dim + 1> &u,
+            int direction = FFT_FORWARD | FFT_BACKWARD,
+            bool transform_x = true);
+  template <bool enable = Dim == 2, typename = std::enable_if_t<enable>>
+  CUFFT_R2C(const zisa::array_view<complex_t, Dim + 1> &u_hat,
+            const zisa::array_view<real_t, Dim + 1> &u,
+            int direction = FFT_FORWARD | FFT_BACKWARD,
+            bool transform_x = true,
+            bool transform_y = true);
+  template <bool enable = Dim == 3, typename = std::enable_if_t<enable>>
+  CUFFT_R2C(const zisa::array_view<complex_t, Dim + 1> &u_hat,
+            const zisa::array_view<real_t, Dim + 1> &u,
+            int direction = FFT_FORWARD | FFT_BACKWARD,
+            bool transform_x = true,
+            bool transform_y = true,
+            bool transform_z = true);
   virtual ~CUFFT_R2C() override;
   using super::initialize;
   virtual void forward() override;
@@ -75,9 +102,36 @@ class CUFFT_C2C final : public FFT<Dim, complex_t> {
 public:
   static constexpr int dim_v = Dim;
 
-  CUFFT_C2C(const zisa::array_view<complex_t, dim_v + 1> &u_hat,
-            const zisa::array_view<complex_t, dim_v + 1> &u,
-            int direction = FFT_FORWARD | FFT_BACKWARD);
+  template <bool enable = Dim == 1, typename = std::enable_if_t<enable>>
+  CUFFT_C2C(int direction = FFT_FORWARD | FFT_BACKWARD,
+            bool transform_x = true);
+  template <bool enable = Dim == 2, typename = std::enable_if_t<enable>>
+  CUFFT_C2C(int direction = FFT_FORWARD | FFT_BACKWARD,
+            bool transform_x = true,
+            bool transform_y = true);
+  template <bool enable = Dim == 3, typename = std::enable_if_t<enable>>
+  CUFFT_C2C(int direction = FFT_FORWARD | FFT_BACKWARD,
+            bool transform_x = true,
+            bool transform_y = true,
+            bool transform_z = true);
+  template <bool enable = Dim == 1, typename = std::enable_if_t<enable>>
+  CUFFT_C2C(const zisa::array_view<complex_t, Dim + 1> &u_hat,
+            const zisa::array_view<complex_t, Dim + 1> &u,
+            int direction = FFT_FORWARD | FFT_BACKWARD,
+            bool transform_x = true);
+  template <bool enable = Dim == 2, typename = std::enable_if_t<enable>>
+  CUFFT_C2C(const zisa::array_view<complex_t, Dim + 1> &u_hat,
+            const zisa::array_view<complex_t, Dim + 1> &u,
+            int direction = FFT_FORWARD | FFT_BACKWARD,
+            bool transform_x = true,
+            bool transform_y = true);
+  template <bool enable = Dim == 3, typename = std::enable_if_t<enable>>
+  CUFFT_C2C(const zisa::array_view<complex_t, Dim + 1> &u_hat,
+            const zisa::array_view<complex_t, Dim + 1> &u,
+            int direction = FFT_FORWARD | FFT_BACKWARD,
+            bool transform_x = true,
+            bool transform_y = true,
+            bool transform_z = true);
   virtual ~CUFFT_C2C() override;
   using super::initialize;
   virtual void forward() override;

@@ -3,19 +3,19 @@
 
 namespace azeban {
 
-static fftwf_plan plan_many_dft(int rank,
-                                const int *n,
-                                int howmany,
-                                Complex<float> *in,
-                                const int *inembed,
-                                int istride,
-                                int idist,
-                                Complex<float> *out,
-                                const int *onembed,
-                                int ostride,
-                                int odist,
-                                fft_direction direction,
-                                unsigned flags) {
+fftwf_plan plan_many_dft(int rank,
+                         const int *n,
+                         int howmany,
+                         Complex<float> *in,
+                         const int *inembed,
+                         int istride,
+                         int idist,
+                         Complex<float> *out,
+                         const int *onembed,
+                         int ostride,
+                         int odist,
+                         fft_direction direction,
+                         unsigned flags) {
   int sign;
   if (direction == FFT_FORWARD) {
     sign = FFTW_FORWARD;
@@ -37,19 +37,19 @@ static fftwf_plan plan_many_dft(int rank,
                              flags);
 }
 
-static fftw_plan plan_many_dft(int rank,
-                               const int *n,
-                               int howmany,
-                               Complex<double> *in,
-                               const int *inembed,
-                               int istride,
-                               int idist,
-                               Complex<double> *out,
-                               const int *onembed,
-                               int ostride,
-                               int odist,
-                               fft_direction direction,
-                               unsigned flags) {
+fftw_plan plan_many_dft(int rank,
+                        const int *n,
+                        int howmany,
+                        Complex<double> *in,
+                        const int *inembed,
+                        int istride,
+                        int idist,
+                        Complex<double> *out,
+                        const int *onembed,
+                        int ostride,
+                        int odist,
+                        fft_direction direction,
+                        unsigned flags) {
   int sign;
   if (direction == FFT_FORWARD) {
     sign = FFTW_FORWARD;
@@ -71,18 +71,18 @@ static fftw_plan plan_many_dft(int rank,
                             flags);
 }
 
-static fftwf_plan plan_many_dft_r2c(int rank,
-                                    const int *n,
-                                    int howmany,
-                                    float *in,
-                                    const int *inembed,
-                                    int istride,
-                                    int idist,
-                                    Complex<float> *out,
-                                    const int *onembed,
-                                    int ostride,
-                                    int odist,
-                                    unsigned flags) {
+fftwf_plan plan_many_dft_r2c(int rank,
+                             const int *n,
+                             int howmany,
+                             float *in,
+                             const int *inembed,
+                             int istride,
+                             int idist,
+                             Complex<float> *out,
+                             const int *onembed,
+                             int ostride,
+                             int odist,
+                             unsigned flags) {
   return fftwf_plan_many_dft_r2c(rank,
                                  n,
                                  howmany,
@@ -97,18 +97,18 @@ static fftwf_plan plan_many_dft_r2c(int rank,
                                  flags);
 }
 
-static fftw_plan plan_many_dft_r2c(int rank,
-                                   const int *n,
-                                   int howmany,
-                                   double *in,
-                                   const int *inembed,
-                                   int istride,
-                                   int idist,
-                                   Complex<double> *out,
-                                   const int *onembed,
-                                   int ostride,
-                                   int odist,
-                                   unsigned flags) {
+fftw_plan plan_many_dft_r2c(int rank,
+                            const int *n,
+                            int howmany,
+                            double *in,
+                            const int *inembed,
+                            int istride,
+                            int idist,
+                            Complex<double> *out,
+                            const int *onembed,
+                            int ostride,
+                            int odist,
+                            unsigned flags) {
   return fftw_plan_many_dft_r2c(rank,
                                 n,
                                 howmany,
@@ -123,18 +123,18 @@ static fftw_plan plan_many_dft_r2c(int rank,
                                 flags);
 }
 
-static fftwf_plan plan_many_dft_c2r(int rank,
-                                    const int *n,
-                                    int howmany,
-                                    Complex<float> *in,
-                                    const int *inembed,
-                                    int istride,
-                                    int idist,
-                                    float *out,
-                                    const int *onembed,
-                                    int ostride,
-                                    int odist,
-                                    unsigned flags) {
+fftwf_plan plan_many_dft_c2r(int rank,
+                             const int *n,
+                             int howmany,
+                             Complex<float> *in,
+                             const int *inembed,
+                             int istride,
+                             int idist,
+                             float *out,
+                             const int *onembed,
+                             int ostride,
+                             int odist,
+                             unsigned flags) {
   return fftwf_plan_many_dft_c2r(rank,
                                  n,
                                  howmany,
@@ -149,18 +149,18 @@ static fftwf_plan plan_many_dft_c2r(int rank,
                                  flags);
 }
 
-static fftw_plan plan_many_dft_c2r(int rank,
-                                   const int *n,
-                                   int howmany,
-                                   Complex<double> *in,
-                                   const int *inembed,
-                                   int istride,
-                                   int idist,
-                                   double *out,
-                                   const int *onembed,
-                                   int ostride,
-                                   int odist,
-                                   unsigned flags) {
+fftw_plan plan_many_dft_c2r(int rank,
+                            const int *n,
+                            int howmany,
+                            Complex<double> *in,
+                            const int *inembed,
+                            int istride,
+                            int idist,
+                            double *out,
+                            const int *onembed,
+                            int ostride,
+                            int odist,
+                            unsigned flags) {
   return fftw_plan_many_dft_c2r(rank,
                                 n,
                                 howmany,
@@ -175,13 +175,13 @@ static fftw_plan plan_many_dft_c2r(int rank,
                                 flags);
 }
 
-static void destroy_plan(fftwf_plan plan) { fftwf_destroy_plan(plan); }
+void destroy_plan(fftwf_plan plan) { fftwf_destroy_plan(plan); }
 
-static void destroy_plan(fftw_plan plan) { fftw_destroy_plan(plan); }
+void destroy_plan(fftw_plan plan) { fftw_destroy_plan(plan); }
 
-static void execute(const fftwf_plan plan) { fftwf_execute(plan); }
+void execute(const fftwf_plan plan) { fftwf_execute(plan); }
 
-static void execute(const fftw_plan plan) { fftw_execute(plan); }
+void execute(const fftw_plan plan) { fftw_execute(plan); }
 
 template <>
 template <>
@@ -305,7 +305,7 @@ void FFTWFFT_R2C<Dim>::do_initialize(
 
   int rdist = 1;
   int cdist = 1;
-  for (int i = 0; i < dim_v; ++i) {
+  for (int i = Dim - 1; i >= 0; --i) {
     if (!transform_dims_[i]) {
       break;
     }
@@ -313,7 +313,7 @@ void FFTWFFT_R2C<Dim>::do_initialize(
     cdist *= u_hat.shape(i + 1);
   }
 
-  if (direction_ & FFT_FORWARD) {
+  if (is_forward()) {
     // Create a plan for the forward operation
     plan_forward_ = plan_many_dft_r2c(rank,          // rank
                                       n.data(),      // n
@@ -328,7 +328,7 @@ void FFTWFFT_R2C<Dim>::do_initialize(
                                       cdist,         // odist
                                       FFTW_MEASURE); // flags
   }
-  if (direction_ & FFT_BACKWARD) {
+  if (is_backward()) {
     // Create a plan for the backward operation
     plan_backward_ = plan_many_dft_c2r(rank,          // rank
                                        n.data(),      // n
@@ -467,7 +467,7 @@ void FFTWFFT_C2C<Dim>::do_initialize(
 
   int rdist = 1;
   int cdist = 1;
-  for (int i = 0; i < dim_v; ++i) {
+  for (int i = Dim - 1; i >= 0; --i) {
     if (!transform_dims_[i]) {
       break;
     }
