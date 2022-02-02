@@ -1,6 +1,33 @@
 cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 project(azeban VERSION 0.1 LANGUAGES C CXX)
 
+option(ENABLE_CUDA "Enable CUDA Acceleration" ON)
+option(ENABLE_MPI "Enable scaling to multiple nodes using MPI" ON)
+option(ENABLE_BENCHMARKS "Compile Benchmarks" ON)
+option(ENABLE_PROFILING "Profile he code while running" ON)
+option(SINGLE_PRECISION "Use single instead of double precision arithmetic" OFF)
+option(HAVE_HDF5 "Compile with HDF5 support" OFF)
+option(HAVE_NETCDF "Compile with NetCDF support" ON)
+
+set(ZISA_HAS_CUDA ENABLE_CUDA)
+set(AZEBAN_HAS_MPI ENABLE_MPI)
+set(AZEBAN_HAS_BENCHMARK ENABLE_BENCHMARKS)
+set(AZEBAN_DO_PROFILE ENABLE_PROFILING)
+set(ZISA_HAS_HDF5 HAVE_HDF5)
+set(ZISA_HAS_NETCDF HAVE_NETCDF)
+if (SINGLE_PRECISION)
+  set(FP_PRECISION "float")
+else()
+  set(FP_PRECISION "double")
+endif()
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/azeban/config.hpp.in
+  ${CMAKE_CURRENT_BINARY_DIR}/include/azeban/config.hpp
+  @ONLY
+)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
+
 if(ZISA_HAS_CUDA)
   enable_language(CUDA)
 endif()
