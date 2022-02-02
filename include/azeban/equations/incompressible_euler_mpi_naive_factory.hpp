@@ -15,10 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef INCOMPRESSIBLE_EULER_MPI_FACTORY_H_
-#define INCOMPRESSIBLE_EULER_MPI_FACTORY_H_
+#ifndef AZEBAN_EQUATION_INCOMPRESSIBLE_EULER_MPI_NAIVE_FACTORY_H_
+#define AZEBAN_EQUATION_INCOMPRESSIBLE_EULER_MPI_NAIVE_FACTORY_H_
 
-#include "incompressible_euler_mpi.hpp"
+#include "incompressible_euler_mpi_naive.hpp"
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>
 
@@ -26,14 +26,14 @@ namespace azeban {
 
 template <int Dim, typename SpectralViscosity, typename Forcing>
 std::shared_ptr<Equation<Dim>>
-make_incompressible_euler_mpi(const Grid<Dim> &grid,
-                              MPI_Comm comm,
-                              const SpectralViscosity &visc,
-                              const Forcing &forcing,
-                              bool has_tracer) {
+make_incompressible_euler_mpi_naive(const Grid<Dim> &grid,
+                                    MPI_Comm comm,
+                                    const SpectralViscosity &visc,
+                                    const Forcing &forcing,
+                                    bool has_tracer) {
   if constexpr (Dim == 2 || Dim == 3) {
     return std::make_shared<
-        IncompressibleEuler_MPI<Dim, SpectralViscosity, Forcing>>(
+        IncompressibleEuler_MPI_Naive<Dim, SpectralViscosity, Forcing>>(
         grid, comm, visc, forcing, has_tracer);
   } else {
     ZISA_UNUSED(grid);

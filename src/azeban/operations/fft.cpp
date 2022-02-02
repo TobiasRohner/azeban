@@ -108,8 +108,8 @@ zisa::int_t optimal_fft_size(const std::string &benchmark_file,
 }
 
 template <int Dim, typename ScalarU>
-zisa::shape_t<Dim + 1> FFT<Dim, ScalarU>::output_shape(
-    const zisa::shape_t<Dim + 1> &input_shape) const {
+zisa::shape_t<Dim + 1>
+FFT<Dim, ScalarU>::shape_u_hat(const zisa::shape_t<Dim + 1> &shape_u) const {
   if (std::is_same_v<ScalarU, real_t>) {
     int last_transform_dim = 0;
     for (int i = 0; i < Dim; ++i) {
@@ -117,25 +117,49 @@ zisa::shape_t<Dim + 1> FFT<Dim, ScalarU>::output_shape(
         last_transform_dim = i;
       }
     }
-    zisa::shape_t<Dim + 1> result = input_shape;
-    result[last_transform_dim + 1]
-        = input_shape[last_transform_dim + 1] / 2 + 1;
+    zisa::shape_t<Dim + 1> result = shape_u;
+    result[last_transform_dim + 1] = shape_u[last_transform_dim + 1] / 2 + 1;
     return result;
   } else {
-    return input_shape;
+    return shape_u;
+  }
+}
+
+template <int Dim, typename ScalarU>
+zisa::shape_t<Dim + 1>
+FFT<Dim, ScalarU>::shape_u(const zisa::shape_t<Dim + 1> &shape_u_hat) const {
+  if (std::is_same_v<ScalarU, real_t>) {
+    int last_transform_dim = 0;
+    for (int i = 0; i < Dim; ++i) {
+      if (transform_dims_[i]) {
+        last_transform_dim = i;
+      }
+    }
+    zisa::shape_t<Dim + 1> result = shape_u_hat;
+    result[last_transform_dim + 1]
+        = 2 * (shape_u_hat[last_transform_dim + 1] - 1);
+    return result;
+  } else {
+    return shape_u_hat;
   }
 }
 
 template <int Dim, typename ScalarU>
 void FFT<Dim, ScalarU>::initialize(
     const zisa::array_view<complex_t, Dim + 1> &u_hat,
-    const zisa::array_view<scalar_u_t, Dim + 1> &u) {
+    const zisa::array_view<scalar_u_t, Dim + 1> &u,
+    bool allocate_work_area) {
   LOG_ERR_IF(u_hat.shape(0) != u.shape(0),
              "Number of variables does not match");
   u_hat_ = u_hat;
   u_ = u;
   data_dim_ = u_hat_.shape(0);
-  do_initialize(u_hat, u);
+  do_initialize(u_hat, u, allocate_work_area);
+}
+
+template <int Dim, typename ScalarU>
+void FFT<Dim, ScalarU>::set_work_area(void *work_area) {
+  do_set_work_area(work_area);
 }
 
 template class FFT<1, real_t>;

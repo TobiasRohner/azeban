@@ -49,6 +49,7 @@ public:
       = 0;
 
   zisa::device_type memory_location() const { return device_; }
+  std::shared_ptr<Equation<dim_v>> equation() { return equation_; }
   std::shared_ptr<const Equation<dim_v>> equation() const { return equation_; }
 
 protected:

@@ -250,6 +250,11 @@ FFTWFFT_R2C<Dim>::~FFTWFFT_R2C() {
 }
 
 template <int Dim>
+size_t FFTWFFT_R2C<Dim>::get_work_area_size() const {
+  return 0;
+}
+
+template <int Dim>
 void FFTWFFT_R2C<Dim>::forward() {
   LOG_ERR_IF(!is_forward(), "Forward operation was not initialized");
   AZEBAN_PROFILE_START("FFTWFFT_R2C::forward");
@@ -268,7 +273,9 @@ void FFTWFFT_R2C<Dim>::backward() {
 template <int Dim>
 void FFTWFFT_R2C<Dim>::do_initialize(
     const zisa::array_view<complex_t, Dim + 1> &u_hat,
-    const zisa::array_view<real_t, Dim + 1> &u) {
+    const zisa::array_view<real_t, Dim + 1> &u,
+    bool allocate_work_area) {
+  ZISA_UNUSED(allocate_work_area);
   LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cpu,
              "FFTW is CPU only!");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cpu,
@@ -345,6 +352,11 @@ void FFTWFFT_R2C<Dim>::do_initialize(
   }
 }
 
+template <int Dim>
+void FFTWFFT_R2C<Dim>::do_set_work_area(void *work_area) {
+  ZISA_UNUSED(work_area);
+}
+
 template <>
 template <>
 FFTWFFT_C2C<1>::FFTWFFT_C2C<true, void>(int direction, bool transform_x)
@@ -412,6 +424,11 @@ FFTWFFT_C2C<Dim>::~FFTWFFT_C2C() {
 }
 
 template <int Dim>
+size_t FFTWFFT_C2C<Dim>::get_work_area_size() const {
+  return 0;
+}
+
+template <int Dim>
 void FFTWFFT_C2C<Dim>::forward() {
   LOG_ERR_IF(!is_forward(), "Forward operation was not initialized");
   AZEBAN_PROFILE_START("FFTWFFT_C2C::forward");
@@ -430,7 +447,9 @@ void FFTWFFT_C2C<Dim>::backward() {
 template <int Dim>
 void FFTWFFT_C2C<Dim>::do_initialize(
     const zisa::array_view<complex_t, Dim + 1> &u_hat,
-    const zisa::array_view<complex_t, Dim + 1> &u) {
+    const zisa::array_view<complex_t, Dim + 1> &u,
+    bool allocate_work_area) {
+  ZISA_UNUSED(allocate_work_area);
   LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cpu,
              "FFTW is CPU only!");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cpu,
@@ -507,6 +526,11 @@ void FFTWFFT_C2C<Dim>::do_initialize(
                   FFT_BACKWARD,
                   FFTW_MEASURE);
   }
+}
+
+template <int Dim>
+void FFTWFFT_C2C<Dim>::do_set_work_area(void *work_area) {
+  ZISA_UNUSED(work_area);
 }
 
 template class FFTWFFT_R2C<1>;

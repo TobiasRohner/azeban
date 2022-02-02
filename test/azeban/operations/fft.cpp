@@ -227,7 +227,7 @@ static void test_fft(zisa::int_t n,
   for (int i = 0; i < Dim; ++i) {
     rshape[i + 1] = n;
   }
-  const zisa::shape_t<Dim + 1> cshape = fft->output_shape(rshape);
+  const zisa::shape_t<Dim + 1> cshape = fft->shape_u_hat(rshape);
 
   auto h_u = zisa::array<azeban::real_t, Dim + 1>(rshape);
   auto h_u_ref = zisa::array<azeban::real_t, Dim + 1>(rshape);

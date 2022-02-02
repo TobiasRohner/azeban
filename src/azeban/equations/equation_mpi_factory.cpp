@@ -1,5 +1,5 @@
 #include <azeban/equations/equation_mpi_factory.hpp>
-#include <azeban/equations/incompressible_euler_mpi_factory.hpp>
+#include <azeban/equations/incompressible_euler_mpi_naive_factory.hpp>
 #include <azeban/equations/spectral_viscosity_factory.hpp>
 #include <azeban/forcing/no_forcing.hpp>
 #include <azeban/forcing/white_noise_factory.hpp>
@@ -42,11 +42,11 @@ std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
     SmoothCutoff1D visc = make_smooth_cutoff_1d(config["visc"], grid);
     if (equation_name == "Euler") {
       if (forcing_type == "No Forcing") {
-        return make_incompressible_euler_mpi(
+        return make_incompressible_euler_mpi_naive(
             grid, comm, visc, NoForcing{}, has_tracer);
       } else if (forcing_type == "White Noise") {
         auto forcing = make_white_noise<std::mt19937>(config["forcing"], grid);
-        return make_incompressible_euler_mpi(
+        return make_incompressible_euler_mpi_naive(
             grid, comm, visc, forcing, has_tracer);
       }
     } else {
@@ -57,11 +57,11 @@ std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
     Step1D visc = make_step_1d(config["visc"], grid);
     if (equation_name == "Euler") {
       if (forcing_type == "No Forcing") {
-        return make_incompressible_euler_mpi(
+        return make_incompressible_euler_mpi_naive(
             grid, comm, visc, NoForcing{}, has_tracer);
       } else if (forcing_type == "White Noise") {
         auto forcing = make_white_noise<std::mt19937>(config["forcing"], grid);
-        return make_incompressible_euler_mpi(
+        return make_incompressible_euler_mpi_naive(
             grid, comm, visc, forcing, has_tracer);
       }
     } else {
@@ -72,11 +72,11 @@ std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
     Quadratic visc = make_quadratic(config["visc"], grid);
     if (equation_name == "Euler") {
       if (forcing_type == "No Forcing") {
-        return make_incompressible_euler_mpi(
+        return make_incompressible_euler_mpi_naive(
             grid, comm, visc, NoForcing{}, has_tracer);
       } else if (forcing_type == "White Noise") {
         auto forcing = make_white_noise<std::mt19937>(config["forcing"], grid);
-        return make_incompressible_euler_mpi(
+        return make_incompressible_euler_mpi_naive(
             grid, comm, visc, forcing, has_tracer);
       }
     } else {
