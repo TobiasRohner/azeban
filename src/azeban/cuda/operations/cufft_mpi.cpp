@@ -29,101 +29,11 @@ CUFFT_MPI<2>::CUFFT_MPI(const zisa::array_view<complex_t, 3> &u_hat,
                         MPI_Comm comm,
                         int direction,
                         void *work_area)
-    : super(u_hat, u, direction),
+    : super(direction),
       comm_(comm),
       work_area_(work_area),
       free_work_area_(work_area == nullptr) {
-  LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cuda,
-             "Unsupported Memory Location");
-  LOG_ERR_IF(u.memory_location() != zisa::device_type::cuda,
-             "Unsupported Memory Location");
-
-  int rank, size;
-  MPI_Comm_rank(comm_, &rank);
-  MPI_Comm_size(comm_, &size);
-
-  zisa::shape_t<3> partial_u_hat_size(
-      u.shape(0), u.shape(1), u.shape(2) / 2 + 1);
-  partial_u_hat_ = zisa::cuda_array<complex_t, 3>(partial_u_hat_size);
-  mpi_send_buffer_ = zisa::array<complex_t, 3>(partial_u_hat_size);
-  mpi_recv_buffer_ = zisa::array<complex_t, 3>(u_hat_.shape());
-
-  size_t workspace_size = 0;
-  // Create the plans for the forward operations
-  if (direction_ && FFT_FORWARD) {
-    // Before transposing
-    cufftResult status = cufftCreate(&plan_forward_r2c_);
-    cudaCheckError(status);
-    status = cufftSetAutoAllocation(plan_forward_r2c_, false);
-    cudaCheckError(status);
-    size_t fwd1_size;
-    status = cufftMakePlan1d(plan_forward_r2c_,         // plan
-                             u_.shape(2),               // n
-                             type_forward_r2c,          // type
-                             u_.shape(0) * u_.shape(1), // batch
-                             &fwd1_size);               // workSize
-    cudaCheckError(status);
-    workspace_size = std::max(workspace_size, fwd1_size);
-    // After transposing
-    status = cufftCreate(&plan_forward_c2c_);
-    cudaCheckError(status);
-    status = cufftSetAutoAllocation(plan_forward_c2c_, false);
-    cudaCheckError(status);
-    size_t fwd2_size;
-    status = cufftMakePlan1d(plan_forward_c2c_,                 // plan
-                             u_hat_.shape(2),                   // n
-                             type_forward_c2c,                  // type
-                             u_hat_.shape(0) * u_hat_.shape(1), // batch
-                             &fwd2_size);                       // workSize
-    cudaCheckError(status);
-    workspace_size = std::max(workspace_size, fwd2_size);
-  }
-  // Create the plans for the backward operations
-  if (direction_ & FFT_BACKWARD) {
-    // Before transposing
-    cufftResult status = cufftCreate(&plan_backward_c2c_);
-    cudaCheckError(status);
-    status = cufftSetAutoAllocation(plan_backward_c2c_, false);
-    cudaCheckError(status);
-    size_t bkw1_size;
-    status = cufftMakePlan1d(plan_backward_c2c_,                // plan
-                             u_hat_.shape(2),                   // n
-                             type_backward_c2c,                 // type
-                             u_hat_.shape(0) * u_hat_.shape(1), // batch
-                             &bkw1_size);                       // workSize
-    cudaCheckError(status);
-    workspace_size = std::max(workspace_size, bkw1_size);
-    // After transposing
-    status = cufftCreate(&plan_backward_c2r_);
-    cudaCheckError(status);
-    status = cufftSetAutoAllocation(plan_backward_c2r_, false);
-    cudaCheckError(status);
-    size_t bkw2_size;
-    status = cufftMakePlan1d(plan_backward_c2r_,        // plan
-                             u_.shape(2),               // n
-                             type_backward_c2r,         // type
-                             u_.shape(0) * u_.shape(1), // batch
-                             &bkw2_size);               // workSize
-    cudaCheckError(status);
-    workspace_size = std::max(workspace_size, bkw2_size);
-  }
-  // Allocate the shared work area
-  if (work_area_ == nullptr) {
-    cudaError_t status = cudaMalloc((void **)(&work_area_), workspace_size);
-    cudaCheckError(status);
-  }
-  if (direction_ & FFT_FORWARD) {
-    cufftResult status = cufftSetWorkArea(plan_forward_r2c_, work_area_);
-    cudaCheckError(status);
-    status = cufftSetWorkArea(plan_forward_c2c_, work_area_);
-    cudaCheckError(status);
-  }
-  if (direction_ & FFT_BACKWARD) {
-    cufftResult status = cufftSetWorkArea(plan_backward_c2r_, work_area_);
-    cudaCheckError(status);
-    status = cufftSetWorkArea(plan_backward_c2c_, work_area_);
-    cudaCheckError(status);
-  }
+  initialize(u_hat, u);
 }
 
 CUFFT_MPI<2>::~CUFFT_MPI() {
@@ -248,15 +158,8 @@ void CUFFT_MPI<2>::backward() {
   AZEBAN_PROFILE_STOP("CUFFT_MPI::backward", comm_);
 }
 
-CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
-                        const zisa::array_view<real_t, 4> &u,
-                        MPI_Comm comm,
-                        int direction,
-                        void *work_area)
-    : super(u_hat, u, direction),
-      comm_(comm),
-      work_area_(work_area),
-      free_work_area_(work_area == nullptr) {
+void CUFFT_MPI<2>::do_initialize(const zisa::array_view<complex_t, 3> &u_hat,
+                                 const zisa::array_view<real_t, 3> &u) {
   LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cuda,
              "Unsupported Memory Location");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cuda,
@@ -266,11 +169,11 @@ CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
   MPI_Comm_rank(comm_, &rank);
   MPI_Comm_size(comm_, &size);
 
-  zisa::shape_t<4> partial_u_hat_size(
-      u.shape(0), u.shape(1), u.shape(2), u.shape(3) / 2 + 1);
-  partial_u_hat_ = zisa::cuda_array<complex_t, 4>(partial_u_hat_size);
-  mpi_send_buffer_ = zisa::array<complex_t, 4>(partial_u_hat_size);
-  mpi_recv_buffer_ = zisa::array<complex_t, 4>(u_hat_.shape());
+  zisa::shape_t<3> partial_u_hat_size(
+      u.shape(0), u.shape(1), u.shape(2) / 2 + 1);
+  partial_u_hat_ = zisa::cuda_array<complex_t, 3>(partial_u_hat_size);
+  mpi_send_buffer_ = zisa::array<complex_t, 3>(partial_u_hat_size);
+  mpi_recv_buffer_ = zisa::array<complex_t, 3>(u_hat_.shape());
 
   size_t workspace_size = 0;
   // Create the plans for the forward operations
@@ -280,21 +183,12 @@ CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
     cudaCheckError(status);
     status = cufftSetAutoAllocation(plan_forward_r2c_, false);
     cudaCheckError(status);
-    int n[2] = {zisa::integer_cast<int>(u_.shape(2)),
-                zisa::integer_cast<int>(u_.shape(3))};
     size_t fwd1_size;
-    status = cufftMakePlanMany(plan_forward_r2c_,                 // plan
-                               2,                                 // rank
-                               n,                                 // n
-                               NULL,                              // inembed
-                               1,                                 // istride
-                               u_.shape(2) * u_.shape(3),         // idist
-                               NULL,                              // onembed
-                               1,                                 // ostride
-                               u_hat_.shape(2) * u_hat_.shape(3), // odist
-                               type_forward_r2c,                  // type
-                               u_.shape(0) * u_.shape(1),         // batch
-                               &fwd1_size);                       // workSize
+    status = cufftMakePlan1d(plan_forward_r2c_,         // plan
+                             u_.shape(2),               // n
+                             type_forward_r2c,          // type
+                             u_.shape(0) * u_.shape(1), // batch
+                             &fwd1_size);               // workSize
     cudaCheckError(status);
     workspace_size = std::max(workspace_size, fwd1_size);
     // After transposing
@@ -303,12 +197,11 @@ CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
     status = cufftSetAutoAllocation(plan_forward_c2c_, false);
     cudaCheckError(status);
     size_t fwd2_size;
-    status = cufftMakePlan1d(plan_forward_c2c_, // plan
-                             u_hat_.shape(3),   // n
-                             type_forward_c2c,  // type
-                             u_hat_.shape(0) * u_hat_.shape(1)
-                                 * u_hat_.shape(2), // batch
-                             &fwd2_size);           // workSize
+    status = cufftMakePlan1d(plan_forward_c2c_,                 // plan
+                             u_hat_.shape(2),                   // n
+                             type_forward_c2c,                  // type
+                             u_hat_.shape(0) * u_hat_.shape(1), // batch
+                             &fwd2_size);                       // workSize
     cudaCheckError(status);
     workspace_size = std::max(workspace_size, fwd2_size);
   }
@@ -320,12 +213,11 @@ CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
     status = cufftSetAutoAllocation(plan_backward_c2c_, false);
     cudaCheckError(status);
     size_t bkw1_size;
-    status = cufftMakePlan1d(plan_backward_c2c_, // plan
-                             u_hat_.shape(3),    // n
-                             type_backward_c2c,  // type
-                             u_hat_.shape(0) * u_hat_.shape(1)
-                                 * u_hat_.shape(2), // batch
-                             &bkw1_size);           // workSize
+    status = cufftMakePlan1d(plan_backward_c2c_,                // plan
+                             u_hat_.shape(2),                   // n
+                             type_backward_c2c,                 // type
+                             u_hat_.shape(0) * u_hat_.shape(1), // batch
+                             &bkw1_size);                       // workSize
     cudaCheckError(status);
     workspace_size = std::max(workspace_size, bkw1_size);
     // After transposing
@@ -333,22 +225,12 @@ CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
     cudaCheckError(status);
     status = cufftSetAutoAllocation(plan_backward_c2r_, false);
     cudaCheckError(status);
-    int n[2] = {zisa::integer_cast<int>(u_.shape(2)),
-                zisa::integer_cast<int>(u_.shape(3))};
     size_t bkw2_size;
-    status = cufftMakePlanMany(plan_backward_c2r_, // plan
-                               2,                  // rank
-                               n,                  // n
-                               NULL,               // inembed
-                               1,                  // istride
-                               partial_u_hat_.shape(2)
-                                   * partial_u_hat_.shape(3), // idist
-                               NULL,                          // onembed
-                               1,                             // ostride
-                               u_.shape(2) * u_.shape(3),     // odist,
-                               type_backward_c2r,             // type,
-                               u_.shape(0) * u_.shape(1),     // batch
-                               &bkw2_size);                   // workSize
+    status = cufftMakePlan1d(plan_backward_c2r_,        // plan
+                             u_.shape(2),               // n
+                             type_backward_c2r,         // type
+                             u_.shape(0) * u_.shape(1), // batch
+                             &bkw2_size);               // workSize
     cudaCheckError(status);
     workspace_size = std::max(workspace_size, bkw2_size);
   }
@@ -369,6 +251,18 @@ CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
     status = cufftSetWorkArea(plan_backward_c2c_, work_area_);
     cudaCheckError(status);
   }
+}
+
+CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
+                        const zisa::array_view<real_t, 4> &u,
+                        MPI_Comm comm,
+                        int direction,
+                        void *work_area)
+    : super(direction),
+      comm_(comm),
+      work_area_(work_area),
+      free_work_area_(work_area == nullptr) {
+  initialize(u_hat, u);
 }
 
 CUFFT_MPI<3>::~CUFFT_MPI() {
@@ -496,6 +390,122 @@ void CUFFT_MPI<3>::backward() {
 }
 
 void *CUFFT_MPI<3>::get_work_area() const { return work_area_; }
+
+void CUFFT_MPI<3>::do_initialize(const zisa::array_view<complex_t, 4> &u_hat,
+                                 const zisa::array_view<real_t, 4> &u) {
+  LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cuda,
+             "Unsupported Memory Location");
+  LOG_ERR_IF(u.memory_location() != zisa::device_type::cuda,
+             "Unsupported Memory Location");
+
+  int rank, size;
+  MPI_Comm_rank(comm_, &rank);
+  MPI_Comm_size(comm_, &size);
+
+  zisa::shape_t<4> partial_u_hat_size(
+      u.shape(0), u.shape(1), u.shape(2), u.shape(3) / 2 + 1);
+  partial_u_hat_ = zisa::cuda_array<complex_t, 4>(partial_u_hat_size);
+  mpi_send_buffer_ = zisa::array<complex_t, 4>(partial_u_hat_size);
+  mpi_recv_buffer_ = zisa::array<complex_t, 4>(u_hat_.shape());
+
+  size_t workspace_size = 0;
+  // Create the plans for the forward operations
+  if (direction_ && FFT_FORWARD) {
+    // Before transposing
+    cufftResult status = cufftCreate(&plan_forward_r2c_);
+    cudaCheckError(status);
+    status = cufftSetAutoAllocation(plan_forward_r2c_, false);
+    cudaCheckError(status);
+    int n[2] = {zisa::integer_cast<int>(u_.shape(2)),
+                zisa::integer_cast<int>(u_.shape(3))};
+    size_t fwd1_size;
+    status = cufftMakePlanMany(plan_forward_r2c_,                 // plan
+                               2,                                 // rank
+                               n,                                 // n
+                               NULL,                              // inembed
+                               1,                                 // istride
+                               u_.shape(2) * u_.shape(3),         // idist
+                               NULL,                              // onembed
+                               1,                                 // ostride
+                               u_hat_.shape(2) * u_hat_.shape(3), // odist
+                               type_forward_r2c,                  // type
+                               u_.shape(0) * u_.shape(1),         // batch
+                               &fwd1_size);                       // workSize
+    cudaCheckError(status);
+    workspace_size = std::max(workspace_size, fwd1_size);
+    // After transposing
+    status = cufftCreate(&plan_forward_c2c_);
+    cudaCheckError(status);
+    status = cufftSetAutoAllocation(plan_forward_c2c_, false);
+    cudaCheckError(status);
+    size_t fwd2_size;
+    status = cufftMakePlan1d(plan_forward_c2c_, // plan
+                             u_hat_.shape(3),   // n
+                             type_forward_c2c,  // type
+                             u_hat_.shape(0) * u_hat_.shape(1)
+                                 * u_hat_.shape(2), // batch
+                             &fwd2_size);           // workSize
+    cudaCheckError(status);
+    workspace_size = std::max(workspace_size, fwd2_size);
+  }
+  // Create the plans for the backward operations
+  if (direction_ & FFT_BACKWARD) {
+    // Before transposing
+    cufftResult status = cufftCreate(&plan_backward_c2c_);
+    cudaCheckError(status);
+    status = cufftSetAutoAllocation(plan_backward_c2c_, false);
+    cudaCheckError(status);
+    size_t bkw1_size;
+    status = cufftMakePlan1d(plan_backward_c2c_, // plan
+                             u_hat_.shape(3),    // n
+                             type_backward_c2c,  // type
+                             u_hat_.shape(0) * u_hat_.shape(1)
+                                 * u_hat_.shape(2), // batch
+                             &bkw1_size);           // workSize
+    cudaCheckError(status);
+    workspace_size = std::max(workspace_size, bkw1_size);
+    // After transposing
+    status = cufftCreate(&plan_backward_c2r_);
+    cudaCheckError(status);
+    status = cufftSetAutoAllocation(plan_backward_c2r_, false);
+    cudaCheckError(status);
+    int n[2] = {zisa::integer_cast<int>(u_.shape(2)),
+                zisa::integer_cast<int>(u_.shape(3))};
+    size_t bkw2_size;
+    status = cufftMakePlanMany(plan_backward_c2r_, // plan
+                               2,                  // rank
+                               n,                  // n
+                               NULL,               // inembed
+                               1,                  // istride
+                               partial_u_hat_.shape(2)
+                                   * partial_u_hat_.shape(3), // idist
+                               NULL,                          // onembed
+                               1,                             // ostride
+                               u_.shape(2) * u_.shape(3),     // odist,
+                               type_backward_c2r,             // type,
+                               u_.shape(0) * u_.shape(1),     // batch
+                               &bkw2_size);                   // workSize
+    cudaCheckError(status);
+    workspace_size = std::max(workspace_size, bkw2_size);
+  }
+  // Allocate the shared work area
+  if (work_area_ == nullptr) {
+    cudaError_t status = cudaMalloc((void **)(&work_area_), workspace_size);
+    cudaCheckError(status);
+  }
+  if (direction_ & FFT_FORWARD) {
+    cufftResult status = cufftSetWorkArea(plan_forward_r2c_, work_area_);
+    cudaCheckError(status);
+    status = cufftSetWorkArea(plan_forward_c2c_, work_area_);
+    cudaCheckError(status);
+  }
+  if (direction_ & FFT_BACKWARD) {
+    cufftResult status = cufftSetWorkArea(plan_backward_c2r_, work_area_);
+    cudaCheckError(status);
+    status = cufftSetWorkArea(plan_backward_c2c_, work_area_);
+    cudaCheckError(status);
+  }
+}
 
 }
 #endif

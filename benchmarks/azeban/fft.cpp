@@ -18,7 +18,7 @@
 #include <azeban/benchmark.hpp>
 
 #include <algorithm>
-#include <azeban/operations/fft.hpp>
+#include <azeban/operations/fft_factory.hpp>
 #include <cuda_runtime.h>
 #include <vector>
 #include <zisa/cuda/memory/cuda_array.hpp>

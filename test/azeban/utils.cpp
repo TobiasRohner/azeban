@@ -19,7 +19,7 @@
 
 #include "utils.hpp"
 #include <azeban/grid.hpp>
-#include <azeban/operations/fft.hpp>
+#include <azeban/operations/fft_factory.hpp>
 #include <cmath>
 #include <fmt/core.h>
 #include <zisa/math/basic_functions.hpp>
