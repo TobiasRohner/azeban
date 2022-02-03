@@ -1,8 +1,8 @@
 {
   "output": "taylor_green_3D_N32_NoForcing_T5.0",
-  "device": "cuda",
+  "device": "cpu",
   "dimension": 3,
-  "num_samples": 32,
+  "num_samples": 1,
   "seed": 1,
   "time": 5,
   "snapshots": {

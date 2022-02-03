@@ -28,7 +28,8 @@ template <int Dim>
 std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
                                                  const Grid<Dim> &grid,
                                                  MPI_Comm comm,
-                                                 bool has_tracer);
+                                                 bool has_tracer,
+                                                 zisa::device_type device);
 
 }
 

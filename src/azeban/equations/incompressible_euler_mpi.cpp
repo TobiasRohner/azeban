@@ -1,7 +1,15 @@
+#include <azeban/equations/advection_functions.hpp>
+#include <azeban/equations/incompressible_euler_functions.hpp>
 #include <azeban/equations/incompressible_euler_mpi.hpp>
 #include <azeban/mpi_types.hpp>
+#include <azeban/operations/copy_from_padded.hpp>
 #include <azeban/operations/copy_to_padded.hpp>
 #include <azeban/operations/fft_factory.hpp>
+#include <azeban/operations/transpose.hpp>
+#include <sstream>
+#if ZISA_HAS_CUDA
+#include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
+#endif
 
 namespace azeban {
 
@@ -15,14 +23,17 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
       comm_(comm),
       device_(device),
       has_tracer_(has_tracer),
+      B_hat_({}, nullptr),
       u_hat_pad_({}, nullptr),
       u_yz_({}, nullptr),
-      u_yz_pre_({}, nullptr),
-      u_yz_comm_({}, nullptr),
       u_yz_trans_({}, nullptr),
       u_yz_trans_pad_({}, nullptr),
       u_xyz_trans_({}, nullptr),
-      B_xyz_trans_({}, nullptr) {
+      B_xyz_trans_({}, nullptr),
+      B_yz_trans_pad_({}, nullptr),
+      B_yz_trans_({}, nullptr),
+      B_yz_({}, nullptr),
+      B_hat_pad_({}, nullptr) {
   MPI_Comm_rank(comm_, &mpi_rank_);
   MPI_Comm_size(comm_, &mpi_size_);
 
@@ -41,19 +52,18 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   } else {
     fft_u_yz_
         = make_fft<dim_v, complex_t>(device, FFT_BACKWARD, false, true, true);
-    fft_u_x_ = make_fft<dim_v, real_t>(device, FFT_BACKWARD, false, true, true);
+    fft_u_x_
+        = make_fft<dim_v, real_t>(device, FFT_BACKWARD, false, false, true);
     fft_B_yz_
         = make_fft<dim_v, complex_t>(device, FFT_FORWARD, false, true, true);
-    fft_B_x_ = make_fft<dim_v, real_t>(device, FFT_FORWARD, false, true, true);
+    fft_B_x_ = make_fft<dim_v, real_t>(device, FFT_FORWARD, false, false, true);
   }
 
   const auto shape_u_fourier = grid.shape_fourier(n_vars_u, comm_);
   const auto shape_u_fourier_pad = grid.shape_fourier_pad(n_vars_u, comm_);
-  const auto shape_u_phys = grid.shape_phys(n_vars_u, comm_);
   const auto shape_u_phys_pad = grid.shape_phys_pad(n_vars_u, comm_);
   const auto shape_B_fourier = grid.shape_fourier(n_vars_B, comm_);
   const auto shape_B_fourier_pad = grid.shape_fourier_pad(n_vars_B, comm_);
-  const auto shape_B_phys = grid.shape_phys(n_vars_B, comm_);
   const auto shape_B_phys_pad = grid.shape_phys_pad(n_vars_B, comm_);
 
   // Buffer to store padded u_hat in y(z)-directions
@@ -64,28 +74,9 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   ws1_size = zisa::max(ws1_size, size_u_hat_pad);
 
   // Buffer for u_hat fourier transformed in y(z)-directions
-  const auto shape_u_yz = fft_u_yz_->shape_u(shape_u_hat_pad);
+  const auto shape_u_yz = shape_u_hat_pad;
   const size_t size_u_yz = sizeof(complex_t) * zisa::product(shape_u_yz);
   ws2_size = zisa::max(ws2_size, size_u_yz);
-
-  // Linear buffer ready for MPI_Alltoallv transpose
-  const zisa::shape_t<1> shape_u_yz_pre(zisa::product(shape_u_yz));
-  const size_t size_u_yz_pre
-      = sizeof(complex_t) * zisa::product(shape_u_yz_pre);
-  ws1_size = zisa::max(ws1_size, size_u_yz_pre);
-
-  // Received data after MPI_Alltoallv
-  zisa::shape_t<1> shape_u_yz_comm(n_vars_u);
-  shape_u_yz_comm[0] *= grid_.N_fourier;
-  shape_u_yz_comm[0] *= grid_.N_phys_pad / mpi_size_
-                        + (zisa::integer_cast<zisa::int_t>(mpi_rank_)
-                           < grid_.N_phys_pad % mpi_size_);
-  if (dim_v == 3) {
-    shape_u_yz_comm[0] *= grid_.N_phys_pad;
-  }
-  const size_t size_u_yz_comm
-      = sizeof(complex_t) * zisa::product(shape_u_yz_comm);
-  ws2_size = zisa::max(ws2_size, size_u_yz_comm);
 
   // Transposed partially fourier transformed data
   zisa::shape_t<dim_v + 1> shape_u_yz_trans;
@@ -127,6 +118,38 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
       = sizeof(real_t) * zisa::product(shape_B_xyz_trans);
   ws2_size = zisa::max(ws2_size, size_B_xyz_trans);
 
+  // B Fourier transfomed in the x-direction
+  zisa::shape_t<dim_v + 1> shape_B_yz_trans_pad = shape_B_xyz_trans;
+  shape_B_yz_trans_pad[dim_v] = shape_B_yz_trans_pad[dim_v] / 2 + 1;
+  const size_t size_B_yz_trans_pad
+      = sizeof(complex_t) * zisa::product(shape_B_yz_trans_pad);
+  ws1_size = zisa::max(ws1_size, size_B_yz_trans_pad);
+
+  // Unpadded B_yz
+  zisa::shape_t<dim_v + 1> shape_B_yz_trans = shape_B_yz_trans_pad;
+  shape_B_yz_trans[dim_v] = grid_.N_fourier;
+  const size_t size_B_yz_trans
+      = sizeof(complex_t) * zisa::product(shape_B_yz_trans);
+  ws2_size = zisa::max(ws2_size, size_B_yz_trans);
+
+  // Buffer for B_hat fourier transformed in y(z)-directions
+  zisa::shape_t<dim_v + 1> shape_B_yz = shape_B_fourier_pad;
+  shape_B_yz[1] = shape_B_fourier[1];
+  const size_t size_B_yz = sizeof(complex_t) * zisa::product(shape_B_yz);
+  ws1_size = zisa::max(ws1_size, size_B_yz);
+
+  // Buffer to store padded B_hat in y(z)-directions
+  zisa::shape_t<dim_v + 1> shape_B_hat_pad = shape_B_fourier_pad;
+  shape_B_hat_pad[1] = shape_B_fourier[1];
+  const size_t size_B_hat_pad
+      = sizeof(complex_t) * zisa::product(shape_B_hat_pad);
+  ws2_size = zisa::max(ws2_size, size_B_hat_pad);
+
+  // Buffer to store B_hat
+  const auto shape_B_hat = shape_B_fourier;
+  const size_t size_B_hat = sizeof(complex_t) * zisa::product(shape_B_hat);
+  ws1_size = zisa::max(ws1_size, size_B_hat);
+
   // Allocate Workspaces
   ws1_ = Workspace(ws1_size, device);
   ws2_ = Workspace(ws2_size, device);
@@ -134,12 +157,35 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   // Generate views onto workspaces
   u_hat_pad_ = ws1_.get_view<complex_t>(0, shape_u_hat_pad);
   u_yz_ = ws2_.get_view<complex_t>(0, shape_u_yz);
-  u_yz_pre_ = ws1_.get_view<complex_t>(0, shape_u_yz_pre);
-  u_yz_comm_ = ws2_.get_view<complex_t>(0, shape_u_yz_comm);
   u_yz_trans_ = ws1_.get_view<complex_t>(0, shape_u_yz_trans);
   u_yz_trans_pad_ = ws2_.get_view<complex_t>(0, shape_u_yz_trans_pad);
   u_xyz_trans_ = ws1_.get_view<real_t>(0, shape_u_xyz_trans);
   B_xyz_trans_ = ws2_.get_view<real_t>(0, shape_B_xyz_trans);
+  B_yz_trans_pad_ = ws1_.get_view<complex_t>(0, shape_B_yz_trans_pad);
+  B_yz_trans_ = ws2_.get_view<complex_t>(0, shape_B_yz_trans);
+  B_yz_ = ws1_.get_view<complex_t>(0, shape_B_yz);
+  B_hat_pad_ = ws2_.get_view<complex_t>(0, shape_B_hat_pad);
+  B_hat_ = ws1_.get_view<complex_t>(0, shape_B_hat);
+
+  std::stringstream ss;
+  ss << "rank " << mpi_rank_ << "\n"
+     << "u_hat_pad_.shape()      = " << u_hat_pad_.shape() << "\n"
+     << "u_yz_.shape()           = " << u_yz_.shape() << "\n"
+     << "u_yz_trans_.shape()     = " << u_yz_trans_.shape() << "\n"
+     << "u_yz_trans_pad_.shape() = " << u_yz_trans_pad_.shape() << "\n"
+     << "u_xyz_trans_.shape()    = " << u_xyz_trans_.shape() << "\n"
+     << "B_xyz_trans_.shape()    = " << B_xyz_trans_.shape() << "\n"
+     << "B_yz_trans_pad_.shape() = " << B_yz_trans_pad_.shape() << "\n"
+     << "B_yz_trans_.shape()     = " << B_yz_trans_.shape() << "\n"
+     << "B_yz_.shape()           = " << B_yz_.shape() << "\n"
+     << "B_hat_pad_.shape()      = " << B_hat_pad_.shape() << "\n"
+     << "B_hat_.shape()          = " << B_hat_.shape() << std::endl;
+  for (int r = 0; r < mpi_size_; ++r) {
+    if (mpi_rank_ == r) {
+      std::cout << ss.str();
+    }
+    MPI_Barrier(comm_);
+  }
 
   // Initialize Fourier Transforms
   fft_u_yz_->initialize(u_hat_pad_, u_yz_, false);
@@ -148,6 +194,12 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   fft_u_x_->initialize(u_yz_trans_pad_, u_xyz_trans_, false);
   const size_t size_fft_u_x = fft_u_x_->get_work_area_size();
   ws_fft_size = zisa::max(ws_fft_size, size_fft_u_x);
+  fft_B_x_->initialize(B_yz_trans_pad_, B_xyz_trans_, false);
+  const size_t size_fft_B_x = fft_B_x_->get_work_area_size();
+  ws_fft_size = zisa::max(ws_fft_size, size_fft_B_x);
+  fft_B_yz_->initialize(B_hat_pad_, B_yz_, false);
+  const size_t size_fft_B_yz = fft_B_yz_->get_work_area_size();
+  ws_fft_size = zisa::max(ws_fft_size, size_fft_B_yz);
 
   ws_fft_ = Workspace(ws_fft_size, device);
 
@@ -223,15 +275,19 @@ IncompressibleEuler_MPI_Base<3>::component(const zisa::array<complex_t, 4> &arr,
 }
 
 template <int Dim>
-void IncompressibleEuler_MPI_Base<Dim>::compute_B_hat(
+void IncompressibleEuler_MPI_Base<Dim>::computeBhat(
     const zisa::array_const_view<complex_t, dim_v + 1> &u_hat) {
   compute_u_hat_pad(u_hat);
   compute_u_yz();
-  compute_u_yz_pre();
-  compute_u_yz_comm();
   compute_u_yz_trans();
   compute_u_yz_trans_pad();
   compute_u_xyz_trans();
+  compute_B_xyz_trans();
+  compute_B_yz_trans_pad();
+  compute_B_yz_trans();
+  compute_B_yz();
+  compute_B_hat_pad();
+  compute_B_hat();
 }
 
 template <int Dim>
@@ -254,149 +310,24 @@ void IncompressibleEuler_MPI_Base<Dim>::compute_u_yz() {
 }
 
 template <int Dim>
-void IncompressibleEuler_MPI_Base<Dim>::compute_u_yz_pre() {
-  if (device_ == zisa::device_type::cpu) {
-    compute_u_yz_pre_cpu();
-  }
-#if ZISA_HAS_CUDA
-  else if (device_ == zisa::device_type::cuda) {
-    // TODO: Implement
-    LOG_ERR("Not yet implemented");
-  }
-#endif
-  else {
-    LOG_ERR("Unsupported device");
-  }
-}
-
-template <>
-void IncompressibleEuler_MPI_Base<2>::compute_u_yz_pre_cpu() {
-  const zisa::int_t ndim = u_yz_.shape(0);
-  const zisa::int_t N_loc = u_yz_.shape(1);
-  size_t j_offset = 0;
-  for (int r = 0; r < mpi_size_; ++r) {
-    const zisa::int_t N_r
-        = grid_.N_phys_pad / mpi_size_
-          + (zisa::integer_cast<zisa::int_t>(r) < grid_.N_phys_pad % mpi_size_);
-    zisa::array_view<complex_t, 3> out_view({ndim, N_r, N_loc},
-                                            u_yz_pre_.raw()
-                                                + j_offset * N_loc * ndim,
-                                            zisa::device_type::cpu);
-    for (zisa::int_t d = 0; d < ndim; ++d) {
-      for (zisa::int_t i = 0; i < N_loc; ++i) {
-        for (zisa::int_t j = 0; j < N_r; ++j) {
-          out_view(d, j, i) = u_yz_(d, i, j_offset + j);
-        }
-      }
-    }
-    j_offset += N_r;
-  }
-}
-
-template <>
-void IncompressibleEuler_MPI_Base<3>::compute_u_yz_pre_cpu() {
-  // TODO: Implement
-  LOG_ERR("Not yet implemented");
-}
-
-template <int Dim>
-void IncompressibleEuler_MPI_Base<Dim>::compute_u_yz_comm() {
-  const zisa::int_t ndims = dim_v + (has_tracer_ ? 1 : 0);
-  auto sendcnts = std::make_unique<int[]>(mpi_size_);
-  auto sdispls = std::make_unique<int[]>(mpi_size_ + 1);
-  auto recvcnts = std::make_unique<int[]>(mpi_size_);
-  auto rdispls = std::make_unique<int[]>(mpi_size_ + 1);
-  sdispls[0] = 0;
-  rdispls[0] = 0;
-  const zisa::int_t N_loc_pre = grid_.N_fourier_pad / mpi_size_
-                                + (zisa::integer_cast<zisa::int_t>(mpi_rank_)
-                                   < grid_.N_fourier_pad % mpi_size_);
-  const zisa::int_t N_loc_post = grid_.N_phys_pad / mpi_size_
-                                 + (zisa::integer_cast<zisa::int_t>(mpi_rank_)
-                                    < grid_.N_phys_pad % mpi_size_);
-  for (int r = 0; r < mpi_size_; ++r) {
-    const zisa::int_t N_r_pre = grid_.N_fourier_pad / mpi_size_
-                                + (zisa::integer_cast<zisa::int_t>(r)
-                                   < grid_.N_fourier_pad % mpi_size_);
-    const zisa::int_t N_r_post
-        = grid_.N_phys_pad / mpi_size_
-          + (zisa::integer_cast<zisa::int_t>(r) < grid_.N_phys_pad % mpi_size_);
-    sendcnts[r]
-        = ndims * N_loc_pre * N_r_post * (dim_v == 3 ? grid_.N_phys_pad : 1);
-    recvcnts[r]
-        = ndims * N_loc_post * N_r_pre * (dim_v == 3 ? grid_.N_phys_pad : 1);
-    sdispls[r + 1] = sdispls[r] + sendcnts[r];
-    rdispls[r + 1] = rdispls[r] + recvcnts[r];
-  }
-
-  if (device_ == zisa::device_type::cpu) {
-    MPI_Alltoallv(u_yz_pre_.raw(),
-                  sendcnts.get(),
-                  sdispls.get(),
-                  mpi_type<complex_t>(),
-                  u_yz_comm_.raw(),
-                  recvcnts.get(),
-                  rdispls.get(),
-                  mpi_type<complex_t>(),
-                  comm_);
-  }
-#if ZISA_HAS_CUDA
-  else if (device_ == zisa::device_type::cuda) {
-    // TODO: Implement
-    LOG_ERR("Not yet implemented");
-  }
-#endif
-  else {
-    LOG_ERR("Unsupported device");
-  }
-}
-
-template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_u_yz_trans() {
   if (device_ == zisa::device_type::cpu) {
-    compute_u_yz_trans_cpu();
+    transpose(u_yz_trans_, u_yz_, comm_);
   }
 #if ZISA_HAS_CUDA
   else if (device_ == zisa::device_type::cuda) {
-    // TODO: Implement
-    LOG_ERR("Not yet implemented");
+    zisa::array<complex_t, dim_v + 1> h_u_yz_trans(u_yz_trans_.shape(),
+                                                   zisa::device_type::cpu);
+    zisa::array<complex_t, dim_v + 1> h_u_yz(u_yz_.shape(),
+                                             zisa::device_type::cpu);
+    zisa::copy(h_u_yz, u_yz_);
+    transpose(h_u_yz_trans, h_u_yz, comm_);
+    zisa::copy(u_yz_trans_, h_u_yz_trans);
   }
 #endif
   else {
     LOG_ERR("Unsupported device");
   }
-}
-
-template <>
-void IncompressibleEuler_MPI_Base<2>::compute_u_yz_trans_cpu() {
-  const zisa::int_t ndim = dim_v + (has_tracer_ ? 1 : 0);
-  const zisa::int_t N_loc = grid_.N_phys_pad / mpi_size_
-                            + (zisa::integer_cast<zisa::int_t>(mpi_rank_)
-                               < grid_.N_phys_pad % mpi_size_);
-  zisa::int_t j_offset = 0;
-  for (int r = 0; r < mpi_size_; ++r) {
-    const zisa::int_t N_r = grid_.N_fourier_pad / mpi_size_
-                            + (zisa::integer_cast<zisa::int_t>(r)
-                               < grid_.N_fourier_pad % mpi_size_);
-    zisa::array_view<complex_t, 3> in_view({ndim, N_loc, N_r},
-                                           u_yz_pre_.raw()
-                                               + j_offset * N_loc * ndim,
-                                           zisa::device_type::cpu);
-    for (zisa::int_t d = 0; d < ndim; ++d) {
-      for (zisa::int_t i = 0; i < N_loc; ++i) {
-        for (zisa::int_t j = 0; j < N_r; ++j) {
-          u_yz_trans_(d, i, j_offset + j) = in_view(d, i, j);
-        }
-      }
-    }
-    j_offset += N_r;
-  }
-}
-
-template <>
-void IncompressibleEuler_MPI_Base<3>::compute_u_yz_trans_cpu() {
-  // TODO: Implement
-  LOG_ERR("Not yet implemented");
 }
 
 template <int Dim>
@@ -422,6 +353,147 @@ void IncompressibleEuler_MPI_Base<Dim>::compute_u_yz_trans_pad() {
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_u_xyz_trans() {
   fft_u_x_->backward();
+}
+
+template <int Dim>
+void IncompressibleEuler_MPI_Base<Dim>::compute_B_xyz_trans() {
+  if (device_ == zisa::device_type::cpu) {
+    compute_B_xyz_trans_cpu();
+  }
+#if ZISA_HAS_CUDA
+  else if (device_ == zisa::device_type::cuda) {
+    if (has_tracer_) {
+      incompressible_euler_compute_B_tracer_cuda<Dim>(
+          B_xyz_trans_, u_xyz_trans_, grid_);
+    } else {
+      incompressible_euler_compute_B_cuda<Dim>(
+          B_xyz_trans_, u_xyz_trans_, grid_);
+    }
+  }
+#endif
+  else {
+    LOG_ERR("Unsupported device");
+  }
+}
+
+template <>
+void IncompressibleEuler_MPI_Base<2>::compute_B_xyz_trans_cpu() {
+  const real_t norm
+      = 1.0
+        / (zisa::pow<dim_v>(grid_.N_phys) * zisa::pow<dim_v>(grid_.N_phys_pad));
+  const unsigned stride
+      = zisa::product(u_xyz_trans_.shape()) / u_xyz_trans_.shape(0);
+  for (zisa::int_t i = 0; i < u_xyz_trans_.shape(1); ++i) {
+    for (zisa::int_t j = 0; j < u_xyz_trans_.shape(2); ++j) {
+      const unsigned idx = i * u_xyz_trans_.shape(1) + j;
+      const real_t u1 = u_xyz_trans_(0, i, j);
+      const real_t u2 = u_xyz_trans_(1, i, j);
+      incompressible_euler_2d_compute_B(
+          stride, idx, norm, u1, u2, B_xyz_trans_.raw());
+      if (has_tracer_) {
+        const real_t rho = u_xyz_trans_(2, i, j);
+        advection_2d_compute_B(
+            stride, idx, norm, rho, u1, u2, B_xyz_trans_.raw() + 3 * stride);
+      }
+    }
+  }
+}
+
+template <>
+void IncompressibleEuler_MPI_Base<3>::compute_B_xyz_trans_cpu() {
+  const real_t norm
+      = 1.0
+        / (zisa::pow<dim_v>(grid_.N_phys) * zisa::pow<dim_v>(grid_.N_phys_pad));
+  const unsigned stride
+      = zisa::product(u_xyz_trans_.shape()) / u_xyz_trans_.shape(0);
+  for (zisa::int_t i = 0; i < u_xyz_trans_.shape(1); ++i) {
+    for (zisa::int_t j = 0; j < u_xyz_trans_.shape(2); ++j) {
+      for (zisa::int_t k = 0; k < u_xyz_trans_.shape(3); ++k) {
+        const unsigned idx = k * u_xyz_trans_.shape(1) * u_xyz_trans_.shape(2)
+                             + i * u_xyz_trans_.shape(1) + j;
+        const real_t u1 = u_xyz_trans_(0, i, j, k);
+        const real_t u2 = u_xyz_trans_(1, i, j, k);
+        const real_t u3 = u_xyz_trans_(2, i, j, k);
+        incompressible_euler_3d_compute_B(
+            stride, idx, norm, u1, u2, u3, B_xyz_trans_.raw());
+        if (has_tracer_) {
+          const real_t rho = u_xyz_trans_(3, i, j, k);
+          advection_3d_compute_B(stride,
+                                 idx,
+                                 norm,
+                                 rho,
+                                 u1,
+                                 u2,
+                                 u3,
+                                 B_xyz_trans_.raw() + 6 * stride);
+        }
+      }
+    }
+  }
+}
+
+template <int Dim>
+void IncompressibleEuler_MPI_Base<Dim>::compute_B_yz_trans_pad() {
+  fft_B_x_->forward();
+}
+
+template <int Dim>
+void IncompressibleEuler_MPI_Base<Dim>::compute_B_yz_trans() {
+  for (zisa::int_t d = 0; d < B_yz_trans_pad_.shape(0); ++d) {
+    if constexpr (dim_v == 2) {
+      copy_from_padded(false,
+                       true,
+                       1,
+                       component(B_yz_trans_, d),
+                       component(B_yz_trans_pad_, d));
+    } else {
+      copy_from_padded(false,
+                       false,
+                       true,
+                       2,
+                       component(B_yz_trans_, d),
+                       component(B_yz_trans_pad_, d));
+    }
+  }
+}
+
+template <int Dim>
+void IncompressibleEuler_MPI_Base<Dim>::compute_B_yz() {
+  if (device_ == zisa::device_type::cpu) {
+    transpose(B_yz_, B_yz_trans_, comm_);
+  }
+#if ZISA_HAS_CUDA
+  else if (device_ == zisa::device_type::cuda) {
+    zisa::array<complex_t, dim_v + 1> h_B_yz(B_yz_.shape(),
+                                             zisa::device_type::cpu);
+    zisa::array<complex_t, dim_v + 1> h_B_yz_trans(B_yz_trans_.shape(),
+                                                   zisa::device_type::cpu);
+    zisa::copy(h_B_yz_trans, B_yz_trans_);
+    transpose(h_B_yz, h_B_yz_trans, comm_);
+    zisa::copy(B_yz_, h_B_yz);
+  }
+#endif
+  else {
+    LOG_ERR("Unsupported device");
+  }
+}
+
+template <int Dim>
+void IncompressibleEuler_MPI_Base<Dim>::compute_B_hat_pad() {
+  fft_B_yz_->forward();
+}
+
+template <int Dim>
+void IncompressibleEuler_MPI_Base<Dim>::compute_B_hat() {
+  for (zisa::int_t d = 0; d < B_hat_pad_.shape(0); ++d) {
+    if constexpr (dim_v == 2) {
+      copy_from_padded(
+          false, true, 0, component(B_hat_, d), component(B_hat_pad_, d));
+    } else {
+      copy_from_padded(
+          false, true, true, 0, component(B_hat_, d), component(B_hat_pad_, d));
+    }
+  }
 }
 
 template class IncompressibleEuler_MPI_Base<2>;

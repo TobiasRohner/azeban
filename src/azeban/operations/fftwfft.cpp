@@ -496,35 +496,35 @@ void FFTWFFT_C2C<Dim>::do_initialize(
 
   if (direction_ & FFT_FORWARD) {
     // Create a plan for the forward operation
-    plan_many_dft(rank,
-                  n.data(),
-                  howmany,
-                  u.raw(),
-                  NULL,
-                  rstride,
-                  rdist,
-                  u_hat.raw(),
-                  NULL,
-                  cstride,
-                  cdist,
-                  FFT_FORWARD,
-                  FFTW_MEASURE);
+    plan_forward_ = plan_many_dft(rank,
+                                  n.data(),
+                                  howmany,
+                                  u.raw(),
+                                  NULL,
+                                  rstride,
+                                  rdist,
+                                  u_hat.raw(),
+                                  NULL,
+                                  cstride,
+                                  cdist,
+                                  FFT_FORWARD,
+                                  FFTW_MEASURE);
   }
   if (direction_ & FFT_BACKWARD) {
     // Create a plan for the backward operation
-    plan_many_dft(rank,
-                  n.data(),
-                  howmany,
-                  u_hat.raw(),
-                  NULL,
-                  cstride,
-                  cdist,
-                  u.raw(),
-                  NULL,
-                  rstride,
-                  rdist,
-                  FFT_BACKWARD,
-                  FFTW_MEASURE);
+    plan_backward_ = plan_many_dft(rank,
+                                   n.data(),
+                                   howmany,
+                                   u_hat.raw(),
+                                   NULL,
+                                   cstride,
+                                   cdist,
+                                   u.raw(),
+                                   NULL,
+                                   rstride,
+                                   rdist,
+                                   FFT_BACKWARD,
+                                   FFTW_MEASURE);
   }
 }
 

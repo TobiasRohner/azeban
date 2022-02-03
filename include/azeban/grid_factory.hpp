@@ -52,11 +52,11 @@ Grid<Dim> make_grid(const nlohmann::json &config, zisa::device_type device) {
                                Dim,
                                Dim,
                                device);
-        fmt::print(
-            stderr,
-            "Info: Minimal padding size is {}. Padded to {} for speed.\n",
-            zisa::div_up(3 * grid.N_phys, zisa::int_t(2)),
-            grid.N_phys_pad);
+        fmt::print(stderr,
+                   "Info: Minimal padding size given from \"N_phys_pad\" is "
+                   "{}. Padded to {} for speed.\n",
+                   zisa::div_up(3 * grid.N_phys, zisa::int_t(2)),
+                   grid.N_phys_pad);
       } else {
         grid.N_phys_pad = config["N_phys_pad"];
       }
@@ -70,11 +70,11 @@ Grid<Dim> make_grid(const nlohmann::json &config, zisa::device_type device) {
                                Dim,
                                Dim,
                                device);
-        fmt::print(
-            stderr,
-            "Info: Minimal padding size is {}. Padded to {} for speed.\n",
-            zisa::div_up(3 * grid.N_phys, zisa::int_t(2)),
-            grid.N_phys_pad);
+        fmt::print(stderr,
+                   "Info: Minimal padding size given from \"N_fourier_pad\" is "
+                   "{}. Padded to {} for speed.\n",
+                   zisa::div_up(3 * grid.N_phys, zisa::int_t(2)),
+                   grid.N_phys_pad);
         grid.N_fourier_pad = grid.N_phys_pad / 2 + 1;
       } else {
         grid.N_fourier_pad = config["N_fourier_pad"];

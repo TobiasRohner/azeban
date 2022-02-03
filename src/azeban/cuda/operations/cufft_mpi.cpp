@@ -129,7 +129,7 @@ void CUFFT_MPI<2>::backward() {
     AZEBAN_PROFILE_STOP("CUFFT_MPI::backward::transpose", comm_);
     // Perform the final local FFTs in place
     status
-        = cufftExecC2R(plan_forward_c2c_,
+        = cufftExecC2R(plan_backward_c2r_,
                        reinterpret_cast<cufftComplex *>(partial_u_hat_.raw()),
                        (float *)u_.raw());
     cudaCheckError(status);
@@ -366,7 +366,7 @@ void CUFFT_MPI<3>::backward() {
     AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose", comm_);
     // Perform the final local FFTs in place
     status
-        = cufftExecC2R(plan_forward_c2c_,
+        = cufftExecC2R(plan_backward_c2r_,
                        reinterpret_cast<cufftComplex *>(partial_u_hat_.raw()),
                        (float *)u_.raw());
     cudaCheckError(status);
