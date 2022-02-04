@@ -385,7 +385,7 @@ void IncompressibleEuler_MPI_Base<2>::compute_B_xyz_trans_cpu() {
       = zisa::product(u_xyz_trans_.shape()) / u_xyz_trans_.shape(0);
   for (zisa::int_t i = 0; i < u_xyz_trans_.shape(1); ++i) {
     for (zisa::int_t j = 0; j < u_xyz_trans_.shape(2); ++j) {
-      const unsigned idx = i * u_xyz_trans_.shape(1) + j;
+      const unsigned idx = i * u_xyz_trans_.shape(2) + j;
       const real_t u1 = u_xyz_trans_(0, i, j);
       const real_t u2 = u_xyz_trans_(1, i, j);
       incompressible_euler_2d_compute_B(
@@ -409,8 +409,8 @@ void IncompressibleEuler_MPI_Base<3>::compute_B_xyz_trans_cpu() {
   for (zisa::int_t i = 0; i < u_xyz_trans_.shape(1); ++i) {
     for (zisa::int_t j = 0; j < u_xyz_trans_.shape(2); ++j) {
       for (zisa::int_t k = 0; k < u_xyz_trans_.shape(3); ++k) {
-        const unsigned idx = k * u_xyz_trans_.shape(1) * u_xyz_trans_.shape(2)
-                             + i * u_xyz_trans_.shape(1) + j;
+        const unsigned idx = i * u_xyz_trans_.shape(2) * u_xyz_trans_.shape(3)
+                             + j * u_xyz_trans_.shape(3) + k;
         const real_t u1 = u_xyz_trans_(0, i, j, k);
         const real_t u2 = u_xyz_trans_(1, i, j, k);
         const real_t u3 = u_xyz_trans_(2, i, j, k);

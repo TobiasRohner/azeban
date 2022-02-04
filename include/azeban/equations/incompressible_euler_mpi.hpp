@@ -178,7 +178,7 @@ private:
         const real_t k2 = 2 * zisa::pi * j_;
         const real_t absk2 = k1 * k1 + k2 * k2;
         complex_t force1, force2;
-        forcing_(0, k1, k2, &force1, &force2);
+        forcing_(0, k2, k1, &force1, &force2);
         complex_t L1_hat, L2_hat;
         incompressible_euler_2d_compute_L(k2,
                                           k1,
@@ -295,7 +295,7 @@ private:
           const real_t k3 = 2 * zisa::pi * k_;
           const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
           complex_t force1, force2, force3;
-          forcing_(0, k1, k2, k3, &force1, &force2, &force3);
+          forcing_(0, k3, k2, k1, &force1, &force2, &force3);
           complex_t L1_hat, L2_hat, L3_hat;
           incompressible_euler_3d_compute_L(k3,
                                             k2,
