@@ -15,8 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef INCOMPRESSIBLE_EULER_CUDA_IMPL_H_
-#define INCOMPRESSIBLE_EULER_CUDA_IMPL_H_
+#ifndef AZEBAN_CUDA_EQUATIONS_INCOMPRESSIBLE_EULER_CUDA_IMPL_HPP_
+#define AZEBAN_CUDA_EQUATIONS_INCOMPRESSIBLE_EULER_CUDA_IMPL_HPP_
 
 #include "incompressible_euler_cuda.hpp"
 #include <azeban/equations/advection_functions.hpp>

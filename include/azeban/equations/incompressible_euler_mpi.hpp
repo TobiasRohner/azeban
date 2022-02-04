@@ -9,6 +9,9 @@
 #include <azeban/operations/fft.hpp>
 #include <azeban/profiler.hpp>
 #include <mpi.h>
+#if ZISA_HAS_CUDA
+#include <azeban/cuda/equations/incompressible_euler_mpi_cuda.hpp>
+#endif
 
 namespace azeban {
 
@@ -153,9 +156,23 @@ private:
 
   void computeDudt(const zisa::array_view<complex_t, 3> &dudt_hat,
                    const zisa::array_const_view<complex_t, 3> &u_hat) {
-    LOG_ERR_IF(device_ != zisa::device_type::cpu,
-               "Currently only CPU version is implemented");
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
+    if (device_ == zisa::device_type::cpu) {
+      computeDudt_cpu(dudt_hat, u_hat);
+    }
+#if ZISA_HAS_CUDA
+    else if (device_ == zisa::device_type::cuda) {
+      computeDudt_cuda(dudt_hat, u_hat);
+    }
+#endif
+    else {
+      LOG_ERR("Unsupported device");
+    }
+    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeDudt");
+  }
+
+  void computeDudt_cpu(const zisa::array_view<complex_t, 3> &dudt_hat,
+                       const zisa::array_const_view<complex_t, 3> &u_hat) {
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const auto shape_phys = grid_.shape_phys(1);
@@ -201,8 +218,25 @@ private:
         }
       }
     }
+  }
+
+#if ZISA_HAS_CUDA
+  void computeDudt_cuda(const zisa::array_view<complex_t, 3> &dudt_hat,
+                        const zisa::array_const_view<complex_t, 3> &u_hat) {
+    AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
+    const zisa::int_t i_base = grid_.i_fourier(0, comm_);
+    const zisa::int_t j_base = grid_.j_fourier(0, comm_);
+    const auto shape_phys = grid_.shape_phys(1);
+    if (has_tracer_) {
+      incompressible_euler_mpi_2d_tracer_cuda(
+          B_hat_, u_hat, dudt_hat, visc_, forcing_, i_base, j_base, shape_phys);
+    } else {
+      incompressible_euler_mpi_2d_cuda(
+          B_hat_, u_hat, dudt_hat, visc_, forcing_, i_base, j_base, shape_phys);
+    }
     AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeDudt");
   }
+#endif
 };
 
 template <typename SpectralViscosity, typename Forcing>
@@ -260,9 +294,23 @@ private:
 
   void computeDudt(const zisa::array_view<complex_t, 4> &dudt_hat,
                    const zisa::array_const_view<complex_t, 4> &u_hat) {
-    LOG_ERR_IF(device_ != zisa::device_type::cpu,
-               "Currently only CPU version is implemented");
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
+    if (device_ == zisa::device_type::cpu) {
+      computeDudt_cpu(dudt_hat, u_hat);
+    }
+#if ZISA_HAS_CUDA
+    else if (device_ == zisa::device_type::cuda) {
+      computeDudt_cuda(dudt_hat, u_hat);
+    }
+#endif
+    else {
+      LOG_ERR("Unsupported device");
+    }
+    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeDudt");
+  }
+
+  void computeDudt_cpu(const zisa::array_view<complex_t, 4> &dudt_hat,
+                       const zisa::array_const_view<complex_t, 4> &u_hat) {
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const zisa::int_t k_base = grid_.k_fourier(0, comm_);
@@ -331,8 +379,38 @@ private:
         }
       }
     }
-    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeDudt");
   }
+
+#if ZISA_HAS_CUDA
+  void computeDudt_cuda(const zisa::array_view<complex_t, 4> &dudt_hat,
+                        const zisa::array_const_view<complex_t, 4> &u_hat) {
+    const zisa::int_t i_base = grid_.i_fourier(0, comm_);
+    const zisa::int_t j_base = grid_.j_fourier(0, comm_);
+    const zisa::int_t k_base = grid_.k_fourier(0, comm_);
+    const auto shape_phys = grid_.shape_phys(1);
+    if (has_tracer_) {
+      incompressible_euler_mpi_3d_tracer_cuda(B_hat_,
+                                              u_hat,
+                                              dudt_hat,
+                                              visc_,
+                                              forcing_,
+                                              i_base,
+                                              j_base,
+                                              k_base,
+                                              shape_phys);
+    } else {
+      incompressible_euler_mpi_3d_cuda(B_hat_,
+                                       u_hat,
+                                       dudt_hat,
+                                       visc_,
+                                       forcing_,
+                                       i_base,
+                                       j_base,
+                                       k_base,
+                                       shape_phys);
+    }
+  }
+#endif
 };
 
 }

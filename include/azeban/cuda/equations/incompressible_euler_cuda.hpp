@@ -15,8 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef INCOMPRESSIBLE_EULER_CUDA_H_
-#define INCOMPRESSIBLE_EULER_CUDA_H_
+#ifndef AZEBAN_CUDA_EQUATIONS_INCOMPRESSIBLE_EULER_CUDA_HPP_
+#define AZEBAN_CUDA_EQUATIONS_INCOMPRESSIBLE_EULER_CUDA_HPP_
 
 #include <azeban/config.hpp>
 #include <azeban/equations/spectral_viscosity.hpp>
