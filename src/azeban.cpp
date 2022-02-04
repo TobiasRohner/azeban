@@ -258,6 +258,7 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
   }
 
   auto simulation = make_simulation_mpi<dim_v>(config, comm);
+  const auto &grid = simulation.grid();
   auto initializer = make_initializer<dim_v>(config, rng);
 
   if (rank == 0) {
@@ -270,9 +271,6 @@ static void runFromConfig_MPI(const nlohmann::json &config, MPI_Comm comm) {
   for (zisa::int_t sample = sample_idx_start;
        sample < sample_idx_start + num_samples;
        ++sample) {
-    simulation = make_simulation_mpi<dim_v>(config, comm);
-    const auto &grid = simulation.grid();
-
     auto u_host = grid.make_array_phys(
         simulation.n_vars(), zisa::device_type::cpu, comm);
     auto u_device = grid.make_array_phys(

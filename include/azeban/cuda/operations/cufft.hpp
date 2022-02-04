@@ -65,6 +65,8 @@ public:
             bool transform_z = true);
   virtual ~CUFFT_R2C() override;
   using super::initialize;
+  virtual size_t get_work_area_size() const override;
+  using super::set_work_area;
   virtual void forward() override;
   virtual void backward() override;
   using super::is_backward;
@@ -77,14 +79,17 @@ protected:
   using super::u_;
   using super::u_hat_;
 
-  virtual void
-  do_initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat,
-                const zisa::array_view<real_t, Dim + 1> &u) override;
+  virtual void do_initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat,
+                             const zisa::array_view<real_t, Dim + 1> &u,
+                             bool allocate_work_area) override;
+  virtual void do_set_work_area(void *work_area) override;
 
 private:
   cufftHandle plan_forward_;
   cufftHandle plan_backward_;
-  void *work_area_;
+  bool custom_work_area_ = false;
+  size_t work_area_size_ = 0;
+  void *work_area_ = nullptr;
 
   static constexpr cufftType type_forward
       = std::is_same_v<float, real_t> ? ::CUFFT_R2C : ::CUFFT_D2Z;
@@ -134,6 +139,8 @@ public:
             bool transform_z = true);
   virtual ~CUFFT_C2C() override;
   using super::initialize;
+  virtual size_t get_work_area_size() const override;
+  using super::set_work_area;
   virtual void forward() override;
   virtual void backward() override;
   using super::is_backward;
@@ -146,14 +153,17 @@ protected:
   using super::u_;
   using super::u_hat_;
 
-  virtual void
-  do_initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat,
-                const zisa::array_view<complex_t, Dim + 1> &u) override;
+  virtual void do_initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat,
+                             const zisa::array_view<complex_t, Dim + 1> &u,
+                             bool allocate_work_area) override;
+  virtual void do_set_work_area(void *work_area) override;
 
 private:
   cufftHandle plan_forward_;
   cufftHandle plan_backward_;
-  void *work_area_;
+  bool custom_work_area_ = false;
+  size_t work_area_size_ = 0;
+  void *work_area_ = nullptr;
 
   static constexpr cufftType type_forward
       = std::is_same_v<float, real_t> ? ::CUFFT_C2C : ::CUFFT_Z2Z;

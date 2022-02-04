@@ -1,33 +1,17 @@
-/*
- * This file is part of azeban (https://github.com/TobiasRohner/azeban).
- * Copyright (c) 2021 Tobias Rohner.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-#ifndef INCOMPRESSIBLE_EULER_MPI_H_
-#define INCOMPRESSIBLE_EULER_MPI_H_
+#ifndef AZEBAN_EQUATIONS_INCOMPRESSIBLE_EULER_MPI_HPP_
+#define AZEBAN_EQUATIONS_INCOMPRESSIBLE_EULER_MPI_HPP_
 
-#include "advection_functions.hpp"
-#include "equation.hpp"
-#include "incompressible_euler_functions.hpp"
-#include <azeban/config.hpp>
-#include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
+#include <azeban/equations/advection_functions.hpp>
+#include <azeban/equations/equation.hpp>
+#include <azeban/equations/incompressible_euler_functions.hpp>
 #include <azeban/forcing/no_forcing.hpp>
-#include <azeban/operations/fft_mpi_factory.hpp>
+#include <azeban/memory/workspace.hpp>
+#include <azeban/operations/fft.hpp>
 #include <azeban/profiler.hpp>
-#include <fmt/core.h>
-#include <fmt/ranges.h>
+#include <mpi.h>
+#if ZISA_HAS_CUDA
+#include <azeban/cuda/equations/incompressible_euler_mpi_cuda.hpp>
+#endif
 
 namespace azeban {
 
@@ -35,7 +19,7 @@ template <int Dim>
 class IncompressibleEuler_MPI_Base : public Equation<Dim> {
   using super = Equation<Dim>;
   static_assert(Dim == 2 || Dim == 3,
-                "Incompressible Euler is only implemented for 2D and 3D");
+                "Incompressible Euler is only implemente for 2D and 3D");
 
 public:
   using scalar_t = complex_t;
@@ -43,6 +27,7 @@ public:
 
   IncompressibleEuler_MPI_Base(const Grid<dim_v> &grid,
                                MPI_Comm comm,
+                               zisa::device_type device,
                                bool has_tracer = false);
   IncompressibleEuler_MPI_Base(const IncompressibleEuler_MPI_Base &) = delete;
   IncompressibleEuler_MPI_Base(IncompressibleEuler_MPI_Base &&) = default;
@@ -54,25 +39,14 @@ public:
 
   virtual int n_vars() const override { return dim_v + (has_tracer_ ? 1 : 0); }
 
-  virtual void *get_fft_work_area() const override {
-    return fft_B_->get_work_area();
-  }
+  virtual void *get_fft_work_area() override;
 
 protected:
   using super::grid_;
   MPI_Comm comm_;
-  zisa::array<complex_t, dim_v + 1> u_hat_partial_pad_;
-  zisa::array<complex_t, dim_v + 1> h_u_hat_pad_;
-  zisa::array<complex_t, dim_v + 1> d_u_hat_pad_;
-  zisa::array<real_t, dim_v + 1> u_pad_;
-  zisa::array<real_t, dim_v + 1> B_pad_;
-  zisa::array<complex_t, dim_v + 1> d_B_hat_pad_;
-  zisa::array<complex_t, dim_v + 1> h_B_hat_pad_;
-  zisa::array<complex_t, dim_v + 1> B_hat_partial_pad_;
-  zisa::array<complex_t, dim_v + 1> B_hat_;
-  std::shared_ptr<FFT<dim_v>> fft_u_;
-  std::shared_ptr<FFT<dim_v>> fft_B_;
+  zisa::device_type device_;
   bool has_tracer_;
+  zisa::array_view<complex_t, dim_v + 1> B_hat_;
 
   static zisa::array_view<complex_t, dim_v>
   component(const zisa::array_view<complex_t, dim_v + 1> &arr, int dim);
@@ -83,9 +57,42 @@ protected:
   static zisa::array_const_view<complex_t, dim_v>
   component(const zisa::array<complex_t, dim_v + 1> &arr, int dim);
 
-  void computeB();
-  void pad_u_hat(const zisa::array_const_view<complex_t, dim_v + 1> &u_hat);
-  void unpad_B_hat();
+  void computeBhat(const zisa::array_const_view<complex_t, dim_v + 1> &u_hat);
+
+private:
+  int mpi_size_;
+  int mpi_rank_;
+  Workspace ws1_;
+  Workspace ws2_;
+  Workspace ws_fft_;
+  std::shared_ptr<FFT<dim_v, complex_t>> fft_u_yz_;
+  std::shared_ptr<FFT<dim_v, real_t>> fft_u_x_;
+  std::shared_ptr<FFT<dim_v, complex_t>> fft_B_yz_;
+  std::shared_ptr<FFT<dim_v, real_t>> fft_B_x_;
+  zisa::array_view<complex_t, dim_v + 1> u_hat_pad_;
+  zisa::array_view<complex_t, dim_v + 1> u_yz_;
+  zisa::array_view<complex_t, dim_v + 1> u_yz_trans_;
+  zisa::array_view<complex_t, dim_v + 1> u_yz_trans_pad_;
+  zisa::array_view<real_t, dim_v + 1> u_xyz_trans_;
+  zisa::array_view<real_t, dim_v + 1> B_xyz_trans_;
+  zisa::array_view<complex_t, dim_v + 1> B_yz_trans_pad_;
+  zisa::array_view<complex_t, dim_v + 1> B_yz_trans_;
+  zisa::array_view<complex_t, dim_v + 1> B_yz_;
+  zisa::array_view<complex_t, dim_v + 1> B_hat_pad_;
+
+  void
+  compute_u_hat_pad(const zisa::array_const_view<complex_t, dim_v + 1> &u_hat);
+  void compute_u_yz();
+  void compute_u_yz_trans();
+  void compute_u_yz_trans_pad();
+  void compute_u_xyz_trans();
+  void compute_B_xyz_trans();
+  void compute_B_xyz_trans_cpu();
+  void compute_B_yz_trans_pad();
+  void compute_B_yz_trans();
+  void compute_B_yz();
+  void compute_B_hat_pad();
+  void compute_B_hat();
 };
 
 template <int Dim, typename SpectralViscosity, typename Forcing = NoForcing>
@@ -108,14 +115,17 @@ public:
   IncompressibleEuler_MPI(const Grid<2> &grid,
                           MPI_Comm comm,
                           const SpectralViscosity &visc,
+                          zisa::device_type device,
                           bool has_tracer = false)
-      : IncompressibleEuler_MPI(grid, comm, visc, NoForcing{}, has_tracer) {}
+      : IncompressibleEuler_MPI(
+          grid, comm, visc, NoForcing{}, device, has_tracer) {}
   IncompressibleEuler_MPI(const Grid<2> &grid,
                           MPI_Comm comm,
                           const SpectralViscosity &visc,
                           const Forcing &forcing,
+                          zisa::device_type device,
                           bool has_tracer = false)
-      : super(grid, comm, has_tracer), visc_(visc), forcing_(forcing) {}
+      : super(grid, comm, device, has_tracer), visc_(visc), forcing_(forcing) {}
   IncompressibleEuler_MPI(const IncompressibleEuler_MPI &) = delete;
   IncompressibleEuler_MPI(IncompressibleEuler_MPI &&) = default;
   virtual ~IncompressibleEuler_MPI() = default;
@@ -125,22 +135,8 @@ public:
   virtual void
   dudt(const zisa::array_view<complex_t, 3> &dudt_hat,
        const zisa::array_const_view<complex_t, 3> &u_hat) override {
-    LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cpu,
-               "Euler MPI needs CPU arrays");
-    LOG_ERR_IF(u_hat.shape(0) != h_u_hat_pad_.shape(0),
-               "Wrong number of variables");
-    LOG_ERR_IF(dudt_hat.memory_location() != zisa::device_type::cpu,
-               "Euler MPI needs CPU arrays");
-    LOG_ERR_IF(dudt_hat.shape(0) != h_u_hat_pad_.shape(0),
-               "Wrong number of variables");
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::dudt");
-    pad_u_hat(u_hat);
-    zisa::copy(d_u_hat_pad_, h_u_hat_pad_);
-    fft_u_->backward();
-    computeB();
-    fft_B_->forward();
-    zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
-    unpad_B_hat();
+    computeBhat(u_hat);
     computeDudt(dudt_hat, u_hat);
     AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::dudt");
   }
@@ -149,22 +145,10 @@ public:
 
 protected:
   using super::B_hat_;
-  using super::B_pad_;
-  using super::comm_;
-  using super::d_B_hat_pad_;
-  using super::d_u_hat_pad_;
-  using super::fft_B_;
-  using super::fft_u_;
+  using super::device_;
   using super::grid_;
-  using super::h_B_hat_pad_;
-  using super::h_u_hat_pad_;
-  using super::has_tracer_;
-  using super::u_pad_;
 
-  using super::component;
-  using super::computeB;
-  using super::pad_u_hat;
-  using super::unpad_B_hat;
+  using super::computeBhat;
 
 private:
   SpectralViscosity visc_;
@@ -173,6 +157,22 @@ private:
   void computeDudt(const zisa::array_view<complex_t, 3> &dudt_hat,
                    const zisa::array_const_view<complex_t, 3> &u_hat) {
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
+    if (device_ == zisa::device_type::cpu) {
+      computeDudt_cpu(dudt_hat, u_hat);
+    }
+#if ZISA_HAS_CUDA
+    else if (device_ == zisa::device_type::cuda) {
+      computeDudt_cuda(dudt_hat, u_hat);
+    }
+#endif
+    else {
+      LOG_ERR("Unsupported device");
+    }
+    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeDudt");
+  }
+
+  void computeDudt_cpu(const zisa::array_view<complex_t, 3> &dudt_hat,
+                       const zisa::array_const_view<complex_t, 3> &u_hat) {
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const auto shape_phys = grid_.shape_phys(1);
@@ -195,7 +195,7 @@ private:
         const real_t k2 = 2 * zisa::pi * j_;
         const real_t absk2 = k1 * k1 + k2 * k2;
         complex_t force1, force2;
-        forcing_(0, k1, k2, &force1, &force2);
+        forcing_(0, k2, k1, &force1, &force2);
         complex_t L1_hat, L2_hat;
         incompressible_euler_2d_compute_L(k2,
                                           k1,
@@ -218,8 +218,25 @@ private:
         }
       }
     }
+  }
+
+#if ZISA_HAS_CUDA
+  void computeDudt_cuda(const zisa::array_view<complex_t, 3> &dudt_hat,
+                        const zisa::array_const_view<complex_t, 3> &u_hat) {
+    AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
+    const zisa::int_t i_base = grid_.i_fourier(0, comm_);
+    const zisa::int_t j_base = grid_.j_fourier(0, comm_);
+    const auto shape_phys = grid_.shape_phys(1);
+    if (has_tracer_) {
+      incompressible_euler_mpi_2d_tracer_cuda(
+          B_hat_, u_hat, dudt_hat, visc_, forcing_, i_base, j_base, shape_phys);
+    } else {
+      incompressible_euler_mpi_2d_cuda(
+          B_hat_, u_hat, dudt_hat, visc_, forcing_, i_base, j_base, shape_phys);
+    }
     AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeDudt");
   }
+#endif
 };
 
 template <typename SpectralViscosity, typename Forcing>
@@ -236,14 +253,17 @@ public:
   IncompressibleEuler_MPI(const Grid<3> &grid,
                           MPI_Comm comm,
                           const SpectralViscosity &visc,
+                          zisa::device_type device,
                           bool has_tracer = false)
-      : IncompressibleEuler_MPI(grid, comm, visc, NoForcing{}, has_tracer) {}
+      : IncompressibleEuler_MPI(
+          grid, comm, visc, NoForcing{}, device, has_tracer) {}
   IncompressibleEuler_MPI(const Grid<3> &grid,
                           MPI_Comm comm,
                           const SpectralViscosity &visc,
                           const Forcing &forcing,
+                          zisa::device_type device,
                           bool has_tracer = false)
-      : super(grid, comm, has_tracer), visc_(visc), forcing_(forcing) {}
+      : super(grid, comm, device, has_tracer), visc_(visc), forcing_(forcing) {}
   IncompressibleEuler_MPI(const IncompressibleEuler_MPI &) = delete;
   IncompressibleEuler_MPI(IncompressibleEuler_MPI &&) = default;
   virtual ~IncompressibleEuler_MPI() = default;
@@ -253,22 +273,8 @@ public:
   virtual void
   dudt(const zisa::array_view<complex_t, 4> &dudt_hat,
        const zisa::array_const_view<complex_t, 4> &u_hat) override {
-    LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cpu,
-               "Euler MPI needs CPU arrays");
-    LOG_ERR_IF(u_hat.shape(0) != h_u_hat_pad_.shape(0),
-               "Wrong number of variables");
-    LOG_ERR_IF(dudt_hat.memory_location() != zisa::device_type::cpu,
-               "Euler MPI needs CPU arrays");
-    LOG_ERR_IF(dudt_hat.shape(0) != h_u_hat_pad_.shape(0),
-               "Wrong number of variables");
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::dudt");
-    pad_u_hat(u_hat);
-    zisa::copy(d_u_hat_pad_, h_u_hat_pad_);
-    fft_u_->backward();
-    computeB();
-    fft_B_->forward();
-    zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
-    unpad_B_hat();
+    computeBhat(u_hat);
     computeDudt(dudt_hat, u_hat);
     AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::dudt");
   }
@@ -277,22 +283,10 @@ public:
 
 protected:
   using super::B_hat_;
-  using super::B_pad_;
-  using super::comm_;
-  using super::d_B_hat_pad_;
-  using super::d_u_hat_pad_;
-  using super::fft_B_;
-  using super::fft_u_;
+  using super::device_;
   using super::grid_;
-  using super::h_B_hat_pad_;
-  using super::h_u_hat_pad_;
-  using super::has_tracer_;
-  using super::u_pad_;
 
-  using super::component;
-  using super::computeB;
-  using super::pad_u_hat;
-  using super::unpad_B_hat;
+  using super::computeBhat;
 
 private:
   SpectralViscosity visc_;
@@ -301,6 +295,22 @@ private:
   void computeDudt(const zisa::array_view<complex_t, 4> &dudt_hat,
                    const zisa::array_const_view<complex_t, 4> &u_hat) {
     AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
+    if (device_ == zisa::device_type::cpu) {
+      computeDudt_cpu(dudt_hat, u_hat);
+    }
+#if ZISA_HAS_CUDA
+    else if (device_ == zisa::device_type::cuda) {
+      computeDudt_cuda(dudt_hat, u_hat);
+    }
+#endif
+    else {
+      LOG_ERR("Unsupported device");
+    }
+    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeDudt");
+  }
+
+  void computeDudt_cpu(const zisa::array_view<complex_t, 4> &dudt_hat,
+                       const zisa::array_const_view<complex_t, 4> &u_hat) {
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const zisa::int_t k_base = grid_.k_fourier(0, comm_);
@@ -333,7 +343,7 @@ private:
           const real_t k3 = 2 * zisa::pi * k_;
           const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
           complex_t force1, force2, force3;
-          forcing_(0, k1, k2, k3, &force1, &force2, &force3);
+          forcing_(0, k3, k2, k1, &force1, &force2, &force3);
           complex_t L1_hat, L2_hat, L3_hat;
           incompressible_euler_3d_compute_L(k3,
                                             k2,
@@ -369,8 +379,38 @@ private:
         }
       }
     }
-    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeDudt");
   }
+
+#if ZISA_HAS_CUDA
+  void computeDudt_cuda(const zisa::array_view<complex_t, 4> &dudt_hat,
+                        const zisa::array_const_view<complex_t, 4> &u_hat) {
+    const zisa::int_t i_base = grid_.i_fourier(0, comm_);
+    const zisa::int_t j_base = grid_.j_fourier(0, comm_);
+    const zisa::int_t k_base = grid_.k_fourier(0, comm_);
+    const auto shape_phys = grid_.shape_phys(1);
+    if (has_tracer_) {
+      incompressible_euler_mpi_3d_tracer_cuda(B_hat_,
+                                              u_hat,
+                                              dudt_hat,
+                                              visc_,
+                                              forcing_,
+                                              i_base,
+                                              j_base,
+                                              k_base,
+                                              shape_phys);
+    } else {
+      incompressible_euler_mpi_3d_cuda(B_hat_,
+                                       u_hat,
+                                       dudt_hat,
+                                       visc_,
+                                       forcing_,
+                                       i_base,
+                                       j_base,
+                                       k_base,
+                                       shape_phys);
+    }
+  }
+#endif
 };
 
 }

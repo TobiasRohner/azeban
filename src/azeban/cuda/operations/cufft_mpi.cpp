@@ -50,6 +50,8 @@ CUFFT_MPI<2>::~CUFFT_MPI() {
   }
 }
 
+size_t CUFFT_MPI<2>::get_work_area_size() const { return 0; }
+
 void CUFFT_MPI<2>::forward() {
   LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
              "Forward operation was not initialized");
@@ -127,7 +129,7 @@ void CUFFT_MPI<2>::backward() {
     AZEBAN_PROFILE_STOP("CUFFT_MPI::backward::transpose", comm_);
     // Perform the final local FFTs in place
     status
-        = cufftExecC2R(plan_forward_c2c_,
+        = cufftExecC2R(plan_backward_c2r_,
                        reinterpret_cast<cufftComplex *>(partial_u_hat_.raw()),
                        (float *)u_.raw());
     cudaCheckError(status);
@@ -159,7 +161,9 @@ void CUFFT_MPI<2>::backward() {
 }
 
 void CUFFT_MPI<2>::do_initialize(const zisa::array_view<complex_t, 3> &u_hat,
-                                 const zisa::array_view<real_t, 3> &u) {
+                                 const zisa::array_view<real_t, 3> &u,
+                                 bool allocate_work_area) {
+  ZISA_UNUSED(allocate_work_area);
   LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cuda,
              "Unsupported Memory Location");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cuda,
@@ -253,6 +257,8 @@ void CUFFT_MPI<2>::do_initialize(const zisa::array_view<complex_t, 3> &u_hat,
   }
 }
 
+void CUFFT_MPI<2>::do_set_work_area(void *work_area) { ZISA_UNUSED(work_area); }
+
 CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
                         const zisa::array_view<real_t, 4> &u,
                         MPI_Comm comm,
@@ -278,6 +284,8 @@ CUFFT_MPI<3>::~CUFFT_MPI() {
     cudaFree(work_area_);
   }
 }
+
+size_t CUFFT_MPI<3>::get_work_area_size() const { return 0; }
 
 void CUFFT_MPI<3>::forward() {
   LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
@@ -358,7 +366,7 @@ void CUFFT_MPI<3>::backward() {
     AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose", comm_);
     // Perform the final local FFTs in place
     status
-        = cufftExecC2R(plan_forward_c2c_,
+        = cufftExecC2R(plan_backward_c2r_,
                        reinterpret_cast<cufftComplex *>(partial_u_hat_.raw()),
                        (float *)u_.raw());
     cudaCheckError(status);
@@ -392,7 +400,9 @@ void CUFFT_MPI<3>::backward() {
 void *CUFFT_MPI<3>::get_work_area() const { return work_area_; }
 
 void CUFFT_MPI<3>::do_initialize(const zisa::array_view<complex_t, 4> &u_hat,
-                                 const zisa::array_view<real_t, 4> &u) {
+                                 const zisa::array_view<real_t, 4> &u,
+                                 bool allocate_work_area) {
+  ZISA_UNUSED(allocate_work_area);
   LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cuda,
              "Unsupported Memory Location");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cuda,
@@ -506,6 +516,8 @@ void CUFFT_MPI<3>::do_initialize(const zisa::array_view<complex_t, 4> &u_hat,
     cudaCheckError(status);
   }
 }
+
+void CUFFT_MPI<3>::do_set_work_area(void *work_area) { ZISA_UNUSED(work_area); }
 
 }
 #endif

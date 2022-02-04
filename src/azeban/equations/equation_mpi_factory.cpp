@@ -1,5 +1,6 @@
 #include <azeban/equations/equation_mpi_factory.hpp>
 #include <azeban/equations/incompressible_euler_mpi_factory.hpp>
+#include <azeban/equations/incompressible_euler_mpi_naive_factory.hpp>
 #include <azeban/equations/spectral_viscosity_factory.hpp>
 #include <azeban/forcing/no_forcing.hpp>
 #include <azeban/forcing/white_noise_factory.hpp>
@@ -9,10 +10,117 @@
 namespace azeban {
 
 template <int Dim>
+static std::shared_ptr<Equation<Dim>>
+make_equation_mpi(const nlohmann::json &config,
+                  const Grid<Dim> &grid,
+                  MPI_Comm comm,
+                  bool has_tracer,
+                  const std::string &visc_type,
+                  const std::string &forcing_type,
+                  const std::string &equation_name,
+                  zisa::device_type device) {
+  if (visc_type == "Smooth Cutoff") {
+    SmoothCutoff1D visc = make_smooth_cutoff_1d(config["visc"], grid);
+    return make_equation_mpi<Dim>(config,
+                                  grid,
+                                  comm,
+                                  has_tracer,
+                                  visc,
+                                  forcing_type,
+                                  equation_name,
+                                  device);
+  } else if (visc_type == "Step") {
+    Step1D visc = make_step_1d(config["visc"], grid);
+    return make_equation_mpi<Dim>(config,
+                                  grid,
+                                  comm,
+                                  has_tracer,
+                                  visc,
+                                  forcing_type,
+                                  equation_name,
+                                  device);
+  } else if (visc_type == "Quadratic") {
+    Quadratic visc = make_quadratic(config["visc"], grid);
+    return make_equation_mpi<Dim>(config,
+                                  grid,
+                                  comm,
+                                  has_tracer,
+                                  visc,
+                                  forcing_type,
+                                  equation_name,
+                                  device);
+  } else {
+    fmt::print(stderr, "Unknown viscosity type: {}\n", visc_type);
+    exit(1);
+  }
+  return nullptr;
+}
+
+template <int Dim, typename SpectralViscosity>
+static std::shared_ptr<Equation<Dim>>
+make_equation_mpi(const nlohmann::json &config,
+                  const Grid<Dim> &grid,
+                  MPI_Comm comm,
+                  bool has_tracer,
+                  const SpectralViscosity &visc,
+                  const std::string &forcing_type,
+                  const std::string &equation_name,
+                  zisa::device_type device) {
+  if (forcing_type == "No Forcing") {
+    NoForcing forcing;
+    return make_equation_mpi(
+        grid, comm, has_tracer, visc, forcing, equation_name, device);
+  }
+  if (forcing_type == "White Noise") {
+    if (device == zisa::device_type::cpu) {
+      WhiteNoise forcing
+          = make_white_noise<std::mt19937>(config["forcing"], grid);
+      return make_equation_mpi(
+          grid, comm, has_tracer, visc, forcing, equation_name, device);
+    }
+#if ZISA_HAS_CUDA
+    else if (device == zisa::device_type::cuda) {
+      WhiteNoise forcing
+          = make_white_noise<curandStateXORWOW_t>(config["forcing"], grid);
+      return make_equation_mpi(
+          grid, comm, has_tracer, visc, forcing, equation_name, device);
+    }
+#endif
+    else {
+      LOG_ERR("Unsupported device");
+    }
+  }
+  return nullptr;
+}
+
+template <int Dim, typename SpectralViscosity, typename Forcing>
+static std::shared_ptr<Equation<Dim>>
+make_equation_mpi(const Grid<Dim> &grid,
+                  MPI_Comm comm,
+                  bool has_tracer,
+                  const SpectralViscosity &visc,
+                  const Forcing &forcing,
+                  const std::string &equation_name,
+                  zisa::device_type device) {
+  if (equation_name == "Euler") {
+    return make_incompressible_euler_mpi<Dim>(
+        grid, comm, visc, forcing, has_tracer, device);
+  } else if (equation_name == "Euler Naive") {
+    return make_incompressible_euler_mpi_naive<Dim>(
+        grid, comm, visc, forcing, has_tracer);
+  } else {
+    fmt::print(stderr, "Unknown equation name: \"{}\"\n", equation_name);
+    exit(1);
+  }
+  return nullptr;
+}
+
+template <int Dim>
 std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
                                                  const Grid<Dim> &grid,
                                                  MPI_Comm comm,
-                                                 bool has_tracer) {
+                                                 bool has_tracer,
+                                                 zisa::device_type device) {
   if (!config.contains("name")) {
     fmt::print(stderr, "Equation config must contain key \"name\"\n");
     exit(1);
@@ -38,55 +146,14 @@ std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
     forcing_type = config["forcing"]["type"];
   }
 
-  if (visc_type == "Smooth Cutoff") {
-    SmoothCutoff1D visc = make_smooth_cutoff_1d(config["visc"], grid);
-    if (equation_name == "Euler") {
-      if (forcing_type == "No Forcing") {
-        return make_incompressible_euler_mpi(
-            grid, comm, visc, NoForcing{}, has_tracer);
-      } else if (forcing_type == "White Noise") {
-        auto forcing = make_white_noise<std::mt19937>(config["forcing"], grid);
-        return make_incompressible_euler_mpi(
-            grid, comm, visc, forcing, has_tracer);
-      }
-    } else {
-      fmt::print(stderr, "Unknown Equation");
-      exit(1);
-    }
-  } else if (visc_type == "Step") {
-    Step1D visc = make_step_1d(config["visc"], grid);
-    if (equation_name == "Euler") {
-      if (forcing_type == "No Forcing") {
-        return make_incompressible_euler_mpi(
-            grid, comm, visc, NoForcing{}, has_tracer);
-      } else if (forcing_type == "White Noise") {
-        auto forcing = make_white_noise<std::mt19937>(config["forcing"], grid);
-        return make_incompressible_euler_mpi(
-            grid, comm, visc, forcing, has_tracer);
-      }
-    } else {
-      fmt::print(stderr, "Unknown Equation");
-      exit(1);
-    }
-  } else if (visc_type == "Quadratic") {
-    Quadratic visc = make_quadratic(config["visc"], grid);
-    if (equation_name == "Euler") {
-      if (forcing_type == "No Forcing") {
-        return make_incompressible_euler_mpi(
-            grid, comm, visc, NoForcing{}, has_tracer);
-      } else if (forcing_type == "White Noise") {
-        auto forcing = make_white_noise<std::mt19937>(config["forcing"], grid);
-        return make_incompressible_euler_mpi(
-            grid, comm, visc, forcing, has_tracer);
-      }
-    } else {
-      fmt::print(stderr, "Unknown Equation");
-      exit(1);
-    }
-  } else {
-    fmt::print(stderr, "Unknown Spectral Viscosity type\n");
-    exit(1);
-  }
+  return make_equation_mpi(config,
+                           grid,
+                           comm,
+                           has_tracer,
+                           visc_type,
+                           forcing_type,
+                           equation_name,
+                           device);
   // Make compiler happy
   return nullptr;
 }
@@ -95,11 +162,13 @@ template std::shared_ptr<Equation<2>>
 make_equation_mpi<2>(const nlohmann::json &config,
                      const Grid<2> &grid,
                      MPI_Comm comm,
-                     bool has_tracer);
+                     bool has_tracer,
+                     zisa::device_type device);
 template std::shared_ptr<Equation<3>>
 make_equation_mpi<3>(const nlohmann::json &config,
                      const Grid<3> &grid,
                      MPI_Comm comm,
-                     bool has_tracer);
+                     bool has_tracer,
+                     zisa::device_type device);
 
 }

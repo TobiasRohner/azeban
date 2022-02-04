@@ -78,7 +78,10 @@ public:
   FFT &operator=(FFT &&) = default;
 
   void initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat,
-                  const zisa::array_view<scalar_u_t, Dim + 1> &u);
+                  const zisa::array_view<scalar_u_t, Dim + 1> &u,
+                  bool allocate_work_area = true);
+  virtual size_t get_work_area_size() const = 0;
+  void set_work_area(void *work_area);
 
   virtual void forward() = 0;
   virtual void backward() = 0;
@@ -97,7 +100,9 @@ public:
   const zisa::array_const_view<scalar_u_t, dim_v + 1> u() const { return u_; }
 
   zisa::shape_t<Dim + 1>
-  output_shape(const zisa::shape_t<Dim + 1> &input_shape) const;
+  shape_u_hat(const zisa::shape_t<Dim + 1> &shape_u) const;
+  zisa::shape_t<Dim + 1>
+  shape_u(const zisa::shape_t<Dim + 1> &shape_u_hat) const;
 
   virtual void *get_work_area() const { return nullptr; }
 
@@ -109,8 +114,10 @@ protected:
   int data_dim_;
 
   virtual void do_initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat,
-                             const zisa::array_view<scalar_u_t, Dim + 1> &u)
+                             const zisa::array_view<scalar_u_t, Dim + 1> &u,
+                             bool allocate_work_area)
       = 0;
+  virtual void do_set_work_area(void *work_area) = 0;
 };
 
 }

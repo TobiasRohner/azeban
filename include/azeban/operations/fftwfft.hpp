@@ -104,6 +104,7 @@ public:
               bool transform_z = true);
   virtual ~FFTWFFT_R2C() override;
   using super::initialize;
+  virtual size_t get_work_area_size() const override;
   virtual void forward() override;
   virtual void backward() override;
   using super::is_backward;
@@ -116,9 +117,10 @@ protected:
   using super::u_;
   using super::u_hat_;
 
-  virtual void
-  do_initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat,
-                const zisa::array_view<real_t, Dim + 1> &u) override;
+  virtual void do_initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat,
+                             const zisa::array_view<real_t, Dim + 1> &u,
+                             bool allocate_work_area) override;
+  virtual void do_set_work_area(void *work_area) override;
 
 private:
   fftw_plan_t plan_forward_;
@@ -173,6 +175,7 @@ public:
               bool transform_z = true);
   virtual ~FFTWFFT_C2C() override;
   using super::initialize;
+  virtual size_t get_work_area_size() const override;
   virtual void forward() override;
   virtual void backward() override;
   using super::is_backward;
@@ -185,9 +188,10 @@ protected:
   using super::u_;
   using super::u_hat_;
 
-  virtual void
-  do_initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat,
-                const zisa::array_view<complex_t, Dim + 1> &u) override;
+  virtual void do_initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat,
+                             const zisa::array_view<complex_t, Dim + 1> &u,
+                             bool allocate_work_area) override;
+  virtual void do_set_work_area(void *work_area) override;
 
 private:
   fftw_plan_t plan_forward_;

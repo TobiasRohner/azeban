@@ -53,6 +53,7 @@ public:
   virtual ~CUFFT_MPI() override;
 
   using super::initialize;
+  virtual size_t get_work_area_size() const override;
 
   virtual void forward() override;
   virtual void backward() override;
@@ -65,7 +66,9 @@ protected:
   using super::u_hat_;
 
   virtual void do_initialize(const zisa::array_view<complex_t, 3> &u_hat,
-                             const zisa::array_view<real_t, 3> &u) override;
+                             const zisa::array_view<real_t, 3> &u,
+                             bool allocate_work_area) override;
+  virtual void do_set_work_area(void *work_area) override;
 
 private:
   cufftHandle plan_forward_r2c_;
@@ -108,6 +111,7 @@ public:
   virtual ~CUFFT_MPI() override;
 
   using super::initialize;
+  virtual size_t get_work_area_size() const override;
 
   virtual void forward() override;
   virtual void backward() override;
@@ -120,7 +124,9 @@ protected:
   using super::u_hat_;
 
   virtual void do_initialize(const zisa::array_view<complex_t, 4> &u_hat,
-                             const zisa::array_view<real_t, 4> &u) override;
+                             const zisa::array_view<real_t, 4> &u,
+                             bool allocate_work_area) override;
+  virtual void do_set_work_area(void *work_area) override;
 
 private:
   cufftHandle plan_forward_r2c_;

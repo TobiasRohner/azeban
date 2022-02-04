@@ -130,6 +130,9 @@ public:
   const Grid<dim_v> &grid() const { return cfl_.grid(); }
   zisa::int_t n_vars() const { return u_.shape(0); }
   zisa::device_type memory_location() const { return memory_location_; }
+  std::shared_ptr<Equation<dim_v>> equation() {
+    return timestepper_->equation();
+  }
   std::shared_ptr<const Equation<dim_v>> equation() const {
     return timestepper_->equation();
   }
