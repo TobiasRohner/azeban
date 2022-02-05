@@ -427,6 +427,10 @@ int main(int argc, char *argv[]) {
   MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
   LOG_ERR_IF(provided < MPI_THREAD_FUNNELED,
              "MPI did not provide enough thread safety");
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  const bool use_mpi = size > 1;
 #endif
 
   if (argc != 2) {
@@ -436,18 +440,24 @@ int main(int argc, char *argv[]) {
 
   auto config = read_config(argv[1]);
 
+#if AZEBAN_HAS_MPI
+  if (size > 1) {
+    if (rank == 0) {
+      fmt::print(
+          "Running azeban with {} MPI ranks.\nRun configuration is\n{}\n",
+          size,
+          config.dump(2));
+    }
+  } else
+#endif
+    fmt::print("Running azeban in single-node mode.\nRun cofiguration is\n{}\n",
+               config.dump(2));
+
   if (!config.contains("dimension")) {
     fmt::print(stderr, "Must provide dimension of simulation\n");
     exit(1);
   }
   int dim = config["dimension"];
-
-#if AZEBAN_HAS_MPI
-  int rank, size;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  const bool use_mpi = size > 1;
-#endif
 
 #if AZEBAN_HAS_MPI
   Profiler::start(MPI_COMM_WORLD);
