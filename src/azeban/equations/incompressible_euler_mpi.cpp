@@ -277,6 +277,7 @@ IncompressibleEuler_MPI_Base<3>::component(const zisa::array<complex_t, 4> &arr,
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::computeBhat(
     const zisa::array_const_view<complex_t, dim_v + 1> &u_hat) {
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeBhat");
   compute_u_hat_pad(u_hat);
   compute_u_yz();
   compute_u_yz_trans();
@@ -288,11 +289,13 @@ void IncompressibleEuler_MPI_Base<Dim>::computeBhat(
   compute_B_yz();
   compute_B_hat_pad();
   compute_B_hat();
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeBhat");
 }
 
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_u_hat_pad(
     const zisa::array_const_view<complex_t, dim_v + 1> &u_hat) {
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::compute_u_hat_pad");
   for (zisa::int_t d = 0; d < u_hat.shape(0); ++d) {
     if constexpr (dim_v == 2) {
       copy_to_padded(
@@ -302,15 +305,19 @@ void IncompressibleEuler_MPI_Base<Dim>::compute_u_hat_pad(
           false, true, true, 0, component(u_hat_pad_, d), component(u_hat, d));
     }
   }
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::compute_u_hat_pad");
 }
 
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_u_yz() {
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::compute_u_yz");
   fft_u_yz_->backward();
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::compute_u_yz");
 }
 
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_u_yz_trans() {
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::compute_u_yz_trans");
   if (device_ == zisa::device_type::cpu) {
     transpose(u_yz_trans_, u_yz_, comm_);
   }
@@ -328,10 +335,12 @@ void IncompressibleEuler_MPI_Base<Dim>::compute_u_yz_trans() {
   else {
     LOG_ERR("Unsupported device");
   }
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::compute_u_yz_trans");
 }
 
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_u_yz_trans_pad() {
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::compute_u_yz_trans_pad");
   for (zisa::int_t d = 0; d < u_yz_trans_.shape(0); ++d) {
     if constexpr (dim_v == 2) {
       copy_to_padded(false,
@@ -348,15 +357,19 @@ void IncompressibleEuler_MPI_Base<Dim>::compute_u_yz_trans_pad() {
                      component(u_yz_trans_, d));
     }
   }
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::compute_u_yz_trans_pad");
 }
 
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_u_xyz_trans() {
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::compute_u_xyz_trans");
   fft_u_x_->backward();
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::compute_u_xyz_trans");
 }
 
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_B_xyz_trans() {
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::compute_B_xyz_trans");
   if (device_ == zisa::device_type::cpu) {
     compute_B_xyz_trans_cpu();
   }
@@ -374,6 +387,7 @@ void IncompressibleEuler_MPI_Base<Dim>::compute_B_xyz_trans() {
   else {
     LOG_ERR("Unsupported device");
   }
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::compute_B_xyz_trans");
 }
 
 template <>
@@ -434,11 +448,14 @@ void IncompressibleEuler_MPI_Base<3>::compute_B_xyz_trans_cpu() {
 
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_B_yz_trans_pad() {
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::compute_B_xyz_trans_pad");
   fft_B_x_->forward();
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::compute_B_xyz_trans_pad");
 }
 
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_B_yz_trans() {
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::compute_B_xyz_trans");
   for (zisa::int_t d = 0; d < B_yz_trans_pad_.shape(0); ++d) {
     if constexpr (dim_v == 2) {
       copy_from_padded(false,
@@ -455,10 +472,12 @@ void IncompressibleEuler_MPI_Base<Dim>::compute_B_yz_trans() {
                        component(B_yz_trans_pad_, d));
     }
   }
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::compute_B_xyz_trans");
 }
 
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_B_yz() {
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::compute_B_yz");
   if (device_ == zisa::device_type::cpu) {
     transpose(B_yz_, B_yz_trans_, comm_);
   }
@@ -476,15 +495,19 @@ void IncompressibleEuler_MPI_Base<Dim>::compute_B_yz() {
   else {
     LOG_ERR("Unsupported device");
   }
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::compute_B_yz");
 }
 
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_B_hat_pad() {
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::compute_B__hat_pad");
   fft_B_yz_->forward();
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::compute_B__hat_pad");
 }
 
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_B_hat() {
+  AZEBAN_PROFILE_START("IncompressibleEuler_MPI::compute_B__hat");
   for (zisa::int_t d = 0; d < B_hat_pad_.shape(0); ++d) {
     if constexpr (dim_v == 2) {
       copy_from_padded(
@@ -494,6 +517,7 @@ void IncompressibleEuler_MPI_Base<Dim>::compute_B_hat() {
           false, true, true, 0, component(B_hat_, d), component(B_hat_pad_, d));
     }
   }
+  AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::compute_B__hat");
 }
 
 template class IncompressibleEuler_MPI_Base<2>;
