@@ -31,13 +31,15 @@ void copy_to_padded_cpu(const zisa::array_view<complex_t, 1> &dst,
   for (zisa::int_t i = 0; i < dst.shape(0); ++i) {
     const auto src_shape = src.shape();
     const auto dst_shape = dst.shape();
-    const int idx_dst = zisa::row_major<1>::linear_index(dst_shape, i);
-    int i_src = i;
+    const unsigned long idx_dst
+        = zisa::row_major<1>::linear_index(dst_shape, i);
+    unsigned long i_src = i;
     if (pad_dim<pad_x, compact_dim == 0>(
             dst, idx_dst, src_shape[0], dst_shape[0], i, pad_value, &i_src)) {
       continue;
     }
-    const int idx_src = zisa::row_major<1>::linear_index(src_shape, i_src);
+    const unsigned long idx_src
+        = zisa::row_major<1>::linear_index(src_shape, i_src);
     dst[idx_dst] = src[idx_src];
   }
 }
@@ -50,9 +52,10 @@ void copy_to_padded_cpu(const zisa::array_view<complex_t, 2> &dst,
     for (zisa::int_t j = 0; j < dst.shape(1); ++j) {
       const auto src_shape = src.shape();
       const auto dst_shape = dst.shape();
-      const int idx_dst = zisa::row_major<2>::linear_index(dst_shape, i, j);
-      int i_src = i;
-      int j_src = j;
+      const unsigned long idx_dst
+          = zisa::row_major<2>::linear_index(dst_shape, i, j);
+      unsigned long i_src = i;
+      unsigned long j_src = j;
       if (pad_dim<pad_x, compact_dim == 0>(
               dst, idx_dst, src_shape[0], dst_shape[0], i, pad_value, &i_src)) {
         continue;
@@ -61,7 +64,7 @@ void copy_to_padded_cpu(const zisa::array_view<complex_t, 2> &dst,
               dst, idx_dst, src_shape[1], dst_shape[1], j, pad_value, &j_src)) {
         continue;
       }
-      const int idx_src
+      const unsigned long idx_src
           = zisa::row_major<2>::linear_index(src_shape, i_src, j_src);
       dst[idx_dst] = src[idx_src];
     }
@@ -77,11 +80,11 @@ void copy_to_padded_cpu(const zisa::array_view<complex_t, 3> &dst,
       for (zisa::int_t k = 0; k < dst.shape(2); ++k) {
         const auto src_shape = src.shape();
         const auto dst_shape = dst.shape();
-        const int idx_dst
+        const unsigned long idx_dst
             = zisa::row_major<3>::linear_index(dst_shape, i, j, k);
-        int i_src = i;
-        int j_src = j;
-        int k_src = k;
+        unsigned long i_src = i;
+        unsigned long j_src = j;
+        unsigned long k_src = k;
         if (pad_dim<pad_x, compact_dim == 0>(dst,
                                              idx_dst,
                                              src_shape[0],
@@ -109,7 +112,7 @@ void copy_to_padded_cpu(const zisa::array_view<complex_t, 3> &dst,
                                              &k_src)) {
           continue;
         }
-        const int idx_src
+        const unsigned long idx_src
             = zisa::row_major<3>::linear_index(src_shape, i_src, j_src, k_src);
         dst[idx_dst] = src[idx_src];
       }

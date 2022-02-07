@@ -27,20 +27,21 @@ __global__ void
 copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 1> dst,
                            zisa::array_const_view<complex_t, 1> src,
                            complex_t pad_value) {
-  const int i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= dst.shape(0)) {
     return;
   }
 
   const auto src_shape = src.shape();
   const auto dst_shape = dst.shape();
-  const int idx_dst = zisa::row_major<1>::linear_index(dst_shape, i);
-  int i_src = i;
+  const unsigned long idx_dst = zisa::row_major<1>::linear_index(dst_shape, i);
+  unsigned long i_src = i;
   if (pad_dim<pad_x, compact_dim == 0>(
           dst, idx_dst, src_shape[0], dst_shape[0], i, pad_value, &i_src)) {
     return;
   }
-  const int idx_src = zisa::row_major<1>::linear_index(src_shape, i_src);
+  const unsigned long idx_src
+      = zisa::row_major<1>::linear_index(src_shape, i_src);
   dst[idx_dst] = src[idx_src];
 }
 
@@ -49,8 +50,8 @@ __global__ void
 copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 2> dst,
                            zisa::array_const_view<complex_t, 2> src,
                            complex_t pad_value) {
-  const int i = blockIdx.x * blockDim.x + threadIdx.x;
-  const int j = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned long j = blockIdx.y * blockDim.y + threadIdx.y;
   const auto src_shape = src.shape();
   const auto dst_shape = dst.shape();
   if (i >= dst_shape[0]) {
@@ -60,9 +61,10 @@ copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 2> dst,
     return;
   }
 
-  const int idx_dst = zisa::row_major<2>::linear_index(dst_shape, i, j);
-  int i_src = i;
-  int j_src = j;
+  const unsigned long idx_dst
+      = zisa::row_major<2>::linear_index(dst_shape, i, j);
+  unsigned long i_src = i;
+  unsigned long j_src = j;
   if (pad_dim<pad_x, compact_dim == 0>(
           dst, idx_dst, src_shape[0], dst_shape[0], i, pad_value, &i_src)) {
     return;
@@ -71,7 +73,8 @@ copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 2> dst,
           dst, idx_dst, src_shape[1], dst_shape[1], j, pad_value, &j_src)) {
     return;
   }
-  const int idx_src = zisa::row_major<2>::linear_index(src_shape, i_src, j_src);
+  const unsigned long idx_src
+      = zisa::row_major<2>::linear_index(src_shape, i_src, j_src);
   dst[idx_dst] = src[idx_src];
 }
 
@@ -80,9 +83,9 @@ __global__ void
 copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 3> dst,
                            zisa::array_const_view<complex_t, 3> src,
                            complex_t pad_value) {
-  const int i = blockIdx.x * blockDim.x + threadIdx.x;
-  const int j = blockIdx.y * blockDim.y + threadIdx.y;
-  const int k = blockIdx.z * blockDim.z + threadIdx.z;
+  const unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned long j = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned long k = blockIdx.z * blockDim.z + threadIdx.z;
   const auto src_shape = src.shape();
   const auto dst_shape = dst.shape();
   if (i >= dst_shape[0]) {
@@ -95,10 +98,11 @@ copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 3> dst,
     return;
   }
 
-  const int idx_dst = zisa::row_major<3>::linear_index(dst_shape, i, j, k);
-  int i_src = i;
-  int j_src = j;
-  int k_src = k;
+  const unsigned long idx_dst
+      = zisa::row_major<3>::linear_index(dst_shape, i, j, k);
+  unsigned long i_src = i;
+  unsigned long j_src = j;
+  unsigned long k_src = k;
   if (pad_dim<pad_x, compact_dim == 0>(
           dst, idx_dst, src_shape[0], dst_shape[0], i, pad_value, &i_src)) {
     return;
@@ -111,7 +115,7 @@ copy_to_padded_cuda_kernel(zisa::array_view<complex_t, 3> dst,
           dst, idx_dst, src_shape[2], dst_shape[2], k, pad_value, &k_src)) {
     return;
   }
-  const int idx_src
+  const unsigned long idx_src
       = zisa::row_major<3>::linear_index(src_shape, i_src, j_src, k_src);
   dst[idx_dst] = src[idx_src];
 }
@@ -125,7 +129,8 @@ void copy_to_padded_cuda(const zisa::array_view<complex_t, 1> &dst,
   assert(dst.shape(0) >= src.shape(0));
   const int thread_dims = 1024;
   const int block_dims = zisa::min(
-      zisa::div_up(static_cast<int>(dst.shape(0)), thread_dims), 1024);
+      zisa::div_up(dst.shape(0), zisa::integer_cast<zisa::int_t>(thread_dims)),
+      static_cast<zisa::int_t>(1024));
   copy_to_padded_cuda_kernel<pad_x, compact_dim>
       <<<block_dims, thread_dims>>>(dst, src, pad_value);
   cudaDeviceSynchronize();
@@ -176,10 +181,12 @@ void copy_to_padded_cuda(const zisa::array_view<complex_t, 2> &dst,
   assert(dst.shape(1) >= src.shape(1));
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
-      zisa::min(zisa::div_up(static_cast<int>(dst.shape(0)), thread_dims.x),
-                1024),
-      zisa::min(zisa::div_up(static_cast<int>(dst.shape(1)), thread_dims.y),
-                1024),
+      zisa::min(zisa::div_up(dst.shape(0),
+                             zisa::integer_cast<zisa::int_t>(thread_dims.x)),
+                static_cast<zisa::int_t>(1024)),
+      zisa::min(zisa::div_up(dst.shape(1),
+                             zisa::integer_cast<zisa::int_t>(thread_dims.y)),
+                static_cast<zisa::int_t>(1024)),
       1);
   copy_to_padded_cuda_kernel<pad_x, pad_y, compact_dim>
       <<<block_dims, thread_dims>>>(dst, src, pad_value);
@@ -243,12 +250,15 @@ void copy_to_padded_cuda(const zisa::array_view<complex_t, 3> &dst,
   assert(dst.shape(2) >= src.shape(2));
   const dim3 thread_dims(4, 4, 32);
   const dim3 block_dims(
-      zisa::min(zisa::div_up(static_cast<int>(dst.shape(0)), thread_dims.x),
-                1024),
-      zisa::min(zisa::div_up(static_cast<int>(dst.shape(1)), thread_dims.y),
-                1024),
-      zisa::min(zisa::div_up(static_cast<int>(dst.shape(2)), thread_dims.z),
-                1024));
+      zisa::min(zisa::div_up(dst.shape(0),
+                             zisa::integer_cast<zisa::int_t>(thread_dims.x)),
+                static_cast<zisa::int_t>(1024)),
+      zisa::min(zisa::div_up(dst.shape(1),
+                             zisa::integer_cast<zisa::int_t>(thread_dims.y)),
+                static_cast<zisa::int_t>(1024)),
+      zisa::min(zisa::div_up(dst.shape(2),
+                             zisa::integer_cast<zisa::int_t>(thread_dims.z)),
+                static_cast<zisa::int_t>(1024)));
   copy_to_padded_cuda_kernel<pad_x, pad_y, pad_z, compact_dim>
       <<<block_dims, thread_dims>>>(dst, src, pad_value);
   cudaDeviceSynchronize();

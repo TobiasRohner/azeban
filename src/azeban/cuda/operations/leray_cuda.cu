@@ -21,13 +21,13 @@
 namespace azeban {
 
 __global__ void leray_cuda_kernel(zisa::array_view<complex_t, 3> u_hat) {
-  const int i = blockIdx.x * blockDim.x + threadIdx.x;
-  const int j = blockIdx.y * blockDim.y + threadIdx.y;
-  const int N_phys = u_hat.shape(1);
-  const int N_fourier = N_phys / 2 + 1;
+  const unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned long j = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned long N_phys = u_hat.shape(1);
+  const unsigned long N_fourier = N_phys / 2 + 1;
 
   if (i < u_hat.shape(1) && j < u_hat.shape(2)) {
-    int i_ = i;
+    long i_ = i;
     if (i_ >= N_fourier) {
       i_ -= N_phys;
     }
@@ -46,18 +46,18 @@ __global__ void leray_cuda_kernel(zisa::array_view<complex_t, 3> u_hat) {
 }
 
 __global__ void leray_cuda_kernel(zisa::array_view<complex_t, 4> u_hat) {
-  const int i = blockIdx.x * blockDim.x + threadIdx.x;
-  const int j = blockIdx.y * blockDim.y + threadIdx.y;
-  const int k = blockIdx.z * blockDim.z + threadIdx.z;
-  const int N_phys = u_hat.shape(1);
-  const int N_fourier = N_phys / 2 + 1;
+  const unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned long j = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned long k = blockIdx.z * blockDim.z + threadIdx.z;
+  const unsigned long N_phys = u_hat.shape(1);
+  const unsigned long N_fourier = N_phys / 2 + 1;
 
   if (i < u_hat.shape(1) && j < u_hat.shape(2) && k < u_hat.shape(3)) {
-    int i_ = i;
+    long i_ = i;
     if (i_ >= N_fourier) {
       i_ -= N_phys;
     }
-    int j_ = j;
+    long j_ = j;
     if (j_ >= N_fourier) {
       j_ -= N_phys;
     }
@@ -86,8 +86,10 @@ __global__ void leray_cuda_kernel(zisa::array_view<complex_t, 4> u_hat) {
 void leray_cuda(const zisa::array_view<complex_t, 3> &u_hat) {
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
-      zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.x),
-      zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.y),
+      zisa::div_up(u_hat.shape(1),
+                   zisa::integer_cast<zisa::int_t>(thread_dims.x)),
+      zisa::div_up(u_hat.shape(2),
+                   zisa::integer_cast<zisa::int_t>(thread_dims.y)),
       1);
   leray_cuda_kernel<<<block_dims, thread_dims>>>(u_hat);
   cudaDeviceSynchronize();
@@ -97,9 +99,12 @@ void leray_cuda(const zisa::array_view<complex_t, 3> &u_hat) {
 void leray_cuda(const zisa::array_view<complex_t, 4> &u_hat) {
   const dim3 thread_dims(4, 4, 32);
   const dim3 block_dims(
-      zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.x),
-      zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.y),
-      zisa::div_up(static_cast<int>(u_hat.shape(3)), thread_dims.z));
+      zisa::div_up(u_hat.shape(1),
+                   zisa::integer_cast<zisa::int_t>(thread_dims.x)),
+      zisa::div_up(u_hat.shape(2),
+                   zisa::integer_cast<zisa::int_t>(thread_dims.y)),
+      zisa::div_up(u_hat.shape(3),
+                   zisa::integer_cast<zisa::int_t>(thread_dims.z)));
   leray_cuda_kernel<<<block_dims, thread_dims>>>(u_hat);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;

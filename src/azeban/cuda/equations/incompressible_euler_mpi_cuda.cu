@@ -11,8 +11,8 @@ namespace azeban {
       const zisa::array_view<complex_t, 3> &,                                  \
       const VISC &,                                                            \
       FORCING &,                                                               \
-      unsigned,                                                                \
-      unsigned,                                                                \
+      unsigned long,                                                           \
+      unsigned long,                                                           \
       const zisa::shape_t<3> &);                                               \
   template void incompressible_euler_mpi_3d_cuda<VISC, FORCING>(               \
       const zisa::array_const_view<complex_t, 4> &,                            \
@@ -20,9 +20,9 @@ namespace azeban {
       const zisa::array_view<complex_t, 4> &,                                  \
       const VISC &,                                                            \
       FORCING &,                                                               \
-      unsigned,                                                                \
-      unsigned,                                                                \
-      unsigned,                                                                \
+      unsigned long,                                                           \
+      unsigned long,                                                           \
+      unsigned long,                                                           \
       const zisa::shape_t<4> &);                                               \
   template void incompressible_euler_mpi_2d_tracer_cuda<VISC, FORCING>(        \
       const zisa::array_const_view<complex_t, 3> &,                            \
@@ -30,8 +30,8 @@ namespace azeban {
       const zisa::array_view<complex_t, 3> &,                                  \
       const VISC &,                                                            \
       FORCING &,                                                               \
-      unsigned,                                                                \
-      unsigned,                                                                \
+      unsigned long,                                                           \
+      unsigned long,                                                           \
       const zisa::shape_t<3> &);                                               \
   template void incompressible_euler_mpi_3d_tracer_cuda<VISC, FORCING>(        \
       const zisa::array_const_view<complex_t, 4> &,                            \
@@ -39,9 +39,9 @@ namespace azeban {
       const zisa::array_view<complex_t, 4> &,                                  \
       const VISC &,                                                            \
       FORCING &,                                                               \
-      unsigned,                                                                \
-      unsigned,                                                                \
-      unsigned,                                                                \
+      unsigned long,                                                           \
+      unsigned long,                                                           \
+      unsigned long,                                                           \
       const zisa::shape_t<4> &);
 
 AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_MPI_CUDA(Step1D, NoForcing)

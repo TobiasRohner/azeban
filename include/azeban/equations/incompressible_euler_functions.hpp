@@ -23,37 +23,32 @@
 
 namespace azeban {
 
-ANY_DEVICE_INLINE void incompressible_euler_2d_compute_B(unsigned stride,
-                                                         unsigned idx,
-                                                         real_t norm,
-                                                         real_t u1,
-                                                         real_t u2,
-                                                         real_t *B) {
-  B[0 * stride + idx] = norm * u1 * u1;
-  B[1 * stride + idx] = norm * u1 * u2;
-  B[2 * stride + idx] = norm * u2 * u2;
+ANY_DEVICE_INLINE void incompressible_euler_2d_compute_B(
+    unsigned long stride, unsigned long idx, real_t u1, real_t u2, real_t *B) {
+  B[0 * stride + idx] = u1 * u1;
+  B[1 * stride + idx] = u1 * u2;
+  B[2 * stride + idx] = u2 * u2;
 }
 
-ANY_DEVICE_INLINE void incompressible_euler_3d_compute_B(unsigned stride,
-                                                         unsigned idx,
-                                                         real_t norm,
+ANY_DEVICE_INLINE void incompressible_euler_3d_compute_B(unsigned long stride,
+                                                         unsigned long idx,
                                                          real_t u1,
                                                          real_t u2,
                                                          real_t u3,
                                                          real_t *B) {
-  B[0 * stride + idx] = norm * u1 * u1;
-  B[1 * stride + idx] = norm * u2 * u1;
-  B[2 * stride + idx] = norm * u2 * u2;
-  B[3 * stride + idx] = norm * u3 * u1;
-  B[4 * stride + idx] = norm * u3 * u2;
-  B[5 * stride + idx] = norm * u3 * u3;
+  B[0 * stride + idx] = u1 * u1;
+  B[1 * stride + idx] = u2 * u1;
+  B[2 * stride + idx] = u2 * u2;
+  B[3 * stride + idx] = u3 * u1;
+  B[4 * stride + idx] = u3 * u2;
+  B[5 * stride + idx] = u3 * u3;
 }
 
 ANY_DEVICE_INLINE void incompressible_euler_2d_compute_L(real_t k1,
                                                          real_t k2,
                                                          real_t absk2,
-                                                         unsigned stride_B,
-                                                         unsigned idx_B,
+                                                         unsigned long stride_B,
+                                                         unsigned long idx_B,
                                                          const complex_t *B_hat,
                                                          complex_t force1,
                                                          complex_t force2,
@@ -77,8 +72,8 @@ ANY_DEVICE_INLINE void incompressible_euler_3d_compute_L(real_t k1,
                                                          real_t k2,
                                                          real_t k3,
                                                          real_t absk2,
-                                                         unsigned stride_B,
-                                                         unsigned idx_B,
+                                                         unsigned long stride_B,
+                                                         unsigned long idx_B,
                                                          const complex_t *B_hat,
                                                          complex_t force1,
                                                          complex_t force2,

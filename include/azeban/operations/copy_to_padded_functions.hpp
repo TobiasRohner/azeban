@@ -9,11 +9,11 @@ namespace azeban {
 template <int Dim>
 ANY_DEVICE_INLINE bool
 pad_compact_dim(const zisa::array_view<complex_t, Dim> &dst,
-                int idx_dst,
-                int src_shape,
-                int i,
+                unsigned long idx_dst,
+                unsigned long src_shape,
+                unsigned long i,
                 const complex_t &pad_value,
-                int *i_src) {
+                unsigned long *i_src) {
   if (i < src_shape) {
     *i_src = i;
     return false;
@@ -25,12 +25,12 @@ pad_compact_dim(const zisa::array_view<complex_t, Dim> &dst,
 
 template <int Dim>
 ANY_DEVICE_INLINE bool pad_full_dim(const zisa::array_view<complex_t, Dim> &dst,
-                                    int idx_dst,
-                                    int src_shape,
-                                    int dst_shape,
-                                    int i,
+                                    unsigned long idx_dst,
+                                    unsigned long src_shape,
+                                    unsigned long dst_shape,
+                                    unsigned long i,
                                     const complex_t &pad_value,
-                                    int *i_src) {
+                                    unsigned long *i_src) {
   if (i < src_shape / 2 + 1) {
     *i_src = i;
     return false;
@@ -45,12 +45,12 @@ ANY_DEVICE_INLINE bool pad_full_dim(const zisa::array_view<complex_t, Dim> &dst,
 
 template <bool pad, bool compact, int Dim>
 ANY_DEVICE_INLINE bool pad_dim(const zisa::array_view<complex_t, Dim> &dst,
-                               int idx_dst,
-                               int src_shape,
-                               int dst_shape,
-                               int i,
+                               unsigned long idx_dst,
+                               unsigned long src_shape,
+                               unsigned long dst_shape,
+                               unsigned long i,
                                const complex_t &pad_value,
-                               int *i_src) {
+                               unsigned long *i_src) {
   if (pad) {
     if (compact) {
       return pad_compact_dim(dst, idx_dst, src_shape, i, pad_value, i_src);
