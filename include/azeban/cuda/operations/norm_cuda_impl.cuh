@@ -15,8 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef NNORM_CUDA_IMPL_H_
-#define NNORM_CUDA_IMPL_H_
+#ifndef AZEBAN_CUDA_OPERATIONS_NORM_CUDA_IMPL_HPP_
+#define AZEBAN_CUDA_OPERATIONS_NORM_CUDA_IMPL_HPP_
 
 #include "norm_cuda.hpp"
 #include <zisa/config.hpp>
@@ -42,8 +42,8 @@ __global__ void norm_cuda_kernel(zisa::array_const_view<Scalar, 1> in_data,
                                  real_t p) {
   extern __shared__ real_t sdata[];
 
-  unsigned tid = threadIdx.x;
-  unsigned i = blockIdx.x * blockDim.x * 2 + threadIdx.x;
+  zisa::int_t tid = threadIdx.x;
+  zisa::int_t i = blockIdx.x * blockDim.x * 2 + threadIdx.x;
   using zisa::abs;
   if (i >= in_data.shape(0)) {
     sdata[tid] = 0;
@@ -55,7 +55,7 @@ __global__ void norm_cuda_kernel(zisa::array_const_view<Scalar, 1> in_data,
   }
   __syncthreads();
 
-  for (unsigned s = blockDim.x / 2; s > 32; s >>= 1) {
+  for (zisa::int_t s = blockDim.x / 2; s > 32; s >>= 1) {
     if (tid < s) {
       sdata[tid] += sdata[tid + s];
     }
@@ -73,15 +73,15 @@ __global__ void norm_cuda_kernel(zisa::array_const_view<Scalar, 1> in_data,
 template <typename Scalar>
 real_t norm_cuda(const zisa::array_const_view<Scalar, 1> &data, real_t p) {
   const int thread_dims = 1024;
-  int block_dims
-      = zisa::div_up(static_cast<int>(data.shape(0)), 2 * thread_dims);
+  int block_dims = zisa::div_up(
+      data.shape(0), zisa::integer_cast<zisa::int_t>(2 * thread_dims));
   auto out_data = zisa::cuda_array<real_t, 1>(zisa::shape_t<1>(block_dims));
   norm_cuda_kernel<<<block_dims, thread_dims, thread_dims * sizeof(real_t)>>>(
       data, zisa::array_view<real_t, 1>(out_data), p);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
   while (block_dims > 1) {
-    block_dims = zisa::div_up(static_cast<int>(block_dims), 2 * thread_dims);
+    block_dims = zisa::div_up(block_dims, 2 * thread_dims);
     norm_cuda_kernel<<<block_dims, thread_dims, thread_dims * sizeof(real_t)>>>(
         zisa::array_const_view<real_t, 1>(out_data),
         zisa::array_view<real_t, 1>(out_data),

@@ -40,12 +40,11 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<2>(
   const unsigned stride = u.shape(1) * u.shape(2);
   const unsigned idx = i * u.shape(2) + j;
 
-  const real_t norm
-      = 1.0 / (zisa::pow<2>(grid.N_phys) * zisa::pow<2>(grid.N_phys_pad));
+  const real_t norm = 1.0 / (grid.N_phys * grid.N_phys_pad);
   if (i < u.shape(1) && j < u.shape(2)) {
-    const real_t u1 = u[0 * stride + idx];
-    const real_t u2 = u[1 * stride + idx];
-    incompressible_euler_2d_compute_B(stride, idx, norm, u1, u2, B.raw());
+    const real_t u1 = norm * u[0 * stride + idx];
+    const real_t u2 = norm * u[1 * stride + idx];
+    incompressible_euler_2d_compute_B(stride, idx, u1, u2, B.raw());
   }
 }
 
@@ -61,12 +60,12 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<3>(
   const unsigned idx = i * u.shape(2) * u.shape(3) + j * u.shape(3) + k;
 
   const real_t norm
-      = 1.0 / (zisa::pow<3>(grid.N_phys) * zisa::pow<3>(grid.N_phys_pad));
+      = 1.0 / (zisa::pow(grid.N_phys, 1.5) * zisa::pow(grid.N_phys_pad, 1.5));
   if (i < u.shape(1) && j < u.shape(2) && k < u.shape(3)) {
-    const real_t u1 = u[0 * stride + idx];
-    const real_t u2 = u[1 * stride + idx];
-    const real_t u3 = u[2 * stride + idx];
-    incompressible_euler_3d_compute_B(stride, idx, norm, u1, u2, u3, B.raw());
+    const real_t u1 = norm * u[0 * stride + idx];
+    const real_t u2 = norm * u[1 * stride + idx];
+    const real_t u3 = norm * u[2 * stride + idx];
+    incompressible_euler_3d_compute_B(stride, idx, u1, u2, u3, B.raw());
   }
 }
 
@@ -86,15 +85,13 @@ __global__ void incompressible_euler_compute_B_tracer_cuda_kernel<2>(
   const unsigned stride = u.shape(1) * u.shape(2);
   const unsigned idx = i * u.shape(2) + j;
 
-  const real_t norm
-      = 1.0 / (zisa::pow<2>(grid.N_phys) * zisa::pow<2>(grid.N_phys_pad));
+  const real_t norm = 1.0 / (grid.N_phys * grid.N_phys_pad);
   if (i < u.shape(1) && j < u.shape(2)) {
-    const real_t u1 = u[0 * stride + idx];
-    const real_t u2 = u[1 * stride + idx];
-    const real_t rho = u[2 * stride + idx];
-    incompressible_euler_2d_compute_B(stride, idx, norm, u1, u2, B.raw());
-    advection_2d_compute_B(
-        stride, idx, norm, rho, u1, u2, B.raw() + 3 * stride);
+    const real_t u1 = norm * u[0 * stride + idx];
+    const real_t u2 = norm * u[1 * stride + idx];
+    const real_t rho = norm * u[2 * stride + idx];
+    incompressible_euler_2d_compute_B(stride, idx, u1, u2, B.raw());
+    advection_2d_compute_B(stride, idx, rho, u1, u2, B.raw() + 3 * stride);
   }
 }
 
@@ -110,15 +107,14 @@ __global__ void incompressible_euler_compute_B_tracer_cuda_kernel<3>(
   const unsigned idx = i * u.shape(2) * u.shape(3) + j * u.shape(3) + k;
 
   const real_t norm
-      = 1.0 / (zisa::pow<3>(grid.N_phys) * zisa::pow<3>(grid.N_phys_pad));
+      = 1.0 / (zisa::pow(grid.N_phys, 1.5) * zisa::pow(grid.N_phys_pad, 1.5));
   if (i < u.shape(1) && j < u.shape(2) && k < u.shape(3)) {
-    const real_t u1 = u[0 * stride + idx];
-    const real_t u2 = u[1 * stride + idx];
-    const real_t u3 = u[2 * stride + idx];
-    const real_t rho = u[3 * stride + idx];
-    incompressible_euler_3d_compute_B(stride, idx, norm, u1, u2, u3, B.raw());
-    advection_3d_compute_B(
-        stride, idx, norm, rho, u1, u2, u3, B.raw() + 6 * stride);
+    const real_t u1 = norm * u[0 * stride + idx];
+    const real_t u2 = norm * u[1 * stride + idx];
+    const real_t u3 = norm * u[2 * stride + idx];
+    const real_t rho = norm * u[3 * stride + idx];
+    incompressible_euler_3d_compute_B(stride, idx, u1, u2, u3, B.raw());
+    advection_3d_compute_B(stride, idx, rho, u1, u2, u3, B.raw() + 6 * stride);
   }
 }
 

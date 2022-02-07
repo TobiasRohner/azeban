@@ -27,7 +27,7 @@ template <typename Scalar>
 __global__ void axpy_cuda_kernel(Scalar a,
                                  zisa::array_const_view<Scalar, 1> x,
                                  zisa::array_view<Scalar, 1> y) {
-  const int i = blockIdx.x * blockDim.x + threadIdx.x;
+  const zisa::int_t i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < x.shape(0)) {
     y[i] += a * x[i];
   }
@@ -40,7 +40,7 @@ void axpy_cuda(const Scalar &a,
   assert(x.shape() == y.shape());
   const int thread_dims = 1024;
   const int block_dims
-      = zisa::div_up(static_cast<int>(x.shape(0)), thread_dims);
+      = zisa::div_up(x.shape(0), zisa::integer_cast<zisa::int_t>(thread_dims));
   axpy_cuda_kernel<<<block_dims, thread_dims>>>(a, x, y);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;

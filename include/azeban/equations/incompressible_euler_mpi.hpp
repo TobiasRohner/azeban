@@ -176,19 +176,19 @@ private:
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const auto shape_phys = grid_.shape_phys(1);
-    const unsigned stride_B = B_hat_.shape(1) * B_hat_.shape(2);
-    const int nx = zisa::integer_cast<int>(u_hat.shape(1));
-    const int ny = zisa::integer_cast<int>(u_hat.shape(2));
+    const unsigned long stride_B = B_hat_.shape(1) * B_hat_.shape(2);
+    const long nx = zisa::integer_cast<long>(u_hat.shape(1));
+    const long ny = zisa::integer_cast<long>(u_hat.shape(2));
 #pragma omp parallel for collapse(2)
-    for (int i = 0; i < nx; ++i) {
-      for (int j = 0; j < ny; ++j) {
-        const unsigned idx_B = i * B_hat_.shape(2) + j;
-        int i_ = i_base + i;
-        if (i_ >= zisa::integer_cast<int>(shape_phys[1] / 2 + 1)) {
+    for (long i = 0; i < nx; ++i) {
+      for (long j = 0; j < ny; ++j) {
+        const unsigned long idx_B = i * B_hat_.shape(2) + j;
+        long i_ = i_base + i;
+        if (i_ >= zisa::integer_cast<long>(shape_phys[1] / 2 + 1)) {
           i_ -= shape_phys[1];
         }
-        int j_ = j_base + j;
-        if (j_ >= zisa::integer_cast<int>(shape_phys[2] / 2 + 1)) {
+        long j_ = j_base + j;
+        if (j_ >= zisa::integer_cast<long>(shape_phys[2] / 2 + 1)) {
           j_ -= shape_phys[2];
         }
         const real_t k1 = 2 * zisa::pi * i_;
@@ -315,27 +315,27 @@ private:
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const zisa::int_t k_base = grid_.k_fourier(0, comm_);
     const auto shape_phys = grid_.shape_phys(1);
-    const unsigned stride_B
+    const unsigned long stride_B
         = B_hat_.shape(1) * B_hat_.shape(2) * B_hat_.shape(3);
-    const int nx = zisa::integer_cast<int>(u_hat.shape(1));
-    const int ny = zisa::integer_cast<int>(u_hat.shape(2));
-    const int nz = zisa::integer_cast<int>(u_hat.shape(3));
+    const long nx = zisa::integer_cast<long>(u_hat.shape(1));
+    const long ny = zisa::integer_cast<long>(u_hat.shape(2));
+    const long nz = zisa::integer_cast<long>(u_hat.shape(3));
 #pragma omp parallel for collapse(3)
-    for (int i = 0; i < nx; ++i) {
-      for (int j = 0; j < ny; ++j) {
-        for (int k = 0; k < nz; ++k) {
-          const unsigned idx_B
+    for (long i = 0; i < nx; ++i) {
+      for (long j = 0; j < ny; ++j) {
+        for (long k = 0; k < nz; ++k) {
+          const unsigned long idx_B
               = i * B_hat_.shape(2) * B_hat_.shape(3) + j * B_hat_.shape(3) + k;
-          int i_ = i_base + i;
-          int j_ = j_base + j;
-          int k_ = k_base + k;
-          if (i_ >= zisa::integer_cast<int>(shape_phys[1] / 2 + 1)) {
+          long i_ = i_base + i;
+          long j_ = j_base + j;
+          long k_ = k_base + k;
+          if (i_ >= zisa::integer_cast<long>(shape_phys[1] / 2 + 1)) {
             i_ -= shape_phys[1];
           }
-          if (j_ >= zisa::integer_cast<int>(shape_phys[2] / 2 + 1)) {
+          if (j_ >= zisa::integer_cast<long>(shape_phys[2] / 2 + 1)) {
             j_ -= shape_phys[2];
           }
-          if (k_ >= zisa::integer_cast<int>(shape_phys[3] / 2 + 1)) {
+          if (k_ >= zisa::integer_cast<long>(shape_phys[3] / 2 + 1)) {
             k_ -= shape_phys[3];
           }
           const real_t k1 = 2 * zisa::pi * i_;

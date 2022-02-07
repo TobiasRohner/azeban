@@ -392,22 +392,20 @@ void IncompressibleEuler_MPI_Base<Dim>::compute_B_xyz_trans() {
 
 template <>
 void IncompressibleEuler_MPI_Base<2>::compute_B_xyz_trans_cpu() {
-  const real_t norm
-      = 1.0
-        / (zisa::pow<dim_v>(grid_.N_phys) * zisa::pow<dim_v>(grid_.N_phys_pad));
+  const real_t norm = 1.0 / (grid_.N_phys * grid_.N_phys_pad);
   const unsigned stride
       = zisa::product(u_xyz_trans_.shape()) / u_xyz_trans_.shape(0);
   for (zisa::int_t i = 0; i < u_xyz_trans_.shape(1); ++i) {
     for (zisa::int_t j = 0; j < u_xyz_trans_.shape(2); ++j) {
       const unsigned idx = i * u_xyz_trans_.shape(2) + j;
-      const real_t u1 = u_xyz_trans_(0, i, j);
-      const real_t u2 = u_xyz_trans_(1, i, j);
+      const real_t u1 = norm * u_xyz_trans_(0, i, j);
+      const real_t u2 = norm * u_xyz_trans_(1, i, j);
       incompressible_euler_2d_compute_B(
-          stride, idx, norm, u1, u2, B_xyz_trans_.raw());
+          stride, idx, u1, u2, B_xyz_trans_.raw());
       if (has_tracer_) {
-        const real_t rho = u_xyz_trans_(2, i, j);
+        const real_t rho = norm * u_xyz_trans_(2, i, j);
         advection_2d_compute_B(
-            stride, idx, norm, rho, u1, u2, B_xyz_trans_.raw() + 3 * stride);
+            stride, idx, rho, u1, u2, B_xyz_trans_.raw() + 3 * stride);
       }
     }
   }
@@ -415,9 +413,9 @@ void IncompressibleEuler_MPI_Base<2>::compute_B_xyz_trans_cpu() {
 
 template <>
 void IncompressibleEuler_MPI_Base<3>::compute_B_xyz_trans_cpu() {
-  const real_t norm
-      = 1.0
-        / (zisa::pow<dim_v>(grid_.N_phys) * zisa::pow<dim_v>(grid_.N_phys_pad));
+  const real_t norm = 1.0
+                      / (zisa::pow<dim_v>(zisa::sqrt(grid_.N_phys))
+                         * zisa::pow<dim_v>(zisa::sqrt(grid_.N_phys_pad)));
   const unsigned stride
       = zisa::product(u_xyz_trans_.shape()) / u_xyz_trans_.shape(0);
   for (zisa::int_t i = 0; i < u_xyz_trans_.shape(1); ++i) {
@@ -425,21 +423,15 @@ void IncompressibleEuler_MPI_Base<3>::compute_B_xyz_trans_cpu() {
       for (zisa::int_t k = 0; k < u_xyz_trans_.shape(3); ++k) {
         const unsigned idx = i * u_xyz_trans_.shape(2) * u_xyz_trans_.shape(3)
                              + j * u_xyz_trans_.shape(3) + k;
-        const real_t u1 = u_xyz_trans_(0, i, j, k);
-        const real_t u2 = u_xyz_trans_(1, i, j, k);
-        const real_t u3 = u_xyz_trans_(2, i, j, k);
+        const real_t u1 = norm * u_xyz_trans_(0, i, j, k);
+        const real_t u2 = norm * u_xyz_trans_(1, i, j, k);
+        const real_t u3 = norm * u_xyz_trans_(2, i, j, k);
         incompressible_euler_3d_compute_B(
-            stride, idx, norm, u1, u2, u3, B_xyz_trans_.raw());
+            stride, idx, u1, u2, u3, B_xyz_trans_.raw());
         if (has_tracer_) {
-          const real_t rho = u_xyz_trans_(3, i, j, k);
-          advection_3d_compute_B(stride,
-                                 idx,
-                                 norm,
-                                 rho,
-                                 u1,
-                                 u2,
-                                 u3,
-                                 B_xyz_trans_.raw() + 6 * stride);
+          const real_t rho = norm * u_xyz_trans_(3, i, j, k);
+          advection_3d_compute_B(
+              stride, idx, rho, u1, u2, u3, B_xyz_trans_.raw() + 6 * stride);
         }
       }
     }

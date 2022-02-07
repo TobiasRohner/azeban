@@ -159,22 +159,21 @@ private:
     AZEBAN_PROFILE_START("IncompressibleEuler::computeB");
     if (device_ == zisa::device_type::cpu) {
       const real_t norm = 1.0
-                          / (zisa::pow<dim_v>(grid_.N_phys)
-                             * zisa::pow<dim_v>(grid_.N_phys_pad));
+                          / (zisa::pow<dim_v>(zisa::sqrt(grid_.N_phys))
+                             * zisa::pow<dim_v>(zisa::sqrt(grid_.N_phys_pad)));
       if constexpr (dim_v == 2) {
         const unsigned stride = grid_.N_phys_pad * grid_.N_phys_pad;
 #pragma omp parallel for collapse(2)
         for (zisa::int_t i = 0; i < u_.shape(1); ++i) {
           for (zisa::int_t j = 0; j < u_.shape(2); ++j) {
             const unsigned idx = i * grid_.N_phys_pad + j;
-            const real_t u1 = u_(0, i, j);
-            const real_t u2 = u_(1, i, j);
-            incompressible_euler_2d_compute_B(
-                stride, idx, norm, u1, u2, B_.raw());
+            const real_t u1 = norm * u_(0, i, j);
+            const real_t u2 = norm * u_(1, i, j);
+            incompressible_euler_2d_compute_B(stride, idx, u1, u2, B_.raw());
             if (has_tracer_) {
-              const real_t rho = u_(2, i, j);
+              const real_t rho = norm * u_(2, i, j);
               advection_2d_compute_B(
-                  stride, idx, norm, rho, u1, u2, B_.raw() + 3 * stride);
+                  stride, idx, rho, u1, u2, B_.raw() + 3 * stride);
             }
           }
         }
@@ -187,15 +186,15 @@ private:
             for (zisa::int_t k = 0; k < u_.shape(3); ++k) {
               const unsigned idx = i * grid_.N_phys_pad * grid_.N_phys_pad
                                    + j * grid_.N_phys_pad + k;
-              const real_t u1 = u_(0, i, j, k);
-              const real_t u2 = u_(1, i, j, k);
-              const real_t u3 = u_(2, i, j, k);
+              const real_t u1 = norm * u_(0, i, j, k);
+              const real_t u2 = norm * u_(1, i, j, k);
+              const real_t u3 = norm * u_(2, i, j, k);
               incompressible_euler_3d_compute_B(
-                  stride, idx, norm, u1, u2, u3, B_.raw());
+                  stride, idx, u1, u2, u3, B_.raw());
               if (has_tracer_) {
-                const real_t rho = u_(3, i, j, k);
+                const real_t rho = norm * u_(3, i, j, k);
                 advection_3d_compute_B(
-                    stride, idx, norm, rho, u1, u2, u3, B_.raw() + 6 * stride);
+                    stride, idx, rho, u1, u2, u3, B_.raw() + 6 * stride);
               }
             }
           }

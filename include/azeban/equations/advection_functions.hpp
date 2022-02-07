@@ -25,26 +25,24 @@ namespace azeban {
 
 ANY_DEVICE_INLINE void advection_2d_compute_B(unsigned stride,
                                               unsigned idx,
-                                              real_t norm,
                                               real_t rho,
                                               real_t u1,
                                               real_t u2,
                                               real_t *B) {
-  B[0 * stride + idx] = norm * rho * u1;
-  B[1 * stride + idx] = norm * rho * u2;
+  B[0 * stride + idx] = rho * u1;
+  B[1 * stride + idx] = rho * u2;
 }
 
 ANY_DEVICE_INLINE void advection_3d_compute_B(unsigned stride,
                                               unsigned idx,
-                                              real_t norm,
                                               real_t rho,
                                               real_t u1,
                                               real_t u2,
                                               real_t u3,
                                               real_t *B) {
-  B[0 * stride + idx] = norm * rho * u1;
-  B[1 * stride + idx] = norm * rho * u2;
-  B[2 * stride + idx] = norm * rho * u3;
+  B[0 * stride + idx] = rho * u1;
+  B[1 * stride + idx] = rho * u2;
+  B[2 * stride + idx] = rho * u3;
 }
 
 ANY_DEVICE_INLINE void advection_2d(real_t k1,
