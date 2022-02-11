@@ -1,5 +1,6 @@
 target_sources(azeban_generic_obj
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/profiler.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/simulation.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/simulation_factory.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/simulation_mpi_factory.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/run_from_config.cpp

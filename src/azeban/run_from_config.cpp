@@ -104,15 +104,15 @@ static void run_from_config_impl(const nlohmann::json &config) {
     std::filesystem::create_directories(sample_folder);
   }
 
+  auto u_host
+      = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
+  auto u_hat_host
+      = grid.make_array_fourier(simulation.n_vars(), zisa::device_type::cpu);
+  auto fft = make_fft<dim_v>(u_hat_host, u_host);
+
   for (zisa::int_t sample = sample_idx_start;
        sample < sample_idx_start + num_samples;
        ++sample) {
-    auto u_host
-        = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
-    auto u_hat_host
-        = grid.make_array_fourier(simulation.n_vars(), zisa::device_type::cpu);
-    auto fft = make_fft<dim_v>(u_hat_host, u_host);
-
     simulation.reset();
     initializer->initialize(simulation.u());
 
@@ -269,21 +269,21 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
     }
   }
 
+  auto u_host
+      = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu, comm);
+  auto u_device = grid.make_array_phys(
+      simulation.n_vars(), zisa::device_type::cuda, comm);
+  auto u_hat_device = grid.make_array_fourier(
+      simulation.n_vars(), zisa::device_type::cuda, comm);
+  auto fft = make_fft_mpi<dim_v>(u_hat_device,
+                                 u_device,
+                                 comm,
+                                 FFT_FORWARD | FFT_BACKWARD,
+                                 simulation.equation()->get_fft_work_area());
+
   for (zisa::int_t sample = sample_idx_start;
        sample < sample_idx_start + num_samples;
        ++sample) {
-    auto u_host = grid.make_array_phys(
-        simulation.n_vars(), zisa::device_type::cpu, comm);
-    auto u_device = grid.make_array_phys(
-        simulation.n_vars(), zisa::device_type::cuda, comm);
-    auto u_hat_device = grid.make_array_fourier(
-        simulation.n_vars(), zisa::device_type::cuda, comm);
-    auto fft = make_fft_mpi<dim_v>(u_hat_device,
-                                   u_device,
-                                   comm,
-                                   FFT_FORWARD | FFT_BACKWARD,
-                                   simulation.equation()->get_fft_work_area());
-
     simulation.reset();
     zisa::array<real_t, dim_v + 1> u_init;
     if (rank == 0) {
