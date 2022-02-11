@@ -56,6 +56,7 @@ public:
 #endif
 
   void reset() { time_ = 0; }
+  void set_time(real_t t) { time_ = t; }
 
   real_t time() const { return time_; }
   zisa::array_view<complex_t, dim_v + 1> u() { return u_; }

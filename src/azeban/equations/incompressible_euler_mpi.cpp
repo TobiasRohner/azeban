@@ -210,8 +210,8 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
 }
 
 template <int Dim>
-void *IncompressibleEuler_MPI_Base<Dim>::get_fft_work_area() {
-  return ws_fft_.get();
+void *IncompressibleEuler_MPI_Base<Dim>::get_fft_work_area() const {
+  return const_cast<void *>(ws_fft_.get());
 }
 
 template <>

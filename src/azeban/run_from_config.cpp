@@ -1,17 +1,14 @@
 #include <azeban/init/initializer_factory.hpp>
-#include <azeban/operations/fft_factory.hpp>
+#include <azeban/io/netcdf_snapshot_writer.hpp>
 #include <azeban/operations/fft_mpi_factory.hpp>
 #include <azeban/run_from_config.hpp>
 #include <azeban/sequence_factory.hpp>
 #include <azeban/simulation.hpp>
 #include <azeban/simulation_factory.hpp>
 #include <cstdlib>
-#include <filesystem>
 #include <fmt/core.h>
 #include <random>
 #include <zisa/cuda/memory/cuda_array.hpp>
-#include <zisa/io/netcdf_file.hpp>
-#include <zisa/io/netcdf_serial_writer.hpp>
 #include <zisa/memory/array.hpp>
 #if AZEBAN_HAS_MPI
 #include <azeban/mpi_types.hpp>
@@ -20,36 +17,6 @@
 #endif
 
 namespace azeban {
-
-template <int Dim>
-static zisa::NetCDFSerialWriter
-make_nc_writer(const std::string &filename, const Simulation<Dim> &simulation) {
-  const Grid<Dim> &grid = simulation.grid();
-
-  using nc_dim_t = std::tuple<std::string, size_t>;
-  using nc_var_t
-      = std::tuple<std::string, std::vector<std::string>, zisa::ErasedDataType>;
-  std::vector<nc_dim_t> dims;
-  std::vector<nc_var_t> vars;
-
-  dims.emplace_back("N", grid.N_phys);
-
-  std::vector<std::string> vardim(Dim, "N");
-
-  vars.emplace_back("u", vardim, zisa::erase_data_type<real_t>());
-  if (Dim > 1) {
-    vars.emplace_back("v", vardim, zisa::erase_data_type<real_t>());
-  }
-  if (Dim > 2) {
-    vars.emplace_back("w", vardim, zisa::erase_data_type<real_t>());
-  }
-  if (simulation.n_vars() == Dim + 1) {
-    vars.emplace_back("rho", vardim, zisa::erase_data_type<real_t>());
-  }
-
-  zisa::NetCDFFileStructure file_structure(dims, vars);
-  return zisa::NetCDFSerialWriter(filename, file_structure);
-}
 
 template <int dim_v>
 static void run_from_config_impl(const nlohmann::json &config) {
@@ -96,92 +63,20 @@ static void run_from_config_impl(const nlohmann::json &config) {
   }
 
   auto simulation = make_simulation<dim_v>(config);
-  const auto &grid = simulation.grid();
   auto initializer = make_initializer<dim_v>(config, rng);
-
-  std::filesystem::path sample_folder = output;
-  if (!std::filesystem::exists(sample_folder)) {
-    std::filesystem::create_directories(sample_folder);
-  }
-
-  auto u_host
-      = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
-  auto u_hat_host
-      = grid.make_array_fourier(simulation.n_vars(), zisa::device_type::cpu);
-  auto fft = make_fft<dim_v>(u_hat_host, u_host);
+  NetCDFSnapshotWriter<dim_v> writer(output);
 
   for (zisa::int_t sample = sample_idx_start;
        sample < sample_idx_start + num_samples;
        ++sample) {
     simulation.reset();
+    simulation.set_time(time_offset);
     initializer->initialize(simulation.u());
 
     for (real_t t : snapshots) {
       simulation.simulate_until(t);
       fmt::print("Sample {}, Time {}\n", sample, t);
-
-      zisa::copy(u_hat_host, simulation.u());
-      fft->backward();
-      for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
-        u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
-      }
-      const std::string name = "sample_" + std::to_string(sample) + "_time_"
-                               + std::to_string(t + time_offset) + ".nc";
-      auto writer = make_nc_writer<dim_v>(output + "/" + name, simulation);
-      if (dim_v == 1) {
-        zisa::shape_t<1> slice_shape(grid.N_phys);
-        zisa::array_const_view<real_t, 1> u(
-            slice_shape, u_host.raw(), zisa::device_type::cpu);
-        zisa::save(writer, u, "u");
-        if (simulation.n_vars() == 2) {
-          zisa::array_const_view<real_t, 1> rho(
-              slice_shape,
-              u_host.raw() + zisa::product(slice_shape),
-              zisa::device_type::cpu);
-          zisa::save(writer, rho, "rho");
-        }
-      }
-      if (dim_v == 2) {
-        zisa::shape_t<2> slice_shape(grid.N_phys, grid.N_phys);
-        zisa::array_const_view<real_t, 2> u(
-            slice_shape, u_host.raw(), zisa::device_type::cpu);
-        zisa::array_const_view<real_t, 2> v(slice_shape,
-                                            u_host.raw()
-                                                + zisa::product(slice_shape),
-                                            zisa::device_type::cpu);
-        zisa::save(writer, u, "u");
-        zisa::save(writer, v, "v");
-        if (simulation.n_vars() == 3) {
-          zisa::array_const_view<real_t, 2> rho(
-              slice_shape,
-              u_host.raw() + 2 * zisa::product(slice_shape),
-              zisa::device_type::cpu);
-          zisa::save(writer, rho, "rho");
-        }
-      }
-      if (dim_v == 3) {
-        zisa::shape_t<3> slice_shape(grid.N_phys, grid.N_phys, grid.N_phys);
-        zisa::array_const_view<real_t, 3> u(
-            slice_shape, u_host.raw(), zisa::device_type::cpu);
-        zisa::array_const_view<real_t, 3> v(slice_shape,
-                                            u_host.raw()
-                                                + zisa::product(slice_shape),
-                                            zisa::device_type::cpu);
-        zisa::array_const_view<real_t, 3> w(
-            slice_shape,
-            u_host.raw() + 2 * zisa::product(slice_shape),
-            zisa::device_type::cpu);
-        zisa::save(writer, u, "u");
-        zisa::save(writer, v, "v");
-        zisa::save(writer, w, "w");
-        if (simulation.n_vars() == 4) {
-          zisa::array_const_view<real_t, 3> rho(
-              slice_shape,
-              u_host.raw() + 3 * zisa::product(slice_shape),
-              zisa::device_type::cpu);
-          zisa::save(writer, rho, "rho");
-        }
-      }
+      writer.write_snapshot(simulation, sample);
     }
   }
 }
@@ -261,13 +156,7 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
   auto simulation = make_simulation_mpi<dim_v>(config, comm);
   const auto &grid = simulation.grid();
   auto initializer = make_initializer<dim_v>(config, rng);
-
-  if (rank == 0) {
-    std::filesystem::path sample_folder = output;
-    if (!std::filesystem::exists(sample_folder)) {
-      std::filesystem::create_directories(sample_folder);
-    }
-  }
+  NetCDFSnapshotWriter<dim_v> writer(output);
 
   auto u_host
       = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu, comm);
@@ -278,13 +167,14 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
   auto fft = make_fft_mpi<dim_v>(u_hat_device,
                                  u_device,
                                  comm,
-                                 FFT_FORWARD | FFT_BACKWARD,
+                                 FFT_FORWARD,
                                  simulation.equation()->get_fft_work_area());
 
   for (zisa::int_t sample = sample_idx_start;
        sample < sample_idx_start + num_samples;
        ++sample) {
     simulation.reset();
+    simulation.set_time(time_offset);
     zisa::array<real_t, dim_v + 1> u_init;
     if (rank == 0) {
       u_init
@@ -329,85 +219,7 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
       if (rank == 0) {
         fmt::print("Sample: {}, Time: {}\n", sample, t);
       }
-
-      zisa::copy(u_hat_device, simulation.u());
-      fft->backward();
-      zisa::copy(u_host, u_device);
-      for (zisa::int_t i = 0; i < zisa::product(u_host.shape()); ++i) {
-        u_host[i] /= zisa::pow<dim_v>(grid.N_phys);
-      }
-      for (zisa::int_t i = 0; i < simulation.n_vars(); ++i) {
-        MPI_Igatherv(u_host.raw() + i * n_elems_per_component_loc,
-                     cnts[rank],
-                     mpi_type<real_t>(),
-                     u_init.raw() + i * n_elems_per_component_glob,
-                     cnts.data(),
-                     displs.data(),
-                     mpi_type<real_t>(),
-                     0,
-                     comm,
-                     &reqs[i]);
-      }
-      MPI_Waitall(simulation.n_vars(), reqs.data(), MPI_STATUSES_IGNORE);
-      if (rank == 0) {
-        const std::string name = "sample_" + std::to_string(sample) + "_time_"
-                                 + std::to_string(t + time_offset) + ".nc";
-        auto writer = make_nc_writer<dim_v>(output + "/" + name, simulation);
-        if (dim_v == 1) {
-          zisa::shape_t<1> slice_shape(grid.N_phys);
-          zisa::array_const_view<real_t, 1> u(
-              slice_shape, u_init.raw(), zisa::device_type::cpu);
-          zisa::save(writer, u, "u");
-          if (simulation.n_vars() == 2) {
-            zisa::array_const_view<real_t, 1> rho(
-                slice_shape,
-                u_init.raw() + zisa::product(slice_shape),
-                zisa::device_type::cpu);
-            zisa::save(writer, rho, "rho");
-          }
-        }
-        if (dim_v == 2) {
-          zisa::shape_t<2> slice_shape(grid.N_phys, grid.N_phys);
-          zisa::array_const_view<real_t, 2> u(
-              slice_shape, u_init.raw(), zisa::device_type::cpu);
-          zisa::array_const_view<real_t, 2> v(slice_shape,
-                                              u_init.raw()
-                                                  + zisa::product(slice_shape),
-                                              zisa::device_type::cpu);
-          zisa::save(writer, u, "u");
-          zisa::save(writer, v, "v");
-          if (simulation.n_vars() == 3) {
-            zisa::array_const_view<real_t, 2> rho(
-                slice_shape,
-                u_init.raw() + 2 * zisa::product(slice_shape),
-                zisa::device_type::cpu);
-            zisa::save(writer, rho, "rho");
-          }
-        }
-        if (dim_v == 3) {
-          zisa::shape_t<3> slice_shape(grid.N_phys, grid.N_phys, grid.N_phys);
-          zisa::array_const_view<real_t, 3> u(
-              slice_shape, u_init.raw(), zisa::device_type::cpu);
-          zisa::array_const_view<real_t, 3> v(slice_shape,
-                                              u_init.raw()
-                                                  + zisa::product(slice_shape),
-                                              zisa::device_type::cpu);
-          zisa::array_const_view<real_t, 3> w(
-              slice_shape,
-              u_init.raw() + 2 * zisa::product(slice_shape),
-              zisa::device_type::cpu);
-          zisa::save(writer, u, "u");
-          zisa::save(writer, v, "v");
-          zisa::save(writer, w, "w");
-          if (simulation.n_vars() == 4) {
-            zisa::array_const_view<real_t, 3> rho(
-                slice_shape,
-                u_init.raw() + 3 * zisa::product(slice_shape),
-                zisa::device_type::cpu);
-            zisa::save(writer, rho, "rho");
-          }
-        }
-      }
+      writer.write_snapshot(simulation, sample, comm);
     }
   }
 }

@@ -39,7 +39,7 @@ public:
 
   virtual int n_vars() const override { return dim_v + (has_tracer_ ? 1 : 0); }
 
-  virtual void *get_fft_work_area() override;
+  virtual void *get_fft_work_area() const override;
 
 protected:
   using super::grid_;

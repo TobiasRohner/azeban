@@ -1,8 +1,8 @@
 {
-  "output": "taylor_green_3D_N32_NoForcing_T5.0",
+  "output": "taylor_green_3D_N64_NoForcing_T5.0",
   "device": "cuda",
   "dimension": 3,
-  "num_samples": 32,
+  "num_samples": 1,
   "seed": 1,
   "time": 5,
   "snapshots": {
@@ -11,7 +11,7 @@
     "n": 50
   },
   "grid": {
-    "N_phys": 32,
+    "N_phys": 64,
     "N_phys_pad": ""
   },
   "equation": {
