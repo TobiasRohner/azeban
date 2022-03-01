@@ -351,6 +351,29 @@ REGISTER_3D_TEST_CASE(2, false, false, true, zisa::device_type::cuda);
 #undef REGISTER_2D_TEST_CASE
 #undef REGISTER_3D_TEST_CASE
 
+TEST_CASE("cuFFT accuracy", "[operations][fft][this]") {
+  std::cout << "TESTING: cuFFT accuracy [operations][fft]"
+            << std::endl;
+  azeban::Grid<2> grid(1024);
+  auto h_u = grid.make_array_phys_pad(1, zisa::device_type::cpu);
+  auto h_u_hat = grid.make_array_fourier_pad(1, zisa::device_type::cpu);
+  auto d_u = grid.make_array_phys_pad(1, zisa::device_type::cuda);
+  auto d_u_hat = grid.make_array_fourier_pad(1, zisa::device_type::cuda);
+  auto fft = azeban::make_fft<2>(d_u_hat, d_u);
+  zisa::fill(h_u_hat, azeban::complex_t(0));
+  zisa::copy(d_u_hat, h_u_hat);
+  fft->backward();
+  zisa::copy(h_u, d_u);
+  azeban::real_t val = 0;
+  for (azeban::real_t u : h_u) {
+    const azeban::real_t mag = std::fabs(u);
+    if (mag > val) {
+      val = mag;
+    }
+  }
+  std::cout << "Maximum error is " << val << std::endl;
+}
+
 #if AZEBAN_HAS_MPI
 TEST_CASE("cuFFT MPI 2d scalar valued data", "[operations][fft][mpi]") {
   std::cout << "TESTING: cuFFT MPI 2d scalar valued data [operations][fft][mpi]"

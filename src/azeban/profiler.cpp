@@ -114,7 +114,7 @@ std::string Profiler::summary() {
     StageSummary &summ = stage_summ.back();
     summ.percentage
         = static_cast<real_t>(stage.elapsed.count()) / elapsed.count();
-    summ.percentage_str = fmt::format("{}%", 100 * summ.percentage);
+    summ.percentage_str = fmt::format("{:.3f}%", 100 * summ.percentage);
     summ.name = stage.name;
     summ.num_calls = fmt::format("{}", stage.num_calls);
     summ.elapsed_total = fmt::format("{}", stage.elapsed);

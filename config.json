@@ -1,21 +1,21 @@
 {
-  "output": "taylor_green_3D_N64_NoForcing_T5.0",
-  "device": "cuda",
+  "output": "taylor_green_3D_N128_NoForcing_T0.1_MPI_Naive_test",
+  "device": "cpu",
   "dimension": 3,
   "num_samples": 1,
   "seed": 1,
-  "time": 5,
+  "time": 0.1,
   "snapshots": {
     "start": 0,
-    "stop": 5,
-    "n": 50
+    "stop": 0.1,
+    "n": 10
   },
   "grid": {
-    "N_phys": 64,
+    "N_phys": 128,
     "N_phys_pad": ""
   },
   "equation": {
-    "name": "Euler",
+    "name": "Euler Naive",
     "visc": {
       "type": "Quadratic",
       "eps": 0.05
