@@ -19,6 +19,7 @@
 #define MPI_TYPES_H_
 
 #include <azeban/complex.hpp>
+#include <zisa/memory/shape.hpp>
 #include <mpi.h>
 
 namespace azeban {
@@ -99,6 +100,21 @@ template <typename T>
 struct MPI_Type<Complex<T>> {
   MPI_Type() {
     MPI_Type_contiguous(2, mpi_type<T>(), &type);
+    MPI_Type_commit(&type);
+  }
+
+  ~MPI_Type() {
+    // Not allowed to free the type because this destructor will be called after
+    // MPI_Finalize() MPI_Type_free(&type);
+  }
+
+  MPI_Datatype type;
+};
+
+template <int n_dims, typename Int>
+struct MPI_Type<zisa::shape_t<n_dims, Int>> {
+  MPI_Type() {
+    MPI_Type_contiguous(n_dims, mpi_type<Int>(), &type);
     MPI_Type_commit(&type);
   }
 
