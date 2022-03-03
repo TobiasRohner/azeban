@@ -184,7 +184,8 @@ void Transpose<Dim>::preprocess() {
   }
 #if ZISA_HAS_CUDA
   else if (location_ == zisa::device_type::cuda) {
-    transpose_cuda_preprocess(from_, sendbuf_, from_shapes_.get(), to_shapes_.get(), rank_);
+    transpose_cuda_preprocess(
+        from_, sendbuf_, from_shapes_.get(), to_shapes_.get(), rank_);
   }
 #endif
   AZEBAN_PROFILE_STOP("Transpose::preprocess");
@@ -196,25 +197,27 @@ void Transpose<Dim>::communicate() {
   // TODO: Use GPUDirect
   if (location_ == zisa::device_type::cpu) {
     MPI_Alltoall(sendbuf_.raw(),
-		 sendbuf_.size() / size_,
-		 mpi_type<complex_t>(),
-		 recvbuf_.raw(),
-		 recvbuf_.size() / size_,
-		 mpi_type<complex_t>(),
-		 comm_);
+                 sendbuf_.size() / size_,
+                 mpi_type<complex_t>(),
+                 recvbuf_.raw(),
+                 recvbuf_.size() / size_,
+                 mpi_type<complex_t>(),
+                 comm_);
   }
 #if ZISA_HAS_CUDA
   else if (location_ == zisa::device_type::cuda) {
-    zisa::array<complex_t, Dim + 2> sendbuf(sendbuf_.shape(), zisa::device_type::cpu);
-    zisa::array<complex_t, Dim + 2> recvbuf(recvbuf_.shape(), zisa::device_type::cpu);
+    zisa::array<complex_t, Dim + 2> sendbuf(sendbuf_.shape(),
+                                            zisa::device_type::cpu);
+    zisa::array<complex_t, Dim + 2> recvbuf(recvbuf_.shape(),
+                                            zisa::device_type::cpu);
     zisa::copy(sendbuf, sendbuf_);
     MPI_Alltoall(sendbuf.raw(),
-		 sendbuf.size() / size_,
-		 mpi_type<complex_t>(),
-		 recvbuf.raw(),
-		 recvbuf.size() / size_,
-		 mpi_type<complex_t>(),
-		 comm_);
+                 sendbuf.size() / size_,
+                 mpi_type<complex_t>(),
+                 recvbuf.raw(),
+                 recvbuf.size() / size_,
+                 mpi_type<complex_t>(),
+                 comm_);
     zisa::copy(recvbuf_, recvbuf);
   }
 #endif
@@ -264,7 +267,8 @@ void Transpose<Dim>::postprocess() {
   }
 #if ZISA_HAS_CUDA
   else if (location_ == zisa::device_type::cuda) {
-    transpose_cuda_postprocess(recvbuf_, to_, from_shapes_.get(), to_shapes_.get(), rank_);
+    transpose_cuda_postprocess(
+        recvbuf_, to_, from_shapes_.get(), to_shapes_.get(), rank_);
   }
 #endif
   AZEBAN_PROFILE_STOP("Transpose::postprocess");

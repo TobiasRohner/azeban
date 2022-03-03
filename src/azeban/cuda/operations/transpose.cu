@@ -12,8 +12,7 @@ transpose_cuda_preprocess_kernel(zisa::array_const_view<complex_t, 3> from,
     zisa::int_t x = 32 * blockIdx.x + threadIdx.x + j_offset;
     zisa::int_t y = 32 * blockIdx.y + threadIdx.y;
     if (x < shape[2]) {
-      const int j_max
-          = zisa::min(32, zisa::integer_cast<int>(shape[1] - y));
+      const int j_max = zisa::min(32, zisa::integer_cast<int>(shape[1] - y));
       for (int j = 0; j < j_max; j += 8) {
         tile[threadIdx.y + j][threadIdx.x] = from(d, y + j, x);
       }
@@ -22,13 +21,12 @@ transpose_cuda_preprocess_kernel(zisa::array_const_view<complex_t, 3> from,
     x = 32 * blockIdx.y + threadIdx.x;
     y = 32 * blockIdx.x + threadIdx.y;
     if (x < shape[1]) {
-      const int j_max
-          = zisa::min(32, zisa::integer_cast<int>(shape[2] - y));
+      const int j_max = zisa::min(32, zisa::integer_cast<int>(shape[2] - y));
       for (int j = 0; j < j_max; j += 8) {
         sendbuf(d, y + j, x) = tile[threadIdx.x][threadIdx.y + j];
       }
     }
-      __syncthreads();
+    __syncthreads();
   }
 }
 
@@ -43,13 +41,13 @@ transpose_cuda_preprocess_kernel(zisa::array_const_view<complex_t, 4> from,
       zisa::int_t x = 32 * blockIdx.x + threadIdx.x;
       zisa::int_t y = 32 * blockIdx.y + threadIdx.y;
       if (x < shape[3] && y < shape[1]) {
-	tile[threadIdx.y][threadIdx.x] = from(d, y, k, x + k_offset);
+        tile[threadIdx.y][threadIdx.x] = from(d, y, k, x + k_offset);
       }
       __syncthreads();
       x = 32 * blockIdx.y + threadIdx.x;
       y = 32 * blockIdx.x + threadIdx.y;
       if (x < shape[1] && y < shape[3]) {
-	sendbuf(d, y, k, x) = tile[threadIdx.x][threadIdx.y];
+        sendbuf(d, y, k, x) = tile[threadIdx.x][threadIdx.y];
       }
       __syncthreads();
     }
@@ -109,9 +107,10 @@ void transpose_cuda_preprocess(const zisa::array_const_view<complex_t, 3> &from,
         zisa::min(zisa::div_up(block_shape[2],
                                zisa::integer_cast<zisa::int_t>(thread_dims.x)),
                   static_cast<zisa::int_t>(1024)),
-        zisa::min(zisa::div_up(block_shape[1],
-                               zisa::integer_cast<zisa::int_t>(4 * thread_dims.y)),
-                  static_cast<zisa::int_t>(1024)),
+        zisa::min(
+            zisa::div_up(block_shape[1],
+                         zisa::integer_cast<zisa::int_t>(4 * thread_dims.y)),
+            static_cast<zisa::int_t>(1024)),
         1);
     transpose_cuda_preprocess_kernel<<<block_dims, thread_dims>>>(
         from, sendbuf_view, block_shape, j_offset);
