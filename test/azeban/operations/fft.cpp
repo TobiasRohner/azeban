@@ -352,8 +352,7 @@ REGISTER_3D_TEST_CASE(2, false, false, true, zisa::device_type::cuda);
 #undef REGISTER_3D_TEST_CASE
 
 TEST_CASE("cuFFT accuracy", "[operations][fft][this]") {
-  std::cout << "TESTING: cuFFT accuracy [operations][fft]"
-            << std::endl;
+  std::cout << "TESTING: cuFFT accuracy [operations][fft]" << std::endl;
   azeban::Grid<2> grid(1024);
   auto h_u = grid.make_array_phys_pad(1, zisa::device_type::cpu);
   auto h_u_hat = grid.make_array_fourier_pad(1, zisa::device_type::cpu);

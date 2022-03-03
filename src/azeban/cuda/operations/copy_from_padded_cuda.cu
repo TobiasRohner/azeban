@@ -45,8 +45,8 @@ template <bool pad_x, bool pad_y, int compact_dim>
 __global__ void
 copy_from_padded_cuda_kernel(zisa::array_view<complex_t, 2> dst,
                              zisa::array_const_view<complex_t, 2> src) {
-  const unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
-  const unsigned long j = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned long i = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned long j = blockIdx.x * blockDim.x + threadIdx.x;
   const auto src_shape = src.shape();
   const auto dst_shape = dst.shape();
   if (i >= dst_shape[0]) {
@@ -71,9 +71,9 @@ template <bool pad_x, bool pad_y, bool pad_z, int compact_dim>
 __global__ void
 copy_from_padded_cuda_kernel(zisa::array_view<complex_t, 3> dst,
                              zisa::array_const_view<complex_t, 3> src) {
-  const unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned long i = blockIdx.z * blockDim.z + threadIdx.z;
   const unsigned long j = blockIdx.y * blockDim.y + threadIdx.y;
-  const unsigned long k = blockIdx.z * blockDim.z + threadIdx.z;
+  const unsigned long k = blockIdx.x * blockDim.x + threadIdx.x;
   const auto src_shape = src.shape();
   const auto dst_shape = dst.shape();
   if (i >= dst_shape[0]) {
@@ -155,10 +155,10 @@ void copy_from_padded_cuda(const zisa::array_view<complex_t, 2> &dst,
   assert(dst.shape(1) <= src.shape(1));
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
-      zisa::min(zisa::div_up(dst.shape(0),
+      zisa::min(zisa::div_up(dst.shape(1),
                              zisa::integer_cast<zisa::int_t>(thread_dims.x)),
                 static_cast<zisa::int_t>(1024)),
-      zisa::min(zisa::div_up(dst.shape(1),
+      zisa::min(zisa::div_up(dst.shape(0),
                              zisa::integer_cast<zisa::int_t>(thread_dims.y)),
                 static_cast<zisa::int_t>(1024)),
       1);
@@ -218,15 +218,15 @@ void copy_from_padded_cuda(const zisa::array_view<complex_t, 3> &dst,
   assert(dst.shape(0) <= src.shape(0));
   assert(dst.shape(1) <= src.shape(1));
   assert(dst.shape(2) <= src.shape(2));
-  const dim3 thread_dims(4, 4, 32);
+  const dim3 thread_dims(32, 4, 4);
   const dim3 block_dims(
-      zisa::min(zisa::div_up(dst.shape(0),
+      zisa::min(zisa::div_up(dst.shape(2),
                              zisa::integer_cast<zisa::int_t>(thread_dims.x)),
                 static_cast<zisa::int_t>(1024)),
       zisa::min(zisa::div_up(dst.shape(1),
                              zisa::integer_cast<zisa::int_t>(thread_dims.y)),
                 static_cast<zisa::int_t>(1024)),
-      zisa::min(zisa::div_up(dst.shape(2),
+      zisa::min(zisa::div_up(dst.shape(0),
                              zisa::integer_cast<zisa::int_t>(thread_dims.z)),
                 static_cast<zisa::int_t>(1024)));
   copy_from_padded_cuda_kernel<pad_x, pad_y, pad_z, compact_dim>

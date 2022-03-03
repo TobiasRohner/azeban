@@ -21,17 +21,19 @@
 #if AZEBAN_HAS_MPI
 
 #include <azeban/config.hpp>
-#include <mpi.h>
 #include <azeban/memory/workspace.hpp>
-#include <zisa/memory/array_view.hpp>
 #include <memory>
+#include <mpi.h>
+#include <zisa/memory/array_view.hpp>
 
 namespace azeban {
 
 template <int Dim>
 class Transpose {
 public:
-  Transpose(MPI_Comm comm, const zisa::array_const_view<complex_t, Dim + 1> &from, const zisa::array_view<complex_t, Dim + 1> &to);
+  Transpose(MPI_Comm comm,
+            const zisa::array_const_view<complex_t, Dim + 1> &from,
+            const zisa::array_view<complex_t, Dim + 1> &to);
   Transpose(const Transpose &) = default;
   Transpose(Transpose &&) = default;
   Transpose &operator=(const Transpose &) = default;

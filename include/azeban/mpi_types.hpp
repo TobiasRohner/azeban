@@ -19,8 +19,8 @@
 #define MPI_TYPES_H_
 
 #include <azeban/complex.hpp>
-#include <zisa/memory/shape.hpp>
 #include <mpi.h>
+#include <zisa/memory/shape.hpp>
 
 namespace azeban {
 

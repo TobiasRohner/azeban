@@ -35,8 +35,8 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<2>(
     zisa::array_view<real_t, 3> B,
     zisa::array_const_view<real_t, 3> u,
     Grid<2> grid) {
-  const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
-  const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned i = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned j = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned stride = u.shape(1) * u.shape(2);
   const unsigned idx = i * u.shape(2) + j;
 
@@ -53,9 +53,9 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<3>(
     zisa::array_view<real_t, 4> B,
     zisa::array_const_view<real_t, 4> u,
     Grid<3> grid) {
-  const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned i = blockIdx.z * blockDim.z + threadIdx.z;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
-  const unsigned k = blockIdx.z * blockDim.z + threadIdx.z;
+  const unsigned k = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned stride = u.shape(1) * u.shape(2) * u.shape(3);
   const unsigned idx = i * u.shape(2) * u.shape(3) + j * u.shape(3) + k;
 
@@ -80,8 +80,8 @@ __global__ void incompressible_euler_compute_B_tracer_cuda_kernel<2>(
     zisa::array_view<real_t, 3> B,
     zisa::array_const_view<real_t, 3> u,
     Grid<2> grid) {
-  const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
-  const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned i = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned j = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned stride = u.shape(1) * u.shape(2);
   const unsigned idx = i * u.shape(2) + j;
 
@@ -100,9 +100,9 @@ __global__ void incompressible_euler_compute_B_tracer_cuda_kernel<3>(
     zisa::array_view<real_t, 4> B,
     zisa::array_const_view<real_t, 4> u,
     Grid<3> grid) {
-  const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned i = blockIdx.z * blockDim.z + threadIdx.z;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
-  const unsigned k = blockIdx.z * blockDim.z + threadIdx.z;
+  const unsigned k = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned stride = u.shape(1) * u.shape(2) * u.shape(3);
   const unsigned idx = i * u.shape(2) * u.shape(3) + j * u.shape(3) + k;
 
@@ -359,8 +359,8 @@ void incompressible_euler_compute_B_cuda<2>(
 
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
-      zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.x),
-      zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.y),
+      zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.x),
+      zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.y),
       1);
   incompressible_euler_compute_B_cuda_kernel<2>
       <<<block_dims, thread_dims>>>(B, u, grid);
@@ -380,9 +380,9 @@ void incompressible_euler_compute_B_cuda<3>(
   assert(B.shape(3) == u.shape(3));
   const dim3 thread_dims(4, 4, 32);
   const dim3 block_dims(
-      zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.x),
+      zisa::div_up(static_cast<int>(u.shape(3)), thread_dims.x),
       zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.y),
-      zisa::div_up(static_cast<int>(u.shape(3)), thread_dims.z));
+      zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.z));
   incompressible_euler_compute_B_cuda_kernel<3>
       <<<block_dims, thread_dims>>>(B, u, grid);
   cudaDeviceSynchronize();
@@ -407,8 +407,8 @@ void incompressible_euler_compute_B_tracer_cuda<2>(
 
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
-      zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.x),
-      zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.y),
+      zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.x),
+      zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.y),
       1);
   incompressible_euler_compute_B_tracer_cuda_kernel<2>
       <<<block_dims, thread_dims>>>(B, u, grid);
@@ -428,9 +428,9 @@ void incompressible_euler_compute_B_tracer_cuda<3>(
   assert(B.shape(3) == u.shape(3));
   const dim3 thread_dims(4, 4, 32);
   const dim3 block_dims(
-      zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.x),
+      zisa::div_up(static_cast<int>(u.shape(3)), thread_dims.x),
       zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.y),
-      zisa::div_up(static_cast<int>(u.shape(3)), thread_dims.z));
+      zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.z));
   incompressible_euler_compute_B_tracer_cuda_kernel<3>
       <<<block_dims, thread_dims>>>(B, u, grid);
   cudaDeviceSynchronize();

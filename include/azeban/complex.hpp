@@ -33,7 +33,7 @@ struct Complex {
 
   scalar_t x, y;
 
-  ANY_DEVICE_INLINE Complex(){};
+  ANY_DEVICE_INLINE Complex() = default;
   ANY_DEVICE_INLINE Complex(scalar_t real, scalar_t imag = 0)
       : x(real), y(imag) {}
   template <typename ScalarR>

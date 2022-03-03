@@ -5,7 +5,6 @@
 #include <azeban/operations/copy_from_padded.hpp>
 #include <azeban/operations/copy_to_padded.hpp>
 #include <azeban/operations/fft_factory.hpp>
-#include <azeban/operations/transpose.hpp>
 #include <sstream>
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
@@ -33,7 +32,11 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
       B_yz_trans_pad_({}, nullptr),
       B_yz_trans_({}, nullptr),
       B_yz_({}, nullptr),
-      B_hat_pad_({}, nullptr) {
+      B_hat_pad_({}, nullptr),
+      trans_u_sendbuf_({}, nullptr),
+      trans_u_recvbuf_({}, nullptr),
+      trans_B_sendbuf_({}, nullptr),
+      trans_B_recvbuf_({}, nullptr) {
   MPI_Comm_rank(comm_, &mpi_rank_);
   MPI_Comm_size(comm_, &mpi_size_);
 
@@ -207,6 +210,36 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   fft_u_x_->set_work_area(ws_fft_.get());
   fft_B_yz_->set_work_area(ws_fft_.get());
   fft_B_x_->set_work_area(ws_fft_.get());
+
+  size_t ws1_trans_size = 0;
+  size_t ws2_trans_size = 0;
+
+  transpose_u_ = std::make_shared<Transpose<dim_v>>(comm, u_yz_, u_yz_trans_);
+  const auto trans_u_buf_shape = transpose_u_->buffer_shape();
+  const size_t size_trans_u_buf
+      = sizeof(complex_t) * zisa::product(trans_u_buf_shape);
+  ws1_trans_size = zisa::max(ws1_trans_size, size_trans_u_buf);
+  ws2_trans_size = zisa::max(ws2_trans_size, size_trans_u_buf);
+  transpose_B_ = std::make_shared<Transpose<dim_v>>(comm, B_yz_trans_, B_yz_);
+  const auto trans_B_buf_shape = transpose_B_->buffer_shape();
+  const size_t size_trans_B_buf
+      = sizeof(complex_t) * zisa::product(trans_B_buf_shape);
+  ws1_trans_size = zisa::max(ws1_trans_size, size_trans_B_buf);
+  ws2_trans_size = zisa::max(ws2_trans_size, size_trans_B_buf);
+
+  // TODO: Share this also with other workspaces!
+  ws1_trans_ = Workspace(ws1_trans_size, device);
+  ws2_trans_ = Workspace(ws2_trans_size, device);
+
+  trans_u_sendbuf_ = ws1_trans_.get_view<complex_t>(0, trans_u_buf_shape);
+  trans_u_recvbuf_ = ws2_trans_.get_view<complex_t>(0, trans_u_buf_shape);
+  trans_B_sendbuf_ = ws1_trans_.get_view<complex_t>(0, trans_B_buf_shape);
+  trans_B_recvbuf_ = ws2_trans_.get_view<complex_t>(0, trans_B_buf_shape);
+
+  transpose_u_->set_send_buffer(trans_u_sendbuf_);
+  transpose_u_->set_recv_buffer(trans_u_recvbuf_);
+  transpose_B_->set_send_buffer(trans_B_sendbuf_);
+  transpose_B_->set_recv_buffer(trans_B_recvbuf_);
 }
 
 template <int Dim>
@@ -318,23 +351,7 @@ void IncompressibleEuler_MPI_Base<Dim>::compute_u_yz() {
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_u_yz_trans() {
   AZEBAN_PROFILE_START("IncompressibleEuler_MPI::compute_u_yz_trans");
-  if (device_ == zisa::device_type::cpu) {
-    transpose(u_yz_trans_, u_yz_, comm_);
-  }
-#if ZISA_HAS_CUDA
-  else if (device_ == zisa::device_type::cuda) {
-    zisa::array<complex_t, dim_v + 1> h_u_yz_trans(u_yz_trans_.shape(),
-                                                   zisa::device_type::cpu);
-    zisa::array<complex_t, dim_v + 1> h_u_yz(u_yz_.shape(),
-                                             zisa::device_type::cpu);
-    zisa::copy(h_u_yz, u_yz_);
-    transpose(h_u_yz_trans, h_u_yz, comm_);
-    zisa::copy(u_yz_trans_, h_u_yz_trans);
-  }
-#endif
-  else {
-    LOG_ERR("Unsupported device");
-  }
+  transpose_u_->eval();
   AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::compute_u_yz_trans");
 }
 
@@ -470,23 +487,7 @@ void IncompressibleEuler_MPI_Base<Dim>::compute_B_yz_trans() {
 template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_B_yz() {
   AZEBAN_PROFILE_START("IncompressibleEuler_MPI::compute_B_yz");
-  if (device_ == zisa::device_type::cpu) {
-    transpose(B_yz_, B_yz_trans_, comm_);
-  }
-#if ZISA_HAS_CUDA
-  else if (device_ == zisa::device_type::cuda) {
-    zisa::array<complex_t, dim_v + 1> h_B_yz(B_yz_.shape(),
-                                             zisa::device_type::cpu);
-    zisa::array<complex_t, dim_v + 1> h_B_yz_trans(B_yz_trans_.shape(),
-                                                   zisa::device_type::cpu);
-    zisa::copy(h_B_yz_trans, B_yz_trans_);
-    transpose(h_B_yz, h_B_yz_trans, comm_);
-    zisa::copy(B_yz_, h_B_yz);
-  }
-#endif
-  else {
-    LOG_ERR("Unsupported device");
-  }
+  transpose_B_->eval();
   AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::compute_B_yz");
 }
 
