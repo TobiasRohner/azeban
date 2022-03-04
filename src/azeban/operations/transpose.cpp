@@ -35,21 +35,27 @@ template <int Dim>
 Transpose<Dim>::Transpose(
     MPI_Comm comm,
     const zisa::array_const_view<complex_t, Dim + 1> &from,
-    const zisa::array_view<complex_t, Dim + 1> &to)
+    const zisa::array_view<complex_t, Dim + 1> &to) : Transpose(comm, from.shape(), to.shape(), from.memory_location()) {
+  set_from_array(from);
+  set_to_array(to);
+}
+
+template <int Dim>
+Transpose<Dim>::Transpose(
+    MPI_Comm comm,
+    const zisa::shape_t<Dim + 1> &from_shape,
+    const zisa::shape_t<Dim + 1> &to_shape,
+    zisa::device_type location)
     : comm_(comm),
-      from_(from),
-      to_(to),
+      location_(location),
+      from_(from_shape, nullptr),
+      to_(to_shape, nullptr),
       sendbuf_({}, nullptr),
       recvbuf_({}, nullptr) {
-  LOG_ERR_IF(from_.memory_location() != to_.memory_location(),
-             "Arrays must be both either on the host or the device");
-  location_ = from_.memory_location();
   MPI_Comm_size(comm_, &size_);
   MPI_Comm_rank(comm_, &rank_);
   from_shapes_ = std::make_unique<zisa::shape_t<Dim + 1>[]>(size_);
   to_shapes_ = std::make_unique<zisa::shape_t<Dim + 1>[]>(size_);
-  const zisa::shape_t<Dim + 1> from_shape = from_.shape();
-  const zisa::shape_t<Dim + 1> to_shape = to_.shape();
   MPI_Allgather(&from_shape,
                 1,
                 mpi_type(from_shape),
@@ -83,14 +89,14 @@ zisa::device_type Transpose<Dim>::location() const {
   return location_;
 }
 
-template <int Dim>
-zisa::shape_t<Dim + 2> Transpose<Dim>::buffer_shape() const {
-  zisa::shape_t<Dim + 2> shape;
-  shape[0] = size_;
-  for (int d = 0; d <= Dim; ++d) {
-    shape[d + 1] = max_to_size_[d];
-  }
-  return shape;
+template<>
+zisa::shape_t<4> Transpose<2>::buffer_shape() const {
+  return {size_, max_from_size_[0], max_to_size_[1], max_from_size_[1]};
+}
+
+template<>
+zisa::shape_t<5> Transpose<3>::buffer_shape() const {
+  return {size_, max_from_size_[0], max_to_size_[1], max_from_size_[2], max_from_size_[1]};
 }
 
 template <int Dim>
@@ -111,6 +117,20 @@ void Transpose<Dim>::set_recv_buffer(
   LOG_ERR_IF(recvbuf.shape() != buffer_shape(),
              "Receive buffer has the wrong shape");
   recvbuf_ = recvbuf;
+}
+
+template<int Dim>
+void Transpose<Dim>::set_from_array(const zisa::array_const_view<complex_t, Dim + 1> &from) {
+  LOG_ERR_IF(from.memory_location() != location_, "Wrong memory_location");
+  LOG_ERR_IF(from.shape() != from_shapes_[rank_], "Wrong array shape");
+  from_ = from;
+}
+
+template<int Dim>
+void Transpose<Dim>::set_to_array(const zisa::array_view<complex_t, Dim + 1> &to) {
+  LOG_ERR_IF(to.memory_location() != location_, "Wrong memory_location");
+  LOG_ERR_IF(to.shape() != to_shapes_[rank_], "Wrong array shape");
+  to_ = to;
 }
 
 template <int Dim>

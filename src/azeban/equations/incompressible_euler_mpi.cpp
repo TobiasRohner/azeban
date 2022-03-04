@@ -25,18 +25,18 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
       B_hat_({}, nullptr),
       u_hat_pad_({}, nullptr),
       u_yz_({}, nullptr),
+      trans_u_sendbuf_({}, nullptr),
+      trans_u_recvbuf_({}, nullptr),
       u_yz_trans_({}, nullptr),
       u_yz_trans_pad_({}, nullptr),
       u_xyz_trans_({}, nullptr),
       B_xyz_trans_({}, nullptr),
       B_yz_trans_pad_({}, nullptr),
       B_yz_trans_({}, nullptr),
-      B_yz_({}, nullptr),
-      B_hat_pad_({}, nullptr),
-      trans_u_sendbuf_({}, nullptr),
-      trans_u_recvbuf_({}, nullptr),
       trans_B_sendbuf_({}, nullptr),
-      trans_B_recvbuf_({}, nullptr) {
+      trans_B_recvbuf_({}, nullptr),
+      B_yz_({}, nullptr),
+      B_hat_pad_({}, nullptr) {
   MPI_Comm_rank(comm_, &mpi_rank_);
   MPI_Comm_size(comm_, &mpi_size_);
 
@@ -95,6 +95,14 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
       = sizeof(complex_t) * zisa::product(shape_u_yz_trans);
   ws1_size = zisa::max(ws1_size, size_u_yz_trans);
 
+  // Buffer for transposing u_yz_
+  transpose_u_ = std::make_shared<Transpose<dim_v>>(comm, shape_u_yz, shape_u_yz_trans, device);
+  const auto trans_u_buf_shape = transpose_u_->buffer_shape();
+  const size_t size_trans_u_buf
+      = sizeof(complex_t) * zisa::product(trans_u_buf_shape);
+  ws1_size = zisa::max(ws1_size, size_trans_u_buf);
+  ws2_size = zisa::max(ws2_size, size_trans_u_buf);
+
   // Transposed data padded in the x-direction
   zisa::shape_t<dim_v + 1> shape_u_yz_trans_pad;
   shape_u_yz_trans_pad[0] = n_vars_u;
@@ -141,6 +149,14 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   const size_t size_B_yz = sizeof(complex_t) * zisa::product(shape_B_yz);
   ws1_size = zisa::max(ws1_size, size_B_yz);
 
+  // Buffer for transposing B
+  transpose_B_ = std::make_shared<Transpose<dim_v>>(comm, shape_B_yz_trans, shape_B_yz, device);
+  const auto trans_B_buf_shape = transpose_B_->buffer_shape();
+  const size_t size_trans_B_buf
+      = sizeof(complex_t) * zisa::product(trans_B_buf_shape);
+  ws1_size = zisa::max(ws1_size, size_trans_B_buf);
+  ws2_size = zisa::max(ws2_size, size_trans_B_buf);
+
   // Buffer to store padded B_hat in y(z)-directions
   zisa::shape_t<dim_v + 1> shape_B_hat_pad = shape_B_fourier_pad;
   shape_B_hat_pad[1] = shape_B_fourier[1];
@@ -160,29 +176,37 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   // Generate views onto workspaces
   u_hat_pad_ = ws1_.get_view<complex_t>(0, shape_u_hat_pad);
   u_yz_ = ws2_.get_view<complex_t>(0, shape_u_yz);
+  trans_u_sendbuf_ = ws1_.get_view<complex_t>(0, trans_u_buf_shape);
+  trans_u_recvbuf_ = ws1_.get_view<complex_t>(0, trans_u_buf_shape);
   u_yz_trans_ = ws1_.get_view<complex_t>(0, shape_u_yz_trans);
   u_yz_trans_pad_ = ws2_.get_view<complex_t>(0, shape_u_yz_trans_pad);
   u_xyz_trans_ = ws1_.get_view<real_t>(0, shape_u_xyz_trans);
   B_xyz_trans_ = ws2_.get_view<real_t>(0, shape_B_xyz_trans);
   B_yz_trans_pad_ = ws1_.get_view<complex_t>(0, shape_B_yz_trans_pad);
   B_yz_trans_ = ws2_.get_view<complex_t>(0, shape_B_yz_trans);
+  trans_B_sendbuf_ = ws1_.get_view<complex_t>(0, trans_B_buf_shape);
+  trans_B_recvbuf_ = ws1_.get_view<complex_t>(0, trans_B_buf_shape);
   B_yz_ = ws1_.get_view<complex_t>(0, shape_B_yz);
   B_hat_pad_ = ws2_.get_view<complex_t>(0, shape_B_hat_pad);
   B_hat_ = ws1_.get_view<complex_t>(0, shape_B_hat);
 
   std::stringstream ss;
   ss << "rank " << mpi_rank_ << "\n"
-     << "u_hat_pad_.shape()      = " << u_hat_pad_.shape() << "\n"
-     << "u_yz_.shape()           = " << u_yz_.shape() << "\n"
-     << "u_yz_trans_.shape()     = " << u_yz_trans_.shape() << "\n"
-     << "u_yz_trans_pad_.shape() = " << u_yz_trans_pad_.shape() << "\n"
-     << "u_xyz_trans_.shape()    = " << u_xyz_trans_.shape() << "\n"
-     << "B_xyz_trans_.shape()    = " << B_xyz_trans_.shape() << "\n"
-     << "B_yz_trans_pad_.shape() = " << B_yz_trans_pad_.shape() << "\n"
-     << "B_yz_trans_.shape()     = " << B_yz_trans_.shape() << "\n"
-     << "B_yz_.shape()           = " << B_yz_.shape() << "\n"
-     << "B_hat_pad_.shape()      = " << B_hat_pad_.shape() << "\n"
-     << "B_hat_.shape()          = " << B_hat_.shape() << std::endl;
+     << "u_hat_pad_.shape()       = " << u_hat_pad_.shape() << "\n"
+     << "u_yz_.shape()            = " << u_yz_.shape() << "\n"
+     << "trans_u_sendbuf_.shape() = " << trans_u_sendbuf_.shape() << "\n"
+     << "trans_u_recvbuf_.shape() = " << trans_u_recvbuf_.shape() << "\n"
+     << "u_yz_trans_.shape()      = " << u_yz_trans_.shape() << "\n"
+     << "u_yz_trans_pad_.shape()  = " << u_yz_trans_pad_.shape() << "\n"
+     << "u_xyz_trans_.shape()     = " << u_xyz_trans_.shape() << "\n"
+     << "B_xyz_trans_.shape()     = " << B_xyz_trans_.shape() << "\n"
+     << "B_yz_trans_pad_.shape()  = " << B_yz_trans_pad_.shape() << "\n"
+     << "B_yz_trans_.shape()      = " << B_yz_trans_.shape() << "\n"
+     << "trans_B_sendbuf_.shape() = " << trans_B_sendbuf_.shape() << "\n"
+     << "trans_B_recvbuf_.shape() = " << trans_B_recvbuf_.shape() << "\n"
+     << "B_yz_.shape()            = " << B_yz_.shape() << "\n"
+     << "B_hat_pad_.shape()       = " << B_hat_pad_.shape() << "\n"
+     << "B_hat_.shape()           = " << B_hat_.shape() << std::endl;
   for (int r = 0; r < mpi_size_; ++r) {
     if (mpi_rank_ == r) {
       std::cout << ss.str();
@@ -211,35 +235,15 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   fft_B_yz_->set_work_area(ws_fft_.get());
   fft_B_x_->set_work_area(ws_fft_.get());
 
-  size_t ws1_trans_size = 0;
-  size_t ws2_trans_size = 0;
-
-  transpose_u_ = std::make_shared<Transpose<dim_v>>(comm, u_yz_, u_yz_trans_);
-  const auto trans_u_buf_shape = transpose_u_->buffer_shape();
-  const size_t size_trans_u_buf
-      = sizeof(complex_t) * zisa::product(trans_u_buf_shape);
-  ws1_trans_size = zisa::max(ws1_trans_size, size_trans_u_buf);
-  ws2_trans_size = zisa::max(ws2_trans_size, size_trans_u_buf);
-  transpose_B_ = std::make_shared<Transpose<dim_v>>(comm, B_yz_trans_, B_yz_);
-  const auto trans_B_buf_shape = transpose_B_->buffer_shape();
-  const size_t size_trans_B_buf
-      = sizeof(complex_t) * zisa::product(trans_B_buf_shape);
-  ws1_trans_size = zisa::max(ws1_trans_size, size_trans_B_buf);
-  ws2_trans_size = zisa::max(ws2_trans_size, size_trans_B_buf);
-
-  // TODO: Share this also with other workspaces!
-  ws1_trans_ = Workspace(ws1_trans_size, device);
-  ws2_trans_ = Workspace(ws2_trans_size, device);
-
-  trans_u_sendbuf_ = ws1_trans_.get_view<complex_t>(0, trans_u_buf_shape);
-  trans_u_recvbuf_ = ws2_trans_.get_view<complex_t>(0, trans_u_buf_shape);
-  trans_B_sendbuf_ = ws1_trans_.get_view<complex_t>(0, trans_B_buf_shape);
-  trans_B_recvbuf_ = ws2_trans_.get_view<complex_t>(0, trans_B_buf_shape);
-
+  // Initialize the transposes
+  transpose_u_->set_from_array(u_yz_);
   transpose_u_->set_send_buffer(trans_u_sendbuf_);
   transpose_u_->set_recv_buffer(trans_u_recvbuf_);
+  transpose_u_->set_to_array(u_yz_trans_);
+  transpose_B_->set_from_array(B_yz_trans_);
   transpose_B_->set_send_buffer(trans_B_sendbuf_);
   transpose_B_->set_recv_buffer(trans_B_recvbuf_);
+  transpose_B_->set_to_array(B_yz_);
 }
 
 template <int Dim>

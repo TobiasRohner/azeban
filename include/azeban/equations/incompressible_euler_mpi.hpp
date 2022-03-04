@@ -72,22 +72,20 @@ private:
   std::shared_ptr<FFT<dim_v, real_t>> fft_B_x_;
   zisa::array_view<complex_t, dim_v + 1> u_hat_pad_;
   zisa::array_view<complex_t, dim_v + 1> u_yz_;
+  zisa::array_view<complex_t, dim_v + 2> trans_u_sendbuf_;
+  zisa::array_view<complex_t, dim_v + 2> trans_u_recvbuf_;
   zisa::array_view<complex_t, dim_v + 1> u_yz_trans_;
   zisa::array_view<complex_t, dim_v + 1> u_yz_trans_pad_;
   zisa::array_view<real_t, dim_v + 1> u_xyz_trans_;
   zisa::array_view<real_t, dim_v + 1> B_xyz_trans_;
   zisa::array_view<complex_t, dim_v + 1> B_yz_trans_pad_;
   zisa::array_view<complex_t, dim_v + 1> B_yz_trans_;
+  zisa::array_view<complex_t, dim_v + 2> trans_B_sendbuf_;
+  zisa::array_view<complex_t, dim_v + 2> trans_B_recvbuf_;
   zisa::array_view<complex_t, dim_v + 1> B_yz_;
   zisa::array_view<complex_t, dim_v + 1> B_hat_pad_;
   std::shared_ptr<Transpose<dim_v>> transpose_u_;
   std::shared_ptr<Transpose<dim_v>> transpose_B_;
-  Workspace ws1_trans_;
-  Workspace ws2_trans_;
-  zisa::array_view<complex_t, dim_v + 2> trans_u_sendbuf_;
-  zisa::array_view<complex_t, dim_v + 2> trans_u_recvbuf_;
-  zisa::array_view<complex_t, dim_v + 2> trans_B_sendbuf_;
-  zisa::array_view<complex_t, dim_v + 2> trans_B_recvbuf_;
 
   void
   compute_u_hat_pad(const zisa::array_const_view<complex_t, dim_v + 1> &u_hat);

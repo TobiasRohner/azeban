@@ -34,6 +34,10 @@ public:
   Transpose(MPI_Comm comm,
             const zisa::array_const_view<complex_t, Dim + 1> &from,
             const zisa::array_view<complex_t, Dim + 1> &to);
+  Transpose(MPI_Comm comm,
+            const zisa::shape_t<Dim + 1> &from_shape,
+            const zisa::shape_t<Dim + 1> &to_shape,
+	    zisa::device_type location);
   Transpose(const Transpose &) = default;
   Transpose(Transpose &&) = default;
   Transpose &operator=(const Transpose &) = default;
@@ -44,6 +48,8 @@ public:
   zisa::shape_t<Dim + 2> buffer_shape() const;
   void set_send_buffer(const zisa::array_view<complex_t, Dim + 2> &sendbuf);
   void set_recv_buffer(const zisa::array_view<complex_t, Dim + 2> &recvbuf);
+  void set_from_array(const zisa::array_const_view<complex_t, Dim + 1> &from);
+  void set_to_array(const zisa::array_view<complex_t, Dim + 1> &to);
 
   void eval();
 
