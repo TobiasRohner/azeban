@@ -37,7 +37,7 @@ public:
   Transpose(MPI_Comm comm,
             const zisa::shape_t<Dim + 1> &from_shape,
             const zisa::shape_t<Dim + 1> &to_shape,
-	    zisa::device_type location);
+            zisa::device_type location);
   Transpose(const Transpose &) = default;
   Transpose(Transpose &&) = default;
   Transpose &operator=(const Transpose &) = default;

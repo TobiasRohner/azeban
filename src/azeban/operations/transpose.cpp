@@ -35,17 +35,17 @@ template <int Dim>
 Transpose<Dim>::Transpose(
     MPI_Comm comm,
     const zisa::array_const_view<complex_t, Dim + 1> &from,
-    const zisa::array_view<complex_t, Dim + 1> &to) : Transpose(comm, from.shape(), to.shape(), from.memory_location()) {
+    const zisa::array_view<complex_t, Dim + 1> &to)
+    : Transpose(comm, from.shape(), to.shape(), from.memory_location()) {
   set_from_array(from);
   set_to_array(to);
 }
 
 template <int Dim>
-Transpose<Dim>::Transpose(
-    MPI_Comm comm,
-    const zisa::shape_t<Dim + 1> &from_shape,
-    const zisa::shape_t<Dim + 1> &to_shape,
-    zisa::device_type location)
+Transpose<Dim>::Transpose(MPI_Comm comm,
+                          const zisa::shape_t<Dim + 1> &from_shape,
+                          const zisa::shape_t<Dim + 1> &to_shape,
+                          zisa::device_type location)
     : comm_(comm),
       location_(location),
       from_(from_shape, nullptr),
@@ -89,14 +89,18 @@ zisa::device_type Transpose<Dim>::location() const {
   return location_;
 }
 
-template<>
+template <>
 zisa::shape_t<4> Transpose<2>::buffer_shape() const {
   return {size_, max_from_size_[0], max_to_size_[1], max_from_size_[1]};
 }
 
-template<>
+template <>
 zisa::shape_t<5> Transpose<3>::buffer_shape() const {
-  return {size_, max_from_size_[0], max_to_size_[1], max_from_size_[2], max_from_size_[1]};
+  return {size_,
+          max_from_size_[0],
+          max_to_size_[1],
+          max_from_size_[2],
+          max_from_size_[1]};
 }
 
 template <int Dim>
@@ -119,15 +123,17 @@ void Transpose<Dim>::set_recv_buffer(
   recvbuf_ = recvbuf;
 }
 
-template<int Dim>
-void Transpose<Dim>::set_from_array(const zisa::array_const_view<complex_t, Dim + 1> &from) {
+template <int Dim>
+void Transpose<Dim>::set_from_array(
+    const zisa::array_const_view<complex_t, Dim + 1> &from) {
   LOG_ERR_IF(from.memory_location() != location_, "Wrong memory_location");
   LOG_ERR_IF(from.shape() != from_shapes_[rank_], "Wrong array shape");
   from_ = from;
 }
 
-template<int Dim>
-void Transpose<Dim>::set_to_array(const zisa::array_view<complex_t, Dim + 1> &to) {
+template <int Dim>
+void Transpose<Dim>::set_to_array(
+    const zisa::array_view<complex_t, Dim + 1> &to) {
   LOG_ERR_IF(to.memory_location() != location_, "Wrong memory_location");
   LOG_ERR_IF(to.shape() != to_shapes_[rank_], "Wrong array shape");
   to_ = to;

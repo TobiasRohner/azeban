@@ -96,7 +96,8 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   ws1_size = zisa::max(ws1_size, size_u_yz_trans);
 
   // Buffer for transposing u_yz_
-  transpose_u_ = std::make_shared<Transpose<dim_v>>(comm, shape_u_yz, shape_u_yz_trans, device);
+  transpose_u_ = std::make_shared<Transpose<dim_v>>(
+      comm, shape_u_yz, shape_u_yz_trans, device);
   const auto trans_u_buf_shape = transpose_u_->buffer_shape();
   const size_t size_trans_u_buf
       = sizeof(complex_t) * zisa::product(trans_u_buf_shape);
@@ -150,7 +151,8 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   ws1_size = zisa::max(ws1_size, size_B_yz);
 
   // Buffer for transposing B
-  transpose_B_ = std::make_shared<Transpose<dim_v>>(comm, shape_B_yz_trans, shape_B_yz, device);
+  transpose_B_ = std::make_shared<Transpose<dim_v>>(
+      comm, shape_B_yz_trans, shape_B_yz, device);
   const auto trans_B_buf_shape = transpose_B_->buffer_shape();
   const size_t size_trans_B_buf
       = sizeof(complex_t) * zisa::product(trans_B_buf_shape);
@@ -177,7 +179,7 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   u_hat_pad_ = ws1_.get_view<complex_t>(0, shape_u_hat_pad);
   u_yz_ = ws2_.get_view<complex_t>(0, shape_u_yz);
   trans_u_sendbuf_ = ws1_.get_view<complex_t>(0, trans_u_buf_shape);
-  trans_u_recvbuf_ = ws1_.get_view<complex_t>(0, trans_u_buf_shape);
+  trans_u_recvbuf_ = ws2_.get_view<complex_t>(0, trans_u_buf_shape);
   u_yz_trans_ = ws1_.get_view<complex_t>(0, shape_u_yz_trans);
   u_yz_trans_pad_ = ws2_.get_view<complex_t>(0, shape_u_yz_trans_pad);
   u_xyz_trans_ = ws1_.get_view<real_t>(0, shape_u_xyz_trans);
@@ -185,7 +187,7 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   B_yz_trans_pad_ = ws1_.get_view<complex_t>(0, shape_B_yz_trans_pad);
   B_yz_trans_ = ws2_.get_view<complex_t>(0, shape_B_yz_trans);
   trans_B_sendbuf_ = ws1_.get_view<complex_t>(0, trans_B_buf_shape);
-  trans_B_recvbuf_ = ws1_.get_view<complex_t>(0, trans_B_buf_shape);
+  trans_B_recvbuf_ = ws2_.get_view<complex_t>(0, trans_B_buf_shape);
   B_yz_ = ws1_.get_view<complex_t>(0, shape_B_yz);
   B_hat_pad_ = ws2_.get_view<complex_t>(0, shape_B_hat_pad);
   B_hat_ = ws1_.get_view<complex_t>(0, shape_B_hat);
