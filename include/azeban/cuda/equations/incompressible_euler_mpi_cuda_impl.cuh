@@ -17,8 +17,8 @@ __global__ void incompressible_euler_mpi_2d_cuda_kernel(
     unsigned long i_base,
     unsigned long j_base,
     zisa::shape_t<3> shape_phys) {
-  const unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
-  const unsigned long j = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned long i = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned long j = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned long stride_B = B_hat.shape(1) * B_hat.shape(2);
   const unsigned long idx_B = i * B_hat.shape(2) + j;
   const unsigned long stride_u = u_hat.shape(1) * u_hat.shape(2);
@@ -70,9 +70,9 @@ __global__ void incompressible_euler_mpi_3d_cuda_kernel(
     unsigned long j_base,
     unsigned long k_base,
     zisa::shape_t<4> shape_phys) {
-  const unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned long i = blockIdx.z * blockDim.z + threadIdx.z;
   const unsigned long j = blockIdx.y * blockDim.y + threadIdx.y;
-  const unsigned long k = blockIdx.z * blockDim.z + threadIdx.z;
+  const unsigned long k = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned long stride_B
       = B_hat.shape(1) * B_hat.shape(2) * B_hat.shape(3);
   const unsigned long idx_B
@@ -137,8 +137,8 @@ __global__ void incompressible_euler_mpi_2d_tracer_cuda_kernel(
     unsigned long i_base,
     unsigned long j_base,
     zisa::shape_t<3> shape_phys) {
-  const unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
-  const unsigned long j = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned long i = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned long j = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned long stride_B = B_hat.shape(1) * B_hat.shape(2);
   const unsigned long idx_B = i * B_hat.shape(2) + j;
   const unsigned long stride_u = u_hat.shape(1) * u_hat.shape(2);
@@ -192,9 +192,9 @@ __global__ void incompressible_euler_mpi_3d_tracer_cuda_kernel(
     unsigned long j_base,
     unsigned long k_base,
     zisa::shape_t<4> shape_phys) {
-  const unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned long i = blockIdx.z * blockDim.z + threadIdx.z;
   const unsigned long j = blockIdx.y * blockDim.y + threadIdx.y;
-  const unsigned long k = blockIdx.z * blockDim.z + threadIdx.z;
+  const unsigned long k = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned long stride_B
       = B_hat.shape(1) * B_hat.shape(2) * B_hat.shape(3);
   const unsigned long idx_B
@@ -267,9 +267,9 @@ void incompressible_euler_mpi_2d_cuda(
 
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
-      zisa::div_up(u_hat.shape(1),
-                   zisa::integer_cast<zisa::int_t>(thread_dims.x)),
       zisa::div_up(u_hat.shape(2),
+                   zisa::integer_cast<zisa::int_t>(thread_dims.x)),
+      zisa::div_up(u_hat.shape(1),
                    zisa::integer_cast<zisa::int_t>(thread_dims.y)),
       1);
 
@@ -292,13 +292,13 @@ void incompressible_euler_mpi_3d_cuda(
     const zisa::shape_t<4> &shape_phys) {
   assert(B_hat.memory_location() == zisa::device_type::cuda);
   assert(u_hat.memory_location() == zisa::device_type::cuda);
-  const dim3 thread_dims(4, 4, 32);
+  const dim3 thread_dims(32, 4, 4);
   const dim3 block_dims(
-      zisa::div_up(u_hat.shape(1),
+      zisa::div_up(u_hat.shape(3),
                    zisa::integer_cast<zisa::int_t>(thread_dims.x)),
       zisa::div_up(u_hat.shape(2),
                    zisa::integer_cast<zisa::int_t>(thread_dims.y)),
-      zisa::div_up(u_hat.shape(3),
+      zisa::div_up(u_hat.shape(1),
                    zisa::integer_cast<zisa::int_t>(thread_dims.z)));
   incompressible_euler_mpi_3d_cuda_kernel<<<block_dims, thread_dims>>>(
       B_hat,
@@ -329,9 +329,9 @@ void incompressible_euler_mpi_2d_tracer_cuda(
 
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
-      zisa::div_up(u_hat.shape(1),
-                   zisa::integer_cast<zisa::int_t>(thread_dims.x)),
       zisa::div_up(u_hat.shape(2),
+                   zisa::integer_cast<zisa::int_t>(thread_dims.x)),
+      zisa::div_up(u_hat.shape(1),
                    zisa::integer_cast<zisa::int_t>(thread_dims.y)),
       1);
 
@@ -354,13 +354,13 @@ void incompressible_euler_mpi_3d_tracer_cuda(
     const zisa::shape_t<4> &shape_phys) {
   assert(B_hat.memory_location() == zisa::device_type::cuda);
   assert(u_hat.memory_location() == zisa::device_type::cuda);
-  const dim3 thread_dims(4, 4, 32);
+  const dim3 thread_dims(32, 4, 4);
   const dim3 block_dims(
-      zisa::div_up(u_hat.shape(1),
+      zisa::div_up(u_hat.shape(3),
                    zisa::integer_cast<zisa::int_t>(thread_dims.x)),
       zisa::div_up(u_hat.shape(2),
                    zisa::integer_cast<zisa::int_t>(thread_dims.y)),
-      zisa::div_up(u_hat.shape(3),
+      zisa::div_up(u_hat.shape(1),
                    zisa::integer_cast<zisa::int_t>(thread_dims.z)));
   incompressible_euler_mpi_3d_tracer_cuda_kernel<<<block_dims, thread_dims>>>(
       B_hat,

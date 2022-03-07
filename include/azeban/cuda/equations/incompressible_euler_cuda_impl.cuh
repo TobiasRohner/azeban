@@ -125,8 +125,8 @@ incompressible_euler_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
                                     zisa::array_view<complex_t, 3> dudt_hat,
                                     SpectralViscosity visc,
                                     Forcing forcing) {
-  const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
-  const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned i = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned j = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned stride_B = B_hat.shape(1) * B_hat.shape(2);
   const unsigned i_B
       = i >= u_hat.shape(1) / 2 + 1 ? B_hat.shape(1) - u_hat.shape(1) + i : i;
@@ -172,9 +172,9 @@ incompressible_euler_3d_cuda_kernel(zisa::array_const_view<complex_t, 4> B_hat,
                                     zisa::array_view<complex_t, 4> dudt_hat,
                                     SpectralViscosity visc,
                                     Forcing forcing) {
-  const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned i = blockIdx.z * blockDim.z + threadIdx.z;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
-  const unsigned k = blockIdx.z * blockDim.z + threadIdx.z;
+  const unsigned k = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned stride_B = B_hat.shape(1) * B_hat.shape(2) * B_hat.shape(3);
   const unsigned i_B
       = i >= u_hat.shape(1) / 2 + 1 ? B_hat.shape(1) - u_hat.shape(1) + i : i;
@@ -234,8 +234,8 @@ __global__ void incompressible_euler_2d_tracer_cuda_kernel(
     zisa::array_view<complex_t, 3> dudt_hat,
     SpectralViscosity visc,
     Forcing forcing) {
-  const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
-  const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned i = blockIdx.y * blockDim.y + threadIdx.y;
+  const unsigned j = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned stride_B = B_hat.shape(1) * B_hat.shape(2);
   const unsigned i_B
       = i >= u_hat.shape(1) / 2 + 1 ? B_hat.shape(1) - u_hat.shape(1) + i : i;
@@ -283,9 +283,9 @@ __global__ void incompressible_euler_3d_tracer_cuda_kernel(
     zisa::array_view<complex_t, 4> dudt_hat,
     SpectralViscosity visc,
     Forcing forcing) {
-  const unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
+  const unsigned i = blockIdx.z * blockDim.z + threadIdx.z;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
-  const unsigned k = blockIdx.z * blockDim.z + threadIdx.z;
+  const unsigned k = blockIdx.x * blockDim.x + threadIdx.x;
   const unsigned stride_B = B_hat.shape(1) * B_hat.shape(2) * B_hat.shape(3);
   const unsigned i_B
       = i >= u_hat.shape(1) / 2 + 1 ? B_hat.shape(1) - u_hat.shape(1) + i : i;
@@ -378,7 +378,7 @@ void incompressible_euler_compute_B_cuda<3>(
   assert(B.shape(1) == u.shape(1));
   assert(B.shape(2) == u.shape(2));
   assert(B.shape(3) == u.shape(3));
-  const dim3 thread_dims(4, 4, 32);
+  const dim3 thread_dims(32, 4, 4);
   const dim3 block_dims(
       zisa::div_up(static_cast<int>(u.shape(3)), thread_dims.x),
       zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.y),
@@ -426,7 +426,7 @@ void incompressible_euler_compute_B_tracer_cuda<3>(
   assert(B.shape(1) == u.shape(1));
   assert(B.shape(2) == u.shape(2));
   assert(B.shape(3) == u.shape(3));
-  const dim3 thread_dims(4, 4, 32);
+  const dim3 thread_dims(32, 4, 4);
   const dim3 block_dims(
       zisa::div_up(static_cast<int>(u.shape(3)), thread_dims.x),
       zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.y),
@@ -449,8 +449,8 @@ void incompressible_euler_2d_cuda(
 
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
-      zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.x),
-      zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.y),
+      zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.x),
+      zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.y),
       1);
 
   incompressible_euler_2d_cuda_kernel<<<block_dims, thread_dims>>>(
@@ -468,11 +468,11 @@ void incompressible_euler_3d_cuda(
     Forcing &forcing) {
   assert(B_hat.memory_location() == zisa::device_type::cuda);
   assert(u_hat.memory_location() == zisa::device_type::cuda);
-  const dim3 thread_dims(4, 4, 32);
+  const dim3 thread_dims(32, 4, 4);
   const dim3 block_dims(
-      zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.x),
+      zisa::div_up(static_cast<int>(u_hat.shape(3)), thread_dims.x),
       zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.y),
-      zisa::div_up(static_cast<int>(u_hat.shape(3)), thread_dims.z));
+      zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.z));
   incompressible_euler_3d_cuda_kernel<<<block_dims, thread_dims>>>(
       B_hat, u_hat, dudt_hat, visc, forcing);
   cudaDeviceSynchronize();
@@ -491,8 +491,8 @@ void incompressible_euler_2d_tracer_cuda(
 
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
-      zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.x),
-      zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.y),
+      zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.x),
+      zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.y),
       1);
 
   incompressible_euler_2d_tracer_cuda_kernel<<<block_dims, thread_dims>>>(
@@ -510,7 +510,7 @@ void incompressible_euler_3d_tracer_cuda(
     Forcing &forcing) {
   assert(B_hat.memory_location() == zisa::device_type::cuda);
   assert(u_hat.memory_location() == zisa::device_type::cuda);
-  const dim3 thread_dims(4, 4, 32);
+  const dim3 thread_dims(32, 4, 4);
   const dim3 block_dims(
       zisa::div_up(static_cast<int>(u_hat.shape(1)), thread_dims.x),
       zisa::div_up(static_cast<int>(u_hat.shape(2)), thread_dims.y),
