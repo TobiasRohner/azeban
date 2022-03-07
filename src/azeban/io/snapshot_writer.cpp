@@ -32,12 +32,11 @@ void SnapshotWriter<Dim>::write_snapshot(const Simulation<Dim> &simulation,
 template <int Dim>
 void SnapshotWriter<Dim>::write_snapshot(const Simulation<Dim> &simulation,
                                          zisa::int_t sample_idx,
-                                         MPI_Comm comm) {
-  AZEBAN_PROFILE_START("SnapshotWriter::write_snapshot", comm);
+                                         const Communicator *comm) {
+  AZEBAN_PROFILE_START("SnapshotWriter::write_snapshot", comm->get_mpi_comm());
   if constexpr (Dim > 1) {
-    int rank, size;
-    MPI_Comm_rank(comm, &rank);
-    MPI_Comm_size(comm, &size);
+    const int rank = comm->rank();
+    const int size = comm->size();
 
     const Grid<Dim> &grid = simulation.grid();
 
@@ -89,7 +88,7 @@ void SnapshotWriter<Dim>::write_snapshot(const Simulation<Dim> &simulation,
                    displs.data(),
                    mpi_type<real_t>(),
                    0,
-                   comm,
+                   comm->get_mpi_comm(),
                    &reqs[i]);
     }
     MPI_Waitall(simulation.n_vars(), reqs.data(), MPI_STATUSES_IGNORE);
@@ -98,7 +97,7 @@ void SnapshotWriter<Dim>::write_snapshot(const Simulation<Dim> &simulation,
       do_write_snapshot(sample_idx, simulation.time(), u_init);
     }
   }
-  AZEBAN_PROFILE_STOP("SnapshotWriter::write_snapshot", comm);
+  AZEBAN_PROFILE_STOP("SnapshotWriter::write_snapshot", comm->get_mpi_comm());
 }
 #endif
 

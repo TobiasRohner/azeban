@@ -20,6 +20,7 @@
 
 #include <azeban/equations/equation.hpp>
 #include <azeban/grid.hpp>
+#include <azeban/mpi/communicator.hpp>
 #include <nlohmann/json.hpp>
 
 namespace azeban {
@@ -27,7 +28,7 @@ namespace azeban {
 template <int Dim>
 std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
                                                  const Grid<Dim> &grid,
-                                                 MPI_Comm comm,
+                                                 const Communicator *comm,
                                                  bool has_tracer,
                                                  zisa::device_type device);
 

@@ -4,7 +4,7 @@
 #include <azeban/grid.hpp>
 #include <azeban/simulation.hpp>
 #if AZEBAN_HAS_MPI
-#include <mpi.h>
+#include <azeban/mpi/communicator.hpp>
 #endif
 
 namespace azeban {
@@ -23,7 +23,7 @@ public:
 #if AZEBAN_HAS_MPI
   void write_snapshot(const Simulation<Dim> &sim,
                       zisa::int_t sample_idx,
-                      MPI_Comm comm);
+                      const Communicator *comm);
 #endif
 
 protected:

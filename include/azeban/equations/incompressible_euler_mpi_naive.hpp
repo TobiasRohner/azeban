@@ -24,6 +24,7 @@
 #include <azeban/config.hpp>
 #include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
 #include <azeban/forcing/no_forcing.hpp>
+#include <azeban/mpi/communicator.hpp>
 #include <azeban/operations/fft_mpi_factory.hpp>
 #include <azeban/profiler.hpp>
 #include <fmt/core.h>
@@ -42,7 +43,7 @@ public:
   static constexpr int dim_v = Dim;
 
   IncompressibleEuler_MPI_Naive_Base(const Grid<dim_v> &grid,
-                                     MPI_Comm comm,
+                                     const Communicator *comm,
                                      bool has_tracer = false);
   IncompressibleEuler_MPI_Naive_Base(const IncompressibleEuler_MPI_Naive_Base &)
       = delete;
@@ -64,7 +65,7 @@ public:
 
 protected:
   using super::grid_;
-  MPI_Comm comm_;
+  const Communicator *comm_;
   zisa::array<complex_t, dim_v + 1> u_hat_partial_pad_;
   zisa::array<complex_t, dim_v + 1> h_u_hat_pad_;
   zisa::array<complex_t, dim_v + 1> d_u_hat_pad_;
@@ -110,13 +111,13 @@ public:
   template <bool enable = std::is_same_v<Forcing, NoForcing>,
             typename = std::enable_if_t<enable>>
   IncompressibleEuler_MPI_Naive(const Grid<2> &grid,
-                                MPI_Comm comm,
+                                const Communicator *comm,
                                 const SpectralViscosity &visc,
                                 bool has_tracer = false)
       : IncompressibleEuler_MPI_Naive(
           grid, comm, visc, NoForcing{}, has_tracer) {}
   IncompressibleEuler_MPI_Naive(const Grid<2> &grid,
-                                MPI_Comm comm,
+                                const Communicator *comm,
                                 const SpectralViscosity &visc,
                                 const Forcing &forcing,
                                 bool has_tracer = false)
@@ -242,13 +243,13 @@ public:
   template <bool enable = std::is_same_v<Forcing, NoForcing>,
             typename = std::enable_if_t<enable>>
   IncompressibleEuler_MPI_Naive(const Grid<3> &grid,
-                                MPI_Comm comm,
+                                const Communicator *comm,
                                 const SpectralViscosity &visc,
                                 bool has_tracer = false)
       : IncompressibleEuler_MPI_Naive(
           grid, comm, visc, NoForcing{}, has_tracer) {}
   IncompressibleEuler_MPI_Naive(const Grid<3> &grid,
-                                MPI_Comm comm,
+                                const Communicator *comm,
                                 const SpectralViscosity &visc,
                                 const Forcing &forcing,
                                 bool has_tracer = false)

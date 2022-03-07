@@ -69,9 +69,8 @@ real_t Simulation<Dim>::step() {
 
 #if AZEBAN_HAS_MPI
 template <int Dim>
-void Simulation<Dim>::simulate_until(real_t t, MPI_Comm comm) {
-  int rank;
-  MPI_Comm_rank(comm, &rank);
+void Simulation<Dim>::simulate_until(real_t t, const Communicator *comm) {
+  const int rank = comm->rank();
   real_t dt = cfl_.dt(u_view_, comm);
   while (time_ < t - dt) {
     if (rank == 0 && dt <= 1e-10) {
@@ -86,12 +85,12 @@ void Simulation<Dim>::simulate_until(real_t t, MPI_Comm comm) {
 }
 
 template <int Dim>
-void Simulation<Dim>::simulate_for(real_t t, MPI_Comm comm) {
+void Simulation<Dim>::simulate_for(real_t t, const Communicator *comm) {
   simulate_until(time_ + t, comm);
 }
 
 template <int Dim>
-real_t Simulation<Dim>::step(MPI_Comm comm) {
+real_t Simulation<Dim>::step(const Communicator *comm) {
   const real_t dt = cfl_.dt(u_view_, comm);
   timestepper_->integrate(dt, u_);
   time_ += dt;

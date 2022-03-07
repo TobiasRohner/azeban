@@ -17,7 +17,7 @@
  */
 #if AZEBAN_HAS_MPI
 
-#include <azeban/mpi_types.hpp>
+#include <azeban/mpi/mpi_types.hpp>
 #include <azeban/operations/transpose.hpp>
 #include <azeban/profiler.hpp>
 #include <iostream>
@@ -33,7 +33,7 @@ namespace azeban {
 
 template <int Dim>
 Transpose<Dim>::Transpose(
-    MPI_Comm comm,
+    const Communicator *comm,
     const zisa::array_const_view<complex_t, Dim + 1> &from,
     const zisa::array_view<complex_t, Dim + 1> &to)
     : Transpose(comm, from.shape(), to.shape(), from.memory_location()) {
@@ -42,18 +42,18 @@ Transpose<Dim>::Transpose(
 }
 
 template <int Dim>
-Transpose<Dim>::Transpose(MPI_Comm comm,
+Transpose<Dim>::Transpose(const Communicator *comm,
                           const zisa::shape_t<Dim + 1> &from_shape,
                           const zisa::shape_t<Dim + 1> &to_shape,
                           zisa::device_type location)
     : comm_(comm),
+      size_(comm->size()),
+      rank_(comm->rank()),
       location_(location),
       from_(from_shape, nullptr),
       to_(to_shape, nullptr),
       sendbuf_({}, nullptr),
       recvbuf_({}, nullptr) {
-  MPI_Comm_size(comm_, &size_);
-  MPI_Comm_rank(comm_, &rank_);
   from_shapes_ = std::make_unique<zisa::shape_t<Dim + 1>[]>(size_);
   to_shapes_ = std::make_unique<zisa::shape_t<Dim + 1>[]>(size_);
   MPI_Allgather(&from_shape,
@@ -62,14 +62,14 @@ Transpose<Dim>::Transpose(MPI_Comm comm,
                 from_shapes_.get(),
                 1,
                 mpi_type(from_shape),
-                comm_);
+                comm_->get_mpi_comm());
   MPI_Allgather(&to_shape,
                 1,
                 mpi_type(to_shape),
                 to_shapes_.get(),
                 1,
                 mpi_type(to_shape),
-                comm_);
+                comm_->get_mpi_comm());
   for (int d = 0; d <= Dim; ++d) {
     max_from_size_[d] = 0;
     max_to_size_[d] = 0;
@@ -220,36 +220,7 @@ void Transpose<Dim>::preprocess() {
 template <int Dim>
 void Transpose<Dim>::communicate() {
   AZEBAN_PROFILE_START("Transpose::communicate");
-  // TODO: Use GPUDirect
-  if (location_ == zisa::device_type::cpu) {
-    MPI_Alltoall(sendbuf_.raw(),
-                 sendbuf_.size() / size_,
-                 mpi_type<complex_t>(),
-                 recvbuf_.raw(),
-                 recvbuf_.size() / size_,
-                 mpi_type<complex_t>(),
-                 comm_);
-  }
-#if ZISA_HAS_CUDA
-  else if (location_ == zisa::device_type::cuda) {
-    zisa::array<complex_t, Dim + 2> sendbuf(sendbuf_.shape(),
-                                            zisa::device_type::cpu);
-    zisa::array<complex_t, Dim + 2> recvbuf(recvbuf_.shape(),
-                                            zisa::device_type::cpu);
-    zisa::copy(sendbuf, sendbuf_);
-    MPI_Alltoall(sendbuf.raw(),
-                 sendbuf.size() / size_,
-                 mpi_type<complex_t>(),
-                 recvbuf.raw(),
-                 recvbuf.size() / size_,
-                 mpi_type<complex_t>(),
-                 comm_);
-    zisa::copy(recvbuf_, recvbuf);
-  }
-#endif
-  else {
-    LOG_ERR("Unsupported Device Type");
-  }
+  comm_->alltoall(sendbuf_, recvbuf_);
   AZEBAN_PROFILE_STOP("Transpose::communicate");
 }
 
@@ -305,7 +276,7 @@ template class Transpose<3>;
 
 void transpose(const zisa::array_view<complex_t, 3> &dst,
                const zisa::array_const_view<complex_t, 3> &src,
-               MPI_Comm comm) {
+               const Communicator *comm) {
   Transpose<2> trans(comm, src, dst);
   const auto buffer_shape = trans.buffer_shape();
   auto sendbuf = zisa::array<complex_t, 4>(buffer_shape, trans.location());
@@ -317,7 +288,7 @@ void transpose(const zisa::array_view<complex_t, 3> &dst,
 
 void transpose(const zisa::array_view<complex_t, 4> &dst,
                const zisa::array_const_view<complex_t, 4> &src,
-               MPI_Comm comm) {
+               const Communicator *comm) {
   Transpose<3> trans(comm, src, dst);
   const auto buffer_shape = trans.buffer_shape();
   auto sendbuf = zisa::array<complex_t, 5>(buffer_shape, trans.location());

@@ -20,6 +20,7 @@
 
 #include <azeban/config.hpp>
 #include <azeban/cuda/operations/cufft_mpi.hpp>
+#include <azeban/mpi/communicator.hpp>
 #include <zisa/config.hpp>
 #include <zisa/memory/array_view.hpp>
 
@@ -29,7 +30,7 @@ template <int Dim>
 std::shared_ptr<FFT<Dim>>
 make_fft_mpi(const zisa::array_view<complex_t, Dim + 1> &u_hat,
              const zisa::array_view<real_t, Dim + 1> &u,
-             MPI_Comm comm,
+             const Communicator *comm,
              int direction = FFT_FORWARD | FFT_BACKWARD,
              void *work_area = nullptr) {
   if (u_hat.memory_location() == zisa::device_type::cuda

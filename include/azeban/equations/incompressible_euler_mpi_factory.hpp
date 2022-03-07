@@ -19,6 +19,7 @@
 #define AZEBAN_EQUATION_INCOMPRESSIBLE_EULER_MPI_FACTORY_HPP_
 
 #include "incompressible_euler_mpi.hpp"
+#include <azeban/mpi/communicator.hpp>
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>
 
@@ -27,7 +28,7 @@ namespace azeban {
 template <int Dim, typename SpectralViscosity, typename Forcing>
 std::shared_ptr<Equation<Dim>>
 make_incompressible_euler_mpi(const Grid<Dim> &grid,
-                              MPI_Comm comm,
+                              const Communicator *comm,
                               const SpectralViscosity &visc,
                               const Forcing &forcing,
                               bool has_tracer,

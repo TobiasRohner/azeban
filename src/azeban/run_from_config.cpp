@@ -11,7 +11,7 @@
 #include <zisa/cuda/memory/cuda_array.hpp>
 #include <zisa/memory/array.hpp>
 #if AZEBAN_HAS_MPI
-#include <azeban/mpi_types.hpp>
+#include <azeban/mpi/mpi_types.hpp>
 #include <azeban/simulation_mpi_factory.hpp>
 #include <mpi.h>
 #endif
@@ -106,10 +106,9 @@ void run_from_config(const nlohmann::json &config) {
 #if AZEBAN_HAS_MPI
 template <int dim_v>
 static void run_from_config_MPI_impl(const nlohmann::json &config,
-                                     MPI_Comm comm) {
-  int rank, size;
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
+                                     const Communicator *comm) {
+  const int rank = comm->rank();
+  const int size = comm->size();
 
   zisa::int_t num_samples = 1;
   if (config.contains("num_samples")) {
@@ -206,7 +205,7 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
                     cnts[rank],
                     mpi_type<real_t>(),
                     0,
-                    comm,
+                    comm->get_mpi_comm(),
                     &reqs[i]);
     }
     MPI_Waitall(simulation.n_vars(), reqs.data(), MPI_STATUSES_IGNORE);
@@ -224,7 +223,7 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
   }
 }
 
-void run_from_config(const nlohmann::json &config, MPI_Comm comm) {
+void run_from_config(const nlohmann::json &config, const Communicator *comm) {
   if (!config.contains("dimension")) {
     fmt::print(stderr, "Must provide dimension of simulation\n");
     exit(1);

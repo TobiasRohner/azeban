@@ -1,7 +1,7 @@
 #include <azeban/equations/advection_functions.hpp>
 #include <azeban/equations/incompressible_euler_functions.hpp>
 #include <azeban/equations/incompressible_euler_mpi.hpp>
-#include <azeban/mpi_types.hpp>
+#include <azeban/mpi/mpi_types.hpp>
 #include <azeban/operations/copy_from_padded.hpp>
 #include <azeban/operations/copy_to_padded.hpp>
 #include <azeban/operations/fft_factory.hpp>
@@ -15,7 +15,7 @@ namespace azeban {
 template <int Dim>
 IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
     const Grid<dim_v> &grid,
-    MPI_Comm comm,
+    const Communicator *comm,
     zisa::device_type device,
     bool has_tracer)
     : super(grid),
@@ -23,6 +23,8 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
       device_(device),
       has_tracer_(has_tracer),
       B_hat_({}, nullptr),
+      mpi_rank_(comm->rank()),
+      mpi_size_(comm->size()),
       u_hat_pad_({}, nullptr),
       u_yz_({}, nullptr),
       trans_u_sendbuf_({}, nullptr),
@@ -37,9 +39,6 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
       trans_B_recvbuf_({}, nullptr),
       B_yz_({}, nullptr),
       B_hat_pad_({}, nullptr) {
-  MPI_Comm_rank(comm_, &mpi_rank_);
-  MPI_Comm_size(comm_, &mpi_size_);
-
   size_t ws1_size = 0;
   size_t ws2_size = 0;
   size_t ws_fft_size = 0;
@@ -213,7 +212,7 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
     if (mpi_rank_ == r) {
       std::cout << ss.str();
     }
-    MPI_Barrier(comm_);
+    MPI_Barrier(comm_->get_mpi_comm());
   }
 
   // Initialize Fourier Transforms

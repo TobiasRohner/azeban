@@ -24,8 +24,8 @@
 #include <azeban/profiler.hpp>
 #include <zisa/memory/array_view.hpp>
 #if AZEBAN_HAS_MPI
-#include <azeban/mpi_types.hpp>
-#include <mpi.h>
+#include <azeban/mpi/communicator.hpp>
+#include <azeban/mpi/mpi_types.hpp>
 #endif
 
 namespace azeban {
@@ -53,12 +53,13 @@ public:
 
 #if AZEBAN_HAS_MPI
   real_t dt(const zisa::array_const_view<complex_t, dim_v + 1> &u_hat,
-            MPI_Comm comm) const {
-    AZEBAN_PROFILE_START("CFL::dt", comm);
+            const Communicator *comm) const {
+    AZEBAN_PROFILE_START("CFL::dt", comm->get_mpi_comm());
     const real_t sup_loc = norm(u_hat, 1);
     real_t sup;
-    MPI_Allreduce(&sup_loc, &sup, 1, mpi_type(sup), MPI_SUM, comm);
-    AZEBAN_PROFILE_STOP("CFL::dt", comm);
+    MPI_Allreduce(
+        &sup_loc, &sup, 1, mpi_type(sup), MPI_SUM, comm->get_mpi_comm());
+    AZEBAN_PROFILE_STOP("CFL::dt", comm->get_mpi_comm());
     return zisa::pow<dim_v - 1>(grid_.N_phys) * C_ / sup;
   }
 #endif

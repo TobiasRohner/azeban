@@ -6,10 +6,10 @@
 #include <azeban/equations/incompressible_euler_functions.hpp>
 #include <azeban/forcing/no_forcing.hpp>
 #include <azeban/memory/workspace.hpp>
+#include <azeban/mpi/communicator.hpp>
 #include <azeban/operations/fft.hpp>
 #include <azeban/operations/transpose.hpp>
 #include <azeban/profiler.hpp>
-#include <mpi.h>
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/equations/incompressible_euler_mpi_cuda.hpp>
 #endif
@@ -27,7 +27,7 @@ public:
   static constexpr int dim_v = Dim;
 
   IncompressibleEuler_MPI_Base(const Grid<dim_v> &grid,
-                               MPI_Comm comm,
+                               const Communicator *comm,
                                zisa::device_type device,
                                bool has_tracer = false);
   IncompressibleEuler_MPI_Base(const IncompressibleEuler_MPI_Base &) = delete;
@@ -44,7 +44,7 @@ public:
 
 protected:
   using super::grid_;
-  MPI_Comm comm_;
+  const Communicator *comm_;
   zisa::device_type device_;
   bool has_tracer_;
   zisa::array_view<complex_t, dim_v + 1> B_hat_;
@@ -120,14 +120,14 @@ public:
   template <bool enable = std::is_same_v<Forcing, NoForcing>,
             typename = std::enable_if_t<enable>>
   IncompressibleEuler_MPI(const Grid<2> &grid,
-                          MPI_Comm comm,
+                          const Communicator *comm,
                           const SpectralViscosity &visc,
                           zisa::device_type device,
                           bool has_tracer = false)
       : IncompressibleEuler_MPI(
           grid, comm, visc, NoForcing{}, device, has_tracer) {}
   IncompressibleEuler_MPI(const Grid<2> &grid,
-                          MPI_Comm comm,
+                          const Communicator *comm,
                           const SpectralViscosity &visc,
                           const Forcing &forcing,
                           zisa::device_type device,
@@ -258,14 +258,14 @@ public:
   template <bool enable = std::is_same_v<Forcing, NoForcing>,
             typename = std::enable_if_t<enable>>
   IncompressibleEuler_MPI(const Grid<3> &grid,
-                          MPI_Comm comm,
+                          const Communicator *comm,
                           const SpectralViscosity &visc,
                           zisa::device_type device,
                           bool has_tracer = false)
       : IncompressibleEuler_MPI(
           grid, comm, visc, NoForcing{}, device, has_tracer) {}
   IncompressibleEuler_MPI(const Grid<3> &grid,
-                          MPI_Comm comm,
+                          const Communicator *comm,
                           const SpectralViscosity &visc,
                           const Forcing &forcing,
                           zisa::device_type device,

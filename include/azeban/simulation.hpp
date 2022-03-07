@@ -22,7 +22,7 @@
 #include <azeban/evolution/cfl.hpp>
 #include <azeban/evolution/time_integrator.hpp>
 #if AZEBAN_HAS_MPI
-#include <mpi.h>
+#include <azeban/mpi/communicator.hpp>
 #endif
 
 namespace azeban {
@@ -50,9 +50,9 @@ public:
   void simulate_for(real_t t);
   real_t step();
 #if AZEBAN_HAS_MPI
-  void simulate_until(real_t t, MPI_Comm comm);
-  void simulate_for(real_t t, MPI_Comm comm);
-  real_t step(MPI_Comm comm);
+  void simulate_until(real_t t, const Communicator *comm);
+  void simulate_for(real_t t, const Communicator *comm);
+  real_t step(const Communicator *comm);
 #endif
 
   void reset() { time_ = 0; }

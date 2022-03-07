@@ -17,7 +17,7 @@
  */
 #if AZEBAN_HAS_MPI
 #include <azeban/cuda/operations/cufft_mpi.hpp>
-#include <azeban/mpi_types.hpp>
+#include <azeban/mpi/mpi_types.hpp>
 #include <azeban/operations/transpose.hpp>
 #include <azeban/profiler.hpp>
 #include <zisa/cuda/memory/cuda_array.hpp>
@@ -26,7 +26,7 @@ namespace azeban {
 
 CUFFT_MPI<2>::CUFFT_MPI(const zisa::array_view<complex_t, 3> &u_hat,
                         const zisa::array_view<real_t, 3> &u,
-                        MPI_Comm comm,
+                        const Communicator *comm,
                         int direction,
                         void *work_area)
     : super(direction),
@@ -55,7 +55,7 @@ size_t CUFFT_MPI<2>::get_work_area_size() const { return 0; }
 void CUFFT_MPI<2>::forward() {
   LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
              "Forward operation was not initialized");
-  AZEBAN_PROFILE_START("CUFFT_MPI::forward", comm_);
+  AZEBAN_PROFILE_START("CUFFT_MPI::forward", comm_->get_mpi_comm());
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {
@@ -67,11 +67,12 @@ void CUFFT_MPI<2>::forward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::forward::transpose", comm_);
+    AZEBAN_PROFILE_START("CUFFT_MPI::forward::transpose",
+                         comm_->get_mpi_comm());
     zisa::copy(mpi_send_buffer_, partial_u_hat_);
     transpose(mpi_recv_buffer_, mpi_send_buffer_, comm_);
     zisa::copy(u_hat_, mpi_recv_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::forward::transpose", comm_);
+    AZEBAN_PROFILE_STOP("CUFFT_MPI::forward::transpose", comm_->get_mpi_comm());
     // Perform the final local FFTs in place
     status = cufftExecC2C(plan_forward_c2c_,
                           reinterpret_cast<cufftComplex *>(u_hat_.raw()),
@@ -88,11 +89,12 @@ void CUFFT_MPI<2>::forward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::forward::transpose", comm_);
+    AZEBAN_PROFILE_START("CUFFT_MPI::forward::transpose",
+                         comm_->get_mpi_comm());
     zisa::copy(mpi_send_buffer_, partial_u_hat_);
     transpose(mpi_recv_buffer_, mpi_send_buffer_, comm_);
     zisa::copy(u_hat_, mpi_recv_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::forward::transpose", comm_);
+    AZEBAN_PROFILE_STOP("CUFFT_MPI::forward::transpose", comm_->get_mpi_comm());
     // Perform the final local FFTs in place
     status = cufftExecZ2Z(plan_forward_c2c_,
                           reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()),
@@ -101,7 +103,7 @@ void CUFFT_MPI<2>::forward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
   }
-  AZEBAN_PROFILE_STOP("CUFFT_MPI::forward", comm_);
+  AZEBAN_PROFILE_STOP("CUFFT_MPI::forward", comm_->get_mpi_comm());
 }
 
 void *CUFFT_MPI<2>::get_work_area() const { return work_area_; }
@@ -109,7 +111,7 @@ void *CUFFT_MPI<2>::get_work_area() const { return work_area_; }
 void CUFFT_MPI<2>::backward() {
   LOG_ERR_IF((direction_ & FFT_BACKWARD) == 0,
              "Backward operation was not initialized");
-  AZEBAN_PROFILE_START("CUFFT_MPI::backward", comm_);
+  AZEBAN_PROFILE_START("CUFFT_MPI::backward", comm_->get_mpi_comm());
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {
@@ -122,11 +124,13 @@ void CUFFT_MPI<2>::backward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::backward::transpose", comm_);
+    AZEBAN_PROFILE_START("CUFFT_MPI::backward::transpose",
+                         comm_->get_mpi_comm());
     zisa::copy(mpi_recv_buffer_, u_hat_);
     transpose(mpi_send_buffer_, mpi_recv_buffer_, comm_);
     zisa::copy(partial_u_hat_, mpi_send_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::backward::transpose", comm_);
+    AZEBAN_PROFILE_STOP("CUFFT_MPI::backward::transpose",
+                        comm_->get_mpi_comm());
     // Perform the final local FFTs in place
     status
         = cufftExecC2R(plan_backward_c2r_,
@@ -144,11 +148,13 @@ void CUFFT_MPI<2>::backward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::backward::transpose", comm_);
+    AZEBAN_PROFILE_START("CUFFT_MPI::backward::transpose",
+                         comm_->get_mpi_comm());
     zisa::copy(mpi_recv_buffer_, u_hat_);
     transpose(mpi_send_buffer_, mpi_recv_buffer_, comm_);
     zisa::copy(partial_u_hat_, mpi_send_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::backward::transpose", comm_);
+    AZEBAN_PROFILE_STOP("CUFFT_MPI::backward::transpose",
+                        comm_->get_mpi_comm());
     // Perform the final local FFTs in place
     status = cufftExecZ2D(
         plan_backward_c2r_,
@@ -157,7 +163,7 @@ void CUFFT_MPI<2>::backward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
   }
-  AZEBAN_PROFILE_STOP("CUFFT_MPI::backward", comm_);
+  AZEBAN_PROFILE_STOP("CUFFT_MPI::backward", comm_->get_mpi_comm());
 }
 
 void CUFFT_MPI<2>::do_initialize(const zisa::array_view<complex_t, 3> &u_hat,
@@ -168,10 +174,6 @@ void CUFFT_MPI<2>::do_initialize(const zisa::array_view<complex_t, 3> &u_hat,
              "Unsupported Memory Location");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cuda,
              "Unsupported Memory Location");
-
-  int rank, size;
-  MPI_Comm_rank(comm_, &rank);
-  MPI_Comm_size(comm_, &size);
 
   zisa::shape_t<3> partial_u_hat_size(
       u.shape(0), u.shape(1), u.shape(2) / 2 + 1);
@@ -261,7 +263,7 @@ void CUFFT_MPI<2>::do_set_work_area(void *work_area) { ZISA_UNUSED(work_area); }
 
 CUFFT_MPI<3>::CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
                         const zisa::array_view<real_t, 4> &u,
-                        MPI_Comm comm,
+                        const Communicator *comm,
                         int direction,
                         void *work_area)
     : super(direction),
@@ -290,9 +292,7 @@ size_t CUFFT_MPI<3>::get_work_area_size() const { return 0; }
 void CUFFT_MPI<3>::forward() {
   LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
              "Forward operation was not initialized");
-  int rank;
-  MPI_Comm_rank(comm_, &rank);
-  AZEBAN_PROFILE_START("CUFFT_MPI::forward", comm_);
+  AZEBAN_PROFILE_START("CUFFT_MPI::forward", comm_->get_mpi_comm());
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {
@@ -304,11 +304,11 @@ void CUFFT_MPI<3>::forward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::transpose", comm_);
+    AZEBAN_PROFILE_START("CUFFT_MPI::transpose", comm_->get_mpi_comm());
     zisa::copy(mpi_send_buffer_, partial_u_hat_);
     transpose(mpi_recv_buffer_, mpi_send_buffer_, comm_);
     zisa::copy(u_hat_, mpi_recv_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose", comm_);
+    AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose", comm_->get_mpi_comm());
     // Perform the final local FFTs in place
     status = cufftExecC2C(plan_forward_c2c_,
                           reinterpret_cast<cufftComplex *>(u_hat_.raw()),
@@ -338,15 +338,13 @@ void CUFFT_MPI<3>::forward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
   }
-  AZEBAN_PROFILE_STOP("CUFFT_MPI::forward", comm_);
+  AZEBAN_PROFILE_STOP("CUFFT_MPI::forward", comm_->get_mpi_comm());
 }
 
 void CUFFT_MPI<3>::backward() {
   LOG_ERR_IF((direction_ & FFT_BACKWARD) == 0,
              "Backward operation was not initialized");
-  int rank;
-  MPI_Comm_rank(comm_, &rank);
-  AZEBAN_PROFILE_START("CUFFT_MPI::backward", comm_);
+  AZEBAN_PROFILE_START("CUFFT_MPI::backward", comm_->get_mpi_comm());
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {
@@ -359,11 +357,11 @@ void CUFFT_MPI<3>::backward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::transpose", comm_);
+    AZEBAN_PROFILE_START("CUFFT_MPI::transpose", comm_->get_mpi_comm());
     zisa::copy(mpi_recv_buffer_, u_hat_);
     transpose(mpi_send_buffer_, mpi_recv_buffer_, comm_);
     zisa::copy(partial_u_hat_, mpi_send_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose", comm_);
+    AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose", comm_->get_mpi_comm());
     // Perform the final local FFTs in place
     status
         = cufftExecC2R(plan_backward_c2r_,
@@ -381,11 +379,11 @@ void CUFFT_MPI<3>::backward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::transpose", comm_);
+    AZEBAN_PROFILE_START("CUFFT_MPI::transpose", comm_->get_mpi_comm());
     zisa::copy(mpi_recv_buffer_, u_hat_);
     transpose(mpi_send_buffer_, mpi_recv_buffer_, comm_);
     zisa::copy(partial_u_hat_, mpi_send_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose", comm_);
+    AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose", comm_->get_mpi_comm());
     // Perform the final local FFTs in place
     status = cufftExecZ2D(
         plan_backward_c2r_,
@@ -394,7 +392,7 @@ void CUFFT_MPI<3>::backward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
   }
-  AZEBAN_PROFILE_STOP("CUFFT_MPI::backward", comm_);
+  AZEBAN_PROFILE_STOP("CUFFT_MPI::backward", comm_->get_mpi_comm());
 }
 
 void *CUFFT_MPI<3>::get_work_area() const { return work_area_; }
@@ -407,10 +405,6 @@ void CUFFT_MPI<3>::do_initialize(const zisa::array_view<complex_t, 4> &u_hat,
              "Unsupported Memory Location");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cuda,
              "Unsupported Memory Location");
-
-  int rank, size;
-  MPI_Comm_rank(comm_, &rank);
-  MPI_Comm_size(comm_, &size);
 
   zisa::shape_t<4> partial_u_hat_size(
       u.shape(0), u.shape(1), u.shape(2), u.shape(3) / 2 + 1);

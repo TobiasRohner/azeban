@@ -19,10 +19,10 @@
 #define CUFFT_MPI_H_
 
 #include <azeban/cuda/cuda_check_error.hpp>
+#include <azeban/mpi/communicator.hpp>
 #include <azeban/operations/fft.hpp>
 #include <azeban/profiler.hpp>
 #include <cufft.h>
-#include <mpi.h>
 #include <vector>
 
 namespace azeban {
@@ -46,7 +46,7 @@ public:
 
   CUFFT_MPI(const zisa::array_view<complex_t, 3> &u_hat,
             const zisa::array_view<real_t, 3> &u,
-            MPI_Comm comm,
+            const Communicator *comm,
             int direction = FFT_FORWARD | FFT_BACKWARD,
             void *work_area = nullptr);
 
@@ -75,7 +75,7 @@ private:
   cufftHandle plan_forward_c2c_;
   cufftHandle plan_backward_c2r_;
   cufftHandle plan_backward_c2c_;
-  MPI_Comm comm_;
+  const Communicator *comm_;
   void *work_area_;
   zisa::array<complex_t, 3> partial_u_hat_;
   zisa::array<complex_t, 3> mpi_send_buffer_;
@@ -104,7 +104,7 @@ public:
 
   CUFFT_MPI(const zisa::array_view<complex_t, 4> &u_hat,
             const zisa::array_view<real_t, 4> &u,
-            MPI_Comm comm,
+            const Communicator *comm,
             int direction = FFT_FORWARD | FFT_BACKWARD,
             void *work_area = nullptr);
 
@@ -133,7 +133,7 @@ private:
   cufftHandle plan_forward_c2c_;
   cufftHandle plan_backward_c2r_;
   cufftHandle plan_backward_c2c_;
-  MPI_Comm comm_;
+  const Communicator *comm_;
   void *work_area_;
   zisa::array<complex_t, 4> partial_u_hat_;
   zisa::array<complex_t, 4> mpi_send_buffer_;

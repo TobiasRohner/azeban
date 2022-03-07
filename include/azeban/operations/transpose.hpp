@@ -22,8 +22,8 @@
 
 #include <azeban/config.hpp>
 #include <azeban/memory/workspace.hpp>
+#include <azeban/mpi/communicator.hpp>
 #include <memory>
-#include <mpi.h>
 #include <zisa/memory/array_view.hpp>
 
 namespace azeban {
@@ -31,10 +31,10 @@ namespace azeban {
 template <int Dim>
 class Transpose {
 public:
-  Transpose(MPI_Comm comm,
+  Transpose(const Communicator *comm,
             const zisa::array_const_view<complex_t, Dim + 1> &from,
             const zisa::array_view<complex_t, Dim + 1> &to);
-  Transpose(MPI_Comm comm,
+  Transpose(const Communicator *comm,
             const zisa::shape_t<Dim + 1> &from_shape,
             const zisa::shape_t<Dim + 1> &to_shape,
             zisa::device_type location);
@@ -54,7 +54,7 @@ public:
   void eval();
 
 private:
-  MPI_Comm comm_;
+  const Communicator *comm_;
   int size_, rank_;
   zisa::device_type location_;
   zisa::array_const_view<complex_t, Dim + 1> from_;
@@ -75,10 +75,10 @@ private:
 
 void transpose(const zisa::array_view<complex_t, 3> &dst,
                const zisa::array_const_view<complex_t, 3> &src,
-               MPI_Comm comm);
+               const Communicator *comm);
 void transpose(const zisa::array_view<complex_t, 4> &dst,
                const zisa::array_const_view<complex_t, 4> &src,
-               MPI_Comm comm);
+               const Communicator *comm);
 
 }
 

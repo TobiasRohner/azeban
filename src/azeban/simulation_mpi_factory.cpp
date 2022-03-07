@@ -8,9 +8,9 @@ namespace azeban {
 
 template <int Dim>
 Simulation<Dim> make_simulation_mpi(const nlohmann::json &config,
-                                    MPI_Comm comm) {
-  int size;
-  MPI_Comm_size(comm, &size);
+                                    const Communicator *comm) {
+  const int size = comm->size();
+  ;
   if (size == 1) {
     // No MPI
     return make_simulation<Dim>(config);
@@ -66,8 +66,8 @@ Simulation<Dim> make_simulation_mpi(const nlohmann::json &config,
 }
 
 template Simulation<2> make_simulation_mpi<2>(const nlohmann::json &config,
-                                              MPI_Comm comm);
+                                              const Communicator *comm);
 template Simulation<3> make_simulation_mpi<3>(const nlohmann::json &config,
-                                              MPI_Comm comm);
+                                              const Communicator *comm);
 
 }

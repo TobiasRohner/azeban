@@ -23,8 +23,8 @@
 #include <azeban/evolution/ssp_rk2.hpp>
 #include <azeban/evolution/ssp_rk3.hpp>
 #include <azeban/evolution/time_integrator.hpp>
+#include <azeban/mpi/communicator.hpp>
 #include <fmt/core.h>
-#include <mpi.h>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <zisa/config.hpp>
@@ -37,7 +37,7 @@ make_timestepper_mpi(const nlohmann::json &config,
                      const GridT<Dim> &grid,
                      const std::shared_ptr<Equation<Dim>> &equation,
                      zisa::device_type device,
-                     MPI_Comm comm) {
+                     const Communicator *comm) {
   if (!config.contains("type")) {
     fmt::print(stderr, "Missing timestepper type\n");
     exit(1);

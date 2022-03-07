@@ -16,12 +16,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <azeban/profiler.hpp>
+#include <azeban/run_from_config.hpp>
 #include <fmt/core.h>
 #include <fstream>
 #include <iomanip>
 #include <nlohmann/json.hpp>
-//#include <zisa/config.hpp>
-#include <azeban/run_from_config.hpp>
+#if AZEBAN_HAS_MPI
+#include <azeban/mpi/manual_cuda_aware_communicator.hpp>
+#endif
 
 using namespace azeban;
 
@@ -74,7 +76,8 @@ int main(int argc, char *argv[]) {
 #if AZEBAN_HAS_MPI
   MPI_Barrier(MPI_COMM_WORLD);
   if (use_mpi) {
-    run_from_config(config, MPI_COMM_WORLD);
+    ManualCUDAAwareCommunicator comm(MPI_COMM_WORLD);
+    run_from_config(config, &comm);
   } else {
 #endif
     run_from_config(config);

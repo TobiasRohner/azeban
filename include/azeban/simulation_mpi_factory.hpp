@@ -18,6 +18,7 @@
 #ifndef SIMULATION_MPI_FACTORY_H_
 #define SIMULATION_MPI_FACTORY_H_
 
+#include <azeban/mpi/communicator.hpp>
 #include <azeban/simulation.hpp>
 #include <nlohmann/json.hpp>
 
@@ -25,7 +26,7 @@ namespace azeban {
 
 template <int Dim>
 Simulation<Dim> make_simulation_mpi(const nlohmann::json &config,
-                                    MPI_Comm comm);
+                                    const Communicator *comm);
 
 }
 

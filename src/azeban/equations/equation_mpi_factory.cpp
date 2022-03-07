@@ -13,7 +13,7 @@ template <int Dim>
 static std::shared_ptr<Equation<Dim>>
 make_equation_mpi(const nlohmann::json &config,
                   const Grid<Dim> &grid,
-                  MPI_Comm comm,
+                  const Communicator *comm,
                   bool has_tracer,
                   const std::string &visc_type,
                   const std::string &forcing_type,
@@ -60,7 +60,7 @@ template <int Dim, typename SpectralViscosity>
 static std::shared_ptr<Equation<Dim>>
 make_equation_mpi(const nlohmann::json &config,
                   const Grid<Dim> &grid,
-                  MPI_Comm comm,
+                  const Communicator *comm,
                   bool has_tracer,
                   const SpectralViscosity &visc,
                   const std::string &forcing_type,
@@ -96,7 +96,7 @@ make_equation_mpi(const nlohmann::json &config,
 template <int Dim, typename SpectralViscosity, typename Forcing>
 static std::shared_ptr<Equation<Dim>>
 make_equation_mpi(const Grid<Dim> &grid,
-                  MPI_Comm comm,
+                  const Communicator *comm,
                   bool has_tracer,
                   const SpectralViscosity &visc,
                   const Forcing &forcing,
@@ -118,7 +118,7 @@ make_equation_mpi(const Grid<Dim> &grid,
 template <int Dim>
 std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
                                                  const Grid<Dim> &grid,
-                                                 MPI_Comm comm,
+                                                 const Communicator *comm,
                                                  bool has_tracer,
                                                  zisa::device_type device) {
   if (!config.contains("name")) {
@@ -161,13 +161,13 @@ std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
 template std::shared_ptr<Equation<2>>
 make_equation_mpi<2>(const nlohmann::json &config,
                      const Grid<2> &grid,
-                     MPI_Comm comm,
+                     const Communicator *comm,
                      bool has_tracer,
                      zisa::device_type device);
 template std::shared_ptr<Equation<3>>
 make_equation_mpi<3>(const nlohmann::json &config,
                      const Grid<3> &grid,
-                     MPI_Comm comm,
+                     const Communicator *comm,
                      bool has_tracer,
                      zisa::device_type device);
 

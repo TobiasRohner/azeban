@@ -26,6 +26,7 @@
 #include <zisa/memory/array.hpp>
 #if AZEBAN_HAS_MPI
 #include <azeban/cuda/operations/cufft_mpi.hpp>
+#include <azeban/mpi/communicator.hpp>
 #endif
 
 static zisa::int_t intpow(zisa::int_t b, zisa::int_t e) {
@@ -166,9 +167,9 @@ BENCHMARK_TEMPLATE(bm_fft_forward, 3)->Apply(fft_3d_params);
 
 #if AZEBAN_HAS_MPI
 static void bm_fft_3d_forward_mpi(benchmark::State &state) {
-  int size, rank;
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  azeban::Communicator comm(MPI_COMM_WORLD);
+  const int rank = comm.rank();
+  const int size = comm.size();
   const zisa::int_t d = state.range(0);
   const zisa::int_t n = state.range(1);
   zisa::shape_t<4> rshape{d, n / size + (rank < n % size ? 1 : 0), n, n};
@@ -185,12 +186,12 @@ static void bm_fft_3d_forward_mpi(benchmark::State &state) {
   zisa::copy(d_u, h_u);
 
   const auto fft = std::make_shared<azeban::CUFFT_MPI<3>>(
-      d_u_hat, d_u, MPI_COMM_WORLD, azeban::FFT_FORWARD);
+      d_u_hat, d_u, &comm, azeban::FFT_FORWARD);
 
   for (auto _ : state) {
     fft->forward();
     cudaDeviceSynchronize();
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(comm.get_mpi_comm());
   }
 }
 
