@@ -27,6 +27,7 @@
 #include <zisa/utils/logging.hpp>
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/operations/transpose.hpp>
+#include <azeban/memory/mapped_array.hpp>
 #endif
 
 namespace azeban {
@@ -106,8 +107,6 @@ zisa::shape_t<5> Transpose<3>::buffer_shape() const {
 template <int Dim>
 void Transpose<Dim>::set_send_buffer(
     const zisa::array_view<complex_t, Dim + 2> &sendbuf) {
-  LOG_ERR_IF(sendbuf.memory_location() != location(),
-             "Send buffer is in the wrong memory location");
   LOG_ERR_IF(sendbuf.shape() != buffer_shape(),
              "Send buffer has the wrong shape");
   sendbuf_ = sendbuf;
@@ -116,8 +115,6 @@ void Transpose<Dim>::set_send_buffer(
 template <int Dim>
 void Transpose<Dim>::set_recv_buffer(
     const zisa::array_view<complex_t, Dim + 2> &recvbuf) {
-  LOG_ERR_IF(recvbuf.memory_location() != location(),
-             "Receive buffer is in the wrong memory location");
   LOG_ERR_IF(recvbuf.shape() != buffer_shape(),
              "Receive buffer has the wrong shape");
   recvbuf_ = recvbuf;
@@ -210,8 +207,16 @@ void Transpose<Dim>::preprocess() {
   }
 #if ZISA_HAS_CUDA
   else if (location_ == zisa::device_type::cuda) {
-    transpose_cuda_preprocess(
-        from_, sendbuf_, from_shapes_.get(), to_shapes_.get(), rank_);
+    if (sendbuf_.memory_location() == zisa::device_type::cuda) {
+      transpose_cuda_preprocess(
+          from_, sendbuf_, from_shapes_.get(), to_shapes_.get(), rank_);
+    } else {
+      // Assume array is memory mapped
+      zisa::array_view<complex_t, Dim + 2> sendbuf_device
+          = mapped_array_to_cuda_view(sendbuf_);
+      transpose_cuda_preprocess(
+          from_, sendbuf_device, from_shapes_.get(), to_shapes_.get(), rank_);
+    }
   }
 #endif
   AZEBAN_PROFILE_STOP("Transpose::preprocess");
@@ -264,8 +269,16 @@ void Transpose<Dim>::postprocess() {
   }
 #if ZISA_HAS_CUDA
   else if (location_ == zisa::device_type::cuda) {
-    transpose_cuda_postprocess(
-        recvbuf_, to_, from_shapes_.get(), to_shapes_.get(), rank_);
+    if (recvbuf_.memory_location() == zisa::device_type::cuda) {
+      transpose_cuda_postprocess(
+          recvbuf_, to_, from_shapes_.get(), to_shapes_.get(), rank_);
+    } else {
+      // Assume aray is memory mapped
+      zisa::array_const_view<complex_t, Dim + 2> recvbuf_device
+          = mapped_array_to_cuda_view(recvbuf_);
+      transpose_cuda_postprocess(
+          recvbuf_device, to_, from_shapes_.get(), to_shapes_.get(), rank_);
+    }
   }
 #endif
   AZEBAN_PROFILE_STOP("Transpose::postprocess");

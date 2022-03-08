@@ -8,6 +8,7 @@
 #include <sstream>
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
+#include <azeban/memory/mapped_array.hpp>
 #endif
 
 namespace azeban {
@@ -27,16 +28,12 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
       mpi_size_(comm->size()),
       u_hat_pad_({}, nullptr),
       u_yz_({}, nullptr),
-      trans_u_sendbuf_({}, nullptr),
-      trans_u_recvbuf_({}, nullptr),
       u_yz_trans_({}, nullptr),
       u_yz_trans_pad_({}, nullptr),
       u_xyz_trans_({}, nullptr),
       B_xyz_trans_({}, nullptr),
       B_yz_trans_pad_({}, nullptr),
       B_yz_trans_({}, nullptr),
-      trans_B_sendbuf_({}, nullptr),
-      trans_B_recvbuf_({}, nullptr),
       B_yz_({}, nullptr),
       B_hat_pad_({}, nullptr) {
   size_t ws1_size = 0;
@@ -98,10 +95,6 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   transpose_u_ = std::make_shared<Transpose<dim_v>>(
       comm, shape_u_yz, shape_u_yz_trans, device);
   const auto trans_u_buf_shape = transpose_u_->buffer_shape();
-  const size_t size_trans_u_buf
-      = sizeof(complex_t) * zisa::product(trans_u_buf_shape);
-  ws1_size = zisa::max(ws1_size, size_trans_u_buf);
-  ws2_size = zisa::max(ws2_size, size_trans_u_buf);
 
   // Transposed data padded in the x-direction
   zisa::shape_t<dim_v + 1> shape_u_yz_trans_pad;
@@ -153,10 +146,6 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   transpose_B_ = std::make_shared<Transpose<dim_v>>(
       comm, shape_B_yz_trans, shape_B_yz, device);
   const auto trans_B_buf_shape = transpose_B_->buffer_shape();
-  const size_t size_trans_B_buf
-      = sizeof(complex_t) * zisa::product(trans_B_buf_shape);
-  ws1_size = zisa::max(ws1_size, size_trans_B_buf);
-  ws2_size = zisa::max(ws2_size, size_trans_B_buf);
 
   // Buffer to store padded B_hat in y(z)-directions
   zisa::shape_t<dim_v + 1> shape_B_hat_pad = shape_B_fourier_pad;
@@ -177,16 +166,42 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   // Generate views onto workspaces
   u_hat_pad_ = ws1_.get_view<complex_t>(0, shape_u_hat_pad);
   u_yz_ = ws2_.get_view<complex_t>(0, shape_u_yz);
-  trans_u_sendbuf_ = ws1_.get_view<complex_t>(0, trans_u_buf_shape);
-  trans_u_recvbuf_ = ws2_.get_view<complex_t>(0, trans_u_buf_shape);
+  if (device == zisa::device_type::cpu) {
+    trans_u_sendbuf_ = zisa::array<complex_t, dim_v + 2>(
+        trans_u_buf_shape, zisa::device_type::cpu);
+    trans_u_recvbuf_ = zisa::array<complex_t, dim_v + 2>(
+        trans_u_buf_shape, zisa::device_type::cpu);
+  }
+#if ZISA_HAS_CUDA
+  else if (device == zisa::device_type::cuda) {
+    trans_u_sendbuf_ = mapped_array<complex_t, dim_v + 2>(trans_u_buf_shape);
+    trans_u_recvbuf_ = mapped_array<complex_t, dim_v + 2>(trans_u_buf_shape);
+  }
+#endif
+  else {
+    LOG_ERR("Unsupported device");
+  }
   u_yz_trans_ = ws1_.get_view<complex_t>(0, shape_u_yz_trans);
   u_yz_trans_pad_ = ws2_.get_view<complex_t>(0, shape_u_yz_trans_pad);
   u_xyz_trans_ = ws1_.get_view<real_t>(0, shape_u_xyz_trans);
   B_xyz_trans_ = ws2_.get_view<real_t>(0, shape_B_xyz_trans);
   B_yz_trans_pad_ = ws1_.get_view<complex_t>(0, shape_B_yz_trans_pad);
   B_yz_trans_ = ws2_.get_view<complex_t>(0, shape_B_yz_trans);
-  trans_B_sendbuf_ = ws1_.get_view<complex_t>(0, trans_B_buf_shape);
-  trans_B_recvbuf_ = ws2_.get_view<complex_t>(0, trans_B_buf_shape);
+  if (device == zisa::device_type::cpu) {
+    trans_B_sendbuf_ = zisa::array<complex_t, dim_v + 2>(
+        trans_B_buf_shape, zisa::device_type::cpu);
+    trans_B_recvbuf_ = zisa::array<complex_t, dim_v + 2>(
+        trans_B_buf_shape, zisa::device_type::cpu);
+  }
+#if ZISA_HAS_CUDA
+  else if (device == zisa::device_type::cuda) {
+    trans_B_sendbuf_ = mapped_array<complex_t, dim_v + 2>(trans_B_buf_shape);
+    trans_B_recvbuf_ = mapped_array<complex_t, dim_v + 2>(trans_B_buf_shape);
+  }
+#endif
+  else {
+    LOG_ERR("Unsupported device");
+  }
   B_yz_ = ws1_.get_view<complex_t>(0, shape_B_yz);
   B_hat_pad_ = ws2_.get_view<complex_t>(0, shape_B_hat_pad);
   B_hat_ = ws1_.get_view<complex_t>(0, shape_B_hat);

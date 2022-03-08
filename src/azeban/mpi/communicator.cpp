@@ -30,7 +30,6 @@ void Communicator::do_alltoall(const void *sendbuf,
                                int recvcount,
                                MPI_Datatype recvtype,
                                zisa::device_type recvloc) const {
-  fmt::print("Called Communicator::do_alltoall\n");
   LOG_ERR_IF(sendloc != zisa::device_type::cpu,
              "Expected sendbuf to be on the host");
   LOG_ERR_IF(recvloc != zisa::device_type::cpu,

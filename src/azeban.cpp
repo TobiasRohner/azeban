@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 #if AZEBAN_HAS_MPI
   MPI_Barrier(MPI_COMM_WORLD);
   if (use_mpi) {
-    ManualCUDAAwareCommunicator comm(MPI_COMM_WORLD);
+    Communicator comm(MPI_COMM_WORLD);
     run_from_config(config, &comm);
   } else {
 #endif
