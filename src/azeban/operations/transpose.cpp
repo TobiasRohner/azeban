@@ -28,6 +28,7 @@
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/operations/transpose.hpp>
 #include <azeban/memory/mapped_array.hpp>
+#include <azeban/memory/pinned_array.hpp>
 #endif
 
 namespace azeban {
@@ -225,7 +226,15 @@ void Transpose<Dim>::preprocess() {
 template <int Dim>
 void Transpose<Dim>::communicate() {
   AZEBAN_PROFILE_START("Transpose::communicate");
-  comm_->alltoall(sendbuf_, recvbuf_);
+  if (sendbuf_.memory_location() == zisa::device_type::cpu) {
+    comm_->alltoall(sendbuf_, recvbuf_);
+  }
+  else {
+    // Copy down to pinned memory
+    auto sendbuf = pinned_array<complex_t, Dim + 2>(sendbuf_.shape());
+    zisa::copy(sendbuf, sendbuf_);
+    comm_->alltoall(sendbuf.const_view(), recvbuf_);
+  }
   AZEBAN_PROFILE_STOP("Transpose::communicate");
 }
 
@@ -273,7 +282,7 @@ void Transpose<Dim>::postprocess() {
       transpose_cuda_postprocess(
           recvbuf_, to_, from_shapes_.get(), to_shapes_.get(), rank_);
     } else {
-      // Assume aray is memory mapped
+      // Assume array is memory mapped
       zisa::array_const_view<complex_t, Dim + 2> recvbuf_device
           = mapped_array_to_cuda_view(recvbuf_);
       transpose_cuda_postprocess(
