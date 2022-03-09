@@ -66,8 +66,11 @@ private:
   zisa::shape_t<Dim + 1> max_from_size_;
   zisa::shape_t<Dim + 1> max_to_size_;
 
+  void eval_cpu();
+  void eval_gpu();
   void preprocess_cpu();
   void preprocess();
+  void communicate_cpu();
   void communicate();
   void postprocess_cpu();
   void postprocess();

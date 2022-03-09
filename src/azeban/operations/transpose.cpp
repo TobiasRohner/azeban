@@ -56,6 +56,7 @@ Transpose<Dim>::Transpose(const Communicator *comm,
       to_(to_shape, nullptr),
       sendbuf_({}, nullptr),
       recvbuf_({}, nullptr) {
+  LOG_ERR_IF(size_ % 2, "Transpose does not support an uneven number of MPI Ranks");
   from_shapes_ = std::make_unique<zisa::shape_t<Dim + 1>[]>(size_);
   to_shapes_ = std::make_unique<zisa::shape_t<Dim + 1>[]>(size_);
   MPI_Allgather(&from_shape,
@@ -144,10 +145,119 @@ void Transpose<Dim>::eval() {
   LOG_ERR_IF(recvbuf_.raw() == nullptr, "Receive buffer uninitialized");
   LOG_ERR_IF(sendbuf_.raw() == recvbuf_.raw(),
              "In-place operation is not supported");
-  preprocess();
-  communicate();
-  postprocess();
+  if (location_ == zisa::device_type::cpu) {
+    eval_cpu();
+  }
+#if ZISA_HAS_CUDA
+  else if (location_ == zisa::device_type::cuda) {
+    eval_gpu();
+  }
+#endif
+  else {
+    LOG_ERR("Unsupporte location for transpose");
+  }
   AZEBAN_PROFILE_STOP("Transpose::eval");
+}
+
+template<int Dim>
+void Transpose<Dim>::eval_cpu() {
+  preprocess_cpu();
+  communicate_cpu();
+  postprocess_cpu();
+}
+
+template<int Dim>
+void Transpose<Dim>::eval_gpu() {
+#if ZISA_HAS_CUDA
+  // Figure out order to transpose blocks in
+  std::vector<int> comm_ranks;
+  for (int r = 0 ; r < size_ ; ++r) {
+    if (rank_ % 2) {
+      comm_ranks.push_back((2 * size_ - rank_ - 1 - r) % size_);
+    } else {
+      comm_ranks.push_back((2 * size_ - rank_ - 1 + r) % size_);
+    }
+  }
+  // Compute the offset for the i-th block
+  const auto compute_to_offset = [&](zisa::int_t i) {
+    zisa::int_t offset = 0;
+    for (zisa::int_t r = 0 ; r < i ; ++r) {
+      offset += to_shapes_[r][1];
+    }
+    return offset;
+  };
+  const auto compute_from_offset = [&](zisa::int_t i) {
+    zisa::int_t offset = 0;
+    for (zisa::int_t r = 0 ; r < i ; ++r) {
+      offset += from_shapes_[r][1];
+    }
+    return offset;
+  };
+
+  // Copy down to pinned memory
+  auto sendbuf_host = pinned_array<complex_t, Dim + 2>(sendbuf_.shape());
+  std::vector<cudaStream_t> streams(size_);
+  for (int r = 0 ; r < size_ ; ++r) {
+    const auto err = cudaStreamCreate(&streams[r]);
+    cudaCheckError(err);
+  }
+  // Asynchronously preprocess blocks and copy them to host pinned memory
+  zisa::shape_t<Dim + 1> buf_view_shape;
+  for (int i = 0 ; i < Dim + 1 ; ++i) {
+    buf_view_shape[i] = sendbuf_.shape(i + 1);
+  }
+  const zisa::int_t buf_view_size = zisa::product(buf_view_shape);
+  for (int r : comm_ranks) {
+    const zisa::int_t offset = compute_to_offset(r);
+    complex_t *sendbuf_start = sendbuf_.raw() + r * buf_view_size;
+    complex_t *sendbuf_host_start = sendbuf_host.raw() + r * buf_view_size;
+    transpose_cuda_preprocess(from_,
+			      sendbuf_,
+			      from_shapes_.get(),
+			      to_shapes_.get(),
+			      rank_,
+			      r,
+			      offset,
+			      streams[r]);
+    const auto err = cudaMemcpyAsync(sendbuf_host_start,
+				     sendbuf_start,
+				     sizeof(complex_t) * buf_view_size,
+				     cudaMemcpyDeviceToHost,
+				     streams[r]);
+    cudaCheckError(err);
+  }
+  // Issue blockwise communications and postprocess asynchronously afterwards
+  for (int r : comm_ranks) {
+    cudaStreamSynchronize(streams[r]);
+    complex_t *sendbuf_host_start = sendbuf_host.raw() + r * buf_view_size;
+    complex_t *recvbuf_start = recvbuf_.raw() + r * buf_view_size;
+    MPI_Sendrecv(sendbuf_host_start,
+		 buf_view_size,
+		 mpi_type<complex_t>(),
+		 r,
+		 0,
+		 recvbuf_start,
+		 buf_view_size,
+		 mpi_type<complex_t>(),
+		 r,
+		 0,
+		 comm_->get_mpi_comm(),
+		 MPI_STATUS_IGNORE);
+    const zisa::int_t offset = compute_from_offset(r);
+    transpose_cuda_postprocess(recvbuf_,
+			       to_,
+			       from_shapes_.get(),
+			       to_shapes_.get(),
+			       r,
+			       rank_,
+			       offset,
+			       streams[r]);
+  }
+  for (int r = 0 ; r < size_ ; ++r) {
+    const auto err = cudaStreamDestroy(streams[r]);
+    cudaCheckError(err);
+  }
+#endif
 }
 
 template <>
@@ -223,11 +333,16 @@ void Transpose<Dim>::preprocess() {
   AZEBAN_PROFILE_STOP("Transpose::preprocess");
 }
 
+template<int Dim>
+void Transpose<Dim>::communicate_cpu() {
+  comm_->alltoall(sendbuf_, recvbuf_);
+}
+
 template <int Dim>
 void Transpose<Dim>::communicate() {
   AZEBAN_PROFILE_START("Transpose::communicate");
   if (sendbuf_.memory_location() == zisa::device_type::cpu) {
-    comm_->alltoall(sendbuf_, recvbuf_);
+    communicate_cpu();
   }
   else {
     // Copy down to pinned memory
