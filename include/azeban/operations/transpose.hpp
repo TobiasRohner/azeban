@@ -71,6 +71,8 @@ private:
   void preprocess_cpu();
   void communicate_cpu();
   void postprocess_cpu();
+
+  std::vector<int> comm_schedule() const;
 };
 
 void transpose(const zisa::array_view<complex_t, 3> &dst,

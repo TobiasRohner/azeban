@@ -56,8 +56,6 @@ Transpose<Dim>::Transpose(const Communicator *comm,
       to_(to_shape, nullptr),
       sendbuf_({}, nullptr),
       recvbuf_({}, nullptr) {
-  LOG_ERR_IF(size_ % 2,
-             "Transpose does not support an uneven number of MPI Ranks");
   from_shapes_ = std::make_unique<zisa::shape_t<Dim + 1>[]>(size_);
   to_shapes_ = std::make_unique<zisa::shape_t<Dim + 1>[]>(size_);
   MPI_Allgather(&from_shape,
@@ -171,14 +169,7 @@ template <int Dim>
 void Transpose<Dim>::eval_gpu() {
 #if ZISA_HAS_CUDA
   // Figure out order to transpose blocks in
-  std::vector<int> comm_ranks;
-  for (int r = 0; r < size_; ++r) {
-    if (rank_ % 2) {
-      comm_ranks.push_back((2 * size_ - rank_ - 1 - r) % size_);
-    } else {
-      comm_ranks.push_back((2 * size_ - rank_ - 1 + r) % size_);
-    }
-  }
+  std::vector<int> schedule = comm_schedule();
   // Compute the offset for the i-th block
   const auto compute_to_offset = [&](zisa::int_t i) {
     zisa::int_t offset = 0;
@@ -208,7 +199,7 @@ void Transpose<Dim>::eval_gpu() {
     buf_view_shape[i] = sendbuf_.shape(i + 1);
   }
   const zisa::int_t buf_view_size = zisa::product(buf_view_shape);
-  for (int r : comm_ranks) {
+  for (int r : schedule) {
     const zisa::int_t offset = compute_to_offset(r);
     complex_t *sendbuf_start = sendbuf_.raw() + r * buf_view_size;
     complex_t *sendbuf_host_start = sendbuf_host.raw() + r * buf_view_size;
@@ -228,7 +219,7 @@ void Transpose<Dim>::eval_gpu() {
     cudaCheckError(err);
   }
   // Issue blockwise communications and postprocess asynchronously afterwards
-  for (int r : comm_ranks) {
+  for (int r : schedule) {
     cudaStreamSynchronize(streams[r]);
     complex_t *sendbuf_host_start = sendbuf_host.raw() + r * buf_view_size;
     complex_t *recvbuf_start = recvbuf_.raw() + r * buf_view_size;
@@ -346,6 +337,19 @@ void Transpose<3>::postprocess_cpu() {
     }
     k_offset += from_shapes_[r][1];
   }
+}
+
+template <int Dim>
+std::vector<int> Transpose<Dim>::comm_schedule() const {
+  std::vector<int> msgs;
+  for (int r = 0; r < size_; ++r) {
+    msgs.push_back((r + rank_) % size_);
+  }
+  std::vector<int> schedule(size_);
+  for (int r = 0; r < size_; ++r) {
+    schedule[msgs[r]] = r;
+  }
+  return schedule;
 }
 
 template class Transpose<2>;
