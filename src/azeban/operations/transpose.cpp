@@ -312,45 +312,8 @@ void Transpose<3>::preprocess_cpu() {
 }
 
 template <int Dim>
-void Transpose<Dim>::preprocess() {
-  AZEBAN_PROFILE_START("Transpose::preprocess");
-  if (location_ == zisa::device_type::cpu) {
-    preprocess_cpu();
-  }
-#if ZISA_HAS_CUDA
-  else if (location_ == zisa::device_type::cuda) {
-    if (sendbuf_.memory_location() == zisa::device_type::cuda) {
-      transpose_cuda_preprocess(
-          from_, sendbuf_, from_shapes_.get(), to_shapes_.get(), rank_);
-    } else {
-      // Assume array is memory mapped
-      zisa::array_view<complex_t, Dim + 2> sendbuf_device
-          = mapped_array_to_cuda_view(sendbuf_);
-      transpose_cuda_preprocess(
-          from_, sendbuf_device, from_shapes_.get(), to_shapes_.get(), rank_);
-    }
-  }
-#endif
-  AZEBAN_PROFILE_STOP("Transpose::preprocess");
-}
-
-template <int Dim>
 void Transpose<Dim>::communicate_cpu() {
   comm_->alltoall(sendbuf_, recvbuf_);
-}
-
-template <int Dim>
-void Transpose<Dim>::communicate() {
-  AZEBAN_PROFILE_START("Transpose::communicate");
-  if (sendbuf_.memory_location() == zisa::device_type::cpu) {
-    communicate_cpu();
-  } else {
-    // Copy down to pinned memory
-    auto sendbuf = pinned_array<complex_t, Dim + 2>(sendbuf_.shape());
-    zisa::copy(sendbuf, sendbuf_);
-    comm_->alltoall(sendbuf.const_view(), recvbuf_);
-  }
-  AZEBAN_PROFILE_STOP("Transpose::communicate");
 }
 
 template <>
@@ -383,29 +346,6 @@ void Transpose<3>::postprocess_cpu() {
     }
     k_offset += from_shapes_[r][1];
   }
-}
-
-template <int Dim>
-void Transpose<Dim>::postprocess() {
-  AZEBAN_PROFILE_START("Transpose::postprocess");
-  if (location_ == zisa::device_type::cpu) {
-    postprocess_cpu();
-  }
-#if ZISA_HAS_CUDA
-  else if (location_ == zisa::device_type::cuda) {
-    if (recvbuf_.memory_location() == zisa::device_type::cuda) {
-      transpose_cuda_postprocess(
-          recvbuf_, to_, from_shapes_.get(), to_shapes_.get(), rank_);
-    } else {
-      // Assume array is memory mapped
-      zisa::array_const_view<complex_t, Dim + 2> recvbuf_device
-          = mapped_array_to_cuda_view(recvbuf_);
-      transpose_cuda_postprocess(
-          recvbuf_device, to_, from_shapes_.get(), to_shapes_.get(), rank_);
-    }
-  }
-#endif
-  AZEBAN_PROFILE_STOP("Transpose::postprocess");
 }
 
 template class Transpose<2>;

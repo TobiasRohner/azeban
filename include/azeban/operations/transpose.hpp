@@ -69,11 +69,8 @@ private:
   void eval_cpu();
   void eval_gpu();
   void preprocess_cpu();
-  void preprocess();
   void communicate_cpu();
-  void communicate();
   void postprocess_cpu();
-  void postprocess();
 };
 
 void transpose(const zisa::array_view<complex_t, 3> &dst,
