@@ -5,7 +5,6 @@
 #include <zisa/memory/allocator.hpp>
 #include <zisa/memory/array.hpp>
 
-
 namespace azeban {
 
 template <typename T, int n_dims>
@@ -15,6 +14,5 @@ zisa::array<T, n_dims> pinned_array(const zisa::shape_t<n_dims> &shape) {
 }
 
 }
-
 
 #endif

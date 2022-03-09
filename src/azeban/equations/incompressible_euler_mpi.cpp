@@ -97,7 +97,8 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   transpose_u_ = std::make_shared<Transpose<dim_v>>(
       comm, shape_u_yz, shape_u_yz_trans, device);
   const auto trans_u_buf_shape = transpose_u_->buffer_shape();
-  const size_t size_trans_u_buf = sizeof(complex_t) * zisa::product(trans_u_buf_shape);
+  const size_t size_trans_u_buf
+      = sizeof(complex_t) * zisa::product(trans_u_buf_shape);
   ws1_size = zisa::max(ws1_size, size_trans_u_buf);
 
   // Transposed data padded in the x-direction
@@ -150,7 +151,8 @@ IncompressibleEuler_MPI_Base<Dim>::IncompressibleEuler_MPI_Base(
   transpose_B_ = std::make_shared<Transpose<dim_v>>(
       comm, shape_B_yz_trans, shape_B_yz, device);
   const auto trans_B_buf_shape = transpose_B_->buffer_shape();
-  const size_t size_trans_B_buf = sizeof(complex_t) * zisa::product(trans_B_buf_shape);
+  const size_t size_trans_B_buf
+      = sizeof(complex_t) * zisa::product(trans_B_buf_shape);
   ws2_size = zisa::max(ws2_size, size_trans_B_buf);
 
   // Buffer to store padded B_hat in y(z)-directions

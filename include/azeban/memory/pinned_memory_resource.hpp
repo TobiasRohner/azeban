@@ -4,7 +4,6 @@
 #include <azeban/cuda/cuda_check_error.hpp>
 #include <zisa/memory/memory_resource.hpp>
 
-
 namespace azeban {
 
 template <typename T>
@@ -35,6 +34,5 @@ protected:
 };
 
 }
-
 
 #endif

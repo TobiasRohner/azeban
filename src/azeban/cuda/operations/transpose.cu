@@ -87,27 +87,34 @@ transpose_cuda_postprocess_kernel(zisa::array_const_view<complex_t, 4> recvbuf,
 }
 
 void transpose_cuda_preprocess(const zisa::array_const_view<complex_t, 3> &from,
-			       const zisa::array_view<complex_t, 4> &sendbuf,
-			       const zisa::shape_t<3> *from_shapes,
-			       const zisa::shape_t<3> *to_shapes,
-			       int from_rank,
-			       int to_rank,
-			       zisa::int_t j_offset,
-			       cudaStream_t stream) {
-  const zisa::shape_t<3> sendbuf_view_shape{sendbuf.shape(1), sendbuf.shape(2), sendbuf.shape(3)};
-  zisa::array_view<complex_t, 3> sendbuf_view(sendbuf_view_shape, sendbuf.raw() + to_rank * zisa::product(sendbuf_view_shape), sendbuf.memory_location());
-  const zisa::shape_t<3> block_shape{from_shapes[from_rank][0], from_shapes[from_rank][1], to_shapes[to_rank][1]};
+                               const zisa::array_view<complex_t, 4> &sendbuf,
+                               const zisa::shape_t<3> *from_shapes,
+                               const zisa::shape_t<3> *to_shapes,
+                               int from_rank,
+                               int to_rank,
+                               zisa::int_t j_offset,
+                               cudaStream_t stream) {
+  const zisa::shape_t<3> sendbuf_view_shape{
+      sendbuf.shape(1), sendbuf.shape(2), sendbuf.shape(3)};
+  zisa::array_view<complex_t, 3> sendbuf_view(
+      sendbuf_view_shape,
+      sendbuf.raw() + to_rank * zisa::product(sendbuf_view_shape),
+      sendbuf.memory_location());
+  const zisa::shape_t<3> block_shape{from_shapes[from_rank][0],
+                                     from_shapes[from_rank][1],
+                                     to_shapes[to_rank][1]};
   const dim3 thread_dims(32, 8, 1);
   const dim3 block_dims(
       zisa::min(zisa::div_up(block_shape[2],
-			     zisa::integer_cast<zisa::int_t>(thread_dims.x)),
-		static_cast<zisa::int_t>(1024)),
+                             zisa::integer_cast<zisa::int_t>(thread_dims.x)),
+                static_cast<zisa::int_t>(1024)),
       zisa::min(
-	  zisa::div_up(block_shape[1],
-		       zisa::integer_cast<zisa::int_t>(4 * thread_dims.y)),
-	  static_cast<zisa::int_t>(1024)),
+          zisa::div_up(block_shape[1],
+                       zisa::integer_cast<zisa::int_t>(4 * thread_dims.y)),
+          static_cast<zisa::int_t>(1024)),
       1);
-  transpose_cuda_preprocess_kernel<<<block_dims, thread_dims, 0, stream>>>(from, sendbuf_view, block_shape, j_offset);
+  transpose_cuda_preprocess_kernel<<<block_dims, thread_dims, 0, stream>>>(
+      from, sendbuf_view, block_shape, j_offset);
 }
 
 void transpose_cuda_preprocess(const zisa::array_const_view<complex_t, 3> &from,
@@ -118,7 +125,8 @@ void transpose_cuda_preprocess(const zisa::array_const_view<complex_t, 3> &from,
   const int size = sendbuf.shape(0);
   zisa::int_t j_offset = 0;
   for (int r = 0; r < size; ++r) {
-    transpose_cuda_preprocess(from, sendbuf, from_shapes, to_shapes, rank, r, j_offset);
+    transpose_cuda_preprocess(
+        from, sendbuf, from_shapes, to_shapes, rank, r, j_offset);
     cudaDeviceSynchronize();
     ZISA_CHECK_CUDA_DEBUG;
     j_offset += to_shapes[r][1];
@@ -126,26 +134,34 @@ void transpose_cuda_preprocess(const zisa::array_const_view<complex_t, 3> &from,
 }
 
 void transpose_cuda_preprocess(const zisa::array_const_view<complex_t, 4> &from,
-			       const zisa::array_view<complex_t, 5> &sendbuf,
-			       const zisa::shape_t<4> *from_shapes,
-			       const zisa::shape_t<4> *to_shapes,
-			       int from_rank,
-			       int to_rank,
-			       zisa::int_t k_offset,
-			       cudaStream_t stream) {
-  const zisa::shape_t<4> sendbuf_view_shape{sendbuf.shape(1), sendbuf.shape(2), sendbuf.shape(3), sendbuf.shape(4)};
-  zisa::array_view<complex_t, 4> sendbuf_view(sendbuf_view_shape, sendbuf.raw() + to_rank * zisa::product(sendbuf_view_shape), sendbuf.memory_location());
-  const zisa::shape_t<4> block_shape{from_shapes[from_rank][0], from_shapes[from_rank][1], from_shapes[from_rank][2], to_shapes[to_rank][1]};
+                               const zisa::array_view<complex_t, 5> &sendbuf,
+                               const zisa::shape_t<4> *from_shapes,
+                               const zisa::shape_t<4> *to_shapes,
+                               int from_rank,
+                               int to_rank,
+                               zisa::int_t k_offset,
+                               cudaStream_t stream) {
+  const zisa::shape_t<4> sendbuf_view_shape{
+      sendbuf.shape(1), sendbuf.shape(2), sendbuf.shape(3), sendbuf.shape(4)};
+  zisa::array_view<complex_t, 4> sendbuf_view(
+      sendbuf_view_shape,
+      sendbuf.raw() + to_rank * zisa::product(sendbuf_view_shape),
+      sendbuf.memory_location());
+  const zisa::shape_t<4> block_shape{from_shapes[from_rank][0],
+                                     from_shapes[from_rank][1],
+                                     from_shapes[from_rank][2],
+                                     to_shapes[to_rank][1]};
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
       zisa::min(zisa::div_up(block_shape[3],
-			     zisa::integer_cast<zisa::int_t>(thread_dims.x)),
-		static_cast<zisa::int_t>(1024)),
+                             zisa::integer_cast<zisa::int_t>(thread_dims.x)),
+                static_cast<zisa::int_t>(1024)),
       zisa::min(zisa::div_up(block_shape[1],
-			     zisa::integer_cast<zisa::int_t>(thread_dims.y)),
-		static_cast<zisa::int_t>(1024)),
+                             zisa::integer_cast<zisa::int_t>(thread_dims.y)),
+                static_cast<zisa::int_t>(1024)),
       1);
-  transpose_cuda_preprocess_kernel<<<block_dims, thread_dims, 0, stream>>>(from, sendbuf_view, block_shape, k_offset);
+  transpose_cuda_preprocess_kernel<<<block_dims, thread_dims, 0, stream>>>(
+      from, sendbuf_view, block_shape, k_offset);
 }
 
 void transpose_cuda_preprocess(const zisa::array_const_view<complex_t, 4> &from,
@@ -156,7 +172,8 @@ void transpose_cuda_preprocess(const zisa::array_const_view<complex_t, 4> &from,
   const int size = sendbuf.shape(0);
   zisa::int_t k_offset = 0;
   for (int r = 0; r < size; ++r) {
-    transpose_cuda_preprocess(from, sendbuf, from_shapes, to_shapes, rank, r, k_offset);
+    transpose_cuda_preprocess(
+        from, sendbuf, from_shapes, to_shapes, rank, r, k_offset);
     cudaDeviceSynchronize();
     ZISA_CHECK_CUDA_DEBUG;
     k_offset += to_shapes[r][1];
@@ -172,17 +189,22 @@ void transpose_cuda_postprocess(
     int to_rank,
     zisa::int_t j_offset,
     cudaStream_t stream) {
-  const zisa::shape_t<3> recvbuf_view_shape{recvbuf.shape(1), recvbuf.shape(2), recvbuf.shape(3)};
-  zisa::array_const_view<complex_t, 3> recvbuf_view(recvbuf_view_shape, recvbuf.raw() + from_rank * zisa::product(recvbuf_view_shape), recvbuf.memory_location());
-  const zisa::shape_t<3> block_shape{to_shapes[to_rank][0], to_shapes[to_rank][1], from_shapes[from_rank][1]};
+  const zisa::shape_t<3> recvbuf_view_shape{
+      recvbuf.shape(1), recvbuf.shape(2), recvbuf.shape(3)};
+  zisa::array_const_view<complex_t, 3> recvbuf_view(
+      recvbuf_view_shape,
+      recvbuf.raw() + from_rank * zisa::product(recvbuf_view_shape),
+      recvbuf.memory_location());
+  const zisa::shape_t<3> block_shape{
+      to_shapes[to_rank][0], to_shapes[to_rank][1], from_shapes[from_rank][1]};
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
       zisa::min(zisa::div_up(block_shape[3],
-			     zisa::integer_cast<zisa::int_t>(thread_dims.x)),
-		static_cast<zisa::int_t>(1024)),
+                             zisa::integer_cast<zisa::int_t>(thread_dims.x)),
+                static_cast<zisa::int_t>(1024)),
       zisa::min(zisa::div_up(block_shape[1],
-			     zisa::integer_cast<zisa::int_t>(thread_dims.y)),
-		static_cast<zisa::int_t>(1024)),
+                             zisa::integer_cast<zisa::int_t>(thread_dims.y)),
+                static_cast<zisa::int_t>(1024)),
       1);
   transpose_cuda_postprocess_kernel<<<block_dims, thread_dims, 0, stream>>>(
       recvbuf_view, to, block_shape, j_offset);
@@ -197,7 +219,8 @@ void transpose_cuda_postprocess(
   const int size = recvbuf.shape(0);
   zisa::int_t j_offset = 0;
   for (int r = 0; r < size; ++r) {
-    transpose_cuda_postprocess(recvbuf, to, from_shapes, to_shapes, r, rank, j_offset);
+    transpose_cuda_postprocess(
+        recvbuf, to, from_shapes, to_shapes, r, rank, j_offset);
     cudaDeviceSynchronize();
     ZISA_CHECK_CUDA_DEBUG;
     j_offset += from_shapes[r][1];
@@ -220,17 +243,17 @@ void transpose_cuda_postprocess(
       recvbuf.raw() + from_rank * zisa::product(recvbuf_view_shape),
       recvbuf.memory_location());
   const zisa::shape_t<4> block_shape{to_shapes[to_rank][0],
-				     to_shapes[to_rank][1],
-				     to_shapes[to_rank][2],
-				     from_shapes[from_rank][1]};
+                                     to_shapes[to_rank][1],
+                                     to_shapes[to_rank][2],
+                                     from_shapes[from_rank][1]};
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
       zisa::min(zisa::div_up(block_shape[3],
-			     zisa::integer_cast<zisa::int_t>(thread_dims.x)),
-		static_cast<zisa::int_t>(1024)),
+                             zisa::integer_cast<zisa::int_t>(thread_dims.x)),
+                static_cast<zisa::int_t>(1024)),
       zisa::min(zisa::div_up(block_shape[1],
-			     zisa::integer_cast<zisa::int_t>(thread_dims.y)),
-		static_cast<zisa::int_t>(1024)),
+                             zisa::integer_cast<zisa::int_t>(thread_dims.y)),
+                static_cast<zisa::int_t>(1024)),
       1);
   transpose_cuda_postprocess_kernel<<<block_dims, thread_dims, 0, stream>>>(
       recvbuf_view, to, block_shape, k_offset);
@@ -245,7 +268,8 @@ void transpose_cuda_postprocess(
   const int size = recvbuf.shape(0);
   zisa::int_t k_offset = 0;
   for (int r = 0; r < size; ++r) {
-    transpose_cuda_postprocess(recvbuf, to, from_shapes, to_shapes, r, rank, k_offset);
+    transpose_cuda_postprocess(
+        recvbuf, to, from_shapes, to_shapes, r, rank, k_offset);
     cudaDeviceSynchronize();
     ZISA_CHECK_CUDA_DEBUG;
     k_offset += from_shapes[r][1];
