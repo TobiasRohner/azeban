@@ -68,35 +68,26 @@ int main(int argc, char *argv[]) {
     fmt::print("Running azeban in single-node mode.\nRun cofiguration is\n{}\n",
                config.dump(2));
 
-#if AZEBAN_HAS_MPI
-  Profiler::start(MPI_COMM_WORLD);
-#else
   Profiler::start();
-#endif
 #if AZEBAN_HAS_MPI
   MPI_Barrier(MPI_COMM_WORLD);
   if (use_mpi) {
     Communicator comm(MPI_COMM_WORLD);
     run_from_config(config, &comm);
-  } else {
+  } else
 #endif
     run_from_config(config);
-#if AZEBAN_HAS_MPI
-  }
-  Profiler::stop(MPI_COMM_WORLD);
-#else
   Profiler::stop();
-#endif
 
 #if AZEBAN_DO_PROFILE
 #if AZEBAN_HAS_MPI
-  fmt::print("Rank {}:\n{}", rank, Profiler::summary());
-  std::ofstream pstream("profiling_rank" + std::to_string(rank) + ".json");
-  pstream << std::setw(2) << Profiler::json();
+  // fmt::print("Rank {}:\n{}", rank, Profiler::summary());
+  std::ofstream pstream("profiling_rank" + std::to_string(rank) + ".out");
+  Profiler::serialize(pstream);
 #else
-  fmt::print(Profiler::summary());
-  std::ofstream pstream("profiling.json");
-  pstream << std::setw(2) << Profiler::json();
+  // fmt::print(Profiler::summary());
+  std::ofstream pstream("profiling.out");
+  Profiler::serialize(pstream);
 #endif
 #endif
 

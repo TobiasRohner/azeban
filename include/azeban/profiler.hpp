@@ -15,18 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef PROFILER_H_
-#define PROFILER_H_
+#ifndef AZEBAN_PROFILER_HPP_
+#define AZEBAN_PROFILER_HPP_
 
 #include <azeban/config.hpp>
 #include <chrono>
-#include <map>
-#include <nlohmann/json.hpp>
+#include <forward_list>
+#include <iostream>
 #include <string>
 #include <vector>
 #include <zisa/config.hpp>
-#if AZEBAN_HAS_MPI
-#include <mpi.h>
+#if ZISA_HAS_CUDA
+#include <cuda_runtime.h>
 #endif
 
 namespace azeban {
@@ -34,46 +34,94 @@ namespace azeban {
 class Profiler {
 public:
   using clock = std::chrono::steady_clock;
-  using duration = typename clock::duration;
-  using time_point = typename clock::time_point;
+  using time_point_t = typename clock::time_point;
+  using duration_t = std::chrono::duration<float, std::milli>;
 
-  struct Stage {
-    Stage(const std::string &_name)
-        : name(_name), num_calls(0), start_time(), elapsed(0) {}
+  struct RecordHost {
     std::string name;
-    zisa::int_t num_calls;
-    time_point start_time;
-    duration elapsed;
+    time_point_t start_time;
+    time_point_t end_time;
+  };
+
+#if ZISA_HAS_CUDA
+  struct RecordDevice {
+    std::string name;
+    cudaStream_t stream;
+    time_point_t start_time;
+    cudaEvent_t start_event;
+    cudaEvent_t end_event;
+  };
+#endif
+
+  struct Timespan {
+    Timespan() = default;
+    Timespan(const RecordHost &record);
+#if ZISA_HAS_CUDA
+    Timespan(const RecordDevice &record);
+#endif
+    std::string name;
+    time_point_t start_time;
+    duration_t duration;
   };
 
   static void start();
   static void stop();
-  static void sync();
-  static void start(const std::string &name);
-  static void stop(const std::string &name);
-#if AZEBAN_HAS_MPI
-  static void start(MPI_Comm comm);
-  static void stop(MPI_Comm comm);
-  static void sync(MPI_Comm comm);
-  static void start(const std::string &name, MPI_Comm comm);
-  static void stop(const std::string &name, MPI_Comm comm);
+  static RecordHost *start(const std::string &name);
+  static void stop(RecordHost *record);
+#if ZISA_HAS_CUDA
+  static RecordDevice *start(const std::string &name, cudaStream_t stream);
+  static void stop(RecordDevice *record);
 #endif
 
-  static std::string summary();
-  static nlohmann::json json();
+  static void serialize(std::ostream &os);
 
 private:
-  static std::map<std::string, Stage> stages_;
-  static time_point start_time;
-  static duration elapsed;
+  static std::forward_list<RecordHost> host_records_;
+#if ZISA_HAS_CUDA
+  static std::forward_list<RecordDevice> device_records_;
+#endif
+  static time_point_t start_time;
+  static time_point_t end_time;
+
+  template <typename RecordType>
+  static std::vector<Timespan>
+  to_timeline(const std::forward_list<RecordType> &records);
 };
 
 #if AZEBAN_DO_PROFILE
-#define AZEBAN_PROFILE_START(...) Profiler::start(__VA_ARGS__)
-#define AZEBAN_PROFILE_STOP(...) Profiler::stop(__VA_ARGS__)
+class ProfileHost {
+public:
+  ProfileHost(const std::string &name);
+  ~ProfileHost();
+  void stop();
+
+private:
+  Profiler::RecordHost *record_;
+};
+#if ZISA_HAS_CUDA
+class ProfileDevice {
+public:
+  ProfileDevice(const std::string &name, cudaStream_t stream);
+  ~ProfileDevice();
+  void stop();
+
+private:
+  Profiler::RecordDevice *record_;
+};
+#endif
 #else
-#define AZEBAN_PROFILE_START(...)
-#define AZEBAN_PROFILE_STOP(...)
+class ProfileHost {
+public:
+  ProfileHost(const std::string &){};
+  void stop(){};
+};
+#if ZISA_HAS_CUDA
+class ProfileDevice {
+public:
+  ProfileDevice(const std::string &, cudaStream_t){};
+  void stop(){};
+};
+#endif
 #endif
 
 }

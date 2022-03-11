@@ -23,180 +23,135 @@
 #include <mpi.h>
 #endif
 #include <algorithm>
+#include <azeban/cuda/cuda_check_error.hpp>
 #include <fmt/chrono.h>
 #include <fmt/core.h>
+#include <iomanip>
+#include <type_traits>
 
 namespace azeban {
 
-std::map<std::string, Profiler::Stage> Profiler::stages_
-    = std::map<std::string, Profiler::Stage>();
-Profiler::time_point Profiler::start_time = Profiler::time_point();
-Profiler::duration Profiler::elapsed = Profiler::duration(0);
-
-void Profiler::start() {
-  sync();
-  start_time = clock::now();
-}
-
-void Profiler::stop() {
-  sync();
-  time_point end_time = clock::now();
-  elapsed = end_time - start_time;
-}
-
-void Profiler::sync() {
+std::forward_list<Profiler::RecordHost> Profiler::host_records_
+    = std::forward_list<Profiler::RecordHost>();
 #if ZISA_HAS_CUDA
-  cudaDeviceSynchronize();
+std::forward_list<Profiler::RecordDevice> Profiler::device_records_
+    = std::forward_list<Profiler::RecordDevice>();
 #endif
-}
+Profiler::time_point_t Profiler::start_time = Profiler::time_point_t();
+Profiler::time_point_t Profiler::end_time = Profiler::time_point_t();
 
-void Profiler::start(const std::string &name) {
-  auto [it, is_new] = stages_.emplace(name, name);
-  Stage &stage = it->second;
-  ++stage.num_calls;
-  sync();
-  stage.start_time = clock::now();
-}
+Profiler::Timespan::Timespan(const RecordHost &record)
+    : name(record.name),
+      start_time(record.start_time),
+      duration(std::chrono::duration_cast<duration_t>(record.end_time
+                                                      - record.start_time)) {}
 
-void Profiler::stop(const std::string &name) {
-  sync();
-  time_point end_time = clock::now();
-  Stage &stage = stages_.find(name)->second;
-  stage.elapsed += end_time - stage.start_time;
-}
-
-#if AZEBAN_HAS_MPI
-void Profiler::start(MPI_Comm comm) {
-  sync(comm);
-  start_time = clock::now();
-}
-
-void Profiler::stop(MPI_Comm comm) {
-  sync(comm);
-  time_point end_time = clock::now();
-  elapsed = end_time - start_time;
-}
-
-void Profiler::sync(MPI_Comm comm) {
-  sync();
-  MPI_Barrier(comm);
-}
-
-void Profiler::start(const std::string &name, MPI_Comm comm) {
-  auto [it, is_new] = stages_.emplace(name, name);
-  Stage &stage = it->second;
-  ++stage.num_calls;
-  sync(comm);
-  stage.start_time = clock::now();
-}
-
-void Profiler::stop(const std::string &name, MPI_Comm comm) {
-  sync(comm);
-  time_point end_time = clock::now();
-  Stage &stage = stages_.find(name)->second;
-  stage.elapsed += end_time - stage.start_time;
+#if ZISA_HAS_CUDA
+Profiler::Timespan::Timespan(const RecordDevice &record)
+    : name(record.name), start_time(record.start_time) {
+  cudaEventSynchronize(record.end_event);
+  float dt;
+  const auto err
+      = cudaEventElapsedTime(&dt, record.start_event, record.end_event);
+  cudaCheckError(err);
+  duration = duration_t(dt);
 }
 #endif
 
-std::string Profiler::summary() {
-  struct StageSummary {
-    real_t percentage;
-    std::string percentage_str;
-    std::string name;
-    std::string num_calls;
-    std::string elapsed_total;
-    std::string elapsed_per_call;
-  };
+void Profiler::start() { start_time = clock::now(); }
 
-  std::vector<StageSummary> stage_summ;
-  for (auto [name, stage] : stages_) {
-    stage_summ.emplace_back();
-    StageSummary &summ = stage_summ.back();
-    summ.percentage
-        = static_cast<real_t>(stage.elapsed.count()) / elapsed.count();
-    summ.percentage_str = fmt::format("{:.3f}%", 100 * summ.percentage);
-    summ.name = stage.name;
-    summ.num_calls = fmt::format("{}", stage.num_calls);
-    summ.elapsed_total = fmt::format("{}", stage.elapsed);
-    summ.elapsed_per_call = fmt::format("{}", stage.elapsed / stage.num_calls);
-  }
-  const auto ordering = [](const StageSummary &s1, const StageSummary &s2) {
-    return s1.percentage > s2.percentage;
-  };
-  std::sort(stage_summ.begin(), stage_summ.end(), ordering);
+void Profiler::stop() { end_time = clock::now(); }
 
-  const std::string percentage_header = "Time %";
-  const std::string name_header = "Name";
-  const std::string num_calls_header = "Nr. Calls";
-  const std::string elapsed_total_header = "Total Time";
-  const std::string elapsed_per_call_header = "Time Per Call";
-  zisa::int_t percentage_size = percentage_header.size();
-  zisa::int_t name_size = name_header.size();
-  zisa::int_t num_calls_size = num_calls_header.size();
-  zisa::int_t elapsed_total_size = elapsed_total_header.size();
-  zisa::int_t elapsed_per_call_size = elapsed_per_call_header.size();
-  for (auto &&summ : stage_summ) {
-    percentage_size = std::max(percentage_size, summ.percentage_str.size());
-    name_size = std::max(name_size, summ.name.size());
-    num_calls_size = std::max(num_calls_size, summ.num_calls.size());
-    elapsed_total_size
-        = std::max(elapsed_total_size, summ.elapsed_total.size());
-    elapsed_per_call_size
-        = std::max(elapsed_per_call_size, summ.elapsed_per_call.size());
-  }
-
-  const auto pad_left = [](std::string str, zisa::int_t n) {
-    str.insert(str.end(), n - str.size(), ' ');
-    return str;
-  };
-  const auto line = [&](const StageSummary &summ) {
-    std::string str = " ";
-    str += pad_left(summ.percentage_str, percentage_size);
-    str += " | ";
-    str += pad_left(summ.elapsed_total, elapsed_total_size);
-    str += " | ";
-    str += pad_left(summ.num_calls, num_calls_size);
-    str += " | ";
-    str += pad_left(summ.elapsed_per_call, elapsed_per_call_size);
-    str += " | ";
-    str += pad_left(summ.name, name_size);
-    str += "\n";
-    return str;
-  };
-
-  StageSummary header;
-  header.percentage_str = percentage_header;
-  header.name = name_header;
-  header.num_calls = num_calls_header;
-  header.elapsed_total = elapsed_total_header;
-  header.elapsed_per_call = elapsed_per_call_header;
-
-  std::string summary_str = line(header);
-  summary_str += std::string(summary_str.size() - 1, '-') + '\n';
-  for (auto &&summ : stage_summ) {
-    summary_str += line(summ);
-  }
-
-  return fmt::format("Total Time: {}\n{}", elapsed, summary_str);
+Profiler::RecordHost *Profiler::start(const std::string &name) {
+  host_records_.emplace_front();
+  RecordHost *record = &host_records_.front();
+  record->name = name;
+  record->start_time = clock::now();
+  return record;
 }
 
-nlohmann::json Profiler::json() {
-  nlohmann::json result;
-  result["timeunit"] = "ns";
-  result["elapsed"]
-      = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count();
-  std::vector<nlohmann::json> stages;
-  for (auto [name, stage] : stages_) {
-    stages.emplace_back();
-    auto &sj = stages.back();
-    sj["name"] = stage.name;
-    sj["num_calls"] = stage.num_calls;
-    sj["elapsed"]
-        = std::chrono::duration_cast<std::chrono::nanoseconds>(stage.elapsed)
-              .count();
-  }
-  result["stages"] = stages;
-  return result;
+void Profiler::stop(RecordHost *record) { record->end_time = clock::now(); }
+
+#if ZISA_HAS_CUDA
+Profiler::RecordDevice *Profiler::start(const std::string &name,
+                                        cudaStream_t stream) {
+  device_records_.emplace_front();
+  RecordDevice *record = &device_records_.front();
+  record->name = name;
+  record->stream = stream;
+  record->start_time = clock::now();
+  cudaEventCreate(&(record->start_event));
+  cudaEventRecord(record->start_event, stream);
+  return record;
 }
+
+void Profiler::stop(RecordDevice *record) {
+  cudaEventCreate(&(record->end_event));
+  cudaEventRecord(record->end_event, record->stream);
+}
+#endif
+
+void Profiler::serialize(std::ostream &os) {
+  std::vector<Timespan> timeline = to_timeline(host_records_);
+  for (const Timespan &ts : timeline) {
+    duration_t start
+        = std::chrono::duration_cast<duration_t>(ts.start_time - start_time);
+    os << std::setprecision(
+        std::numeric_limits<typename duration_t::rep>::digits10 + 1)
+       << ts.name << ' ' << start.count() << ' ' << ts.duration.count() << ' ';
+  }
+  os << '\n';
+  timeline = to_timeline(device_records_);
+  for (const Timespan &ts : timeline) {
+    duration_t start
+        = std::chrono::duration_cast<duration_t>(ts.start_time - start_time);
+    os << std::setprecision(
+        std::numeric_limits<typename duration_t::rep>::digits10 + 1)
+       << ts.name << ' ' << start.count() << ' ' << ts.duration.count() << ' ';
+  }
+}
+
+template <typename RecordType>
+std::vector<Profiler::Timespan>
+Profiler::to_timeline(const std::forward_list<RecordType> &records) {
+  std::vector<Timespan> timeline;
+  for (const RecordType &record : records) {
+    timeline.emplace_back(record);
+  }
+  return timeline;
+}
+
+template std::vector<Profiler::Timespan>
+Profiler::to_timeline(const std::forward_list<Profiler::RecordHost> &);
+template std::vector<Profiler::Timespan>
+Profiler::to_timeline(const std::forward_list<Profiler::RecordDevice> &);
+
+#if AZEBAN_DO_PROFILE
+ProfileHost::ProfileHost(const std::string &name)
+    : record_(Profiler::start(name)) {}
+
+ProfileHost::~ProfileHost() { stop(); }
+
+void ProfileHost::stop() {
+  if (record_) {
+    Profiler::stop(record_);
+    record_ = nullptr;
+  }
+}
+
+#if ZISA_HAS_CUDA
+ProfileDevice::ProfileDevice(const std::string &name, cudaStream_t stream)
+    : record_(Profiler::start(name, stream)) {}
+
+ProfileDevice::~ProfileDevice() { stop(); }
+
+void ProfileDevice::stop() {
+  if (record_) {
+    Profiler::stop(record_);
+    record_ = nullptr;
+  }
+}
+#endif
+#endif
 
 }

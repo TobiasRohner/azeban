@@ -12,7 +12,7 @@ namespace azeban {
 template <int Dim>
 void SnapshotWriter<Dim>::write_snapshot(const Simulation<Dim> &simulation,
                                          zisa::int_t sample_idx) {
-  AZEBAN_PROFILE_START("SnapshotWriter::write_snapshot");
+  ProfileHost pofile("SnapshotWriter::write_snapshot");
   const Grid<Dim> &grid = simulation.grid();
   auto u_host
       = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
@@ -25,7 +25,6 @@ void SnapshotWriter<Dim>::write_snapshot(const Simulation<Dim> &simulation,
     u_host[i] /= zisa::product(u_host.shape()) / u_host.shape(0);
   }
   do_write_snapshot(sample_idx, simulation.time(), u_host);
-  AZEBAN_PROFILE_STOP("SnapshotWriter::write_snapshot");
 }
 
 #if AZEBAN_HAS_MPI
@@ -33,7 +32,7 @@ template <int Dim>
 void SnapshotWriter<Dim>::write_snapshot(const Simulation<Dim> &simulation,
                                          zisa::int_t sample_idx,
                                          const Communicator *comm) {
-  AZEBAN_PROFILE_START("SnapshotWriter::write_snapshot", comm->get_mpi_comm());
+  ProfileHost profile("SnapshotWriter::write_snapshot");
   if constexpr (Dim > 1) {
     const int rank = comm->rank();
     const int size = comm->size();
@@ -97,7 +96,6 @@ void SnapshotWriter<Dim>::write_snapshot(const Simulation<Dim> &simulation,
       do_write_snapshot(sample_idx, simulation.time(), u_init);
     }
   }
-  AZEBAN_PROFILE_STOP("SnapshotWriter::write_snapshot", comm->get_mpi_comm());
 }
 #endif
 

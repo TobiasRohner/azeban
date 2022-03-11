@@ -257,17 +257,15 @@ size_t FFTWFFT_R2C<Dim>::get_work_area_size() const {
 template <int Dim>
 void FFTWFFT_R2C<Dim>::forward() {
   LOG_ERR_IF(!is_forward(), "Forward operation was not initialized");
-  AZEBAN_PROFILE_START("FFTWFFT_R2C::forward");
+  ProfileHost profile("FFTWFFT_R2C::forward");
   execute(plan_forward_);
-  AZEBAN_PROFILE_STOP("FFTWFFT_R2C::forward");
 }
 
 template <int Dim>
 void FFTWFFT_R2C<Dim>::backward() {
   LOG_ERR_IF(!is_backward(), "Backward operation was not initialized");
-  AZEBAN_PROFILE_START("FFTWFFT_R2C::backward");
+  ProfileHost profile("FFTWFFT_R2C::backward");
   execute(plan_backward_);
-  AZEBAN_PROFILE_STOP("FFTWFFT_R2C::backward");
 }
 
 template <int Dim>
@@ -431,17 +429,15 @@ size_t FFTWFFT_C2C<Dim>::get_work_area_size() const {
 template <int Dim>
 void FFTWFFT_C2C<Dim>::forward() {
   LOG_ERR_IF(!is_forward(), "Forward operation was not initialized");
-  AZEBAN_PROFILE_START("FFTWFFT_C2C::forward");
+  ProfileHost profile("FFTWFFT_C2C::forward");
   execute(plan_forward_);
-  AZEBAN_PROFILE_STOP("FFTWFFT_C2C::forward");
 }
 
 template <int Dim>
 void FFTWFFT_C2C<Dim>::backward() {
   LOG_ERR_IF(!is_backward(), "Backward operation was not initialized");
-  AZEBAN_PROFILE_START("FFTWFFT_C2C::backward");
+  ProfileHost profile("FFTWFFT_C2C::backward");
   execute(plan_backward_);
-  AZEBAN_PROFILE_STOP("FFTWFFT_C2C::backward");
 }
 
 template <int Dim>

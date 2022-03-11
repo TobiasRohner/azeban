@@ -61,14 +61,13 @@ public:
   virtual void
   dudt(const zisa::array_view<complex_t, dim_v + 1> &dudt_hat,
        const zisa::array_const_view<complex_t, dim_v + 1> &u_hat) override {
-    AZEBAN_PROFILE_START("IncompressibleEulerNaive::dudt");
+    ProfileHost profile("IncompressibleEulerNaive::dudt");
     for (int i = 0; i < dim_v; ++i) {
       copy_to_padded(component(u_hat_, i), component(u_hat, i));
     }
     fft_u_->backward();
     computeB();
     fft_B_->forward();
-    AZEBAN_PROFILE_START("IncompressibleEulerNaive::computeDudt");
     if (device_ == zisa::device_type::cpu) {
       if constexpr (dim_v == 2) {
         for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
@@ -169,8 +168,6 @@ public:
     else {
       LOG_ERR("Unsupported memory_location");
     }
-    AZEBAN_PROFILE_STOP("IncompressibleEulerNaive::computeDudt");
-    AZEBAN_PROFILE_STOP("IncompressibleEulerNaive::dudt");
   }
 
   virtual int n_vars() const override { return dim_v; }
@@ -231,7 +228,7 @@ private:
   }
 
   void computeB() {
-    AZEBAN_PROFILE_START("IncompressibleEulerNaive::computeB");
+    ProfileHost profile("IncompressibleEulerNaive::computeB");
     if (device_ == zisa::device_type::cpu) {
       const real_t norm = 1.0
                           / (zisa::pow<dim_v>(grid_.N_phys)
@@ -273,7 +270,6 @@ private:
     else {
       LOG_ERR("Unsupported memory location");
     }
-    AZEBAN_PROFILE_STOP("IncompressibleEulerNaive::computeB");
   }
 };
 

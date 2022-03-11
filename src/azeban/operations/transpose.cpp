@@ -139,7 +139,7 @@ void Transpose<Dim>::set_to_array(
 
 template <int Dim>
 void Transpose<Dim>::eval() {
-  AZEBAN_PROFILE_START("Transpose::eval");
+  ProfileHost profile("Transpose::eval");
   LOG_ERR_IF(sendbuf_.raw() == nullptr, "Send buffer uninitialized");
   LOG_ERR_IF(recvbuf_.raw() == nullptr, "Receive buffer uninitialized");
   LOG_ERR_IF(sendbuf_.raw() == recvbuf_.raw(),
@@ -155,7 +155,6 @@ void Transpose<Dim>::eval() {
   else {
     LOG_ERR("Unsupporte location for transpose");
   }
-  AZEBAN_PROFILE_STOP("Transpose::eval");
 }
 
 template <int Dim>
@@ -203,6 +202,7 @@ void Transpose<Dim>::eval_gpu() {
     const zisa::int_t offset = compute_to_offset(r);
     complex_t *sendbuf_start = sendbuf_.raw() + r * buf_view_size;
     complex_t *sendbuf_host_start = sendbuf_host.raw() + r * buf_view_size;
+    ProfileDevice profile_pre("Transpose::preprocess", streams[r]);
     transpose_cuda_preprocess(from_,
                               sendbuf_,
                               from_shapes_.get(),
@@ -211,18 +211,22 @@ void Transpose<Dim>::eval_gpu() {
                               r,
                               offset,
                               streams[r]);
+    profile_pre.stop();
+    ProfileDevice profile_copy("Transpose::preprocess::copy", streams[r]);
     const auto err = cudaMemcpyAsync(sendbuf_host_start,
                                      sendbuf_start,
                                      sizeof(complex_t) * buf_view_size,
                                      cudaMemcpyDeviceToHost,
                                      streams[r]);
     cudaCheckError(err);
+    profile_copy.stop();
   }
   // Issue blockwise communications and postprocess asynchronously afterwards
   for (int r : schedule) {
     cudaStreamSynchronize(streams[r]);
     complex_t *sendbuf_host_start = sendbuf_host.raw() + r * buf_view_size;
     complex_t *recvbuf_start = recvbuf_.raw() + r * buf_view_size;
+    ProfileHost profile_comm("Transpose::communication");
     MPI_Sendrecv(sendbuf_host_start,
                  buf_view_size,
                  mpi_type<complex_t>(),
@@ -235,7 +239,9 @@ void Transpose<Dim>::eval_gpu() {
                  0,
                  comm_->get_mpi_comm(),
                  MPI_STATUS_IGNORE);
+    profile_comm.stop();
     const zisa::int_t offset = compute_from_offset(r);
+    ProfileDevice profile_post("Transpose::postprocess", streams[r]);
     transpose_cuda_postprocess(recvbuf_,
                                to_,
                                from_shapes_.get(),
@@ -244,6 +250,7 @@ void Transpose<Dim>::eval_gpu() {
                                rank_,
                                offset,
                                streams[r]);
+    profile_post.stop();
   }
   for (int r = 0; r < size_; ++r) {
     const auto err = cudaStreamDestroy(streams[r]);

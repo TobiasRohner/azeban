@@ -47,7 +47,7 @@ public:
   virtual void
   integrate(real_t dt,
             const zisa::array_view<complex_t, dim_v + 1> &u) override {
-    AZEBAN_PROFILE_START("SSP_RK2::integrate");
+    ProfileHost profile("SSP_RK2::integrate");
     zisa::copy(u_star_, u);
     equation_->dudt(dudt_, u);
     axpy(complex_t(0.5 * dt),
@@ -60,7 +60,6 @@ public:
     axpy(complex_t(0.5 * dt),
          zisa::array_const_view<complex_t, dim_v + 1>(u_star_),
          u);
-    AZEBAN_PROFILE_STOP("SSP_RK2::integrate");
   }
 
   using super::equation;

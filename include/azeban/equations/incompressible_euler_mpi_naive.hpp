@@ -142,7 +142,7 @@ public:
                "Euler MPI needs CPU arrays");
     LOG_ERR_IF(dudt_hat.shape(0) != h_u_hat_pad_.shape(0),
                "Wrong number of variables");
-    AZEBAN_PROFILE_START("IncompressibleEuler_MPI_Naive::dudt");
+    ProfileHost profile("IncompressibleEuler_MPI_Naive::dudt");
     pad_u_hat(u_hat);
     zisa::copy(d_u_hat_pad_, h_u_hat_pad_);
     fft_u_->backward();
@@ -151,7 +151,6 @@ public:
     zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
     unpad_B_hat();
     computeDudt(dudt_hat, u_hat);
-    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI_Naive::dudt");
   }
 
   using super::n_vars;
@@ -181,7 +180,7 @@ private:
 
   void computeDudt(const zisa::array_view<complex_t, 3> &dudt_hat,
                    const zisa::array_const_view<complex_t, 3> &u_hat) {
-    AZEBAN_PROFILE_START("IncompressibleEuler_MPI_Naive::computeDudt");
+    ProfileHost profile("IncompressibleEuler_MPI_Naive::computeDudt");
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const auto shape_phys = grid_.shape_phys(1);
@@ -227,7 +226,6 @@ private:
         }
       }
     }
-    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI_Naive::computeDudt");
   }
 };
 
@@ -274,7 +272,7 @@ public:
                "Euler MPI needs CPU arrays");
     LOG_ERR_IF(dudt_hat.shape(0) != h_u_hat_pad_.shape(0),
                "Wrong number of variables");
-    AZEBAN_PROFILE_START("IncompressibleEuler_MPI_Naive::dudt");
+    ProfileHost profile("IncompressibleEuler_MPI_Naive::dudt");
     pad_u_hat(u_hat);
     zisa::copy(d_u_hat_pad_, h_u_hat_pad_);
     fft_u_->backward();
@@ -283,7 +281,6 @@ public:
     zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
     unpad_B_hat();
     computeDudt(dudt_hat, u_hat);
-    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI_Naive::dudt");
   }
 
   using super::n_vars;
@@ -313,7 +310,7 @@ private:
 
   void computeDudt(const zisa::array_view<complex_t, 4> &dudt_hat,
                    const zisa::array_const_view<complex_t, 4> &u_hat) {
-    AZEBAN_PROFILE_START("IncompressibleEuler_MPI_Naive::computeDudt");
+    ProfileHost profile("IncompressibleEuler_MPI_Naive::computeDudt");
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const zisa::int_t k_base = grid_.k_fourier(0, comm_);
@@ -382,7 +379,6 @@ private:
         }
       }
     }
-    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI_Naive::computeDudt");
   }
 };
 

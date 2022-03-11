@@ -47,10 +47,9 @@ public:
   virtual void
   integrate(real_t dt,
             const zisa::array_view<complex_t, dim_v + 1> &u) override {
-    AZEBAN_PROFILE_START("forward_euler::integrate");
+    ProfileHost profile("forward_euler::integrate");
     equation_->dudt(dudt_, u);
     axpy(complex_t(dt), zisa::array_const_view<complex_t, dim_v + 1>(dudt_), u);
-    AZEBAN_PROFILE_STOP("forward_euler::integrate");
   }
 
   using super::equation;

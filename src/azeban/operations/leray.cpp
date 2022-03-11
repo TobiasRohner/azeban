@@ -26,7 +26,7 @@
 namespace azeban {
 
 void leray(const zisa::array_view<complex_t, 3> &u_hat) {
-  AZEBAN_PROFILE_START("leray");
+  ProfileHost profile("leray");
   if (u_hat.memory_location() == zisa::device_type::cpu) {
     const long N_phys = u_hat.shape(1);
     const long N_fourier = N_phys / 2 + 1;
@@ -61,11 +61,10 @@ void leray(const zisa::array_view<complex_t, 3> &u_hat) {
   else {
     LOG_ERR("Unsupported Memory Location");
   }
-  AZEBAN_PROFILE_STOP("leray");
 }
 
 void leray(const zisa::array_view<complex_t, 4> &u_hat) {
-  AZEBAN_PROFILE_START("leray");
+  ProfileHost profile("leray");
   if (u_hat.memory_location() == zisa::device_type::cpu) {
     const long N_phys = u_hat.shape(1);
     const long N_fourier = N_phys / 2 + 1;
@@ -114,7 +113,6 @@ void leray(const zisa::array_view<complex_t, 4> &u_hat) {
   else {
     LOG_ERR("Unsupported Memory Location");
   }
-  AZEBAN_PROFILE_STOP("leray");
 }
 
 }

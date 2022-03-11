@@ -248,7 +248,7 @@ void copy_to_padded(bool pad_x,
                     const zisa::array_view<complex_t, 1> &dst,
                     const zisa::array_const_view<complex_t, 1> &src,
                     const complex_t &pad_value) {
-  AZEBAN_PROFILE_START("copy_to_padded");
+  ProfileHost profile("copy_to_padded");
   if (src.memory_location() == zisa::device_type::cpu
       && dst.memory_location() == zisa::device_type::cpu) {
     copy_to_padded_cpu(pad_x, compact_dim, dst, src, pad_value);
@@ -262,7 +262,6 @@ void copy_to_padded(bool pad_x,
   else {
     LOG_ERR("Unsupported combination of CPU and CUDA arrays");
   }
-  AZEBAN_PROFILE_STOP("copy_to_padded");
 }
 
 void copy_to_padded(const zisa::array_view<complex_t, 1> &dst,
@@ -277,7 +276,7 @@ void copy_to_padded(bool pad_x,
                     const zisa::array_view<complex_t, 2> &dst,
                     const zisa::array_const_view<complex_t, 2> &src,
                     const complex_t &pad_value) {
-  AZEBAN_PROFILE_START("copy_to_padded");
+  ProfileHost profile("copy_to_padded");
   if (src.memory_location() == zisa::device_type::cpu
       && dst.memory_location() == zisa::device_type::cpu) {
     copy_to_padded_cpu(pad_x, pad_y, compact_dim, dst, src, pad_value);
@@ -291,7 +290,6 @@ void copy_to_padded(bool pad_x,
   else {
     LOG_ERR("Unsupported combination of CPU and CUDA arrays");
   }
-  AZEBAN_PROFILE_STOP("copy_to_padded");
 }
 
 void copy_to_padded(const zisa::array_view<complex_t, 2> &dst,
@@ -307,7 +305,7 @@ void copy_to_padded(bool pad_x,
                     const zisa::array_view<complex_t, 3> &dst,
                     const zisa::array_const_view<complex_t, 3> &src,
                     const complex_t &pad_value) {
-  AZEBAN_PROFILE_START("copy_to_padded");
+  ProfileHost profile("copy_to_padded");
   if (src.memory_location() == zisa::device_type::cpu
       && dst.memory_location() == zisa::device_type::cpu) {
     copy_to_padded_cpu(pad_x, pad_y, pad_z, compact_dim, dst, src, pad_value);
@@ -321,7 +319,6 @@ void copy_to_padded(bool pad_x,
   else {
     LOG_ERR("Unsupported combination of CPU and CUDA arrays");
   }
-  AZEBAN_PROFILE_STOP("copy_to_padded");
 }
 
 void copy_to_padded(const zisa::array_view<complex_t, 3> &dst,

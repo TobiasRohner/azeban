@@ -104,7 +104,7 @@ public:
     LOG_ERR_IF(dudt_hat.shape(0) != u_hat_.shape(0),
                "Wrong number of variables");
     LOG_ERR_IF(u_hat.shape(0) != u_hat_.shape(0), "Wrong number of variables");
-    AZEBAN_PROFILE_START("IncompressibleEuler::dudt");
+    ProfileHost profile("IncompressibleEuler::dudt");
     for (int i = 0; i < n_vars(); ++i) {
       copy_to_padded(component(u_hat_, i), component(u_hat, i));
     }
@@ -112,7 +112,6 @@ public:
     computeB();
     fft_B_->forward();
     computeDudt(dudt_hat, u_hat);
-    AZEBAN_PROFILE_STOP("IncompressibleEuler::dudt");
   }
 
   virtual int n_vars() const override { return dim_v + (has_tracer_ ? 1 : 0); }
@@ -156,7 +155,7 @@ private:
   }
 
   void computeB() {
-    AZEBAN_PROFILE_START("IncompressibleEuler::computeB");
+    ProfileHost profile("IncompressibleEuler::computeB");
     if (device_ == zisa::device_type::cpu) {
       const real_t norm = 1.0
                           / (zisa::pow<dim_v>(zisa::sqrt(grid_.N_phys))
@@ -215,7 +214,6 @@ private:
     else {
       LOG_ERR("Unsupported memory location");
     }
-    AZEBAN_PROFILE_STOP("IncompressibleEuler::computeB");
   }
 
   void
@@ -328,7 +326,7 @@ private:
 
   void computeDudt(const zisa::array_view<complex_t, Dim + 1> &dudt_hat,
                    const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
-    AZEBAN_PROFILE_START("IncompressibleEuler::computeDudt");
+    ProfileHost profile("IncompressibleEuler::computeDudt");
     if (device_ == zisa::device_type::cpu) {
       if constexpr (dim_v == 2) {
         computeDudt_cpu_2d(dudt_hat, u_hat);
@@ -360,7 +358,6 @@ private:
     else {
       LOG_ERR("Unsupported memory_location");
     }
-    AZEBAN_PROFILE_STOP("IncompressibleEuler::computeDudt");
   }
 };
 

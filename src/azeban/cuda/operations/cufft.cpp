@@ -133,21 +133,19 @@ size_t CUFFT_R2C<Dim>::get_work_area_size() const {
 template <int Dim>
 void CUFFT_R2C<Dim>::forward() {
   LOG_ERR_IF(!is_forward(), "Forward operation was not initialized");
-  AZEBAN_PROFILE_START("CUFFT_R2C::forward");
+  ProfileHost profile("CUFFT_R2C::forward");
   auto status = execute_r2c(plan_forward_, u_.raw(), u_hat_.raw());
   cudaCheckError(status);
   cudaDeviceSynchronize();
-  AZEBAN_PROFILE_STOP("CUFFT_R2C::forward");
 }
 
 template <int Dim>
 void CUFFT_R2C<Dim>::backward() {
   LOG_ERR_IF(!is_backward(), "Backward operation was not initialized");
-  AZEBAN_PROFILE_START("CUFFT_R2C::backward");
+  ProfileHost profile("CUFFT_R2C::backward");
   auto status = execute_c2r(plan_backward_, u_hat_.raw(), u_.raw());
   cudaCheckError(status);
   cudaDeviceSynchronize();
-  AZEBAN_PROFILE_STOP("CUFFT_R2C::backward");
 }
 
 template <int Dim>
@@ -343,22 +341,20 @@ size_t CUFFT_C2C<Dim>::get_work_area_size() const {
 template <int Dim>
 void CUFFT_C2C<Dim>::forward() {
   LOG_ERR_IF(!is_forward(), "Forward operation was not initialized");
-  AZEBAN_PROFILE_START("CUFFT_C2C::forward");
+  ProfileHost profile("CUFFT_C2C::forward");
   auto status = execute_c2c(plan_forward_, u_.raw(), u_hat_.raw(), FFT_FORWARD);
   cudaCheckError(status);
   cudaDeviceSynchronize();
-  AZEBAN_PROFILE_STOP("CUFFT_C2C::forward");
 }
 
 template <int Dim>
 void CUFFT_C2C<Dim>::backward() {
   LOG_ERR_IF(!is_backward(), "Backward operation was not initialized");
-  AZEBAN_PROFILE_START("CUFFT_C2C::backward");
+  ProfileHost profile("CUFFT_C2C::backward");
   auto status
       = execute_c2c(plan_backward_, u_hat_.raw(), u_.raw(), FFT_BACKWARD);
   cudaCheckError(status);
   cudaDeviceSynchronize();
-  AZEBAN_PROFILE_STOP("CUFFT_C2C::backward");
 }
 
 template <int Dim>

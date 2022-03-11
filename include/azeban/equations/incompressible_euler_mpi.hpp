@@ -142,10 +142,9 @@ public:
   virtual void
   dudt(const zisa::array_view<complex_t, 3> &dudt_hat,
        const zisa::array_const_view<complex_t, 3> &u_hat) override {
-    AZEBAN_PROFILE_START("IncompressibleEuler_MPI::dudt");
+    ProfileHost profile("IncompressibleEuler_MPI::dudt");
     computeBhat(u_hat);
     computeDudt(dudt_hat, u_hat);
-    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::dudt");
   }
 
   using super::n_vars;
@@ -163,7 +162,7 @@ private:
 
   void computeDudt(const zisa::array_view<complex_t, 3> &dudt_hat,
                    const zisa::array_const_view<complex_t, 3> &u_hat) {
-    AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
+    ProfileHost profile("IncompressibleEuler_MPI::computeDudt");
     if (device_ == zisa::device_type::cpu) {
       computeDudt_cpu(dudt_hat, u_hat);
     }
@@ -175,7 +174,6 @@ private:
     else {
       LOG_ERR("Unsupported device");
     }
-    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeDudt");
   }
 
   void computeDudt_cpu(const zisa::array_view<complex_t, 3> &dudt_hat,
@@ -230,7 +228,7 @@ private:
 #if ZISA_HAS_CUDA
   void computeDudt_cuda(const zisa::array_view<complex_t, 3> &dudt_hat,
                         const zisa::array_const_view<complex_t, 3> &u_hat) {
-    AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
+    ProfileHost profile("IncompressibleEuler_MPI::computeDudt");
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const auto shape_phys = grid_.shape_phys(1);
@@ -241,7 +239,6 @@ private:
       incompressible_euler_mpi_2d_cuda(
           B_hat_, u_hat, dudt_hat, visc_, forcing_, i_base, j_base, shape_phys);
     }
-    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeDudt");
   }
 #endif
 };
@@ -280,10 +277,9 @@ public:
   virtual void
   dudt(const zisa::array_view<complex_t, 4> &dudt_hat,
        const zisa::array_const_view<complex_t, 4> &u_hat) override {
-    AZEBAN_PROFILE_START("IncompressibleEuler_MPI::dudt");
+    ProfileHost profile("IncompressibleEuler_MPI::dudt");
     computeBhat(u_hat);
     computeDudt(dudt_hat, u_hat);
-    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::dudt");
   }
 
   using super::n_vars;
@@ -301,7 +297,7 @@ private:
 
   void computeDudt(const zisa::array_view<complex_t, 4> &dudt_hat,
                    const zisa::array_const_view<complex_t, 4> &u_hat) {
-    AZEBAN_PROFILE_START("IncompressibleEuler_MPI::computeDudt");
+    ProfileHost profile("IncompressibleEuler_MPI::computeDudt");
     if (device_ == zisa::device_type::cpu) {
       computeDudt_cpu(dudt_hat, u_hat);
     }
@@ -313,7 +309,6 @@ private:
     else {
       LOG_ERR("Unsupported device");
     }
-    AZEBAN_PROFILE_STOP("IncompressibleEuler_MPI::computeDudt");
   }
 
   void computeDudt_cpu(const zisa::array_view<complex_t, 4> &dudt_hat,

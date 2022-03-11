@@ -21,6 +21,7 @@
 #include <azeban/grid.hpp>
 #include <azeban/operations/fft.hpp>
 #include <fmt/core.h>
+#include <nlohmann/json.hpp>
 
 namespace azeban {
 

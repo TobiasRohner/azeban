@@ -55,7 +55,7 @@ size_t CUFFT_MPI<2>::get_work_area_size() const { return 0; }
 void CUFFT_MPI<2>::forward() {
   LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
              "Forward operation was not initialized");
-  AZEBAN_PROFILE_START("CUFFT_MPI::forward", comm_->get_mpi_comm());
+  ProfileHost profile("CUFFT_MPI::forward");
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {
@@ -67,12 +67,11 @@ void CUFFT_MPI<2>::forward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::forward::transpose",
-                         comm_->get_mpi_comm());
+    ProfileHost profile_trans("CUFFT_MPI::forward::transpose");
     zisa::copy(mpi_send_buffer_, partial_u_hat_);
     transpose(mpi_recv_buffer_, mpi_send_buffer_, comm_);
     zisa::copy(u_hat_, mpi_recv_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::forward::transpose", comm_->get_mpi_comm());
+    profile_trans.stop();
     // Perform the final local FFTs in place
     status = cufftExecC2C(plan_forward_c2c_,
                           reinterpret_cast<cufftComplex *>(u_hat_.raw()),
@@ -89,12 +88,11 @@ void CUFFT_MPI<2>::forward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::forward::transpose",
-                         comm_->get_mpi_comm());
+    ProfileHost profile_trans("CUFFT_MPI::forward::transpose");
     zisa::copy(mpi_send_buffer_, partial_u_hat_);
     transpose(mpi_recv_buffer_, mpi_send_buffer_, comm_);
     zisa::copy(u_hat_, mpi_recv_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::forward::transpose", comm_->get_mpi_comm());
+    profile_trans.stop();
     // Perform the final local FFTs in place
     status = cufftExecZ2Z(plan_forward_c2c_,
                           reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()),
@@ -103,7 +101,6 @@ void CUFFT_MPI<2>::forward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
   }
-  AZEBAN_PROFILE_STOP("CUFFT_MPI::forward", comm_->get_mpi_comm());
 }
 
 void *CUFFT_MPI<2>::get_work_area() const { return work_area_; }
@@ -111,7 +108,7 @@ void *CUFFT_MPI<2>::get_work_area() const { return work_area_; }
 void CUFFT_MPI<2>::backward() {
   LOG_ERR_IF((direction_ & FFT_BACKWARD) == 0,
              "Backward operation was not initialized");
-  AZEBAN_PROFILE_START("CUFFT_MPI::backward", comm_->get_mpi_comm());
+  ProfileHost profile("CUFFT_MPI::backward");
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {
@@ -124,13 +121,11 @@ void CUFFT_MPI<2>::backward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::backward::transpose",
-                         comm_->get_mpi_comm());
+    ProfileHost profile_trans("CUFFT_MPI::backward::transpose");
     zisa::copy(mpi_recv_buffer_, u_hat_);
     transpose(mpi_send_buffer_, mpi_recv_buffer_, comm_);
     zisa::copy(partial_u_hat_, mpi_send_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::backward::transpose",
-                        comm_->get_mpi_comm());
+    profile_trans.stop();
     // Perform the final local FFTs in place
     status
         = cufftExecC2R(plan_backward_c2r_,
@@ -148,13 +143,11 @@ void CUFFT_MPI<2>::backward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::backward::transpose",
-                         comm_->get_mpi_comm());
+    ProfileHost profile_trans("CUFFT_MPI::backward::transpose");
     zisa::copy(mpi_recv_buffer_, u_hat_);
     transpose(mpi_send_buffer_, mpi_recv_buffer_, comm_);
     zisa::copy(partial_u_hat_, mpi_send_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::backward::transpose",
-                        comm_->get_mpi_comm());
+    profile_trans.stop();
     // Perform the final local FFTs in place
     status = cufftExecZ2D(
         plan_backward_c2r_,
@@ -163,7 +156,6 @@ void CUFFT_MPI<2>::backward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
   }
-  AZEBAN_PROFILE_STOP("CUFFT_MPI::backward", comm_->get_mpi_comm());
 }
 
 void CUFFT_MPI<2>::do_initialize(const zisa::array_view<complex_t, 3> &u_hat,
@@ -292,7 +284,7 @@ size_t CUFFT_MPI<3>::get_work_area_size() const { return 0; }
 void CUFFT_MPI<3>::forward() {
   LOG_ERR_IF((direction_ & FFT_FORWARD) == 0,
              "Forward operation was not initialized");
-  AZEBAN_PROFILE_START("CUFFT_MPI::forward", comm_->get_mpi_comm());
+  ProfileHost profile("CUFFT_MPI::forward");
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {
@@ -304,11 +296,11 @@ void CUFFT_MPI<3>::forward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::transpose", comm_->get_mpi_comm());
+    ProfileHost profile_trans("CUFFT_MPI::transpose");
     zisa::copy(mpi_send_buffer_, partial_u_hat_);
     transpose(mpi_recv_buffer_, mpi_send_buffer_, comm_);
     zisa::copy(u_hat_, mpi_recv_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose", comm_->get_mpi_comm());
+    profile_trans.stop();
     // Perform the final local FFTs in place
     status = cufftExecC2C(plan_forward_c2c_,
                           reinterpret_cast<cufftComplex *>(u_hat_.raw()),
@@ -325,11 +317,11 @@ void CUFFT_MPI<3>::forward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::transpose");
+    ProfileHost profile_trans("CUFFT_MPI::transpose");
     zisa::copy(mpi_send_buffer_, partial_u_hat_);
     transpose(mpi_recv_buffer_, mpi_send_buffer_, comm_);
     zisa::copy(u_hat_, mpi_recv_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose");
+    profile_trans.stop();
     // Perform the final local FFTs in place
     status = cufftExecZ2Z(plan_forward_c2c_,
                           reinterpret_cast<cufftDoubleComplex *>(u_hat_.raw()),
@@ -338,13 +330,12 @@ void CUFFT_MPI<3>::forward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
   }
-  AZEBAN_PROFILE_STOP("CUFFT_MPI::forward", comm_->get_mpi_comm());
 }
 
 void CUFFT_MPI<3>::backward() {
   LOG_ERR_IF((direction_ & FFT_BACKWARD) == 0,
              "Backward operation was not initialized");
-  AZEBAN_PROFILE_START("CUFFT_MPI::backward", comm_->get_mpi_comm());
+  ProfileHost profile("CUFFT_MPI::backward");
   // TODO: Remove the C-style casts when the compiler chooses not to ignore the
   // `constexpr` anymore
   if constexpr (std::is_same_v<float, real_t>) {
@@ -357,11 +348,11 @@ void CUFFT_MPI<3>::backward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::transpose", comm_->get_mpi_comm());
+    ProfileHost profile_trans("CUFFT_MPI::transpose");
     zisa::copy(mpi_recv_buffer_, u_hat_);
     transpose(mpi_send_buffer_, mpi_recv_buffer_, comm_);
     zisa::copy(partial_u_hat_, mpi_send_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose", comm_->get_mpi_comm());
+    profile_trans.stop();
     // Perform the final local FFTs in place
     status
         = cufftExecC2R(plan_backward_c2r_,
@@ -379,11 +370,11 @@ void CUFFT_MPI<3>::backward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
     // Transpose the data from partial_u_hat_ to u_hat_
-    AZEBAN_PROFILE_START("CUFFT_MPI::transpose", comm_->get_mpi_comm());
+    ProfileHost profile_trans("CUFFT_MPI::transpose");
     zisa::copy(mpi_recv_buffer_, u_hat_);
     transpose(mpi_send_buffer_, mpi_recv_buffer_, comm_);
     zisa::copy(partial_u_hat_, mpi_send_buffer_);
-    AZEBAN_PROFILE_STOP("CUFFT_MPI::transpose", comm_->get_mpi_comm());
+    profile_trans.stop();
     // Perform the final local FFTs in place
     status = cufftExecZ2D(
         plan_backward_c2r_,
@@ -392,7 +383,6 @@ void CUFFT_MPI<3>::backward() {
     cudaCheckError(status);
     cudaDeviceSynchronize();
   }
-  AZEBAN_PROFILE_STOP("CUFFT_MPI::backward", comm_->get_mpi_comm());
 }
 
 void *CUFFT_MPI<3>::get_work_area() const { return work_area_; }
