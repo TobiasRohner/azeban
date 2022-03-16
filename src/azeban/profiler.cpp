@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <azeban/profiler.hpp>
+#include <azeban/utils/format_time.hpp>
 #if ZISA_HAS_CUDA
 #include <cuda_runtime.h>
 #endif
@@ -111,6 +112,93 @@ void Profiler::serialize(std::ostream &os) {
   }
 }
 
+void Profiler::summarize(std::ostream &os) {
+  const std::map<std::string, StageSummary> summary
+      = build_summary(to_timeline(host_records_));
+  struct TableEntry {
+    TableEntry(const std::string &name_, const StageSummary &stage)
+        : name(name_),
+          percentage(100 * stage.total_time / (end_time - start_time)),
+          total_time(stage.total_time),
+          num_calls(stage.num_calls),
+          time_per_call(stage.total_time / stage.num_calls) {}
+    std::string name;
+    double percentage;
+    duration_t total_time;
+    size_t num_calls;
+    duration_t time_per_call;
+  };
+  std::vector<TableEntry> table_entries;
+  for (const auto &[name, stage] : summary) {
+    table_entries.emplace_back(name, stage);
+  }
+  std::sort(table_entries.begin(),
+            table_entries.end(),
+            [](const TableEntry &lhs, const TableEntry &rhs) {
+              return lhs.percentage > rhs.percentage;
+            });
+  std::vector<std::string> percentage_col;
+  std::vector<std::string> total_time_col;
+  std::vector<std::string> num_calls_col;
+  std::vector<std::string> time_per_call_col;
+  std::vector<std::string> name_col;
+  int percentage_col_width = 6;
+  int total_time_col_width = 10;
+  int num_calls_col_width = 9;
+  int time_per_call_col_width = 13;
+  int name_col_width = 4;
+  for (const TableEntry &entry : table_entries) {
+    percentage_col.push_back(fmt::format("{:.3f}%", entry.percentage));
+    percentage_col_width = std::max(
+        percentage_col_width, static_cast<int>(percentage_col.back().length()));
+    total_time_col.push_back(format_time(entry.total_time));
+    total_time_col_width = std::max(
+        total_time_col_width, static_cast<int>(total_time_col.back().length()));
+    num_calls_col.push_back(fmt::format("{}", entry.num_calls));
+    num_calls_col_width = std::max(
+        num_calls_col_width, static_cast<int>(num_calls_col.back().length()));
+    time_per_call_col.push_back(format_time(entry.time_per_call));
+    time_per_call_col_width
+        = std::max(time_per_call_col_width,
+                   static_cast<int>(time_per_call_col.back().size()));
+    name_col.push_back(entry.name);
+    name_col_width
+        = std::max(name_col_width, static_cast<int>(name_col.back().length()));
+  }
+  std::string table
+      = "Total Simulation Time: " + format_time(end_time - start_time) + '\n';
+  table += fmt::format(" {:<{}} | {:<{}} | {:<{}} | {:<{}} | {:<{}} \n",
+                       "Time %",
+                       percentage_col_width,
+                       "Total Time",
+                       total_time_col_width,
+                       "Nr. Calls",
+                       num_calls_col_width,
+                       "Time per Call",
+                       time_per_call_col_width,
+                       "Name",
+                       name_col_width);
+  const int total_table_width = 1 + percentage_col_width + 3
+                                + total_time_col_width + 3 + num_calls_col_width
+                                + 3 + time_per_call_col_width + 3
+                                + name_col_width + 1;
+  table += std::string(total_table_width, '-') + '\n';
+  for (int row = 0; row < table_entries.size(); ++row) {
+    table += fmt::format(" {:>{}} | {:>{}} | {:>{}} | {:>{}} | {:<{}} \n",
+                         percentage_col[row],
+                         percentage_col_width,
+                         total_time_col[row],
+                         total_time_col_width,
+                         num_calls_col[row],
+                         num_calls_col_width,
+                         time_per_call_col[row],
+                         time_per_call_col_width,
+                         name_col[row],
+                         name_col_width);
+  }
+  os << table;
+}
+
 template <typename RecordType>
 std::vector<Profiler::Timespan>
 Profiler::to_timeline(const std::forward_list<RecordType> &records) {
@@ -125,6 +213,17 @@ template std::vector<Profiler::Timespan>
 Profiler::to_timeline(const std::forward_list<Profiler::RecordHost> &);
 template std::vector<Profiler::Timespan>
 Profiler::to_timeline(const std::forward_list<Profiler::RecordDevice> &);
+
+std::map<std::string, Profiler::StageSummary>
+Profiler::build_summary(const std::vector<Profiler::Timespan> &timeline) {
+  std::map<std::string, StageSummary> summary;
+  for (const auto &span : timeline) {
+    auto &stage = summary[span.name];
+    ++stage.num_calls;
+    stage.total_time += span.duration;
+  }
+  return summary;
+}
 
 #if AZEBAN_DO_PROFILE
 ProfileHost::ProfileHost(const std::string &name)

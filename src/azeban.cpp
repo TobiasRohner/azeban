@@ -81,11 +81,17 @@ int main(int argc, char *argv[]) {
 
 #if AZEBAN_DO_PROFILE
 #if AZEBAN_HAS_MPI
-  // fmt::print("Rank {}:\n{}", rank, Profiler::summary());
+  for (int r = 0; r < size; ++r) {
+    if (r == rank) {
+      std::cout << "Rank " << rank << ":\n";
+      Profiler::summarize(std::cout);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
   std::ofstream pstream("profiling_rank" + std::to_string(rank) + ".out");
   Profiler::serialize(pstream);
 #else
-  // fmt::print(Profiler::summary());
+  Profiler::summarize(std::cout);
   std::ofstream pstream("profiling.out");
   Profiler::serialize(pstream);
 #endif

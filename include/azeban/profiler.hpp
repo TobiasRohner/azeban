@@ -22,6 +22,7 @@
 #include <chrono>
 #include <forward_list>
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 #include <zisa/config.hpp>
@@ -64,6 +65,11 @@ public:
     duration_t duration;
   };
 
+  struct StageSummary {
+    duration_t total_time = duration_t(0);
+    size_t num_calls = 0;
+  };
+
   static void start();
   static void stop();
   static RecordHost *start(const std::string &name);
@@ -74,6 +80,7 @@ public:
 #endif
 
   static void serialize(std::ostream &os);
+  static void summarize(std::ostream &os);
 
 private:
   static std::forward_list<RecordHost> host_records_;
@@ -86,6 +93,9 @@ private:
   template <typename RecordType>
   static std::vector<Timespan>
   to_timeline(const std::forward_list<RecordType> &records);
+
+  static std::map<std::string, StageSummary>
+  build_summary(const std::vector<Timespan> &timeline);
 };
 
 #if AZEBAN_DO_PROFILE

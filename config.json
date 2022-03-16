@@ -1,5 +1,5 @@
 {
-  "output": "discontinuous_double_shear_layer_N128_NoForcing_T1.0",
+  "output": "brownian_bridge_N128_NoForcing_T1.0",
   "device": "cuda",
   "dimension": 2,
   "num_samples": 2048,
@@ -31,7 +31,7 @@
     "C": 0.5
   },
   "init": {
-    "name": "Discontinuous Double Shear Layer",
+    "name": "Brownian Motion",
     "N": 3,
     "rho": 0.1,
     "delta": 0.025,

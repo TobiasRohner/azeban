@@ -19,14 +19,14 @@ def read_intervals(fname, from_t=None, to_t=None):
     return intervals_host, intervals_device
 
 
-def remove_overlap(intervals):
+def remove_overlap(intervals, eps=0.001):
     result = []
     for interval in intervals:
         inserted = False
         for i in range(len(result)):
             last_interval = result[i][-1]
             end_time = last_interval[1] + last_interval[2]
-            if interval[1] >= end_time:
+            if interval[1] >= end_time - eps:
                 result[i].append(interval)
                 inserted = True
                 break
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     profiling_files = sys.argv[1:]
     fig, ax = plt.subplots()
     for fname in profiling_files:
-        data_host, data_device = read_intervals(fname, 0, 2000)
+        data_host, data_device = read_intervals(fname, 0, 100000)
         data_host = remove_overlap(data_host)
         data_device = remove_overlap(data_device)
         xlim_host, ylim_host = plot_timeline(ax, data_host, 1, 'b')
