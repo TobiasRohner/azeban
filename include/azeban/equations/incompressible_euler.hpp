@@ -235,7 +235,7 @@ private:
         const real_t k2 = 2 * zisa::pi * j;
         const real_t absk2 = k1 * k1 + k2 * k2;
         complex_t force1, force2;
-        forcing_(0, k1, k2, &force1, &force2);
+        forcing_(0, i_, j, &force1, &force2);
         complex_t L1_hat, L2_hat;
         // clang-format off
         incompressible_euler_2d_compute_L(
@@ -294,7 +294,7 @@ private:
           const real_t k3 = 2 * zisa::pi * k;
           const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
           complex_t force1, force2, force3;
-          forcing_(0, k1, k2, k3, &force1, &force2, &force3);
+          forcing_(0, i_, j_, k, &force1, &force2, &force3);
           complex_t L1_hat, L2_hat, L3_hat;
           // clang-format off
           incompressible_euler_3d_compute_L(

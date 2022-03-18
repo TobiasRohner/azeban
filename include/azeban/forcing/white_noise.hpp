@@ -31,16 +31,11 @@ class WhiteNoise<RNG, zisa::device_type::cpu> {
 
 #ifdef __NVCC__
 public:
-  __device__ void operator()(real_t, zisa::int_t, complex_t *f1) {}
-  __device__ void
-  operator()(real_t, zisa::int_t, zisa::int_t, complex_t *f1, complex_t *f2) {}
-  __device__ void operator()(real_t,
-                             zisa::int_t,
-                             zisa::int_t,
-                             zisa::int_t,
-                             complex_t *f1,
-                             complex_t *f2,
-                             complex_t *f3) {}
+  __device__ void operator()(real_t, long, complex_t *f1) {}
+  __device__ void operator()(real_t, long, long, complex_t *f1, complex_t *f2) {
+  }
+  __device__ void operator()(
+      real_t, long, long, long, complex_t *f1, complex_t *f2, complex_t *f3) {}
 #else
 public:
   template <int Dim>
@@ -78,21 +73,15 @@ public:
   WhiteNoise &operator=(const WhiteNoise &) = default;
   WhiteNoise &operator=(WhiteNoise &&) = default;
 
-  void operator()(real_t, zisa::int_t, complex_t *f1) { *f1 = generate(); }
+  void operator()(real_t, long, complex_t *f1) { *f1 = generate(); }
 
-  void
-  operator()(real_t, zisa::int_t, zisa::int_t, complex_t *f1, complex_t *f2) {
+  void operator()(real_t, long, long, complex_t *f1, complex_t *f2) {
     *f1 = generate();
     *f2 = generate();
   }
 
-  void operator()(real_t,
-                  zisa::int_t,
-                  zisa::int_t,
-                  zisa::int_t,
-                  complex_t *f1,
-                  complex_t *f2,
-                  complex_t *f3) {
+  void operator()(
+      real_t, long, long, long, complex_t *f1, complex_t *f2, complex_t *f3) {
     *f1 = generate();
     *f2 = generate();
     *f3 = generate();
@@ -149,7 +138,7 @@ public:
 
   void destroy() { curand_free_state<RNG>(state_); }
 
-  __device__ __inline__ void operator()(real_t t, zisa::int_t, complex_t *f1) {
+  __device__ __inline__ void operator()(real_t t, long, complex_t *f1) {
 #ifdef __NVCC__
     const size_t id = blockDim.x * blockIdx.x + threadIdx.x;
     state_t local_state = state_[id];
@@ -164,7 +153,7 @@ public:
   }
 
   __device__ __inline__ void
-  operator()(real_t, zisa::int_t, zisa::int_t, complex_t *f1, complex_t *f2) {
+  operator()(real_t, long, long, complex_t *f1, complex_t *f2) {
 #ifdef __NVCC__
     const size_t idx_x = blockDim.x * blockIdx.x + threadIdx.x;
     const size_t idx_y = blockDim.y * blockIdx.y + threadIdx.y;
@@ -185,13 +174,8 @@ public:
 #endif
   }
 
-  __device__ __inline__ void operator()(real_t,
-                                        zisa::int_t,
-                                        zisa::int_t,
-                                        zisa::int_t,
-                                        complex_t *f1,
-                                        complex_t *f2,
-                                        complex_t *f3) {
+  __device__ __inline__ void operator()(
+      real_t, long, long, long, complex_t *f1, complex_t *f2, complex_t *f3) {
 #ifdef __NVCC__
     const size_t idx_x = blockDim.x * blockIdx.x + threadIdx.x;
     const size_t idx_y = blockDim.y * blockIdx.y + threadIdx.y;

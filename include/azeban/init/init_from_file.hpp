@@ -56,10 +56,22 @@ private:
   std::string time_;
 
   std::string filename() const;
+  std::vector<int> get_varids(int ncid) const;
+  std::vector<std::string> get_varnames(int ncid) const;
   std::vector<size_t> get_dims(int ncid, int varid) const;
   void read_component(int ncid,
                       const std::string &name,
                       const zisa::array_view<real_t, Dim> &u) const;
+  void read_u(int ncid, const zisa::array_view<real_t, Dim + 1> &u) const;
+  void read_u_hat(int ncid,
+                  const zisa::array_view<complex_t, Dim + 1> &u_hat) const;
+  void read_omega(int ncid,
+                  const zisa::array_view<real_t, Dim + 1> &omega) const;
+  void
+  read_omega_hat(int ncid,
+                 const zisa::array_view<complex_t, Dim + 1> &omega_hat) const;
+  void init(int ncid, const zisa::array_view<real_t, Dim + 1> &u) const;
+  void init(int ncid, const zisa::array_view<complex_t, Dim + 1> &u_hat) const;
 };
 
 }

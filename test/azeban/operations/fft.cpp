@@ -379,8 +379,6 @@ TEST_CASE("cuFFT MPI 2d scalar valued data", "[operations][fft][mpi]") {
   std::cout << "TESTING: cuFFT MPI 2d scalar valued data [operations][fft][mpi]"
             << std::endl;
   azeban::Communicator comm(MPI_COMM_WORLD);
-  const int rank = comm.rank();
-  const int size = comm.size();
 
   zisa::int_t n = 128;
   azeban::Grid<2> grid(n);
@@ -437,8 +435,6 @@ TEST_CASE("cuFFT MPI 2d vector valued data", "[operations][fft][mpi]") {
   std::cout << "TESTING: cuFFT MPI 2d vector valued data [operations][fft][mpi]"
             << std::endl;
   azeban::Communicator comm(MPI_COMM_WORLD);
-  const int rank = comm.rank();
-  const int size = comm.size();
 
   zisa::int_t n = 128;
   azeban::Grid<2> grid(n);
@@ -505,8 +501,6 @@ TEST_CASE("cuFFT MPI 3d scalar valued data", "[operations][fft][mpi]") {
   std::cout << "TESTING: cuFFT MPI 3d scalar valued data [operations][fft][mpi]"
             << std::endl;
   azeban::Communicator comm(MPI_COMM_WORLD);
-  const int rank = comm.rank();
-  const int size = comm.size();
 
   zisa::int_t n = 128;
   azeban::Grid<3> grid(n);
@@ -574,8 +568,6 @@ TEST_CASE("cuFFT MPI 3d vector valued data", "[operations][fft][mpi]") {
   std::cout << "TESTING: cuFFT MPI 3d vector valued data [operations][fft][mpi]"
             << std::endl;
   azeban::Communicator comm(MPI_COMM_WORLD);
-  const int rank = comm.rank();
-  const int size = comm.size();
 
   zisa::int_t n = 128;
   azeban::Grid<3> grid(n);

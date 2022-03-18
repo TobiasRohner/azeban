@@ -3,6 +3,7 @@
 #include <azeban/equations/incompressible_euler_mpi_naive_factory.hpp>
 #include <azeban/equations/spectral_viscosity_factory.hpp>
 #include <azeban/forcing/no_forcing.hpp>
+#include <azeban/forcing/sinusoidal_factory.hpp>
 #include <azeban/forcing/white_noise_factory.hpp>
 #include <fmt/core.h>
 #include <string>
@@ -70,8 +71,11 @@ make_equation_mpi(const nlohmann::json &config,
     NoForcing forcing;
     return make_equation_mpi(
         grid, comm, has_tracer, visc, forcing, equation_name, device);
-  }
-  if (forcing_type == "White Noise") {
+  } else if (forcing_type == "Sinusoidal") {
+    Sinusoidal forcing = make_sinusoidal(config["forcing"], grid);
+    return make_equation_mpi(
+        grid, comm, has_tracer, visc, forcing, equation_name, device);
+  } else if (forcing_type == "White Noise") {
     if (device == zisa::device_type::cpu) {
       WhiteNoise forcing
           = make_white_noise<std::mt19937>(config["forcing"], grid);
@@ -89,8 +93,10 @@ make_equation_mpi(const nlohmann::json &config,
     else {
       LOG_ERR("Unsupported device");
     }
+  } else {
+    fmt::print(stderr, "Unknown forcing type: {}\n", forcing_type);
+    exit(1);
   }
-  return nullptr;
 }
 
 template <int Dim, typename SpectralViscosity, typename Forcing>

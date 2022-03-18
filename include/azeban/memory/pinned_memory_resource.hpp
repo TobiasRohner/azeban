@@ -23,7 +23,7 @@ protected:
     return p;
   }
 
-  virtual void do_deallocate(pointer ptr, size_type n) override {
+  virtual void do_deallocate(pointer ptr, size_type /*n*/) override {
     const auto err = cudaFreeHost(ptr);
     cudaCheckError(err);
   }

@@ -183,7 +183,7 @@ void Profiler::summarize(std::ostream &os) {
                                 + 3 + time_per_call_col_width + 3
                                 + name_col_width + 1;
   table += std::string(total_table_width, '-') + '\n';
-  for (int row = 0; row < table_entries.size(); ++row) {
+  for (size_t row = 0; row < table_entries.size(); ++row) {
     table += fmt::format(" {:>{}} | {:>{}} | {:>{}} | {:>{}} | {:<{}} \n",
                          percentage_col[row],
                          percentage_col_width,

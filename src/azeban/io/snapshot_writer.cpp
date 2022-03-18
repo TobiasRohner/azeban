@@ -95,6 +95,8 @@ void SnapshotWriter<Dim>::write_snapshot(const Simulation<Dim> &simulation,
     if (rank == 0) {
       do_write_snapshot(sample_idx, simulation.time(), u_init);
     }
+  } else {
+    ZISA_UNUSED(sample_idx);
   }
 }
 #endif

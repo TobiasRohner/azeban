@@ -4,10 +4,109 @@
 #include <azeban/equations/incompressible_euler_naive_factory.hpp>
 #include <azeban/equations/spectral_viscosity_factory.hpp>
 #include <azeban/forcing/no_forcing.hpp>
+#include <azeban/forcing/sinusoidal_factory.hpp>
 #include <azeban/forcing/white_noise_factory.hpp>
 #include <string>
 
 namespace azeban {
+
+template <int Dim>
+static std::shared_ptr<Equation<Dim>>
+make_equation(const nlohmann::json &config,
+              const Grid<Dim> &grid,
+              bool has_tracer,
+              const std::string &visc_type,
+              const std::string &forcing_type,
+              const std::string &equation_name,
+              zisa::device_type device) {
+  if (visc_type == "Smooth Cutoff") {
+    SmoothCutoff1D visc = make_smooth_cutoff_1d(config["visc"], grid);
+    return make_equation<Dim>(
+        config, grid, has_tracer, visc, forcing_type, equation_name, device);
+  } else if (visc_type == "Step") {
+    Step1D visc = make_step_1d(config["visc"], grid);
+    return make_equation<Dim>(
+        config, grid, has_tracer, visc, forcing_type, equation_name, device);
+  } else if (visc_type == "Quadratic") {
+    Quadratic visc = make_quadratic(config["visc"], grid);
+    return make_equation<Dim>(
+        config, grid, has_tracer, visc, forcing_type, equation_name, device);
+  } else {
+    fmt::print(stderr, "Unknown viscosity type: {}\n", visc_type);
+    exit(1);
+  }
+}
+
+template <int Dim, typename SpectralViscosity>
+static std::shared_ptr<Equation<Dim>>
+make_equation(const nlohmann::json &config,
+              const Grid<Dim> &grid,
+              bool has_tracer,
+              const SpectralViscosity &visc,
+              const std::string &forcing_type,
+              const std::string &equation_name,
+              zisa::device_type device) {
+  if (forcing_type == "No Forcing") {
+    NoForcing forcing;
+    return make_equation(
+        grid, has_tracer, visc, forcing, equation_name, device);
+  } else if (forcing_type == "Sinusoidal") {
+    Sinusoidal forcing = make_sinusoidal(config["forcing"], grid);
+    return make_equation(
+        grid, has_tracer, visc, forcing, equation_name, device);
+  } else if (forcing_type == "White Noise") {
+    if (device == zisa::device_type::cpu) {
+      WhiteNoise forcing
+          = make_white_noise<std::mt19937>(config["forcing"], grid);
+      return make_equation(
+          grid, has_tracer, visc, forcing, equation_name, device);
+    }
+#if ZISA_HAS_CUDA
+    else if (device == zisa::device_type::cuda) {
+      WhiteNoise forcing
+          = make_white_noise<curandStateXORWOW_t>(config["forcing"], grid);
+      return make_equation(
+          grid, has_tracer, visc, forcing, equation_name, device);
+    }
+#endif
+    else {
+      LOG_ERR("Unsupported device");
+    }
+  } else {
+    fmt::print(stderr, "Unknown forcing type: {}\n", forcing_type);
+    exit(1);
+  }
+}
+
+template <int Dim, typename SpectralViscosity, typename Forcing>
+static std::shared_ptr<Equation<Dim>>
+make_equation(const Grid<Dim> &grid,
+              bool has_tracer,
+              const SpectralViscosity &visc,
+              const Forcing &forcing,
+              const std::string &equation_name,
+              zisa::device_type device) {
+  if constexpr (Dim == 1) {
+    ZISA_UNUSED(grid);
+    ZISA_UNUSED(has_tracer);
+    ZISA_UNUSED(visc);
+    ZISA_UNUSED(forcing);
+    ZISA_UNUSED(equation_name);
+    ZISA_UNUSED(device);
+    // TODO: Return burgers
+    return nullptr;
+  } else {
+    if (equation_name == "Euler") {
+      return make_incompressible_euler<Dim>(
+          grid, visc, forcing, has_tracer, device);
+    } else if (equation_name == "Euler Naive") {
+      return make_incompressible_euler_naive<Dim>(grid, visc, device);
+    } else {
+      fmt::print(stderr, "Unknown equation name: \"{}\"\n", equation_name);
+      exit(1);
+    }
+  }
+}
 
 template <int Dim>
 std::shared_ptr<Equation<Dim>> make_equation(const nlohmann::json &config,
@@ -39,82 +138,8 @@ std::shared_ptr<Equation<Dim>> make_equation(const nlohmann::json &config,
     forcing_type = config["forcing"]["type"];
   }
 
-  auto make_equation = [&equation_name, &grid, &has_tracer, &device](
-                           auto &&visc, auto &&forcing) {
-    if (equation_name == "Burgers") {
-      return make_burgers(grid, visc, device);
-    } else if (equation_name == "Euler") {
-      return make_incompressible_euler(grid, visc, forcing, has_tracer, device);
-    } else if (equation_name == "Euler Naive") {
-      return make_incompressible_euler_naive(grid, visc, device);
-    }
-    AZEBAN_ERR("Unkown Equation");
-  };
-
-  auto make_forcing_no_forcing = [&]() { return NoForcing{}; };
-  auto make_forcing_white_noise_cpu = [&]() {
-    return make_white_noise<std::mt19937>(config["forcing"], grid);
-  };
-#if ZISA_HAS_CUDA
-  auto make_forcing_white_noise_cuda = [&]() {
-    return make_white_noise<curandStateXORWOW_t>(config["forcing"], grid);
-  };
-#endif
-
-#define REGISTER_EQUATION(                                                     \
-    VISC_STR, VISC_FACTORY, FORCING_STR, FORCING_FACTORY)                      \
-  if (visc_type == VISC_STR && forcing_type == FORCING_STR) {                  \
-    auto visc = VISC_FACTORY(config["visc"], grid);                            \
-    auto forcing = FORCING_FACTORY();                                          \
-    return make_equation(visc, forcing);                                       \
-  }
-
-  REGISTER_EQUATION("Smooth Cutoff",
-                    make_smooth_cutoff_1d,
-                    "No Forcing",
-                    make_forcing_no_forcing);
-  REGISTER_EQUATION(
-      "Step", make_step_1d, "No Forcing", make_forcing_no_forcing);
-  REGISTER_EQUATION(
-      "Quadratic", make_quadratic, "No Forcing", make_forcing_no_forcing);
-  REGISTER_EQUATION(
-      "None", make_no_viscosity, "No Forcing", make_forcing_no_forcing);
-  if (device == zisa::device_type::cpu) {
-    REGISTER_EQUATION("Smooth Cutoff",
-                      make_smooth_cutoff_1d,
-                      "White Noise",
-                      make_forcing_white_noise_cpu);
-    REGISTER_EQUATION(
-        "Step", make_step_1d, "White Noise", make_forcing_white_noise_cpu);
-    REGISTER_EQUATION("Quadratic",
-                      make_quadratic,
-                      "White Noise",
-                      make_forcing_white_noise_cpu);
-    REGISTER_EQUATION(
-        "None", make_no_viscosity, "White Noise", make_forcing_white_noise_cpu);
-  }
-#if ZISA_HAS_CUDA
-  else if (device == zisa::device_type::cuda) {
-    REGISTER_EQUATION("Smooth Cutoff",
-                      make_smooth_cutoff_1d,
-                      "White Noise",
-                      make_forcing_white_noise_cuda);
-    REGISTER_EQUATION(
-        "Step", make_step_1d, "White Noise", make_forcing_white_noise_cuda);
-    REGISTER_EQUATION("Quadratic",
-                      make_quadratic,
-                      "White Noise",
-                      make_forcing_white_noise_cuda);
-    REGISTER_EQUATION("None",
-                      make_no_viscosity,
-                      "White Noise",
-                      make_forcing_white_noise_cuda);
-  }
-#endif
-
-#undef REGISTER_EQUATION
-
-  AZEBAN_ERR("Invalid Equation Configuration\n");
+  return make_equation(
+      config, grid, has_tracer, visc_type, forcing_type, equation_name, device);
 }
 
 template std::shared_ptr<Equation<1>>

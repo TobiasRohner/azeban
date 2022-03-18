@@ -1,17 +1,17 @@
 {
-  "output": "brownian_bridge_N128_NoForcing_T1.0",
+  "output": "bm_N256_ForcingPaper_T20.0",
   "device": "cuda",
   "dimension": 2,
-  "num_samples": 2048,
+  "num_samples": 1,
   "seed": 1,
-  "time": 1,
+  "time": 20,
   "snapshots": {
     "start": 0,
-    "stop": 1,
-    "n": 100
+    "stop": 20,
+    "n": 200
   },
   "grid": {
-    "N_phys": 128,
+    "N_phys": 256,
     "N_phys_pad": ""
   },
   "equation": {
@@ -19,26 +19,27 @@
     "visc": {
       "type": "Step",
       "k0": 1,
-      "eps": 0.1
+      "eps": 0.256
     },
-    "forcing_": {
-      "type": "White Noise",
-      "sigma": 10
+    "forcing": {
+      "type": "Sinusoidal",
+      "amplitude": 0.015915494
     }
   },
   "timestepper": {
     "type": "SSP RK3",
-    "C": 0.5
+    "C": 0.05
   },
   "init": {
+    "name_": "Init From File",
+    "experiment_": "grf_N256",
+    "time_": "0.000000",
     "name": "Brownian Motion",
-    "N": 3,
-    "rho": 0.1,
-    "delta": 0.025,
-    "perturb": {
-      "name": "Uniform",
-      "min": -0.025,
-      "max": 0.025
+    "hurst": 0.5,
+    "tracer_": {
+      "name": "Sphere",
+      "center": [0.5, 0.5],
+      "radius": 0.3
     }
   }
 }

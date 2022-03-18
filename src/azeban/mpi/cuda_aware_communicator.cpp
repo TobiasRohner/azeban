@@ -42,11 +42,11 @@ CUDAAwareCommunicator::CUDAAwareCommunicator(MPI_Comm comm) : super(comm) {
 void CUDAAwareCommunicator::do_alltoall(const void *sendbuf,
                                         int sendcount,
                                         MPI_Datatype sendtype,
-                                        zisa::device_type sendloc,
+                                        zisa::device_type /*sendloc*/,
                                         void *recvbuf,
                                         int recvcount,
                                         MPI_Datatype recvtype,
-                                        zisa::device_type recvloc) const {
+                                        zisa::device_type /*recvloc*/) const {
   MPI_Alltoall(
       sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_);
 }

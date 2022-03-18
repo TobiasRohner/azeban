@@ -144,7 +144,7 @@ incompressible_euler_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
     const real_t absk2 = k1 * k1 + k2 * k2;
 
     complex_t force1, force2;
-    forcing(0, k1, k2, &force1, &force2);
+    forcing(0, i_, j, &force1, &force2);
     complex_t L1_hat, L2_hat;
     incompressible_euler_2d_compute_L(k1,
                                       k2,
@@ -201,7 +201,7 @@ incompressible_euler_3d_cuda_kernel(zisa::array_const_view<complex_t, 4> B_hat,
     const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
 
     complex_t force1, force2, force3;
-    forcing(0, k1, k2, k3, &force1, &force2, &force3);
+    forcing(0, i_, j_, k, &force1, &force2, &force3);
     complex_t L1_hat, L2_hat, L3_hat;
     incompressible_euler_3d_compute_L(k1,
                                       k2,
@@ -253,7 +253,7 @@ __global__ void incompressible_euler_2d_tracer_cuda_kernel(
     const real_t absk2 = k1 * k1 + k2 * k2;
 
     complex_t force1, force2;
-    forcing(0, k1, k2, &force1, &force2);
+    forcing(0, i_, j, &force1, &force2);
     complex_t L1_hat, L2_hat, L3_hat;
     incompressible_euler_2d_compute_L(k1,
                                       k2,
@@ -312,7 +312,7 @@ __global__ void incompressible_euler_3d_tracer_cuda_kernel(
     const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
 
     complex_t force1, force2, force3;
-    forcing(0, k1, k2, k3, &force1, &force2, &force3);
+    forcing(0, i_, j_, k, &force1, &force2, &force3);
     complex_t L1_hat, L2_hat, L3_hat, L4_hat;
     incompressible_euler_3d_compute_L(k1,
                                       k2,
