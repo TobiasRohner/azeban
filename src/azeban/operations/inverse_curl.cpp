@@ -29,8 +29,8 @@ void inverse_curl(const zisa::array_const_view<complex_t, 2> &w,
           u(0, i, j) = 0;
           u(1, i, j) = 0;
         } else {
-          u(0, i, j) = complex_t(0, k2 / absk2) * w(i, j);
-          u(1, i, j) = complex_t(0, -k1 / absk2) * w(i, j);
+          u(0, i, j) = complex_t(0, -k2 / absk2) * w(i, j);
+          u(1, i, j) = complex_t(0, k1 / absk2) * w(i, j);
         }
       }
     }
