@@ -1,5 +1,5 @@
 {
-  "output": "bm_N256_ForcingPaper_T20.0",
+  "output": "bm_N256_mu3_NoForcing_T20.0",
   "device": "cuda",
   "dimension": 2,
   "num_samples": 1,
@@ -21,7 +21,7 @@
       "k0": 1,
       "eps": 0.256
     },
-    "forcing": {
+    "forcing_": {
       "type": "Sinusoidal",
       "amplitude": 0.015915494
     }

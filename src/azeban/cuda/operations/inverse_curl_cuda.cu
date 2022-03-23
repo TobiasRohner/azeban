@@ -22,8 +22,8 @@ __global__ void inverse_curl_cuda_kernel(zisa::array_const_view<complex_t, 2> w,
       u(1, i, j) = 0;
     } else {
       const complex_t wij = w(i, j);
-      u(0, i, j) = complex_t(0, k2 / absk2) * wij;
-      u(1, i, j) = complex_t(0, -k1 / absk2) * wij;
+      u(0, i, j) = complex_t(0, -k2 / absk2) * wij;
+      u(1, i, j) = complex_t(0, k1 / absk2) * wij;
     }
   }
 }
