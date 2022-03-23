@@ -60,6 +60,7 @@ private:
   zisa::array_const_view<complex_t, Dim + 1> from_;
   zisa::array_view<complex_t, Dim + 1> to_;
   zisa::array_view<complex_t, Dim + 2> sendbuf_;
+  zisa::array<complex_t, Dim + 2> sendbuf_host_;
   zisa::array_view<complex_t, Dim + 2> recvbuf_;
   std::unique_ptr<zisa::shape_t<Dim + 1>[]> from_shapes_;
   std::unique_ptr<zisa::shape_t<Dim + 1>[]> to_shapes_;
