@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import subprocess
 import netCDF4 as nc
 import os
 import json
@@ -8,7 +7,7 @@ import numpy as np
 
 
 
-def solve_NS(executable, u, visc, t_end, tmpdir='sol', device='cuda'):
+def solve_NS(executable, u, visc, t_end, tmpdir='/tmp', device='cuda'):
     # Setting up simulation configuration file
     dim = len(u.shape) - 1
     N = u.shape[1]
@@ -63,6 +62,11 @@ def solve_NS(executable, u, visc, t_end, tmpdir='sol', device='cuda'):
     return u_new
 
 
+def solve_Euler(executable, u, t_end, tmpdir='/tmp', device='cuda'):
+    N = u.shape[1]
+    return solve_NS(executable, u, 0.05 / N, t_end, tmpdir, device)
+
+
 
 if __name__== '__main__':
     import sys
@@ -85,7 +89,7 @@ if __name__== '__main__':
     u = np.empty((2, N, N))
     fbm.generate_fourier_efficient_sample(u[0,:], 0.5)
     fbm.generate_fourier_efficient_sample(u[1,:], 0.5)
-    u_new = solve_NS(sys.argv[1], u, 1e-4, t_end, tmpdir=sys.argv[2])
+    u_new = solve_Euler(sys.argv[1], u, t_end, tmpdir=sys.argv[2])
 
     curl_u = curl(u[0], u[1])
     curl_u_new = curl(u_new[0], u_new[1])
