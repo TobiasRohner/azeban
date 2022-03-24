@@ -84,6 +84,9 @@ Transpose<Dim>::Transpose(const Communicator *comm,
       }
     }
   }
+  if (location_ == zisa::device_type::cuda) {
+    sendbuf_host_ = pinned_array<complex_t, Dim + 2>(buffer_shape());
+  }
 }
 
 template <int Dim>
@@ -186,7 +189,6 @@ void Transpose<Dim>::eval_gpu() {
   };
 
   // Copy down to pinned memory
-  auto sendbuf_host = pinned_array<complex_t, Dim + 2>(sendbuf_.shape());
   std::vector<cudaStream_t> streams(size_);
   for (int r = 0; r < size_; ++r) {
     const auto err = cudaStreamCreate(&streams[r]);
@@ -201,7 +203,7 @@ void Transpose<Dim>::eval_gpu() {
   for (int r : schedule) {
     const zisa::int_t offset = compute_to_offset(r);
     complex_t *sendbuf_start = sendbuf_.raw() + r * buf_view_size;
-    complex_t *sendbuf_host_start = sendbuf_host.raw() + r * buf_view_size;
+    complex_t *sendbuf_host_start = sendbuf_host_.raw() + r * buf_view_size;
     ProfileDevice profile_pre("Transpose::preprocess", streams[r]);
     transpose_cuda_preprocess(from_,
                               sendbuf_,
@@ -224,7 +226,7 @@ void Transpose<Dim>::eval_gpu() {
   // Issue blockwise communications and postprocess asynchronously afterwards
   for (int r : schedule) {
     cudaStreamSynchronize(streams[r]);
-    complex_t *sendbuf_host_start = sendbuf_host.raw() + r * buf_view_size;
+    complex_t *sendbuf_host_start = sendbuf_host_.raw() + r * buf_view_size;
     complex_t *recvbuf_start = recvbuf_.raw() + r * buf_view_size;
     ProfileHost profile_comm("Transpose::communication");
     MPI_Sendrecv(sendbuf_host_start,
