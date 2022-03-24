@@ -19,7 +19,7 @@ def solve_NS(executable, u, visc, t_end, tmpdir='sol', device='cuda'):
                 "dimension" : dim,
                 "num_samlpes": 1,
                 "time": t_end,
-                "snapshots": {"start":0, "stop":t_end, "n":100},#[t_end],
+                "snapshots": [0, t_end],
                 "grid": {
                   "N_phys": N,
                   "N_phys_pad": ""
@@ -67,9 +67,31 @@ def solve_NS(executable, u, visc, t_end, tmpdir='sol', device='cuda'):
 if __name__== '__main__':
     import sys
     import fbm
+    import matplotlib.pyplot as plt
+
+    def curl(x, y):
+        dx = np.zeros_like(x)
+        dy = np.zeros_like(y)
+        dx[:,0] = x[:,1] - x[:,-1]
+        dx[:,1:-1] = x[:,2:] - x[:,:-2]
+        dx[:,-1] = x[:,0] - x[:,-2]
+        dy[0,:] = y[1,:] - y[-1,:]
+        dy[1:-1,:] = y[2:,:] - y[:-2,:]
+        dy[-1,:] = y[0,:] - y[-2,:]
+        return (dx - dy) * x.shape[0]
 
     N = 256
+    t_end = 1
     u = np.empty((2, N, N))
     fbm.generate_fourier_efficient_sample(u[0,:], 0.5)
     fbm.generate_fourier_efficient_sample(u[1,:], 0.5)
-    u_new = solve_NS(sys.argv[1], u, 1e-4, 1, tmpdir=sys.argv[2])
+    u_new = solve_NS(sys.argv[1], u, 1e-4, t_end, tmpdir=sys.argv[2])
+
+    curl_u = curl(u[0], u[1])
+    curl_u_new = curl(u_new[0], u_new[1])
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    ax1.imshow(curl_u)
+    ax2.imshow(curl_u_new)
+    ax1.set_title("curl(u(t=0))")
+    ax2.set_title("curl(u(t={}))".format(t_end))
+    plt.show()
