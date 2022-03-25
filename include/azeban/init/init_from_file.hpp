@@ -40,15 +40,11 @@ public:
   InitFromFile &operator=(const InitFromFile &) = default;
   InitFromFile &operator=(InitFromFile &&) = default;
 
-  virtual void initialize(const zisa::array_view<real_t, Dim + 1> &u) override;
-  virtual void
-  initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat) override;
-
 protected:
   virtual void
-  do_initialize(const zisa::array_view<real_t, Dim + 1> & /*u*/) override {}
-  virtual void do_initialize(
-      const zisa::array_view<complex_t, Dim + 1> & /*u_hat*/) override {}
+  do_initialize(const zisa::array_view<real_t, Dim + 1> &u) override;
+  virtual void
+  do_initialize(const zisa::array_view<complex_t, Dim + 1> &u_hat) override;
 
 private:
   zisa::int_t sample_;

@@ -24,7 +24,8 @@
 namespace azeban {
 
 template <int Dim>
-void InitFromFile<Dim>::initialize(const zisa::array_view<real_t, Dim + 1> &u) {
+void InitFromFile<Dim>::do_initialize(
+    const zisa::array_view<real_t, Dim + 1> &u) {
   int status, ncid;
   status = nc_open(filename().c_str(), 0, &ncid);
   AZEBAN_ERR_IF(status != NC_NOERR, "Failed to open initial conditions");
@@ -43,7 +44,7 @@ void InitFromFile<Dim>::initialize(const zisa::array_view<real_t, Dim + 1> &u) {
 }
 
 template <int Dim>
-void InitFromFile<Dim>::initialize(
+void InitFromFile<Dim>::do_initialize(
     const zisa::array_view<complex_t, Dim + 1> &u_hat) {
   int status, ncid;
   status = nc_open(filename().c_str(), 0, &ncid);
