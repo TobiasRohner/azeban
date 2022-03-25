@@ -194,6 +194,14 @@ void Transpose<Dim>::eval_gpu() {
     const auto err = cudaStreamCreate(&streams[r]);
     cudaCheckError(err);
   }
+  cudaStream_t copy_stream;
+  auto err = cudaStreamCreate(&copy_stream);
+  cudaCheckError(err);
+  std::vector<cudaEvent_t> finished_pre(size_);
+  for (int r = 0 ; r < size_ ; ++r) {
+    const auto err = cudaEventCreateWithFlags(&finished_pre[r], cudaEventDisableTiming);
+    cudaCheckError(err);
+  }
   // Asynchronously preprocess blocks and copy them to host pinned memory
   zisa::shape_t<Dim + 1> buf_view_shape;
   for (int i = 0; i < Dim + 1; ++i) {
@@ -213,13 +221,17 @@ void Transpose<Dim>::eval_gpu() {
                               r,
                               offset,
                               streams[r]);
+    auto err = cudaEventRecord(finished_pre[r], streams[r]);
+    cudaCheckError(err);
     profile_pre.stop();
-    ProfileDevice profile_copy("Transpose::preprocess::copy", streams[r]);
-    const auto err = cudaMemcpyAsync(sendbuf_host_start,
+    err = cudaStreamWaitEvent(copy_stream, finished_pre[r], 0);
+    cudaCheckError(err);
+    ProfileDevice profile_copy("Transpose::preprocess::copy", copy_stream);
+    err = cudaMemcpyAsync(sendbuf_host_start,
                                      sendbuf_start,
                                      sizeof(complex_t) * buf_view_size,
                                      cudaMemcpyDeviceToHost,
-                                     streams[r]);
+                                     copy_stream);
     cudaCheckError(err);
     profile_copy.stop();
   }
@@ -253,6 +265,10 @@ void Transpose<Dim>::eval_gpu() {
                                offset,
                                streams[r]);
     profile_post.stop();
+  }
+  for (int r = 0 ; r < size_ ; ++r) {
+    const auto err = cudaEventDestroy(finished_pre[r]);
+    cudaCheckError(err);
   }
   for (int r = 0; r < size_; ++r) {
     const auto err = cudaStreamDestroy(streams[r]);
