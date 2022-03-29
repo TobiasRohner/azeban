@@ -148,6 +148,7 @@ public:
   }
 
   using super::n_vars;
+  virtual real_t visc() const override { return visc_.eps; }
 
 protected:
   using super::B_hat_;
@@ -283,6 +284,7 @@ public:
   }
 
   using super::n_vars;
+  virtual real_t visc() const override { return visc_.eps; }
 
 protected:
   using super::B_hat_;

@@ -1,14 +1,14 @@
 {
-  "output": "bm_N256_mu3_NoForcing_T20.0",
+  "output": "grf_N256_mu4_fp_T50.0",
   "device": "cuda",
   "dimension": 2,
   "num_samples": 1,
   "seed": 1,
-  "time": 20,
+  "time": 50,
   "snapshots": {
     "start": 0,
-    "stop": 20,
-    "n": 200
+    "stop": 50,
+    "n": 500
   },
   "grid": {
     "N_phys": 256,
@@ -19,23 +19,22 @@
     "visc": {
       "type": "Step",
       "k0": 1,
-      "eps": 0.256
+      "eps": 2.56
     },
-    "forcing_": {
+    "forcing": {
       "type": "Sinusoidal",
       "amplitude": 0.015915494
     }
   },
   "timestepper": {
     "type": "SSP RK3",
-    "C": 0.05
+    "C": 0.5
   },
   "init": {
-    "name_": "Init From File",
-    "experiment_": "grf_N256",
-    "time_": "0.000000",
     "name": "Brownian Motion",
     "hurst": 0.5,
+    "experiment": "grf_N256",
+    "time": "0.000000",
     "tracer_": {
       "name": "Sphere",
       "center": [0.5, 0.5],

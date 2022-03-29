@@ -15,8 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef CFL_H_
-#define CFL_H_
+#ifndef AZEBAN_EVOLUTION_CFL_HPP_
+#define AZEBAN_EVOLUTION_CFL_HPP_
 
 #include <azeban/config.hpp>
 #include <azeban/grid.hpp>
@@ -44,21 +44,27 @@ public:
   CFL &operator=(const CFL &) = default;
   CFL &operator=(CFL &&) = default;
 
-  real_t dt(const zisa::array_const_view<complex_t, dim_v + 1> &u_hat) const {
+  real_t dt(const zisa::array_const_view<complex_t, dim_v + 1> &u_hat,
+            real_t eps) const {
     ProfileHost profile("CFL::dt");
     const real_t sup = norm(u_hat, 1);
-    return zisa::pow<dim_v - 1>(grid_.N_phys) * C_ / sup;
+    const real_t cfl_visc = 2. / (eps * zisa::pow<2>(zisa::pi * grid_.N_phys));
+    const real_t cfl_advect = zisa::pow<dim_v - 1>(grid_.N_phys) / sup;
+    return C_ * zisa::min(cfl_visc, cfl_advect);
   }
 
 #if AZEBAN_HAS_MPI
   real_t dt(const zisa::array_const_view<complex_t, dim_v + 1> &u_hat,
+            real_t eps,
             const Communicator *comm) const {
     ProfileHost profile("CFL::dt");
     const real_t sup_loc = norm(u_hat, 1);
     real_t sup;
     MPI_Allreduce(
         &sup_loc, &sup, 1, mpi_type(sup), MPI_SUM, comm->get_mpi_comm());
-    return zisa::pow<dim_v - 1>(grid_.N_phys) * C_ / sup;
+    const real_t cfl_visc = 2. / (eps * zisa::pow<2>(zisa::pi * grid_.N_phys));
+    const real_t cfl_advect = zisa::pow<dim_v - 1>(grid_.N_phys) / sup;
+    return C_ * zisa::min(cfl_visc, cfl_advect);
   }
 #endif
 

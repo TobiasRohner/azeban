@@ -33,7 +33,7 @@ def solve_NS(executable, u, visc, t_end, tmpdir='/tmp', device='cuda'):
                 },
                 "timestepper": {
                   "type": "SSP RK3",
-                  "C": min(0.5 / (eps / 0.05), 0.5)
+                  "C": 0.5
                 },
                 "init": {
                   "name": "Init From File",

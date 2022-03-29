@@ -45,7 +45,7 @@ def plot_timeline(ax, timeline, offset, color='b'):
             start = interval[1]
             duration = interval[2]
             ax.add_patch(patches.Rectangle((start, i+offset-0.5+0.1), duration, 0.8, facecolor=color, edgecolor='k'))
-            ax.text(start+duration/2, i+offset, interval[0], horizontalalignment='center', verticalalignment='center', rotation='vertical')
+            #ax.text(start+duration/2, i+offset, interval[0], horizontalalignment='center', verticalalignment='center', rotation='vertical')
             xmin = min(xmin, start)
             xmax = max(xmax, start + duration)
     return (xmin, xmax), (ymin, ymax)

@@ -41,14 +41,14 @@ Simulation<Dim>::Simulation(
 
 template <int Dim>
 void Simulation<Dim>::simulate_until(real_t t) {
-  real_t dt = cfl_.dt(u_view_);
+  real_t dt = cfl_.dt(u_view_, equation()->visc());
   while (time_ < t - dt) {
     if (dt <= 1e-10) {
       fmt::print(stderr, "Warning: Timestep is tiny. dt = {}\n", dt);
     }
     timestepper_->integrate(dt, u_);
     time_ += dt;
-    dt = cfl_.dt(u_view_);
+    dt = cfl_.dt(u_view_, equation()->visc());
   }
   timestepper_->integrate(t - time_, u_);
   time_ = t;
@@ -61,7 +61,7 @@ void Simulation<Dim>::simulate_for(real_t t) {
 
 template <int Dim>
 real_t Simulation<Dim>::step() {
-  const real_t dt = cfl_.dt(u_view_);
+  const real_t dt = cfl_.dt(u_view_, equation()->visc());
   timestepper_->integrate(dt, u_);
   time_ += dt;
   return dt;
@@ -71,14 +71,14 @@ real_t Simulation<Dim>::step() {
 template <int Dim>
 void Simulation<Dim>::simulate_until(real_t t, const Communicator *comm) {
   const int rank = comm->rank();
-  real_t dt = cfl_.dt(u_view_, comm);
+  real_t dt = cfl_.dt(u_view_, equation()->visc(), comm);
   while (time_ < t - dt) {
     if (rank == 0 && dt <= 1e-10) {
       fmt::print(stderr, "Warning: Timestep is tiny. dt = {}\n", dt);
     }
     timestepper_->integrate(dt, u_);
     time_ += dt;
-    dt = cfl_.dt(u_view_, comm);
+    dt = cfl_.dt(u_view_, equation()->visc(), comm);
   }
   timestepper_->integrate(t - time_, u_);
   time_ = t;
@@ -91,7 +91,7 @@ void Simulation<Dim>::simulate_for(real_t t, const Communicator *comm) {
 
 template <int Dim>
 real_t Simulation<Dim>::step(const Communicator *comm) {
-  const real_t dt = cfl_.dt(u_view_, comm);
+  const real_t dt = cfl_.dt(u_view_, equation()->visc(), comm);
   timestepper_->integrate(dt, u_);
   time_ += dt;
   return dt;

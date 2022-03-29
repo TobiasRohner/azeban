@@ -115,6 +115,7 @@ public:
   }
 
   virtual int n_vars() const override { return dim_v + (has_tracer_ ? 1 : 0); }
+  virtual real_t visc() const override { return visc_.eps; }
 
 protected:
   using super::grid_;
