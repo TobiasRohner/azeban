@@ -15,12 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
+#if ZISA_HAS_CUDA
+
 #include <azeban/benchmark.hpp>
 
 #include <azeban/equations/incompressible_euler.hpp>
 #include <azeban/grid_factory.hpp>
+#if ZISA_HAS_CUDA
 #include <cuda_runtime.h>
 #include <zisa/cuda/memory/cuda_array.hpp>
+#endif
 #include <zisa/memory/array.hpp>
 
 static zisa::int_t intpow(zisa::int_t b, zisa::int_t e) {
@@ -118,3 +123,5 @@ static void bm_compute_B(benchmark::State &state) {
 
 BENCHMARK_TEMPLATE(bm_compute_B, 2)->Apply(compute_B_2d_params);
 BENCHMARK_TEMPLATE(bm_compute_B, 3)->Apply(compute_B_3d_params);
+
+#endif

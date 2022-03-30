@@ -17,14 +17,18 @@
  */
 #include <azeban/catch.hpp>
 
+#if AZEBAN_HAS_MPI
 #include <azeban/cuda/operations/cufft_mpi.hpp>
-#include <azeban/grid.hpp>
 #include <azeban/mpi/communicator.hpp>
+#endif
+#include <azeban/grid.hpp>
 #include <azeban/operations/fft_factory.hpp>
 #include <fmt/core.h>
 #include <iostream>
 #include <random>
+#if ZISA_HAS_CUDA
 #include <zisa/cuda/memory/cuda_array.hpp>
+#endif
 #include <zisa/math/basic_functions.hpp>
 #include <zisa/memory/array_view.hpp>
 

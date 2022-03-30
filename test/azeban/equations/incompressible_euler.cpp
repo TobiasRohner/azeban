@@ -118,6 +118,7 @@ static zisa::array<azeban::real_t, 3> read_reference() {
   return reference;
 }
 
+#if ZISA_HAS_CUDA
 TEST_CASE("2D Euler Compute B") {
   azeban::Grid<2> grid(4);
   const zisa::int_t N_phys = grid.N_phys;
@@ -165,6 +166,7 @@ TEST_CASE("2D Euler Compute B") {
     }
   }
 }
+#endif
 
 TEST_CASE("2D Euler Derivative") {
   const azeban::Grid<2> grid(4);

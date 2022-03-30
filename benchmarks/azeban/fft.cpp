@@ -19,9 +19,11 @@
 
 #include <algorithm>
 #include <azeban/operations/fft_factory.hpp>
-#include <cuda_runtime.h>
 #include <vector>
+#if ZISA_HAS_CUDA
+#include <cuda_runtime.h>
 #include <zisa/cuda/memory/cuda_array.hpp>
+#endif
 #include <zisa/math/basic_functions.hpp>
 #include <zisa/memory/array.hpp>
 #if AZEBAN_HAS_MPI
@@ -128,6 +130,7 @@ static void fft_3d_params_mpi(benchmark::internal::Benchmark *bm) {
   }
 }
 
+#if ZISA_HAS_CUDA
 template <int Dim>
 static void bm_fft_forward(benchmark::State &state) {
   const zisa::int_t d = 1;
@@ -164,6 +167,7 @@ static void bm_fft_forward(benchmark::State &state) {
 BENCHMARK_TEMPLATE(bm_fft_forward, 1)->Apply(fft_1d_params);
 BENCHMARK_TEMPLATE(bm_fft_forward, 2)->Apply(fft_2d_params);
 BENCHMARK_TEMPLATE(bm_fft_forward, 3)->Apply(fft_3d_params);
+#endif
 
 #if AZEBAN_HAS_MPI
 static void bm_fft_3d_forward_mpi(benchmark::State &state) {

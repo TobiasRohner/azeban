@@ -1,6 +1,10 @@
+#if AZEBAN_HAS_MPI
+
 #include <azeban/equations/equation_mpi_factory.hpp>
 #include <azeban/equations/incompressible_euler_mpi_factory.hpp>
+#if ZISA_HAS_CUDA
 #include <azeban/equations/incompressible_euler_mpi_naive_factory.hpp>
+#endif
 #include <azeban/equations/spectral_viscosity_factory.hpp>
 #include <azeban/forcing/no_forcing.hpp>
 #include <azeban/forcing/sinusoidal_factory.hpp>
@@ -111,10 +115,14 @@ make_equation_mpi(const Grid<Dim> &grid,
   if (equation_name == "Euler") {
     return make_incompressible_euler_mpi<Dim>(
         grid, comm, visc, forcing, has_tracer, device);
-  } else if (equation_name == "Euler Naive") {
+  }
+#if ZISA_HAS_CUDA
+  else if (equation_name == "Euler Naive") {
     return make_incompressible_euler_mpi_naive<Dim>(
         grid, comm, visc, forcing, has_tracer);
-  } else {
+  }
+#endif
+  else {
     fmt::print(stderr, "Unknown equation name: \"{}\"\n", equation_name);
     exit(1);
   }
@@ -178,3 +186,5 @@ make_equation_mpi<3>(const nlohmann::json &config,
                      zisa::device_type device);
 
 }
+
+#endif

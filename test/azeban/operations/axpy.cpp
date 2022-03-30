@@ -1,4 +1,5 @@
 #include <azeban/catch.hpp>
+#include <azeban/config.hpp>
 #include <azeban/operations/axpy.hpp>
 #include <iostream>
 #include <zisa/cuda/memory/cuda_array.hpp>

@@ -1,27 +1,27 @@
 {
-  "output": "grf_N256_mu4_fp_T50.0",
+  "output": "bm_N64",
   "device": "cuda",
-  "dimension": 2,
+  "dimension": 3,
   "num_samples": 1,
   "seed": 1,
-  "time": 50,
+  "time": 5,
   "snapshots": {
     "start": 0,
-    "stop": 50,
-    "n": 500
+    "stop": 5,
+    "n": 50
   },
   "grid": {
-    "N_phys": 256,
+    "N_phys": 64,
     "N_phys_pad": ""
   },
   "equation": {
     "name": "Euler",
     "visc": {
-      "type": "Step",
+      "type": "Quadratic",
       "k0": 1,
-      "eps": 2.56
+      "eps": 0.05
     },
-    "forcing": {
+    "forcing_": {
       "type": "Sinusoidal",
       "amplitude": 0.015915494
     }

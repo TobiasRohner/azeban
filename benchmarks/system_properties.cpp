@@ -109,7 +109,9 @@ void measure_bandwidth_mpi_send(size_t bytes) {
 #endif
 
 int main(int argc, char *argv[]) {
+#if AZEBAN_HAS_MPI
   MPI_Init(&argc, &argv);
+#endif
 
   // 4GB
   static constexpr size_t bytes = 4ull * 1024ull * 1024ull * 1024ull;
@@ -123,6 +125,8 @@ int main(int argc, char *argv[]) {
   measure_bandwidth_mpi_send(bytes);
 #endif
 
+#if AZEBAN_HAS_MPI
   MPI_Finalize();
+#endif
   return 0;
 }

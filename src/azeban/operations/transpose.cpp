@@ -84,9 +84,11 @@ Transpose<Dim>::Transpose(const Communicator *comm,
       }
     }
   }
+#if ZISA_HAS_CUDA
   if (location_ == zisa::device_type::cuda) {
     sendbuf_host_ = pinned_array<complex_t, Dim + 2>(buffer_shape());
   }
+#endif
 }
 
 template <int Dim>
@@ -198,8 +200,9 @@ void Transpose<Dim>::eval_gpu() {
   auto err = cudaStreamCreate(&copy_stream);
   cudaCheckError(err);
   std::vector<cudaEvent_t> finished_pre(size_);
-  for (int r = 0 ; r < size_ ; ++r) {
-    const auto err = cudaEventCreateWithFlags(&finished_pre[r], cudaEventDisableTiming);
+  for (int r = 0; r < size_; ++r) {
+    const auto err
+        = cudaEventCreateWithFlags(&finished_pre[r], cudaEventDisableTiming);
     cudaCheckError(err);
   }
   // Asynchronously preprocess blocks and copy them to host pinned memory
@@ -228,10 +231,10 @@ void Transpose<Dim>::eval_gpu() {
     cudaCheckError(err);
     ProfileDevice profile_copy("Transpose::preprocess::copy", copy_stream);
     err = cudaMemcpyAsync(sendbuf_host_start,
-                                     sendbuf_start,
-                                     sizeof(complex_t) * buf_view_size,
-                                     cudaMemcpyDeviceToHost,
-                                     copy_stream);
+                          sendbuf_start,
+                          sizeof(complex_t) * buf_view_size,
+                          cudaMemcpyDeviceToHost,
+                          copy_stream);
     cudaCheckError(err);
     profile_copy.stop();
   }
@@ -266,7 +269,7 @@ void Transpose<Dim>::eval_gpu() {
                                streams[r]);
     profile_post.stop();
   }
-  for (int r = 0 ; r < size_ ; ++r) {
+  for (int r = 0; r < size_; ++r) {
     const auto err = cudaEventDestroy(finished_pre[r]);
     cudaCheckError(err);
   }

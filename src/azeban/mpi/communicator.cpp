@@ -1,3 +1,5 @@
+#if AZEBAN_HAS_MPI
+
 #include <azeban/mpi/communicator.hpp>
 #include <cstdlib>
 #include <fmt/core.h>
@@ -39,3 +41,5 @@ void Communicator::do_alltoall(const void *sendbuf,
 }
 
 }
+
+#endif

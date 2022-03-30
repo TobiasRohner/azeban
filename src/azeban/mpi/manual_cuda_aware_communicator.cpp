@@ -1,3 +1,5 @@
+#if AZEBAN_HAS_MPI
+
 #include <azeban/mpi/manual_cuda_aware_communicator.hpp>
 #if ZISA_HAS_CUDA
 #include <cuda_runtime.h>
@@ -140,3 +142,5 @@ void ManualCUDAAwareCommunicator::do_alltoall(const void *sendbuf,
 }
 
 }
+
+#endif

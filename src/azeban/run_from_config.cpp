@@ -1,6 +1,5 @@
 #include <azeban/init/initializer_factory.hpp>
 #include <azeban/io/netcdf_snapshot_writer.hpp>
-#include <azeban/operations/fft_mpi_factory.hpp>
 #include <azeban/run_from_config.hpp>
 #include <azeban/sequence_factory.hpp>
 #include <azeban/simulation.hpp>
@@ -12,6 +11,7 @@
 #include <zisa/memory/array.hpp>
 #if AZEBAN_HAS_MPI
 #include <azeban/mpi/mpi_types.hpp>
+#include <azeban/operations/fft_mpi_factory.hpp>
 #include <azeban/simulation_mpi_factory.hpp>
 #include <mpi.h>
 #endif

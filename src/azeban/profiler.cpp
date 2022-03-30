@@ -102,6 +102,7 @@ void Profiler::serialize(std::ostream &os) {
        << ts.name << ' ' << start.count() << ' ' << ts.duration.count() << ' ';
   }
   os << '\n';
+#if ZISA_HAS_CUDA
   timeline = to_timeline(device_records_);
   for (const Timespan &ts : timeline) {
     duration_t start
@@ -110,6 +111,7 @@ void Profiler::serialize(std::ostream &os) {
         std::numeric_limits<typename duration_t::rep>::digits10 + 1)
        << ts.name << ' ' << start.count() << ' ' << ts.duration.count() << ' ';
   }
+#endif
 }
 
 void Profiler::summarize(std::ostream &os) {
@@ -211,8 +213,10 @@ Profiler::to_timeline(const std::forward_list<RecordType> &records) {
 
 template std::vector<Profiler::Timespan>
 Profiler::to_timeline(const std::forward_list<Profiler::RecordHost> &);
+#if ZISA_HAS_CUDA
 template std::vector<Profiler::Timespan>
 Profiler::to_timeline(const std::forward_list<Profiler::RecordDevice> &);
+#endif
 
 std::map<std::string, Profiler::StageSummary>
 Profiler::build_summary(const std::vector<Profiler::Timespan> &timeline) {

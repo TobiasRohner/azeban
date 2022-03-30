@@ -1,3 +1,5 @@
+#if ZISA_HAS_CUDA
+
 #include <azeban/equations/equation_mpi_factory.hpp>
 #include <azeban/evolution/time_integrator_mpi_factory.hpp>
 #include <azeban/grid_factory.hpp>
@@ -71,3 +73,5 @@ template Simulation<3> make_simulation_mpi<3>(const nlohmann::json &config,
                                               const Communicator *comm);
 
 }
+
+#endif

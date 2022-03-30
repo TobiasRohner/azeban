@@ -1,3 +1,5 @@
+#if AZEBAN_HAS_MPI
+
 #include <azeban/equations/advection_functions.hpp>
 #include <azeban/equations/incompressible_euler_functions.hpp>
 #include <azeban/equations/incompressible_euler_mpi.hpp>
@@ -529,3 +531,5 @@ template class IncompressibleEuler_MPI_Base<2>;
 template class IncompressibleEuler_MPI_Base<3>;
 
 }
+
+#endif

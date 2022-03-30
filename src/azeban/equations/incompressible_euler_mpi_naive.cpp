@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#if AZEBAN_HAS_MPI
+#if AZEBAN_HAS_MPI && ZISA_HAS_CUDA
 
 #include <azeban/equations/incompressible_euler_mpi_naive.hpp>
 #include <azeban/mpi/mpi_types.hpp>

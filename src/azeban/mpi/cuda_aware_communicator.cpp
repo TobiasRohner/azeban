@@ -1,3 +1,5 @@
+#if AZEBAN_HAS_MPI
+
 #include <azeban/mpi/cuda_aware_communicator.hpp>
 
 #if AZEBAN_HAS_CUDA_AWARE_MPI
@@ -55,3 +57,5 @@ void CUDAAwareCommunicator::do_alltoall(const void *sendbuf,
 
 #undef CUDA_ENABLE_ENV_VAR
 #undef EXPECTED_ENV_VAR_VALUE
+
+#endif
