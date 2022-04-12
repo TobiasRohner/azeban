@@ -173,7 +173,7 @@ template <int Dim>
 void Transpose<Dim>::eval_gpu() {
 #if ZISA_HAS_CUDA
   // Figure out order to transpose blocks in
-  std::vector<int> schedule = comm_schedule();
+  std::vector<std::pair<int, int>> schedule = comm_schedule();
   // Compute the offset for the i-th block
   const auto compute_to_offset = [&](zisa::int_t i) {
     zisa::int_t offset = 0;
@@ -191,18 +191,12 @@ void Transpose<Dim>::eval_gpu() {
   };
 
   // Copy down to pinned memory
-  std::vector<cudaStream_t> streams(size_);
+  std::vector<cudaStream_t> preprocess_streams(size_);
+  std::vector<cudaStream_t> postprocess_streams(size_);
   for (int r = 0; r < size_; ++r) {
-    const auto err = cudaStreamCreate(&streams[r]);
+    auto err = cudaStreamCreate(&preprocess_streams[r]);
     cudaCheckError(err);
-  }
-  cudaStream_t copy_stream;
-  auto err = cudaStreamCreate(&copy_stream);
-  cudaCheckError(err);
-  std::vector<cudaEvent_t> finished_pre(size_);
-  for (int r = 0; r < size_; ++r) {
-    const auto err
-        = cudaEventCreateWithFlags(&finished_pre[r], cudaEventDisableTiming);
+    err = cudaStreamCreate(&postprocess_streams[r]);
     cudaCheckError(err);
   }
   // Asynchronously preprocess blocks and copy them to host pinned memory
@@ -211,70 +205,69 @@ void Transpose<Dim>::eval_gpu() {
     buf_view_shape[i] = sendbuf_.shape(i + 1);
   }
   const zisa::int_t buf_view_size = zisa::product(buf_view_shape);
-  for (int r : schedule) {
-    const zisa::int_t offset = compute_to_offset(r);
-    complex_t *sendbuf_start = sendbuf_.raw() + r * buf_view_size;
-    complex_t *sendbuf_host_start = sendbuf_host_.raw() + r * buf_view_size;
-    ProfileDevice profile_pre("Transpose::preprocess", streams[r]);
+  for (auto [send_to, receive_from] : schedule) {
+    const zisa::int_t offset = compute_to_offset(send_to);
+    complex_t *sendbuf_start = sendbuf_.raw() + send_to * buf_view_size;
+    complex_t *sendbuf_host_start
+        = sendbuf_host_.raw() + send_to * buf_view_size;
+    ProfileDevice profile_pre("Transpose::preprocess",
+                              preprocess_streams[send_to]);
     transpose_cuda_preprocess(from_,
                               sendbuf_,
                               from_shapes_.get(),
                               to_shapes_.get(),
                               rank_,
-                              r,
+                              send_to,
                               offset,
-                              streams[r]);
-    auto err = cudaEventRecord(finished_pre[r], streams[r]);
-    cudaCheckError(err);
+                              preprocess_streams[send_to]);
     profile_pre.stop();
-    err = cudaStreamWaitEvent(copy_stream, finished_pre[r], 0);
-    cudaCheckError(err);
-    ProfileDevice profile_copy("Transpose::preprocess::copy", copy_stream);
-    err = cudaMemcpyAsync(sendbuf_host_start,
-                          sendbuf_start,
-                          sizeof(complex_t) * buf_view_size,
-                          cudaMemcpyDeviceToHost,
-                          copy_stream);
+    ProfileDevice profile_copy("Transpose::preprocess::copy",
+                               preprocess_streams[send_to]);
+    auto err = cudaMemcpyAsync(sendbuf_host_start,
+                               sendbuf_start,
+                               sizeof(complex_t) * buf_view_size,
+                               cudaMemcpyDeviceToHost,
+                               preprocess_streams[send_to]);
     cudaCheckError(err);
     profile_copy.stop();
   }
   // Issue blockwise communications and postprocess asynchronously afterwards
-  for (int r : schedule) {
-    cudaStreamSynchronize(streams[r]);
-    complex_t *sendbuf_host_start = sendbuf_host_.raw() + r * buf_view_size;
-    complex_t *recvbuf_start = recvbuf_.raw() + r * buf_view_size;
+  for (auto [send_to, receive_from] : schedule) {
+    cudaStreamSynchronize(preprocess_streams[send_to]);
+    complex_t *sendbuf_host_start
+        = sendbuf_host_.raw() + send_to * buf_view_size;
+    complex_t *recvbuf_start = recvbuf_.raw() + receive_from * buf_view_size;
     ProfileHost profile_comm("Transpose::communication");
     MPI_Sendrecv(sendbuf_host_start,
                  buf_view_size,
                  mpi_type<complex_t>(),
-                 r,
+                 send_to,
                  0,
                  recvbuf_start,
                  buf_view_size,
                  mpi_type<complex_t>(),
-                 r,
+                 receive_from,
                  0,
                  comm_->get_mpi_comm(),
                  MPI_STATUS_IGNORE);
     profile_comm.stop();
-    const zisa::int_t offset = compute_from_offset(r);
-    ProfileDevice profile_post("Transpose::postprocess", streams[r]);
+    const zisa::int_t offset = compute_from_offset(receive_from);
+    ProfileDevice profile_post("Transpose::postprocess",
+                               postprocess_streams[receive_from]);
     transpose_cuda_postprocess(recvbuf_,
                                to_,
                                from_shapes_.get(),
                                to_shapes_.get(),
-                               r,
+                               receive_from,
                                rank_,
                                offset,
-                               streams[r]);
+                               postprocess_streams[receive_from]);
     profile_post.stop();
   }
   for (int r = 0; r < size_; ++r) {
-    const auto err = cudaEventDestroy(finished_pre[r]);
+    auto err = cudaStreamDestroy(preprocess_streams[r]);
     cudaCheckError(err);
-  }
-  for (int r = 0; r < size_; ++r) {
-    const auto err = cudaStreamDestroy(streams[r]);
+    err = cudaStreamDestroy(postprocess_streams[r]);
     cudaCheckError(err);
   }
 #endif
@@ -368,14 +361,11 @@ void Transpose<3>::postprocess_cpu() {
 }
 
 template <int Dim>
-std::vector<int> Transpose<Dim>::comm_schedule() const {
-  std::vector<int> msgs;
+std::vector<std::pair<int, int>> Transpose<Dim>::comm_schedule() const {
+  std::vector<std::pair<int, int>> schedule(size_);
   for (int r = 0; r < size_; ++r) {
-    msgs.push_back((r + rank_) % size_);
-  }
-  std::vector<int> schedule(size_);
-  for (int r = 0; r < size_; ++r) {
-    schedule[msgs[r]] = r;
+    schedule[r].first = (rank_ + r) % size_;
+    schedule[r].second = (rank_ - r + size_) % size_;
   }
   return schedule;
 }

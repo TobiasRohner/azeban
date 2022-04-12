@@ -24,6 +24,7 @@
 #include <azeban/memory/workspace.hpp>
 #include <azeban/mpi/communicator.hpp>
 #include <memory>
+#include <utility>
 #include <zisa/memory/array_view.hpp>
 
 namespace azeban {
@@ -73,7 +74,7 @@ private:
   void communicate_cpu();
   void postprocess_cpu();
 
-  std::vector<int> comm_schedule() const;
+  std::vector<std::pair<int, int>> comm_schedule() const;
 };
 
 void transpose(const zisa::array_view<complex_t, 3> &dst,
