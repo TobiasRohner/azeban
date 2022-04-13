@@ -1,8 +1,8 @@
 {
-  "output": "taylor_green_3D_N256_T5.0_1",
+  "output": "tg_N256_weak_8",
   "device": "cuda",
   "dimension": 3,
-  "num_samples": 1,
+  "num_samples": 8,
   "seed": 1,
   "time": 5,
   "snapshots": {
