@@ -200,10 +200,13 @@ void Transpose<Dim>::eval_gpu() {
   cudaCheckError(err);
   std::vector<cudaEvent_t> preprocess_events(size_);
   std::vector<cudaEvent_t> copy_events(size_);
-  for (int r = 0 ; r < size_ ; ++r) {
-    auto err = cudaEventCreateWithFlags(&preprocess_events[r], /*cudaEventBlockingSync |*/ cudaEventDisableTiming);
+  for (int r = 0; r < size_; ++r) {
+    auto err = cudaEventCreateWithFlags(
+        &preprocess_events[r],
+        /*cudaEventBlockingSync |*/ cudaEventDisableTiming);
     cudaCheckError(err);
-    err = cudaEventCreateWithFlags(&copy_events[r], /*cudaEventBlockingSync |*/ cudaEventDisableTiming);
+    err = cudaEventCreateWithFlags(
+        &copy_events[r], /*cudaEventBlockingSync |*/ cudaEventDisableTiming);
     cudaCheckError(err);
   }
   // Asynchronously preprocess blocks and copy them to host pinned memory
@@ -232,10 +235,10 @@ void Transpose<Dim>::eval_gpu() {
     cudaCheckError(err);
     ProfileDevice profile_copy("Transpose::preprocess::copy", copy_stream);
     err = cudaMemcpyAsync(sendbuf_host_start,
-			  sendbuf_start,
-			  sizeof(complex_t) * buf_view_size,
-			  cudaMemcpyDeviceToHost,
-			  copy_stream);
+                          sendbuf_start,
+                          sizeof(complex_t) * buf_view_size,
+                          cudaMemcpyDeviceToHost,
+                          copy_stream);
     cudaCheckError(err);
     profile_copy.stop();
     err = cudaEventRecord(copy_events[r], copy_stream);
@@ -273,7 +276,7 @@ void Transpose<Dim>::eval_gpu() {
                                streams[r]);
     profile_post.stop();
   }
-  for (int r = 0 ; r < size_ ; ++r) {
+  for (int r = 0; r < size_; ++r) {
     auto err = cudaEventDestroy(preprocess_events[r]);
     cudaCheckError(err);
     err = cudaEventDestroy(copy_events[r]);

@@ -58,9 +58,11 @@ static void run_from_config_impl(const nlohmann::json &config) {
   }
 
   std::mt19937 rng;
+  size_t seed = 1;
   if (config.contains("seed")) {
-    rng.seed(config["seed"].get<size_t>());
+    seed = config["seed"];
   }
+  rng.seed(seed);
 
   auto simulation = make_simulation<dim_v>(config);
   auto initializer = make_initializer<dim_v>(config, rng);
@@ -148,9 +150,11 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
   }
 
   std::mt19937 rng;
+  size_t seed = 1;
   if (config.contains("seed")) {
-    rng.seed(config["seed"].get<size_t>());
+    seed = config["seed"];
   }
+  rng.seed(seed);
 
   auto simulation = make_simulation_mpi<dim_v>(config, comm);
   const auto &grid = simulation.grid();

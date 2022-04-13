@@ -74,6 +74,9 @@ target_link_libraries(azeban_dependencies INTERFACE nlohmann_json::nlohmann_json
 find_package(fmt REQUIRED)
 target_link_libraries(azeban_dependencies INTERFACE fmt::fmt)
 
+find_package(Boost COMPONENTS program_options REQUIRED)
+target_link_libraries(azeban_dependencies INTERFACE Boost::program_options)
+
 if(ZISA_HAS_HDF5)
   find_package(HDF5 REQUIRED COMPONENTS CXX)
   target_include_directories(azeban_dependencies INTERFACE ${HDF5_INCLUDE_DIRS})

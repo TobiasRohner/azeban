@@ -17,6 +17,7 @@
  */
 #include <azeban/profiler.hpp>
 #include <azeban/run_from_config.hpp>
+#include <boost/program_options.hpp>
 #include <fmt/core.h>
 #include <fstream>
 #include <iomanip>
@@ -26,6 +27,7 @@
 #endif
 
 using namespace azeban;
+namespace po = boost::program_options;
 
 nlohmann::json read_config(const std::string &config_filename) {
   // Ensures the file `config_filename` is closed again as soon as possible.
@@ -36,6 +38,32 @@ nlohmann::json read_config(const std::string &config_filename) {
   return config;
 }
 
+void run_azeban(const nlohmann::json &config) {
+  fmt::print("Running azeban in single-node mode.\nRun cofiguration is\n{}\n",
+             config.dump(2));
+  run_from_config(config);
+}
+
+#if AZEBAN_HAS_MPI
+void run_azeban(const nlohmann::json &config, MPI_Comm comm) {
+  int rank, size;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
+  if (size > 1) {
+    if (rank == 0) {
+      fmt::print(
+          "Running azeban with {} MPI ranks.\nRun configuration is\n{}\n",
+          size,
+          config.dump(2));
+    }
+    Communicator communicator(comm);
+    run_from_config(config, &communicator);
+  } else {
+    run_azeban(config);
+  }
+}
+#endif
+
 int main(int argc, char *argv[]) {
 #if AZEBAN_HAS_MPI
   int provided;
@@ -45,38 +73,72 @@ int main(int argc, char *argv[]) {
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  const bool use_mpi = size > 1;
 #endif
 
-  if (argc != 2) {
-    fmt::print(stderr, "Usage: {} <config>\n", argv[0]);
+  int ranks_per_sample;
+  std::string config_path;
+  po::options_description desc("Allowed options");
+  desc.add_options()("help,h", "produce help message")(
+      "config",
+      po::value<std::string>(&config_path),
+      "Path to the simulation config file")(
+      "ranks-per-sample",
+      po::value<int>(&ranks_per_sample)->default_value(1),
+      "How many MPI ranks to use for a single sample");
+  po::positional_options_description pdesc;
+  pdesc.add("config", -1);
+  po::variables_map vm;
+  po::store(
+      po::command_line_parser(argc, argv).options(desc).positional(pdesc).run(),
+      vm);
+  po::notify(vm);
+
+  if (vm.count("help")) {
+    std::cout << desc << std::endl;
     exit(1);
   }
-
-  auto config = read_config(argv[1]);
-
+  if (config_path == "") {
+    std::cout << "ERROR: No config path provided" << std::endl;
+    std::cout << desc << std::endl;
+    exit(1);
+  }
 #if AZEBAN_HAS_MPI
-  if (size > 1) {
-    if (rank == 0) {
-      fmt::print(
-          "Running azeban with {} MPI ranks.\nRun configuration is\n{}\n",
-          size,
-          config.dump(2));
-    }
-  } else
+  if (size % ranks_per_sample) {
+    std::cout
+        << "ERROR: ranks-per-sample must divide the total number of MPI ranks"
+        << std::endl;
+    exit(1);
+  }
 #endif
-    fmt::print("Running azeban in single-node mode.\nRun cofiguration is\n{}\n",
-               config.dump(2));
+
+  auto config = read_config(config_path);
 
   Profiler::start();
 #if AZEBAN_HAS_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (use_mpi) {
-    Communicator comm(MPI_COMM_WORLD);
-    run_from_config(config, &comm);
-  } else
+  const int color = rank / ranks_per_sample;
+  MPI_Comm subcomm;
+  MPI_Comm_split(MPI_COMM_WORLD, color, rank, &subcomm);
+  int sample_idx_start = 0;
+  if (config.contains("sample_idx_start")) {
+    sample_idx_start = config["sample_idx_start"];
+  }
+  int num_samples = 1;
+  if (config.contains("num_samples")) {
+    num_samples = config["num_samples"];
+  }
+  size_t seed = 1;
+  if (config.contains("seed")) {
+    seed = config["seed"];
+  }
+  const int num_par_samples = size / ranks_per_sample;
+  const int samples_per_comm = num_samples / num_par_samples;
+  config["seed"] = seed + color;
+  config["num_samples"] = samples_per_comm;
+  config["sample_idx_start"] = sample_idx_start + color * samples_per_comm;
+  run_azeban(config, subcomm);
+#else
+  run_azeban(config);
 #endif
-    run_from_config(config);
   Profiler::stop();
 
 #if AZEBAN_DO_PROFILE
