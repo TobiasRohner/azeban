@@ -190,10 +190,20 @@ void Transpose<Dim>::eval_gpu() {
     return offset;
   };
 
-  // Copy down to pinned memory
   std::vector<cudaStream_t> streams(size_);
   for (int r = 0; r < size_; ++r) {
     const auto err = cudaStreamCreate(&streams[r]);
+    cudaCheckError(err);
+  }
+  cudaStream_t copy_stream;
+  auto err = cudaStreamCreate(&copy_stream);
+  cudaCheckError(err);
+  std::vector<cudaEvent_t> preprocess_events(size_);
+  std::vector<cudaEvent_t> copy_events(size_);
+  for (int r = 0 ; r < size_ ; ++r) {
+    auto err = cudaEventCreateWithFlags(&preprocess_events[r], /*cudaEventBlockingSync |*/ cudaEventDisableTiming);
+    cudaCheckError(err);
+    err = cudaEventCreateWithFlags(&copy_events[r], /*cudaEventBlockingSync |*/ cudaEventDisableTiming);
     cudaCheckError(err);
   }
   // Asynchronously preprocess blocks and copy them to host pinned memory
@@ -216,20 +226,27 @@ void Transpose<Dim>::eval_gpu() {
                               offset,
                               streams[r]);
     profile_pre.stop();
-    ProfileDevice profile_copy("Transpose::preprocess::copy", streams[r]);
-    const auto err = cudaMemcpyAsync(sendbuf_host_start,
-                                     sendbuf_start,
-                                     sizeof(complex_t) * buf_view_size,
-                                     cudaMemcpyDeviceToHost,
-                                     streams[r]);
+    auto err = cudaEventRecord(preprocess_events[r], streams[r]);
+    cudaCheckError(err);
+    err = cudaStreamWaitEvent(copy_stream, preprocess_events[r], 0);
+    cudaCheckError(err);
+    ProfileDevice profile_copy("Transpose::preprocess::copy", copy_stream);
+    err = cudaMemcpyAsync(sendbuf_host_start,
+			  sendbuf_start,
+			  sizeof(complex_t) * buf_view_size,
+			  cudaMemcpyDeviceToHost,
+			  copy_stream);
     cudaCheckError(err);
     profile_copy.stop();
+    err = cudaEventRecord(copy_events[r], copy_stream);
+    cudaCheckError(err);
   }
   // Issue blockwise communications and postprocess asynchronously afterwards
   for (int r : schedule) {
-    cudaStreamSynchronize(streams[r]);
     complex_t *sendbuf_host_start = sendbuf_host_.raw() + r * buf_view_size;
     complex_t *recvbuf_start = recvbuf_.raw() + r * buf_view_size;
+    const auto err = cudaEventSynchronize(copy_events[r]);
+    cudaCheckError(err);
     ProfileHost profile_comm("Transpose::communication");
     MPI_Sendrecv(sendbuf_host_start,
                  buf_view_size,
@@ -256,6 +273,14 @@ void Transpose<Dim>::eval_gpu() {
                                streams[r]);
     profile_post.stop();
   }
+  for (int r = 0 ; r < size_ ; ++r) {
+    auto err = cudaEventDestroy(preprocess_events[r]);
+    cudaCheckError(err);
+    err = cudaEventDestroy(copy_events[r]);
+    cudaCheckError(err);
+  }
+  err = cudaStreamDestroy(copy_stream);
+  cudaCheckError(err);
   for (int r = 0; r < size_; ++r) {
     const auto err = cudaStreamDestroy(streams[r]);
     cudaCheckError(err);
