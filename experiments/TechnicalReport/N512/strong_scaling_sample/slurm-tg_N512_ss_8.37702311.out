@@ -1,0 +1,93 @@
+ModuleCmd_Switch.c(179):ERROR:152: Module 'PrgEnv-cray' is currently not loaded
+CMake(3):ERROR:105: Unable to locate a modulefile for 'CMake/3.21.3'
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 768. Padded to 768 for speed.
+slurmstepd: error: *** STEP 37702311.0 ON nid03263 CANCELLED AT 2022-04-14T19:15:03 DUE TO TIME LIMIT ***
+slurmstepd: error: *** JOB 37702311 ON nid03263 CANCELLED AT 2022-04-14T19:15:03 DUE TO TIME LIMIT ***
+srun: Job step aborted: Waiting up to 92 seconds for job step to finish.
+srun: got SIGCONT
+srun: forcing job termination
+
+
+Batch Job Summary Report (version 21.01.1) for Job "tg_N512_ss_8" (37702311) on daint
+
+Job information (1/3)
+-----------------------------------------------------------------------------------------------------
+             Submit            Eligible               Start                 End    Elapsed Time limit
+------------------- ------------------- ------------------- ------------------- ---------- ----------
+2022-04-14T14:27:45 2022-04-14T14:27:45 2022-04-14T18:14:37 2022-04-14T19:15:02   01:00:25   01:00:00
+-----------------------------------------------------------------------------------------------------
+
+Job information (2/3)
+-------------------------------------------------------------
+    Username      Account    Partition   NNodes        Energy
+------------ ------------ ------------ -------- -------------
+     trohner        s1069       normal       32  15949.494 kJ
+
+Job information (3/3) - GPU utilization data
+----------------------------------------------------
+   Node name       Usage      Max mem Execution time
+------------ ----------- ------------ --------------
+    nid05864        97 %     2071 MiB       01:00:10
+    nid06892        97 %     2071 MiB       01:00:10
+    nid05863        97 %     2071 MiB       01:00:10
+    nid06898        97 %     2071 MiB       01:00:10
+    nid06893        97 %     2071 MiB       01:00:10
+    nid04395        97 %     2071 MiB       01:00:10
+    nid04390        97 %     2071 MiB       01:00:10
+    nid04393        97 %     2071 MiB       01:00:10
+    nid07069        97 %     2071 MiB       01:00:10
+    nid07080        96 %     2071 MiB       01:00:10
+    nid07072        96 %     2071 MiB       01:00:10
+    nid07079        96 %     2071 MiB       01:00:10
+    nid06900        97 %     2071 MiB       01:00:10
+    nid05862        97 %     2071 MiB       01:00:10
+    nid06899        97 %     2071 MiB       01:00:10
+    nid06889        97 %     2071 MiB       01:00:10
+    nid04392        97 %     2071 MiB       01:00:10
+    nid05865        97 %     2071 MiB       01:00:10
+    nid06891        97 %     2071 MiB       01:00:10
+    nid04391        97 %     2071 MiB       01:00:10
+    nid05866        97 %     2071 MiB       01:00:10
+    nid07071        97 %     2071 MiB       01:00:10
+    nid06894        97 %     2071 MiB       01:00:10
+    nid06895        97 %     2071 MiB       01:00:10
+    nid07070        97 %     2071 MiB       01:00:10
+    nid04394        97 %     2071 MiB       01:00:10
+    nid06896        97 %     2071 MiB       01:00:10
+    nid06897        97 %     2071 MiB       01:00:10
+    nid06890        97 %     2071 MiB       01:00:10
+    nid07068        97 %     2071 MiB       01:00:10
+    nid05867        97 %     2071 MiB       01:00:10
+    nid03263        96 %     2113 MiB       01:00:10
+

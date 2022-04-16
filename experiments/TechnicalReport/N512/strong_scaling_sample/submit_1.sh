@@ -1,10 +1,10 @@
 #!/bin/bash -l
-#SBATCH --job-name=tg_N512_weak_8
+#SBATCH --job-name=tg_N512_ss_1
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=tobias.rohner@math.ethz.ch
 #SBATCH --account="s1069"
 #SBATCH --time=01:00:00
-#SBATCH --nodes=32
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-core=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=12
@@ -15,4 +15,4 @@
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
-srun /users/trohner/azeban/build_profile/azeban --ranks-per-sample=4 /users/trohner/azeban/experiments/TechnicalReport/N512/weak_scaling/config_8.json
+srun /users/trohner/azeban/build_profile/azeban --ranks-per-sample=4 /users/trohner/azeban/experiments/TechnicalReport/N512/strong_scaling_sample/config_1.json

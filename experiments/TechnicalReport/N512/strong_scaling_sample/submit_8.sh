@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=tg_N512_weak_8
+#SBATCH --job-name=tg_N512_ss_8
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=tobias.rohner@math.ethz.ch
 #SBATCH --account="s1069"
@@ -15,4 +15,4 @@
 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
-srun /users/trohner/azeban/build_profile/azeban --ranks-per-sample=4 /users/trohner/azeban/experiments/TechnicalReport/N512/weak_scaling/config_8.json
+srun /users/trohner/azeban/build_profile/azeban --ranks-per-sample=32 /users/trohner/azeban/experiments/TechnicalReport/N512/strong_scaling_sample/config_8.json

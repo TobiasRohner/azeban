@@ -4,11 +4,11 @@
   "dimension": 3,
   "num_samples": 2,
   "seed": 1,
-  "time": 5,
+  "time": 0.1,
   "snapshots": {
     "start": 0,
-    "stop": 5,
-    "n": 50
+    "stop": 0.1,
+    "n": 1
   },
   "grid": {
     "N_phys": 512,
