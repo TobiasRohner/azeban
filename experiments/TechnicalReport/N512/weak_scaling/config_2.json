@@ -4,10 +4,10 @@
   "dimension": 3,
   "num_samples": 2,
   "seed": 1,
-  "time": 0.1,
+  "time": 0.2,
   "snapshots": {
     "start": 0,
-    "stop": 0.1,
+    "stop": 0.2,
     "n": 1
   },
   "grid": {
