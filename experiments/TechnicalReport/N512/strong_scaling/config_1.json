@@ -1,0 +1,36 @@
+{
+  "output": "tg_N512_strong_1",
+  "device": "cuda",
+  "dimension": 3,
+  "num_samples": 8,
+  "seed": 1,
+  "time": 0.2,
+  "snapshots": {
+    "start": 0,
+    "stop": 0.2,
+    "n": 1
+  },
+  "grid": {
+    "N_phys": 512,
+    "N_phys_pad": ""
+  },
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "type": "Quadratic",
+      "eps": 0.05
+    }
+  },
+  "timestepper": {
+    "type": "SSP RK3",
+    "C": 0.5
+  },
+  "init": {
+    "name": "Taylor Green",
+    "perturb": {
+      "name": "Uniform",
+      "min": -0.025,
+      "max": 0.025
+    }
+  }
+}
