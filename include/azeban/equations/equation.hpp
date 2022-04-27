@@ -41,6 +41,8 @@ public:
                     const zisa::array_const_view<complex_t, dim_v + 1> &u)
       = 0;
 
+  virtual real_t dt() const = 0;
+
   virtual int n_vars() const = 0;
   virtual real_t visc() const { return 0; }
 

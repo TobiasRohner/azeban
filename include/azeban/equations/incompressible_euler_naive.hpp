@@ -23,6 +23,7 @@
 #include <azeban/grid.hpp>
 #include <azeban/operations/convolve.hpp>
 #include <azeban/operations/fft_factory.hpp>
+#include <azeban/operations/norm.hpp>
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/equations/incompressible_euler_naive_cuda.hpp>
 #endif
@@ -43,7 +44,7 @@ public:
   IncompressibleEulerNaive(const Grid<dim_v> &grid,
                            const SpectralViscosity &visc,
                            zisa::device_type device)
-      : super(grid), device_(device), visc_(visc) {
+      : super(grid), device_(device), u_max_(0), visc_(visc) {
     u_hat_ = grid.make_array_fourier_pad(dim_v, device);
     u_ = grid.make_array_phys_pad(dim_v, device);
     B_hat_ = grid.make_array_fourier_pad((dim_v * dim_v + dim_v) / 2, device);
@@ -66,6 +67,7 @@ public:
       copy_to_padded(component(u_hat_, i), component(u_hat, i));
     }
     fft_u_->backward();
+    u_max_ = max_norm(u_);
     computeB();
     fft_B_->forward();
     if (device_ == zisa::device_type::cpu) {
@@ -170,6 +172,10 @@ public:
     }
   }
 
+  virtual real_t dt() const override {
+    return zisa::pow<Dim - 1>(grid_.N_phys) / u_max_;
+  }
+
   virtual int n_vars() const override { return dim_v; }
 
 protected:
@@ -177,6 +183,7 @@ protected:
 
 private:
   zisa::device_type device_;
+  real_t u_max_;
   zisa::array<complex_t, dim_v + 1> u_hat_;
   zisa::array<real_t, dim_v + 1> u_;
   zisa::array<complex_t, dim_v + 1> B_hat_;

@@ -19,6 +19,7 @@
 #define NORM_H_
 
 #include <zisa/config.hpp>
+#include <zisa/memory/array.hpp>
 #include <zisa/memory/array_view.hpp>
 #ifdef ZISA_HAS_CUDA
 #include <azeban/cuda/operations/norm_cuda.hpp>
@@ -53,6 +54,20 @@ real_t norm(const zisa::array_const_view<Scalar, Dim> &data, real_t p) {
 }
 
 template <int Dim, typename Scalar>
+real_t norm(const zisa::array_view<Scalar, Dim> &data, real_t p) {
+  return norm(zisa::array_const_view<Scalar, Dim>(
+                  data.shape(), data.raw(), data.memory_location()),
+              p);
+}
+
+template <int Dim, typename Scalar>
+real_t norm(const zisa::array<Scalar, Dim> &data, real_t p) {
+  return norm(zisa::array_const_view<Scalar, Dim>(
+                  data.shape(), data.raw(), data.device()),
+              p);
+}
+
+template <int Dim, typename Scalar>
 real_t max_norm(const zisa::array_const_view<Scalar, Dim> &data) {
   if (data.memory_location() == zisa::device_type::cpu) {
     using zisa::abs;
@@ -77,6 +92,18 @@ real_t max_norm(const zisa::array_const_view<Scalar, Dim> &data) {
   }
   // Make compiler happy
   return 0;
+}
+
+template <int Dim, typename Scalar>
+real_t max_norm(const zisa::array_view<Scalar, Dim> &data) {
+  return max_norm(zisa::array_const_view<Scalar, Dim>(
+      data.shape(), data.raw(), data.memory_location()));
+}
+
+template <int Dim, typename Scalar>
+real_t max_norm(const zisa::array<Scalar, Dim> &data) {
+  return max_norm(zisa::array_const_view<Scalar, Dim>(
+      data.shape(), data.raw(), data.device()));
 }
 
 }

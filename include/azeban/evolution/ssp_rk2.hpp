@@ -44,12 +44,14 @@ public:
   SSP_RK2 &operator=(const SSP_RK2 &) = delete;
   SSP_RK2 &operator=(SSP_RK2 &&) = default;
 
-  virtual void
-  integrate(real_t dt,
+  virtual real_t
+  integrate(real_t max_dt,
+            real_t C,
             const zisa::array_view<complex_t, dim_v + 1> &u) override {
     ProfileHost profile("SSP_RK2::integrate");
     zisa::copy(u_star_, u);
     equation_->dudt(dudt_, u);
+    const real_t dt = zisa::min(C * equation_->dt(), max_dt);
     axpy(complex_t(0.5 * dt),
          zisa::array_const_view<complex_t, dim_v + 1>(dudt_),
          u);
@@ -60,6 +62,7 @@ public:
     axpy(complex_t(0.5 * dt),
          zisa::array_const_view<complex_t, dim_v + 1>(u_star_),
          u);
+    return dt;
   }
 
   using super::equation;

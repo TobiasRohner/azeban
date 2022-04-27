@@ -50,12 +50,8 @@ static azeban::real_t measureConvergence(
               zisa::device_type::cuda,
               grid.shape_fourier(equation->n_vars()),
               equation);
-          azeban::CFL<dim_v> cfl(grid, 0.2);
           azeban::Simulation<dim_v> simulation(
-              grid.shape_fourier(equation->n_vars()),
-              cfl,
-              timestepper,
-              zisa::device_type::cuda);
+              grid, 0.2, timestepper, zisa::device_type::cuda);
 
           auto d_u = zisa::cuda_array<azeban::real_t, dim_v + 1>(
               grid.shape_phys(dim_v));

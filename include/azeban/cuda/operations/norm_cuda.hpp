@@ -30,7 +30,7 @@ real_t max_norm_cuda(const zisa::array_const_view<Scalar, 1> &data);
 
 #define AZEBAN_INSTANTIATE_REDUCE_CUDA(TYPE)                                   \
   extern template real_t norm_cuda<TYPE>(                                      \
-      const zisa::array_const_view<TYPE, 1> &, real_t p);		       \
+      const zisa::array_const_view<TYPE, 1> &, real_t p);                      \
   extern template real_t max_norm_cuda<TYPE>(                                  \
       const zisa::array_const_view<TYPE, 1> &);
 

@@ -56,11 +56,8 @@ static azeban::real_t measureConvergence(
         zisa::device_type::cuda,
         grid.shape_fourier(equation->n_vars()),
         equation);
-    azeban::CFL<dim_v> cfl(grid, 0.2);
-    azeban::Simulation<dim_v> simulation(grid.shape_fourier(equation->n_vars()),
-                                         cfl,
-                                         timestepper,
-                                         zisa::device_type::cuda);
+    azeban::Simulation<dim_v> simulation(
+        grid, 0.2, timestepper, zisa::device_type::cuda);
 
     initializer->initialize(simulation.u());
     simulation.simulate_until(t);
@@ -239,11 +236,8 @@ TEST_CASE("Euler Naive Taylor Vortex 2D", "[slow]") {
         zisa::device_type::cuda,
         grid.shape_fourier(equation->n_vars()),
         equation);
-    azeban::CFL<2> cfl(grid, 0.2);
-    azeban::Simulation<2> simulation(grid.shape_fourier(equation->n_vars()),
-                                     cfl,
-                                     timestepper,
-                                     zisa::device_type::cuda);
+    azeban::Simulation<2> simulation(
+        grid, 0.2, timestepper, zisa::device_type::cuda);
     initializer->initialize(simulation.u());
 
     auto h_u_hat = zisa::array<azeban::complex_t, 3>(grid.shape_fourier(2));
@@ -313,11 +307,8 @@ TEST_CASE("Euler Naive Taylor Vortex 3D", "[slow]") {
           zisa::device_type::cuda,
           grid.shape_fourier(equation->n_vars()),
           equation);
-      azeban::CFL<3> cfl(grid, 0.2);
-      azeban::Simulation<3> simulation(grid.shape_fourier(equation->n_vars()),
-                                       cfl,
-                                       timestepper,
-                                       zisa::device_type::cuda);
+      azeban::Simulation<3> simulation(
+          grid, 0.2, timestepper, zisa::device_type::cuda);
       initializer->initialize(simulation.u());
 
       auto h_u_hat = zisa::array<azeban::complex_t, 4>(grid.shape_fourier(2));
