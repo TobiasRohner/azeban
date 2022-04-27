@@ -1,0 +1,264 @@
+ModuleCmd_Switch.c(179):ERROR:152: Module 'PrgEnv-cray' is currently not loaded
+CMake(3):ERROR:105: Unable to locate a modulefile for 'CMake/3.21.3'
+Info: Minimal padding size given from "N_phys_pad" is 384. Padded to 384 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 384. Padded to 384 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 384. Padded to 384 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 384. Padded to 384 for speed.
+Running azeban with 4 MPI ranks.
+Run configuration is
+{
+  "device": "cuda",
+  "dimension": 3,
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "eps": 0.05,
+      "type": "Quadratic"
+    }
+  },
+  "grid": {
+    "N_phys": 256,
+    "N_phys_pad": ""
+  },
+  "init": {
+    "name": "Taylor Green",
+    "perturb": {
+      "max": 0.025,
+      "min": -0.025,
+      "name": "Uniform"
+    }
+  },
+  "num_samples": 1,
+  "output": "tg_N256_strong_sample_4",
+  "sample_idx_start": 0,
+  "seed": 1,
+  "snapshots": {
+    "n": 1,
+    "start": 0,
+    "stop": 0.5
+  },
+  "time": 0.5,
+  "timestepper": {
+    "C": 0.5,
+    "type": "SSP RK3"
+  }
+}
+rank 0
+u_hat_pad_.shape()       = [3, 33, 384, 384]
+u_yz_.shape()            = [3, 33, 384, 384]
+trans_u_sendbuf_.shape() = [4, 3, 96, 384, 33]
+trans_u_recvbuf_.shape() = [4, 3, 96, 384, 33]
+u_yz_trans_.shape()      = [3, 96, 384, 129]
+u_yz_trans_pad_.shape()  = [3, 96, 384, 193]
+u_xyz_trans_.shape()     = [3, 96, 384, 384]
+B_xyz_trans_.shape()     = [6, 96, 384, 384]
+B_yz_trans_pad_.shape()  = [6, 96, 384, 193]
+B_yz_trans_.shape()      = [6, 96, 384, 129]
+trans_B_sendbuf_.shape() = [4, 6, 33, 384, 96]
+trans_B_recvbuf_.shape() = [4, 6, 33, 384, 96]
+B_yz_.shape()            = [6, 33, 384, 384]
+B_hat_pad_.shape()       = [6, 33, 384, 384]
+B_hat_.shape()           = [6, 33, 256, 256]
+Sample: 0, Time: 0
+Sample: 0, Time: 0.5
+Rank 0:
+Total Simulation Time: 4min58.839s
+ Time %  | Total Time  | Nr. Calls | Time per Call | Name                                             
+------------------------------------------------------------------------------------------------------
+ 95.971% | 4min46.799s |      1064 |     269.548ms | SSP_RK3::integrate                               
+ 95.437% | 4min45.202s |      3192 |      89.349ms | IncompressibleEuler_MPI::dudt                    
+ 94.993% | 4min43.877s |      3192 |      88.934ms | IncompressibleEuler_MPI::computeBhat             
+ 82.289% |  4min5.911s |      6387 |      38.502ms | Transpose::eval                                  
+ 59.591% | 2min58.080s |     25536 |       6.974ms | Transpose::communication                         
+ 54.944% | 2min44.193s |      3192 |      51.439ms | IncompressibleEuler_MPI::compute_B_yz            
+ 27.262% | 1min21.469s |      3192 |      25.523ms | IncompressibleEuler_MPI::compute_u_yz_trans      
+  2.836% |      8.476s |      6384 |       1.328ms | IncompressibleEuler_MPI::compute_B_xyz_trans     
+  2.754% |      8.229s |      3192 |       2.578ms | IncompressibleEuler_MPI::compute_B_xyz_trans_pad 
+  2.753% |      8.226s |      3192 |       2.577ms | CUFFT_R2C::forward                               
+  2.238% |      6.688s |      3192 |       2.095ms | IncompressibleEuler_MPI::compute_B__hat_pad      
+  2.237% |      6.686s |      3192 |       2.095ms | CUFFT_C2C::forward                               
+  1.912% |      5.714s |     19152 |     298.347us | copy_to_padded                                   
+  1.625% |      4.857s |     38304 |     126.800us | copy_from_padded                                 
+  1.428% |      4.268s |      3192 |       1.337ms | IncompressibleEuler_MPI::compute_u_xyz_trans     
+  1.428% |      4.266s |      3192 |       1.336ms | CUFFT_R2C::backward                              
+  1.243% |      3.713s |      3192 |       1.163ms | IncompressibleEuler_MPI::compute_u_yz_trans_pad  
+  1.127% |      3.367s |      3192 |       1.055ms | IncompressibleEuler_MPI::compute_u_yz            
+  1.126% |      3.365s |      3192 |       1.054ms | CUFFT_C2C::backward                              
+  0.962% |      2.876s |         2 |        1.438s | SnapshotWriter::write_snapshot                   
+  0.671% |      2.006s |      3192 |     628.306us | IncompressibleEuler_MPI::compute_u_hat_pad       
+  0.486% |      1.452s |      3192 |     454.823us | IncompressibleEuler_MPI::compute_B__hat          
+  0.442% |      1.322s |      3192 |     414.131us | IncompressibleEuler_MPI::computeDudt             
+  0.261% |   780.747ms |      1064 |     733.785us | CFL::dt                                          
+rank 3
+u_hat_pad_.shape()       = [3, 32, 384, 384]
+u_yz_.shape()            = [3, 32, 384, 384]
+trans_u_sendbuf_.shape() = [4, 3, 96, 384, 33]
+trans_u_recvbuf_.shape() = [4, 3, 96, 384, 33]
+u_yz_trans_.shape()      = [3, 96, 384, 129]
+u_yz_trans_pad_.shape()  = [3, 96, 384, 193]
+u_xyz_trans_.shape()     = [3, 96, 384, 384]
+B_xyz_trans_.shape()     = [6, 96, 384, 384]
+B_yz_trans_pad_.shape()  = [6, 96, 384, 193]
+B_yz_trans_.shape()      = [6, 96, 384, 129]
+trans_B_sendbuf_.shape() = [4, 6, 33, 384, 96]
+trans_B_recvbuf_.shape() = [4, 6, 33, 384, 96]
+B_yz_.shape()            = [6, 32, 384, 384]
+B_hat_pad_.shape()       = [6, 32, 384, 384]
+B_hat_.shape()           = [6, 32, 256, 256]
+Rank 3:
+Total Simulation Time: 4min58.686s
+ Time %  | Total Time  | Nr. Calls | Time per Call | Name                                             
+------------------------------------------------------------------------------------------------------
+ 95.940% | 4min46.561s |      1064 |     269.324ms | SSP_RK3::integrate                               
+ 95.415% | 4min44.991s |      3192 |      89.283ms | IncompressibleEuler_MPI::dudt                    
+ 94.982% | 4min43.698s |      3192 |      88.878ms | IncompressibleEuler_MPI::computeBhat             
+ 82.471% |  4min6.330s |      6387 |      38.567ms | Transpose::eval                                  
+ 58.626% | 2min55.109s |     25536 |       6.857ms | Transpose::communication                         
+ 54.011% | 2min41.324s |      3192 |      50.540ms | IncompressibleEuler_MPI::compute_B_yz            
+ 28.376% | 1min24.756s |      3192 |      26.553ms | IncompressibleEuler_MPI::compute_u_yz_trans      
+  2.839% |      8.478s |      6384 |       1.328ms | IncompressibleEuler_MPI::compute_B_xyz_trans     
+  2.755% |      8.228s |      3192 |       2.578ms | IncompressibleEuler_MPI::compute_B_xyz_trans_pad 
+  2.754% |      8.225s |      3192 |       2.577ms | CUFFT_R2C::forward                               
+  2.168% |      6.476s |      3192 |       2.029ms | IncompressibleEuler_MPI::compute_B__hat_pad      
+  2.168% |      6.474s |      3192 |       2.028ms | CUFFT_C2C::forward                               
+  1.829% |      5.463s |     19152 |     285.235us | copy_to_padded                                   
+  1.615% |      4.825s |     38304 |     125.969us | copy_from_padded                                 
+  1.429% |      4.267s |      3192 |       1.337ms | IncompressibleEuler_MPI::compute_u_xyz_trans     
+  1.428% |      4.266s |      3192 |       1.336ms | CUFFT_R2C::backward                              
+  1.243% |      3.713s |      3192 |       1.163ms | IncompressibleEuler_MPI::compute_u_yz_trans_pad  
+  1.112% |      3.322s |      1064 |       3.122ms | CFL::dt                                          
+  1.091% |      3.258s |      3192 |       1.021ms | IncompressibleEuler_MPI::compute_u_yz            
+  1.090% |      3.256s |      3192 |       1.020ms | CUFFT_C2C::backward                              
+  0.587% |      1.754s |      3192 |     549.539us | IncompressibleEuler_MPI::compute_u_hat_pad       
+  0.475% |      1.420s |      3192 |     444.863us | IncompressibleEuler_MPI::compute_B__hat          
+  0.432% |      1.289s |      3192 |     403.820us | IncompressibleEuler_MPI::computeDudt             
+  0.143% |   425.833ms |         2 |     212.916ms | SnapshotWriter::write_snapshot                   
+  0.117% |   348.191ms |         3 |     116.064ms | CUFFT_MPI::transpose                             
+  0.079% |   236.797ms |         2 |     118.398ms | CUFFT_MPI::backward                              
+  0.038% |   114.581ms |         1 |     114.581ms | CUFFT_MPI::forward                               
+  0.116% |   348.095ms |         3 |     116.032ms | CUFFT_MPI::transpose                             
+  0.100% |   298.260ms |         1 |     298.260ms | FFTWFFT_R2C::forward                             
+  0.096% |   285.422ms |         1 |     285.422ms | FFTWFFT_R2C::backward                            
+  0.079% |   236.077ms |         2 |     118.038ms | CUFFT_MPI::backward                              
+  0.048% |   143.765ms |         1 |     143.765ms | leray                                            
+  0.039% |   115.239ms |         1 |     115.239ms | CUFFT_MPI::forward                               
+rank 2
+u_hat_pad_.shape()       = [3, 32, 384, 384]
+u_yz_.shape()            = [3, 32, 384, 384]
+trans_u_sendbuf_.shape() = [4, 3, 96, 384, 33]
+trans_u_recvbuf_.shape() = [4, 3, 96, 384, 33]
+u_yz_trans_.shape()      = [3, 96, 384, 129]
+u_yz_trans_pad_.shape()  = [3, 96, 384, 193]
+u_xyz_trans_.shape()     = [3, 96, 384, 384]
+B_xyz_trans_.shape()     = [6, 96, 384, 384]
+B_yz_trans_pad_.shape()  = [6, 96, 384, 193]
+B_yz_trans_.shape()      = [6, 96, 384, 129]
+trans_B_sendbuf_.shape() = [4, 6, 33, 384, 96]
+trans_B_recvbuf_.shape() = [4, 6, 33, 384, 96]
+B_yz_.shape()            = [6, 32, 384, 384]
+B_hat_pad_.shape()       = [6, 32, 384, 384]
+B_hat_.shape()           = [6, 32, 256, 256]
+Rank 2:
+Total Simulation Time: 4min58.677s
+ Time %  | Total Time  | Nr. Calls | Time per Call | Name                                             
+------------------------------------------------------------------------------------------------------
+ 95.863% | 4min46.320s |      1064 |     269.098ms | SSP_RK3::integrate                               
+ 95.337% | 4min44.750s |      3192 |      89.207ms | IncompressibleEuler_MPI::dudt                    
+ 94.904% | 4min43.457s |      3192 |      88.802ms | IncompressibleEuler_MPI::computeBhat             
+ 82.394% |  4min6.093s |      6387 |      38.530ms | Transpose::eval                                  
+ 57.633% | 2min52.137s |     25536 |       6.741ms | Transpose::communication                         
+ 54.561% | 2min42.960s |      3192 |      51.053ms | IncompressibleEuler_MPI::compute_B_yz            
+ 27.750% | 1min22.882s |      3192 |      25.966ms | IncompressibleEuler_MPI::compute_u_yz_trans      
+  2.840% |      8.481s |      6384 |       1.329ms | IncompressibleEuler_MPI::compute_B_xyz_trans     
+  2.754% |      8.227s |      3192 |       2.577ms | IncompressibleEuler_MPI::compute_B_xyz_trans_pad 
+  2.754% |      8.225s |      3192 |       2.577ms | CUFFT_R2C::forward                               
+  2.167% |      6.471s |      3192 |       2.027ms | IncompressibleEuler_MPI::compute_B__hat_pad      
+  2.166% |      6.470s |      3192 |       2.027ms | CUFFT_C2C::forward                               
+  1.831% |      5.468s |     19152 |     285.528us | copy_to_padded                                   
+  1.617% |      4.830s |     38304 |     126.086us | copy_from_padded                                 
+  1.429% |      4.267s |      3192 |       1.337ms | IncompressibleEuler_MPI::compute_u_xyz_trans     
+  1.428% |      4.265s |      3192 |       1.336ms | CUFFT_R2C::backward                              
+  1.245% |      3.718s |      3192 |       1.165ms | IncompressibleEuler_MPI::compute_u_yz_trans_pad  
+  1.196% |      3.571s |      1064 |       3.356ms | CFL::dt                                          
+  1.090% |      3.256s |      3192 |       1.020ms | IncompressibleEuler_MPI::compute_u_yz            
+  1.090% |      3.255s |      3192 |       1.020ms | CUFFT_C2C::backward                              
+  0.588% |      1.755s |      3192 |     549.910us | IncompressibleEuler_MPI::compute_u_hat_pad       
+  0.475% |      1.420s |      3192 |     444.751us | IncompressibleEuler_MPI::compute_B__hat          
+  0.432% |      1.289s |      3192 |     403.901us | IncompressibleEuler_MPI::computeDudt             
+  0.137% |   407.868ms |         2 |     203.934ms | SnapshotWriter::write_snapshot                   
+  0.117% |   350.137ms |         3 |     116.712ms | CUFFT_MPI::transpose                             
+  0.079% |   236.886ms |         2 |     118.443ms | CUFFT_MPI::backward                              
+  0.039% |   116.432ms |         1 |     116.432ms | CUFFT_MPI::forward                               
+rank 1
+u_hat_pad_.shape()       = [3, 32, 384, 384]
+u_yz_.shape()            = [3, 32, 384, 384]
+trans_u_sendbuf_.shape() = [4, 3, 96, 384, 33]
+trans_u_recvbuf_.shape() = [4, 3, 96, 384, 33]
+u_yz_trans_.shape()      = [3, 96, 384, 129]
+u_yz_trans_pad_.shape()  = [3, 96, 384, 193]
+u_xyz_trans_.shape()     = [3, 96, 384, 384]
+B_xyz_trans_.shape()     = [6, 96, 384, 384]
+B_yz_trans_pad_.shape()  = [6, 96, 384, 193]
+B_yz_trans_.shape()      = [6, 96, 384, 129]
+trans_B_sendbuf_.shape() = [4, 6, 33, 384, 96]
+trans_B_recvbuf_.shape() = [4, 6, 33, 384, 96]
+B_yz_.shape()            = [6, 32, 384, 384]
+B_hat_pad_.shape()       = [6, 32, 384, 384]
+B_hat_.shape()           = [6, 32, 256, 256]
+Rank 1:
+Total Simulation Time: 4min58.668s
+ Time %  | Total Time  | Nr. Calls | Time per Call | Name                                             
+------------------------------------------------------------------------------------------------------
+ 95.862% | 4min46.310s |      1064 |     269.088ms | SSP_RK3::integrate                               
+ 95.336% | 4min44.739s |      3192 |      89.204ms | IncompressibleEuler_MPI::dudt                    
+ 94.903% | 4min43.446s |      3192 |      88.799ms | IncompressibleEuler_MPI::computeBhat             
+ 82.389% |  4min6.071s |      6387 |      38.527ms | Transpose::eval                                  
+ 59.833% | 2min58.702s |     25536 |       6.998ms | Transpose::communication                         
+ 54.553% | 2min42.932s |      3192 |      51.044ms | IncompressibleEuler_MPI::compute_B_yz            
+ 27.753% | 1min22.889s |      3192 |      25.968ms | IncompressibleEuler_MPI::compute_u_yz_trans      
+  2.840% |      8.482s |      6384 |       1.329ms | IncompressibleEuler_MPI::compute_B_xyz_trans     
+  2.755% |      8.228s |      3192 |       2.578ms | IncompressibleEuler_MPI::compute_B_xyz_trans_pad 
+  2.754% |      8.225s |      3192 |       2.577ms | CUFFT_R2C::forward                               
+  2.168% |      6.475s |      3192 |       2.029ms | IncompressibleEuler_MPI::compute_B__hat_pad      
+  2.167% |      6.473s |      3192 |       2.028ms | CUFFT_C2C::forward                               
+  1.831% |      5.468s |     19152 |     285.520us | copy_to_padded                                   
+  1.617% |      4.828s |     38304 |     126.051us | copy_from_padded                                 
+  1.429% |      4.267s |      3192 |       1.337ms | IncompressibleEuler_MPI::compute_u_xyz_trans     
+  1.428% |      4.265s |      3192 |       1.336ms | CUFFT_R2C::backward                              
+  1.245% |      3.718s |      3192 |       1.165ms | IncompressibleEuler_MPI::compute_u_yz_trans_pad  
+  1.203% |      3.592s |      1064 |       3.376ms | CFL::dt                                          
+  1.091% |      3.257s |      3192 |       1.020ms | IncompressibleEuler_MPI::compute_u_yz            
+  1.090% |      3.256s |      3192 |       1.020ms | CUFFT_C2C::backward                              
+  0.588% |      1.756s |      3192 |     550.004us | IncompressibleEuler_MPI::compute_u_hat_pad       
+  0.476% |      1.420s |      3192 |     444.954us | IncompressibleEuler_MPI::compute_B__hat          
+  0.432% |      1.289s |      3192 |     403.877us | IncompressibleEuler_MPI::computeDudt             
+  0.130% |   389.724ms |         2 |     194.862ms | SnapshotWriter::write_snapshot                   
+  0.118% |   351.310ms |         3 |     117.103ms | CUFFT_MPI::transpose                             
+  0.079% |   236.611ms |         2 |     118.305ms | CUFFT_MPI::backward                              
+  0.039% |   117.881ms |         1 |     117.881ms | CUFFT_MPI::forward                               
+
+
+Batch Job Summary Report (version 21.01.1) for Job "tg_N256_ss_4" (38014661) on daint
+
+Job information (1/3)
+-----------------------------------------------------------------------------------------------------
+             Submit            Eligible               Start                 End    Elapsed Time limit
+------------------- ------------------- ------------------- ------------------- ---------- ----------
+2022-04-27T15:01:35 2022-04-27T15:01:35 2022-04-27T15:17:16 2022-04-27T15:22:49   00:05:33   00:30:00
+-----------------------------------------------------------------------------------------------------
+
+Job information (2/3)
+-------------------------------------------------------------
+    Username      Account    Partition   NNodes        Energy
+------------ ------------ ------------ -------- -------------
+     trohner        s1069       normal        4    164.050 kJ
+
+Job information (3/3) - GPU utilization data
+----------------------------------------------------
+   Node name       Usage      Max mem Execution time
+------------ ----------- ------------ --------------
+    nid02836        80 %     2071 MiB       00:04:59
+    nid02835        81 %     2071 MiB       00:04:59
+    nid02837        79 %     2071 MiB       00:04:59
+    nid02834        81 %     2083 MiB       00:04:59
+

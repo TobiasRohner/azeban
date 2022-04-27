@@ -1,0 +1,82 @@
+ModuleCmd_Switch.c(179):ERROR:152: Module 'PrgEnv-cray' is currently not loaded
+CMake(3):ERROR:105: Unable to locate a modulefile for 'CMake/3.21.3'
+Info: Minimal padding size given from "N_phys_pad" is 384. Padded to 384 for speed.
+Running azeban in single-node mode.
+Run cofiguration is
+{
+  "device": "cuda",
+  "dimension": 3,
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "eps": 0.05,
+      "type": "Quadratic"
+    }
+  },
+  "grid": {
+    "N_phys": 256,
+    "N_phys_pad": ""
+  },
+  "init": {
+    "name": "Taylor Green",
+    "perturb": {
+      "max": 0.025,
+      "min": -0.025,
+      "name": "Uniform"
+    }
+  },
+  "num_samples": 1,
+  "output": "tg_N256_strong_sample_1",
+  "sample_idx_start": 0,
+  "seed": 1,
+  "snapshots": {
+    "n": 1,
+    "start": 0,
+    "stop": 0.5
+  },
+  "time": 0.5,
+  "timestepper": {
+    "C": 0.5,
+    "type": "SSP RK3"
+  }
+}
+Sample 0, Time 0
+Sample 0, Time 0.5
+Rank 0:
+Total Simulation Time: 2min1.019s
+ Time %  | Total Time  | Nr. Calls | Time per Call | Name                             
+--------------------------------------------------------------------------------------
+ 94.258% | 1min54.070s |       721 |     158.210ms | SSP_RK3::integrate               
+ 90.839% | 1min49.932s |      2163 |      50.824ms | IncompressibleEuler::dudt        
+ 46.000% |     55.669s |      2164 |      25.725ms | CUFFT_R2C::forward               
+ 23.247% |     28.133s |      2163 |      13.007ms | CUFFT_R2C::backward              
+ 11.252% |     13.617s |      2163 |       6.295ms | IncompressibleEuler::computeB    
+  7.224% |      8.743s |      6489 |       1.347ms | copy_to_padded                   
+  3.115% |      3.770s |      2163 |       1.743ms | IncompressibleEuler::computeDudt 
+  3.039% |      3.678s |         2 |        1.839s | SnapshotWriter::write_snapshot   
+  0.822% |   994.228ms |       721 |       1.379ms | CFL::dt                          
+  0.582% |   704.389ms |         2 |     352.195ms | FFTWFFT_R2C::backward            
+  0.003% |     3.294ms |         1 |       3.294ms | leray                            
+
+
+Batch Job Summary Report (version 21.01.1) for Job "tg_N256_ss_1" (38014659) on daint
+
+Job information (1/3)
+-----------------------------------------------------------------------------------------------------
+             Submit            Eligible               Start                 End    Elapsed Time limit
+------------------- ------------------- ------------------- ------------------- ---------- ----------
+2022-04-27T15:01:29 2022-04-27T15:01:29 2022-04-27T15:17:16 2022-04-27T15:19:46   00:02:30   00:30:00
+-----------------------------------------------------------------------------------------------------
+
+Job information (2/3)
+-------------------------------------------------------------
+    Username      Account    Partition   NNodes        Energy
+------------ ------------ ------------ -------- -------------
+     trohner        s1069       normal        1     28.848 kJ
+
+Job information (3/3) - GPU utilization data
+----------------------------------------------------
+   Node name       Usage      Max mem Execution time
+------------ ----------- ------------ --------------
+    nid02408        94 %     6193 MiB       00:02:01
+
