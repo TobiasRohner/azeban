@@ -27,6 +27,7 @@
 #include <azeban/memory/workspace.hpp>
 #include <azeban/operations/convolve.hpp>
 #include <azeban/operations/fft_factory.hpp>
+#include <azean/operations/norm.hpp>
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
 #endif

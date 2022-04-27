@@ -21,3 +21,21 @@ TEST_CASE("norm complex CUDA", "[operations][norm]") {
 
   REQUIRE(std::fabs(d - 1000) <= 1e-10);
 }
+
+TEST_CASE("max norm complex CUDA", "[operations][norm]") {
+  std::cout << "TESTING: max norm complex CUDA [operations][norm]" << std::endl;
+  zisa::int_t n = 1000 * 1000;
+  zisa::shape_t<1> shape{n};
+  auto h_u = zisa::array<azeban::complex_t, 1>(shape);
+  auto d_u = zisa::cuda_array<azeban::complex_t, 1>(shape);
+
+  for (zisa::int_t i = 0; i < n; ++i) {
+    h_u[i] = n;
+  }
+
+  zisa::copy(d_u, h_u);
+  const azeban::real_t d
+      = azeban::max_norm(zisa::array_const_view<azeban::complex_t, 1>(d_u));
+
+  REQUIRE(std::fabs(d - n) <= 1e-10);
+}

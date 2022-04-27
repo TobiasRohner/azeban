@@ -27,7 +27,8 @@ namespace azeban {
 
 #define AZEBAN_INSTANTIATE_REDUCE_CUDA(TYPE)                                   \
   template real_t norm_cuda<TYPE>(const zisa::array_const_view<TYPE, 1> &,     \
-                                  real_t p);
+                                  real_t p);				       \
+  template real_t max_norm_cuda<TYPE>(const zisa::array_const_view<TYPE, 1> &);
 
 AZEBAN_INSTANTIATE_REDUCE_CUDA(real_t)
 AZEBAN_INSTANTIATE_REDUCE_CUDA(complex_t)

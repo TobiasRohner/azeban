@@ -52,6 +52,33 @@ real_t norm(const zisa::array_const_view<Scalar, Dim> &data, real_t p) {
   return 0;
 }
 
+template <int Dim, typename Scalar>
+real_t max_norm(const zisa::array_const_view<Scalar, Dim> &data) {
+  if (data.memory_location() == zisa::device_type::cpu) {
+    using zisa::abs;
+    real_t val = abs(data[0]);
+    for (zisa::int_t i = 0; i < zisa::product(data.shape()); ++i) {
+      using zisa::abs;
+      val = zisa::max(val, abs(data[i]));
+    }
+    return val;
+  }
+#if ZISA_HAS_CUDA
+  else if (data.memory_location() == zisa::device_type::cuda) {
+    zisa::array_const_view<Scalar, 1> view(
+        zisa::shape_t<1>(zisa::product(data.shape())),
+        data.raw(),
+        data.memory_location());
+    return max_norm_cuda(view);
+  }
+#endif
+  else {
+    LOG_ERR("Unsupported memory location");
+  }
+  // Make compiler happy
+  return 0;
+}
+
 }
 
 #endif
