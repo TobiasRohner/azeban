@@ -60,10 +60,8 @@ Simulation<Dim> make_simulation_mpi(const nlohmann::json &config,
       exit(1);
     }
     const real_t C = config["timestepper"]["C"];
-    auto cfl = CFL<Dim>(grid, C);
 
-    return Simulation(
-        grid.shape_fourier(equation->n_vars(), comm), cfl, timestepper, device);
+    return Simulation<Dim>(grid, C, timestepper, device, comm);
   }
 }
 

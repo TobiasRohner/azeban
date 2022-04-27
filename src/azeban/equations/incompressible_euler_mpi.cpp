@@ -7,6 +7,7 @@
 #include <azeban/operations/copy_from_padded.hpp>
 #include <azeban/operations/copy_to_padded.hpp>
 #include <azeban/operations/fft_factory.hpp>
+#include <azeban/operations/norm.hpp>
 #include <sstream>
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
@@ -402,6 +403,13 @@ template <int Dim>
 void IncompressibleEuler_MPI_Base<Dim>::compute_u_xyz_trans() {
   ProfileHost profile("IncompressibleEuler_MPI::compute_u_xyz_trans");
   fft_u_x_->backward();
+  real_t max_u_loc = max_norm(fft_u_x_->u());
+  MPI_Allreduce(&max_u_loc,
+                &u_max_,
+                1,
+                mpi_type<real_t>(),
+                MPI_SUM,
+                comm_->get_mpi_comm());
 }
 
 template <int Dim>

@@ -33,13 +33,26 @@ public:
   static constexpr int dim_v = Dim;
 
   Simulation() = delete;
-  Simulation(const zisa::shape_t<dim_v + 1> &shape,
-             const CFL<Dim> &cfl,
+  Simulation(const Grid<Dim> &grid,
+             real_t C,
              const std::shared_ptr<TimeIntegrator<dim_v>> &timestepper,
              zisa::device_type device = zisa::device_type::cpu);
   Simulation(const zisa::array_const_view<complex_t, dim_v + 1> &u,
-             const CFL<Dim> cfl,
+             const Grid<Dim> &grid_,
+             real_t C,
              const std::shared_ptr<TimeIntegrator<dim_v>> &timestepper);
+#if AZEBAN_HAS_MPI
+  Simulation(const Grid<Dim> &grid,
+             real_t C,
+             const std::shared_ptr<TimeIntegrator<dim_v>> &timestepper,
+             zisa::device_type device,
+             const Communicator *comm);
+  Simulation(const zisa::array_const_view<complex_t, dim_v + 1> &u,
+             const Grid<Dim> &grid_,
+             real_t C,
+             const std::shared_ptr<TimeIntegrator<dim_v>> &timestepper,
+             const Communicator *comm);
+#endif
   Simulation(const Simulation &) = delete;
   Simulation(Simulation &&) = default;
 
@@ -48,11 +61,9 @@ public:
 
   void simulate_until(real_t t);
   void simulate_for(real_t t);
-  real_t step();
 #if AZEBAN_HAS_MPI
   void simulate_until(real_t t, const Communicator *comm);
   void simulate_for(real_t t, const Communicator *comm);
-  real_t step(const Communicator *comm);
 #endif
 
   void reset() { time_ = 0; }
@@ -61,7 +72,7 @@ public:
   real_t time() const { return time_; }
   zisa::array_view<complex_t, dim_v + 1> u() { return u_; }
   zisa::array_const_view<complex_t, dim_v + 1> u() const { return u_; }
-  const Grid<dim_v> &grid() const { return cfl_.grid(); }
+  const Grid<dim_v> &grid() const { return grid_; }
   zisa::int_t n_vars() const { return u_.shape(0); }
   zisa::device_type memory_location() const { return memory_location_; }
   std::shared_ptr<Equation<dim_v>> equation() {
@@ -74,7 +85,8 @@ public:
 private:
   zisa::array<complex_t, dim_v + 1> u_;
   zisa::array_view<complex_t, dim_v + 1> u_view_;
-  CFL<Dim> cfl_;
+  real_t C_;
+  Grid<Dim> grid_;
   std::shared_ptr<TimeIntegrator<dim_v>> timestepper_;
   real_t time_;
   zisa::device_type memory_location_;

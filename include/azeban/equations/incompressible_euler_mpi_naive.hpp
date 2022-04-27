@@ -26,6 +26,7 @@
 #include <azeban/forcing/no_forcing.hpp>
 #include <azeban/mpi/communicator.hpp>
 #include <azeban/operations/fft_mpi_factory.hpp>
+#include <azeban/operations/norm.hpp>
 #include <azeban/profiler.hpp>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
@@ -121,7 +122,10 @@ public:
                                 const SpectralViscosity &visc,
                                 const Forcing &forcing,
                                 bool has_tracer = false)
-      : super(grid, comm, has_tracer), visc_(visc), forcing_(forcing) {}
+      : super(grid, comm, has_tracer),
+        u_max_(0),
+        visc_(visc),
+        forcing_(forcing) {}
   IncompressibleEuler_MPI_Naive(const IncompressibleEuler_MPI_Naive &) = delete;
   IncompressibleEuler_MPI_Naive(IncompressibleEuler_MPI_Naive &&) = default;
   virtual ~IncompressibleEuler_MPI_Naive() = default;
@@ -146,11 +150,22 @@ public:
     pad_u_hat(u_hat);
     zisa::copy(d_u_hat_pad_, h_u_hat_pad_);
     fft_u_->backward();
+    real_t max_u_loc = max_norm(fft_u_->u());
+    MPI_Allreduce(&max_u_loc,
+                  &u_max_,
+                  1,
+                  mpi_type<real_t>(),
+                  MPI_SUM,
+                  comm_->get_mpi_comm());
     computeB();
     fft_B_->forward();
     zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
     unpad_B_hat();
     computeDudt(dudt_hat, u_hat);
+  }
+
+  virtual real_t dt() const override {
+    return zisa::pow<1>(grid_.N_phys) / u_max_;
   }
 
   using super::n_vars;
@@ -175,6 +190,7 @@ protected:
   using super::unpad_B_hat;
 
 private:
+  real_t u_max_;
   SpectralViscosity visc_;
   Forcing forcing_;
 
@@ -251,7 +267,10 @@ public:
                                 const SpectralViscosity &visc,
                                 const Forcing &forcing,
                                 bool has_tracer = false)
-      : super(grid, comm, has_tracer), visc_(visc), forcing_(forcing) {}
+      : super(grid, comm, has_tracer),
+        u_max_(0),
+        visc_(visc),
+        forcing_(forcing) {}
   IncompressibleEuler_MPI_Naive(const IncompressibleEuler_MPI_Naive &) = delete;
   IncompressibleEuler_MPI_Naive(IncompressibleEuler_MPI_Naive &&) = default;
   virtual ~IncompressibleEuler_MPI_Naive() = default;
@@ -276,11 +295,22 @@ public:
     pad_u_hat(u_hat);
     zisa::copy(d_u_hat_pad_, h_u_hat_pad_);
     fft_u_->backward();
+    real_t max_u_loc = max_norm(fft_u_->u());
+    MPI_Allreduce(&max_u_loc,
+                  &u_max_,
+                  1,
+                  mpi_type<real_t>(),
+                  MPI_SUM,
+                  comm_->get_mpi_comm());
     computeB();
     fft_B_->forward();
     zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
     unpad_B_hat();
     computeDudt(dudt_hat, u_hat);
+  }
+
+  virtual real_t dt() const override {
+    return zisa::pow<2>(grid_.N_phys) / u_max_;
   }
 
   using super::n_vars;
@@ -305,6 +335,7 @@ protected:
   using super::unpad_B_hat;
 
 private:
+  real_t u_max_;
   SpectralViscosity visc_;
   Forcing forcing_;
 

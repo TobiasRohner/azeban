@@ -5,13 +5,14 @@ namespace azeban {
 
 template <int Dim>
 Simulation<Dim>::Simulation(
-    const zisa::shape_t<dim_v + 1> &shape,
-    const CFL<Dim> &cfl,
+    const Grid<Dim> &grid,
+    real_t C,
     const std::shared_ptr<TimeIntegrator<dim_v>> &timestepper,
     zisa::device_type device)
-    : u_(shape, device),
+    : u_(grid.shape_fourier(timestepper->equation()->n_vars()), device),
       u_view_(u_.shape(), u_.raw(), u_.device()),
-      cfl_(cfl),
+      C_(C),
+      grid_(grid),
       timestepper_(timestepper),
       time_(0),
       memory_location_(device) {
@@ -24,11 +25,13 @@ Simulation<Dim>::Simulation(
 template <int Dim>
 Simulation<Dim>::Simulation(
     const zisa::array_const_view<complex_t, dim_v + 1> &u,
-    const CFL<Dim> cfl,
+    const Grid<Dim> &grid,
+    real_t C,
     const std::shared_ptr<TimeIntegrator<dim_v>> &timestepper)
     : u_(u.shape(), u.memory_location()),
       u_view_(u_.shape(), u_.raw(), u_.device()),
-      cfl_(cfl),
+      C_(C),
+      grid_(grid),
       timestepper_(timestepper),
       time_(0),
       memory_location_(u.memory_location()) {
@@ -39,18 +42,58 @@ Simulation<Dim>::Simulation(
       u_view_shape, u_.raw(), u_.device());
 }
 
+#if AZEBAN_HAS_MPI
+template <int Dim>
+Simulation<Dim>::Simulation(
+    const Grid<Dim> &grid,
+    real_t C,
+    const std::shared_ptr<TimeIntegrator<dim_v>> &timestepper,
+    zisa::device_type device,
+    const Communicator *comm)
+    : u_(grid.shape_fourier(timestepper->equation()->n_vars(), comm), device),
+      u_view_(u_.shape(), u_.raw(), u_.device()),
+      C_(C),
+      grid_(grid),
+      timestepper_(timestepper),
+      time_(0),
+      memory_location_(device) {
+  zisa::shape_t<dim_v + 1> u_view_shape = u_.shape();
+  u_view_shape[0] = dim_v;
+  u_view_ = zisa::array_view<complex_t, dim_v + 1>(
+      u_view_shape, u_.raw(), u_.device());
+}
+
+template <int Dim>
+Simulation<Dim>::Simulation(
+    const zisa::array_const_view<complex_t, dim_v + 1> &u,
+    const Grid<Dim> &grid,
+    real_t C,
+    const std::shared_ptr<TimeIntegrator<dim_v>> &timestepper,
+    const Communicator *comm)
+    : u_(u.shape(), u.memory_location()),
+      u_view_(u_.shape(), u_.raw(), u_.device()),
+      C_(C),
+      grid_(grid),
+      timestepper_(timestepper),
+      time_(0),
+      memory_location_(u.memory_location()) {
+  zisa::copy(u_, u);
+  zisa::shape_t<dim_v + 1> u_view_shape = u_.shape();
+  u_view_shape[0] = dim_v;
+  u_view_ = zisa::array_view<complex_t, dim_v + 1>(
+      u_view_shape, u_.raw(), u_.device());
+}
+#endif
+
 template <int Dim>
 void Simulation<Dim>::simulate_until(real_t t) {
-  real_t dt = cfl_.dt(u_view_, equation()->visc());
-  while (time_ < t - dt) {
+  while (time_ < t) {
+    const real_t dt = timestepper_->integrate(t - time_, C_, u_);
     if (dt <= 1e-10) {
       fmt::print(stderr, "Warning: Timestep is tiny. dt = {}\n", dt);
     }
-    timestepper_->integrate(dt, u_);
     time_ += dt;
-    dt = cfl_.dt(u_view_, equation()->visc());
   }
-  timestepper_->integrate(t - time_, u_);
   time_ = t;
 }
 
@@ -59,42 +102,22 @@ void Simulation<Dim>::simulate_for(real_t t) {
   simulate_until(time_ + t);
 }
 
-template <int Dim>
-real_t Simulation<Dim>::step() {
-  const real_t dt = cfl_.dt(u_view_, equation()->visc());
-  timestepper_->integrate(dt, u_);
-  time_ += dt;
-  return dt;
-}
-
 #if AZEBAN_HAS_MPI
 template <int Dim>
 void Simulation<Dim>::simulate_until(real_t t, const Communicator *comm) {
   const int rank = comm->rank();
-  real_t dt = cfl_.dt(u_view_, equation()->visc(), comm);
-  while (time_ < t - dt) {
+  while (time_ < t) {
+    const real_t dt = timestepper_->integrate(t - time_, C_, u_);
     if (rank == 0 && dt <= 1e-10) {
       fmt::print(stderr, "Warning: Timestep is tiny. dt = {}\n", dt);
     }
-    timestepper_->integrate(dt, u_);
     time_ += dt;
-    dt = cfl_.dt(u_view_, equation()->visc(), comm);
   }
-  timestepper_->integrate(t - time_, u_);
-  time_ = t;
 }
 
 template <int Dim>
 void Simulation<Dim>::simulate_for(real_t t, const Communicator *comm) {
   simulate_until(time_ + t, comm);
-}
-
-template <int Dim>
-real_t Simulation<Dim>::step(const Communicator *comm) {
-  const real_t dt = cfl_.dt(u_view_, equation()->visc(), comm);
-  timestepper_->integrate(dt, u_);
-  time_ += dt;
-  return dt;
 }
 #endif
 

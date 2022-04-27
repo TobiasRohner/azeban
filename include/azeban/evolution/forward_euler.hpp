@@ -44,12 +44,15 @@ public:
   ForwardEuler &operator=(const ForwardEuler &) = delete;
   ForwardEuler &operator=(ForwardEuler &&) = default;
 
-  virtual void
-  integrate(real_t dt,
+  virtual real_t
+  integrate(real_t max_dt,
+            real_t C,
             const zisa::array_view<complex_t, dim_v + 1> &u) override {
     ProfileHost profile("forward_euler::integrate");
     equation_->dudt(dudt_, u);
+    const real_t dt = zisa::min(C * equation_->dt(), max_dt);
     axpy(complex_t(dt), zisa::array_const_view<complex_t, dim_v + 1>(dudt_), u);
+    return dt;
   }
 
   using super::equation;

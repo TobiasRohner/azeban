@@ -58,7 +58,6 @@ verify_via_tracer(Visc visc, zisa::int_t N) {
              std::vector<azeban::complex_t>>
       out;
   azeban::Grid<2> grid(N);
-  azeban::CFL<2> cfl(grid, 0.2);
   auto equation = std::make_shared<azeban::IncompressibleEuler<2, Visc>>(
       grid, visc, zisa::device_type::cpu, true);
   auto timestepper = std::make_shared<azeban::SSP_RK3<2>>(
@@ -69,7 +68,7 @@ verify_via_tracer(Visc visc, zisa::int_t N) {
   auto init_rho = std::make_shared<azeban::ConstFourierTracer<2>>(1);
   auto initializer
       = std::make_shared<azeban::VelocityAndTracer<2>>(init_u, init_rho);
-  azeban::Simulation<2> simulation(grid.shape_fourier(3), cfl, timestepper);
+  azeban::Simulation<2> simulation(grid, 0.2, timestepper);
   initializer->initialize(simulation.u());
   const azeban::real_t dt = 0.001 / N;
   std::get<0>(out) = dt;

@@ -27,6 +27,7 @@
 #include <azeban/memory/workspace.hpp>
 #include <azeban/operations/convolve.hpp>
 #include <azeban/operations/fft_factory.hpp>
+#include <azeban/operations/norm.hpp>
 #if ZISA_HAS_CUDA
 #include <azeban/cuda/equations/incompressible_euler_cuda.hpp>
 #endif
@@ -60,6 +61,7 @@ public:
       : super(grid),
         device_(device),
         workspace_(),
+        u_max_(0),
         u_hat_({}, nullptr),
         u_({}, nullptr),
         B_hat_({}, nullptr),
@@ -109,9 +111,14 @@ public:
       copy_to_padded(component(u_hat_, i), component(u_hat, i));
     }
     fft_u_->backward();
+    u_max_ = max_norm(u_);
     computeB();
     fft_B_->forward();
     computeDudt(dudt_hat, u_hat);
+  }
+
+  virtual real_t dt() const override {
+    return zisa::pow<Dim - 1>(grid_.N_phys) / u_max_;
   }
 
   virtual int n_vars() const override { return dim_v + (has_tracer_ ? 1 : 0); }
@@ -123,6 +130,7 @@ protected:
 private:
   zisa::device_type device_;
   Workspace workspace_;
+  real_t u_max_;
   zisa::array_view<complex_t, dim_v + 1> u_hat_;
   zisa::array_view<real_t, dim_v + 1> u_;
   zisa::array_view<complex_t, dim_v + 1> B_hat_;

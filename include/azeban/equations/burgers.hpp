@@ -24,6 +24,7 @@
 #include <azeban/grid.hpp>
 #include <azeban/operations/convolve.hpp>
 #include <azeban/operations/fft_factory.hpp>
+#include <azeban/operations/norm.hpp>
 #ifdef ZISA_HAS_CUDA
 #include <azeban/cuda/equations/burgers_cuda.hpp>
 #endif
@@ -41,7 +42,7 @@ public:
   Burgers(const Grid<1> &grid,
           const SpectralViscosity &visc,
           zisa::device_type device)
-      : super(grid), device_(device), visc_(visc) {
+      : super(grid), device_(device), u_max_(0), visc_(visc) {
     u_hat_ = grid.make_array_fourier_pad(1, device);
     u_ = grid.make_array_phys_pad(1, device);
     fft_ = make_fft<1>(u_hat_, u_);
@@ -63,6 +64,7 @@ public:
                                              u_hat.memory_location()),
         complex_t(0));
     fft_->backward();
+    u_max_ = max_norm(u_);
     real_t norm = grid_.N_phys_pad * grid_.N_phys;
     detail::scale_and_square(zisa::array_view<real_t, 2>(u_),
                              real_t(1.0 / std::sqrt(norm)));
@@ -85,10 +87,13 @@ public:
     }
   }
 
+  virtual real_t dt() const override { return 1. / u_max_; }
+
   virtual int n_vars() const override { return 1; }
 
 private:
   zisa::device_type device_;
+  real_t u_max_;
   zisa::array<complex_t, 2> u_hat_;
   zisa::array<real_t, 2> u_;
   std::shared_ptr<FFT<1>> fft_;

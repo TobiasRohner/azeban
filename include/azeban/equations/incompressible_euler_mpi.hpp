@@ -38,6 +38,10 @@ public:
   IncompressibleEuler_MPI_Base &operator=(IncompressibleEuler_MPI_Base &&)
       = default;
 
+  virtual real_t dt() const override {
+    return zisa::pow<Dim - 1>(grid_.N_phys) / u_max_;
+  }
+
   virtual int n_vars() const override { return dim_v + (has_tracer_ ? 1 : 0); }
 
   virtual void *get_fft_work_area() const override;
@@ -66,6 +70,7 @@ private:
   Workspace ws1_;
   Workspace ws2_;
   Workspace ws_fft_;
+  real_t u_max_;
   std::shared_ptr<FFT<dim_v, complex_t>> fft_u_yz_;
   std::shared_ptr<FFT<dim_v, real_t>> fft_u_x_;
   std::shared_ptr<FFT<dim_v, complex_t>> fft_B_yz_;
