@@ -408,8 +408,9 @@ void IncompressibleEuler_MPI_Base<Dim>::compute_u_xyz_trans() {
                 &u_max_,
                 1,
                 mpi_type<real_t>(),
-                MPI_SUM,
+                MPI_MAX,
                 comm_->get_mpi_comm());
+  u_max_ /= zisa::pow<Dim>(grid_.N_phys_pad);
 }
 
 template <int Dim>

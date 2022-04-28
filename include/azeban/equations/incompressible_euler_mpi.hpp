@@ -38,9 +38,7 @@ public:
   IncompressibleEuler_MPI_Base &operator=(IncompressibleEuler_MPI_Base &&)
       = default;
 
-  virtual real_t dt() const override {
-    return zisa::pow<Dim - 1>(grid_.N_phys) / u_max_;
-  }
+  virtual real_t dt() const override { return 1. / (grid_.N_phys * u_max_); }
 
   virtual int n_vars() const override { return dim_v + (has_tracer_ ? 1 : 0); }
 

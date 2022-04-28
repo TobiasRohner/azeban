@@ -217,10 +217,10 @@ void Transpose<Dim>::eval_gpu() {
     profile_pre.stop();
     ProfileDevice profile_copy("Transpose::preprocess::copy", streams[r]);
     const auto err = cudaMemcpyAsync(sendbuf_host_start,
-                          sendbuf_start,
-                          sizeof(complex_t) * buf_view_size,
-                          cudaMemcpyDeviceToHost,
-                          streams[r]);
+                                     sendbuf_start,
+                                     sizeof(complex_t) * buf_view_size,
+                                     cudaMemcpyDeviceToHost,
+                                     streams[r]);
     cudaCheckError(err);
     profile_copy.stop();
   }

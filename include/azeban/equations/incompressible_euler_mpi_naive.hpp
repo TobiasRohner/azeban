@@ -155,7 +155,7 @@ public:
                   &u_max_,
                   1,
                   mpi_type<real_t>(),
-                  MPI_SUM,
+                  MPI_MAX,
                   comm_->get_mpi_comm());
     computeB();
     fft_B_->forward();

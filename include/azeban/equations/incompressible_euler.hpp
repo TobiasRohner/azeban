@@ -111,15 +111,13 @@ public:
       copy_to_padded(component(u_hat_, i), component(u_hat, i));
     }
     fft_u_->backward();
-    u_max_ = max_norm(u_);
+    u_max_ = max_norm(u_) / zisa::pow<dim_v>(grid_.N_phys_pad);
     computeB();
     fft_B_->forward();
     computeDudt(dudt_hat, u_hat);
   }
 
-  virtual real_t dt() const override {
-    return zisa::pow<Dim - 1>(grid_.N_phys) / u_max_;
-  }
+  virtual real_t dt() const override { return 1. / (grid_.N_phys * u_max_); }
 
   virtual int n_vars() const override { return dim_v + (has_tracer_ ? 1 : 0); }
   virtual real_t visc() const override { return visc_.eps; }
