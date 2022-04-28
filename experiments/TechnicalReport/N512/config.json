@@ -1,14 +1,14 @@
 {
-  "output": "tg_N512_strong_sample_2",
+  "output": "tg_N512_time",
   "device": "cuda",
   "dimension": 3,
   "num_samples": 1,
   "seed": 1,
-  "time": 1,
+  "time": 5,
   "snapshots": {
     "start": 0,
-    "stop": 1,
-    "n": 1
+    "stop": 5,
+    "n": 50
   },
   "grid": {
     "N_phys": 512,
