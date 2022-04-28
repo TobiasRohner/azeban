@@ -93,7 +93,7 @@ __global__ void max_norm_cuda_kernel(zisa::array_const_view<Scalar, 1> in_data,
     sdata[tid] = abs(in_data[i]);
   }
   if (i + blockDim.x < in_data.shape(0)) {
-    sdata[tid] = zisa::max(sdata[tid], abs(in_data[i + blockDim.x]));
+    sdata[tid] = zisa::max(sdata[tid], real_t(abs(in_data[i + blockDim.x])));
   }
   __syncthreads();
 

@@ -74,7 +74,7 @@ real_t max_norm(const zisa::array_const_view<Scalar, Dim> &data) {
     real_t val = abs(data[0]);
     for (zisa::int_t i = 0; i < zisa::product(data.shape()); ++i) {
       using zisa::abs;
-      val = zisa::max(val, abs(data[i]));
+      val = zisa::max(val, real_t(abs(data[i])));
     }
     return val;
   }

@@ -90,7 +90,7 @@ void Simulation<Dim>::simulate_until(real_t t) {
   while (time_ < t) {
     const real_t eps = equation()->visc();
     const real_t max_dt = zisa::min(
-        t - time_, 2. / (eps * zisa::pow<2>(zisa::pi * grid_.N_fourier)));
+        t - time_, real_t(2. / (eps * zisa::pow<2>(zisa::pi * grid_.N_fourier))));
     const real_t dt = timestepper_->integrate(max_dt, C_, u_);
     if (dt <= 1e-10) {
       fmt::print(stderr, "Warning: Timestep is tiny. dt = {}\n", dt);
@@ -112,7 +112,7 @@ void Simulation<Dim>::simulate_until(real_t t, const Communicator *comm) {
   while (time_ < t) {
     const real_t eps = equation()->visc();
     const real_t max_dt = zisa::min(
-        t - time_, 2. / (eps * zisa::pow<2>(zisa::pi * grid_.N_fourier)));
+        t - time_, real_t(2. / (eps * zisa::pow<2>(zisa::pi * grid_.N_fourier))));
     const real_t dt = timestepper_->integrate(max_dt, C_, u_);
     if (rank == 0 && dt <= 1e-10) {
       fmt::print(stderr, "Warning: Timestep is tiny. dt = {}\n", dt);
