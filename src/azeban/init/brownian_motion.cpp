@@ -16,6 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #include <azeban/init/brownian_motion.hpp>
+#include <azeban/operations/scale.hpp>
 
 namespace azeban {
 
@@ -52,6 +53,7 @@ void BrownianMotion<1>::do_initialize(
   auto fft = make_fft<1>(u_hat, u);
   initialize(u);
   fft->forward();
+  scale(static_cast<real_t>(1. / N), u.view());
 }
 
 void BrownianMotion<1>::generate_step(const zisa::array_view<real_t, 1> &u,
@@ -81,6 +83,8 @@ void BrownianMotion<2>::do_initialize(const zisa::array_view<real_t, 3> &u) {
   auto fft = make_fft<2>(u_hat, u);
   initialize(u_hat);
   fft->backward();
+  scale(static_cast<real_t>(1. / N), u);
+  scale(static_cast<real_t>(1. / N), u);
 }
 
 void BrownianMotion<2>::do_initialize(
@@ -131,6 +135,9 @@ void BrownianMotion<3>::do_initialize(const zisa::array_view<real_t, 4> &u) {
   auto fft = make_fft<3>(u_hat, u);
   initialize(u_hat);
   fft->backward();
+  scale(static_cast<real_t>(1. / N), u);
+  scale(static_cast<real_t>(1. / N), u);
+  scale(static_cast<real_t>(1. / N), u);
 }
 
 void BrownianMotion<3>::do_initialize(
