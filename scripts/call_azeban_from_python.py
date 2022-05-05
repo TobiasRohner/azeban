@@ -37,6 +37,7 @@ def solve_NS(executable, u, visc, t_end, tmpdir='/tmp', device='cuda'):
                 },
                 "init": {
                   "name": "Init From File",
+                  "sample_idx_start": 0,
                   "experiment": tmpdir,
                   "time": "0"
                 }
