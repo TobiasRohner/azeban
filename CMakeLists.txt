@@ -49,11 +49,9 @@ add_library(azeban_dependencies INTERFACE)
 
 if(AZEBAN_HAS_MPI)
   find_package(MPI REQUIRED COMPONENTS CXX)
-  target_compile_definitions(azeban_dependencies INTERFACE 
-    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CXX>:AZEBAN_HAS_MPI=1>>)
+  target_compile_definitions(azeban_dependencies INTERFACE AZEBAN_HAS_MPI=1)
   if(ZISA_HAS_CUDA AND AZEBAN_HAS_CUDA_AWARE_MPI)
-    target_compile_definitions(azeban_dependencies INTERFACE 
-      $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CXX>:AZEBAN_HAS_CUDA_AWARE_MPI=1>>)
+    target_compile_definitions(azeban_dependencies INTERFACE AZEBAN_HAS_CUDA_AWARE_MPI=1)
   endif()
   target_include_directories(azeban_dependencies INTERFACE ${MPI_CXX_INCLUDE_PATH})
   target_compile_options(azeban_dependencies INTERFACE

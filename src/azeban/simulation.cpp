@@ -77,6 +77,7 @@ Simulation<Dim>::Simulation(
       timestepper_(timestepper),
       time_(0),
       memory_location_(u.memory_location()) {
+  ZISA_UNUSED(comm);
   zisa::copy(u_, u);
   zisa::shape_t<dim_v + 1> u_view_shape = u_.shape();
   u_view_shape[0] = dim_v;

@@ -28,7 +28,7 @@ namespace internal {
 
 template <typename T>
 struct MPI_Type {
-  static_assert(!std::is_same_v<T, T>, "Unknown MPI Datatype");
+  static_assert(!std::is_same<T, T>::value, "Unknown MPI Datatype");
 };
 
 }

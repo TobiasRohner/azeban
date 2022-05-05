@@ -70,7 +70,7 @@ void BrownianMotion<1>::generate_step(const zisa::array_view<real_t, 1> &u,
   const real_t X = normal_.get();
   const real_t sigma
       = zisa::sqrt(zisa::pow(static_cast<real_t>(i1 - i0) / N, 2 * H)
-                   * (1. - zisa::pow(2., 2 * H - 2)));
+                   * (1. - zisa::pow(static_cast<real_t>(2.), 2 * H - 2)));
   u(im) = 0.5 * (ui0 + ui1) + sigma * X;
   generate_step(u, H, i0, im);
   generate_step(u, H, im, i1);
@@ -105,7 +105,8 @@ void BrownianMotion<2>::do_initialize(
           const real_t ss = uniform_.get();
           const real_t fac
               = static_cast<real_t>(N * N)
-                / zisa::pow(4 * zisa::pi * zisa::pi * (k1 * k1 + k2 * k2),
+                / zisa::pow(static_cast<real_t>(4 * zisa::pi * zisa::pi
+                                                * (k1 * k1 + k2 * k2)),
                             (H + 1) / 2);
           u_hat_(d, k1, k2) = fac * complex_t(cc - ss, cs + sc);
           if (k1 > 0) {
@@ -162,8 +163,9 @@ void BrownianMotion<3>::do_initialize(
             const real_t ssc = uniform_.get();
             const real_t sss = uniform_.get();
             const real_t fac = static_cast<real_t>(N * N * N)
-                               / zisa::pow(4 * zisa::pi * zisa::pi
-                                               * (k1 * k1 + k2 * k2 + k3 * k3),
+                               / zisa::pow(static_cast<real_t>(
+                                               4 * zisa::pi * zisa::pi
+                                               * (k1 * k1 + k2 * k2 + k3 * k3)),
                                            (H + 1) / 2);
             u_hat_(d, k1, k2, k3)
                 = fac * complex_t(ccc - css - scs - ssc, ccs + csc + scc - sss);

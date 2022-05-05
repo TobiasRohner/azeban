@@ -20,11 +20,23 @@
 
 #include <azeban/config.hpp>
 #include <zisa/memory/array_view.hpp>
+#if AZEBAN_HAS_MPI
+#include <azeban/grid.hpp>
+#include <azeban/mpi/communicator.hpp>
+#endif
 
 namespace azeban {
 
 void leray(const zisa::array_view<complex_t, 3> &u_hat);
 void leray(const zisa::array_view<complex_t, 4> &u_hat);
+#if AZEBAN_HAS_MPI
+void leray(const zisa::array_view<complex_t, 3> &u_hat,
+           const Grid<2> &grid,
+           const Communicator *comm);
+void leray(const zisa::array_view<complex_t, 4> &u_hat,
+           const Grid<3> &grid,
+           const Communicator *comm);
+#endif
 
 }
 

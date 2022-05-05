@@ -110,7 +110,6 @@ template <int dim_v>
 static void run_from_config_MPI_impl(const nlohmann::json &config,
                                      const Communicator *comm) {
   const int rank = comm->rank();
-  const int size = comm->size();
 
   zisa::int_t num_samples = 1;
   if (config.contains("num_samples")) {
@@ -150,9 +149,9 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
   }
 
   std::mt19937 rng;
-  size_t seed = 1;
+  size_t seed = 1 * rank;
   if (config.contains("seed")) {
-    seed = config["seed"];
+    seed = config["seed"].get<size_t>() * rank;
   }
   rng.seed(seed);
 
@@ -161,61 +160,13 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
   auto initializer = make_initializer<dim_v>(config, rng);
   NetCDFSnapshotWriter<dim_v> writer(output);
 
-  auto u_host
-      = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu, comm);
-  auto u_device = grid.make_array_phys(
-      simulation.n_vars(), zisa::device_type::cuda, comm);
-  auto u_hat_device = grid.make_array_fourier(
-      simulation.n_vars(), zisa::device_type::cuda, comm);
-  auto fft = make_fft_mpi<dim_v>(u_hat_device,
-                                 u_device,
-                                 comm,
-                                 FFT_FORWARD,
-                                 simulation.equation()->get_fft_work_area());
-
   for (zisa::int_t sample = sample_idx_start;
        sample < sample_idx_start + num_samples;
        ++sample) {
     simulation.reset();
     simulation.set_time(time_offset);
-    zisa::array<real_t, dim_v + 1> u_init;
-    if (rank == 0) {
-      u_init
-          = grid.make_array_phys(simulation.n_vars(), zisa::device_type::cpu);
-      initializer->initialize(u_init);
-    }
-    std::vector<int> cnts(size);
-    std::vector<int> displs(size);
-    for (int r = 0; r < size; ++r) {
-      cnts[r] = zisa::pow<dim_v - 1>(grid.N_phys)
-                * (grid.N_phys / size
-                   + (zisa::integer_cast<zisa::int_t>(r) < grid.N_phys % size));
-    }
-    displs[0] = 0;
-    for (int r = 1; r < size; ++r) {
-      displs[r] = displs[r - 1] + cnts[r - 1];
-    }
-    std::vector<MPI_Request> reqs(simulation.n_vars());
-    const zisa::int_t n_elems_per_component_glob
-        = zisa::product(grid.shape_phys(1));
-    const zisa::int_t n_elems_per_component_loc
-        = zisa::product(grid.shape_phys(1, comm));
-    for (zisa::int_t i = 0; i < simulation.n_vars(); ++i) {
-      MPI_Iscatterv(u_init.raw() + i * n_elems_per_component_glob,
-                    cnts.data(),
-                    displs.data(),
-                    mpi_type<real_t>(),
-                    u_host.raw() + i * n_elems_per_component_loc,
-                    cnts[rank],
-                    mpi_type<real_t>(),
-                    0,
-                    comm->get_mpi_comm(),
-                    &reqs[i]);
-    }
-    MPI_Waitall(simulation.n_vars(), reqs.data(), MPI_STATUSES_IGNORE);
-    zisa::copy(u_device, u_host);
-    fft->forward();
-    zisa::copy(simulation.u(), u_hat_device);
+    initializer->initialize(
+        simulation.u(), grid, comm, simulation.equation()->get_fft_work_area());
 
     for (real_t t : snapshots) {
       simulation.simulate_until(t, comm);

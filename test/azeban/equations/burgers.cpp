@@ -97,18 +97,18 @@ TEST_CASE("Burgers Derivative") {
 }
 
 TEST_CASE("Burgers Convergence") {
-  const auto compute_error
-      = [&](const zisa::array_const_view<azeban::real_t, 2> &u_ref,
-            const zisa::array_const_view<azeban::real_t, 2> &u) {
-          using zisa::abs;
-          azeban::real_t errL1 = 0;
-          const zisa::int_t delta = u_ref.shape(1) / u.shape(1);
-          for (zisa::int_t i = 0; i < u.shape(1); ++i) {
-            const zisa::int_t i_ref = i * delta;
-            errL1 += zisa::pow(abs(u[i] - u_ref[i_ref]), 2);
-          }
-          return zisa::pow(errL1, 0.5) / u.shape(1);
-        };
+  const auto compute_error =
+      [&](const zisa::array_const_view<azeban::real_t, 2> &u_ref,
+          const zisa::array_const_view<azeban::real_t, 2> &u) {
+        using zisa::abs;
+        azeban::real_t errL1 = 0;
+        const zisa::int_t delta = u_ref.shape(1) / u.shape(1);
+        for (zisa::int_t i = 0; i < u.shape(1); ++i) {
+          const zisa::int_t i_ref = i * delta;
+          errL1 += zisa::pow(abs(u[i] - u_ref[i_ref]), 2);
+        }
+        return zisa::pow(errL1, static_cast<azeban::real_t>(0.5)) / u.shape(1);
+      };
 
   const azeban::Grid<1> grid_max(4 * 1024);
   const zisa::int_t N_max = grid_max.N_phys;
