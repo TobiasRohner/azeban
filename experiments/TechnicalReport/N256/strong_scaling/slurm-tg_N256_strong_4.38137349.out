@@ -1,0 +1,260 @@
+ModuleCmd_Switch.c(179):ERROR:152: Module 'PrgEnv-cray' is currently not loaded
+CMake(3):ERROR:105: Unable to locate a modulefile for 'CMake/3.21.3'
+Info: Minimal padding size given from "N_phys_pad" is 384. Padded to 384 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 384. Padded to 384 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 384. Padded to 384 for speed.
+Info: Minimal padding size given from "N_phys_pad" is 384. Padded to 384 for speed.
+Running azeban in single-node mode.
+Run cofiguration is
+{
+  "device": "cuda",
+  "dimension": 3,
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "eps": 0.05,
+      "type": "Quadratic"
+    }
+  },
+  "grid": {
+    "N_phys": 256,
+    "N_phys_pad": ""
+  },
+  "init": {
+    "name": "Taylor Green",
+    "perturb": {
+      "max": 0.025,
+      "min": -0.025,
+      "name": "Uniform"
+    }
+  },
+  "num_samples": 2,
+  "output": "tg_N256_strong_4",
+  "sample_idx_start": 4,
+  "seed": 3,
+  "snapshots": {
+    "n": 1,
+    "start": 0,
+    "stop": 5
+  },
+  "time": 5,
+  "timestepper": {
+    "C": 0.5,
+    "type": "SSP RK3"
+  }
+}
+Sample 4, Time 0
+Sample 4, Time 5
+Sample 5, Time 0
+Sample 5, Time 5
+Rank 2:
+Total Simulation Time: 11min48.761s
+ Time %  | Total Time   | Nr. Calls | Time per Call | Name                             
+---------------------------------------------------------------------------------------
+ 98.631% | 11min39.059s |      4144 |     168.692ms | SSP_RK3::integrate               
+ 95.275% | 11min15.274s |     12432 |      54.317ms | IncompressibleEuler::dudt        
+ 45.201% |  5min20.366s |     12434 |      25.765ms | CUFFT_R2C::forward               
+ 22.840% |  2min41.883s |     12432 |      13.021ms | CUFFT_R2C::backward              
+ 11.046% |  1min18.287s |     12432 |       6.297ms | IncompressibleEuler::computeB    
+  7.088% |      50.236s |     37296 |       1.347ms | copy_to_padded                   
+  3.059% |      21.679s |     12432 |       1.744ms | IncompressibleEuler::computeDudt 
+  0.698% |       4.946s |         4 |        1.236s | SnapshotWriter::write_snapshot   
+  0.195% |       1.385s |         4 |     346.344ms | FFTWFFT_R2C::backward            
+  0.001% |      6.583ms |         2 |       3.291ms | leray                            
+Running azeban in single-node mode.
+Run cofiguration is
+{
+  "device": "cuda",
+  "dimension": 3,
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "eps": 0.05,
+      "type": "Quadratic"
+    }
+  },
+  "grid": {
+    "N_phys": 256,
+    "N_phys_pad": ""
+  },
+  "init": {
+    "name": "Taylor Green",
+    "perturb": {
+      "max": 0.025,
+      "min": -0.025,
+      "name": "Uniform"
+    }
+  },
+  "num_samples": 2,
+  "output": "tg_N256_strong_4",
+  "sample_idx_start": 6,
+  "seed": 4,
+  "snapshots": {
+    "n": 1,
+    "start": 0,
+    "stop": 5
+  },
+  "time": 5,
+  "timestepper": {
+    "C": 0.5,
+    "type": "SSP RK3"
+  }
+}
+Sample 6, Time 0
+Sample 6, Time 5
+Sample 7, Time 0
+Sample 7, Time 5
+Rank 3:
+Total Simulation Time: 12min3.129s
+ Time %  | Total Time   | Nr. Calls | Time per Call | Name                             
+---------------------------------------------------------------------------------------
+ 98.664% | 11min53.469s |      4218 |     169.149ms | SSP_RK3::integrate               
+ 95.317% | 11min29.261s |     12654 |      54.470ms | IncompressibleEuler::dudt        
+ 45.263% |  5min27.308s |     12656 |      25.862ms | CUFFT_R2C::forward               
+ 22.865% |  2min45.343s |     12654 |      13.066ms | CUFFT_R2C::backward              
+ 11.020% |  1min19.686s |     12654 |       6.297ms | IncompressibleEuler::computeB    
+  7.096% |      51.314s |     37962 |       1.352ms | copy_to_padded                   
+  3.050% |      22.059s |     12654 |       1.743ms | IncompressibleEuler::computeDudt 
+  0.677% |       4.896s |         4 |        1.224s | SnapshotWriter::write_snapshot   
+  0.193% |       1.398s |         4 |     349.565ms | FFTWFFT_R2C::backward            
+  0.001% |      6.593ms |         2 |       3.297ms | leray                            
+Running azeban in single-node mode.
+Run cofiguration is
+{
+  "device": "cuda",
+  "dimension": 3,
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "eps": 0.05,
+      "type": "Quadratic"
+    }
+  },
+  "grid": {
+    "N_phys": 256,
+    "N_phys_pad": ""
+  },
+  "init": {
+    "name": "Taylor Green",
+    "perturb": {
+      "max": 0.025,
+      "min": -0.025,
+      "name": "Uniform"
+    }
+  },
+  "num_samples": 2,
+  "output": "tg_N256_strong_4",
+  "sample_idx_start": 0,
+  "seed": 1,
+  "snapshots": {
+    "n": 1,
+    "start": 0,
+    "stop": 5
+  },
+  "time": 5,
+  "timestepper": {
+    "C": 0.5,
+    "type": "SSP RK3"
+  }
+}
+Sample 0, Time 0
+Sample 0, Time 5
+Sample 1, Time 0
+Sample 1, Time 5
+Rank 0:
+Total Simulation Time: 12min5.360s
+ Time %  | Total Time   | Nr. Calls | Time per Call | Name                             
+---------------------------------------------------------------------------------------
+ 98.655% | 11min55.605s |      4247 |     168.496ms | SSP_RK3::integrate               
+ 95.295% | 11min31.232s |     12741 |      54.253ms | IncompressibleEuler::dudt        
+ 45.196% |  5min27.833s |     12743 |      25.726ms | CUFFT_R2C::forward               
+ 22.838% |  2min45.658s |     12741 |      13.002ms | CUFFT_R2C::backward              
+ 11.061% |  1min20.232s |     12741 |       6.297ms | IncompressibleEuler::computeB    
+  7.100% |      51.504s |     38223 |       1.347ms | copy_to_padded                   
+  3.062% |      22.211s |     12741 |       1.743ms | IncompressibleEuler::computeDudt 
+  0.688% |       4.993s |         4 |        1.248s | SnapshotWriter::write_snapshot   
+  0.194% |       1.410s |         4 |     352.609ms | FFTWFFT_R2C::backward            
+  0.001% |      6.579ms |         2 |       3.290ms | leray                            
+Running azeban in single-node mode.
+Run cofiguration is
+{
+  "device": "cuda",
+  "dimension": 3,
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "eps": 0.05,
+      "type": "Quadratic"
+    }
+  },
+  "grid": {
+    "N_phys": 256,
+    "N_phys_pad": ""
+  },
+  "init": {
+    "name": "Taylor Green",
+    "perturb": {
+      "max": 0.025,
+      "min": -0.025,
+      "name": "Uniform"
+    }
+  },
+  "num_samples": 2,
+  "output": "tg_N256_strong_4",
+  "sample_idx_start": 2,
+  "seed": 2,
+  "snapshots": {
+    "n": 1,
+    "start": 0,
+    "stop": 5
+  },
+  "time": 5,
+  "timestepper": {
+    "C": 0.5,
+    "type": "SSP RK3"
+  }
+}
+Sample 2, Time 0
+Sample 2, Time 5
+Sample 3, Time 0
+Sample 3, Time 5
+Rank 1:
+Total Simulation Time: 11min56.822s
+ Time %  | Total Time   | Nr. Calls | Time per Call | Name                             
+---------------------------------------------------------------------------------------
+ 98.622% | 11min46.947s |      4198 |     168.401ms | SSP_RK3::integrate               
+ 95.261% | 11min22.852s |     12594 |      54.220ms | IncompressibleEuler::dudt        
+ 45.160% |  5min23.718s |     12596 |      25.700ms | CUFFT_R2C::forward               
+ 22.822% |  2min43.591s |     12594 |      12.990ms | CUFFT_R2C::backward              
+ 11.064% |  1min19.308s |     12594 |       6.297ms | IncompressibleEuler::computeB    
+  7.106% |      50.939s |     37782 |       1.348ms | copy_to_padded                   
+  3.063% |      21.956s |     12594 |       1.743ms | IncompressibleEuler::computeDudt 
+  0.713% |       5.108s |         4 |        1.277s | SnapshotWriter::write_snapshot   
+  0.194% |       1.393s |         4 |     348.147ms | FFTWFFT_R2C::backward            
+  0.001% |      6.582ms |         2 |       3.291ms | leray                            
+
+
+Batch Job Summary Report (version 21.01.1) for Job "tg_N256_strong_4" (38137349) on daint
+
+Job information (1/3)
+-----------------------------------------------------------------------------------------------------
+             Submit            Eligible               Start                 End    Elapsed Time limit
+------------------- ------------------- ------------------- ------------------- ---------- ----------
+2022-05-02T16:18:17 2022-05-02T16:18:17 2022-05-03T04:23:09 2022-05-03T04:35:26   00:12:17 1-00:00:00
+-----------------------------------------------------------------------------------------------------
+
+Job information (2/3)
+-------------------------------------------------------------
+    Username      Account    Partition   NNodes        Energy
+------------ ------------ ------------ -------- -------------
+     trohner        s1069       normal        4    656.611 kJ
+
+Job information (3/3) - GPU utilization data
+----------------------------------------------------
+   Node name       Usage      Max mem Execution time
+------------ ----------- ------------ --------------
+    nid06769        96 %     6193 MiB       00:12:05
+    nid06799        95 %     6193 MiB       00:12:05
+    nid06801        97 %     6193 MiB       00:12:05
+    nid06644        98 %     6193 MiB       00:12:05
+
