@@ -49,6 +49,16 @@ protected:
   virtual void do_initialize(const zisa::array_view<real_t, 3> &u) override;
   virtual void
   do_initialize(const zisa::array_view<complex_t, 3> &u_hat) override;
+#if AZEBAN_HAS_MPI
+  virtual void do_initialize(const zisa::array_view<real_t, 3> &u,
+                             const Grid<2> &grid,
+                             const Communicator *comm,
+                             void *work_area = nullptr) override;
+  virtual void do_initialize(const zisa::array_view<complex_t, 3> &u,
+                             const Grid<2> &grid,
+                             const Communicator *comm,
+                             void *work_area = nullptr) override;
+#endif
 
 private:
   RandomVariable<real_t> delta_;
@@ -73,6 +83,16 @@ protected:
   virtual void do_initialize(const zisa::array_view<real_t, 4> &u) override;
   virtual void
   do_initialize(const zisa::array_view<complex_t, 4> &u_hat) override;
+#if AZEBAN_HAS_MPI
+  virtual void do_initialize(const zisa::array_view<real_t, 4> &u,
+                             const Grid<3> &grid,
+                             const Communicator *comm,
+                             void *work_area = nullptr) override;
+  virtual void do_initialize(const zisa::array_view<complex_t, 4> &u,
+                             const Grid<3> &grid,
+                             const Communicator *comm,
+                             void *work_area = nullptr) override;
+#endif
 
 private:
   RandomVariable<real_t> delta_;
