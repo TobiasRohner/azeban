@@ -26,12 +26,10 @@ namespace azeban {
 
 extern void leray_cuda(const zisa::array_view<complex_t, 3> &u_hat);
 extern void leray_cuda(const zisa::array_view<complex_t, 4> &u_hat);
-#if AZEBAN_HAS_MPI
 extern void leray_cuda_mpi(const zisa::array_view<complex_t, 3> &u_hat,
                            long k_start);
 extern void leray_cuda_mpi(const zisa::array_view<complex_t, 4> &u_hat,
                            long k_start);
-#endif
 
 }
 

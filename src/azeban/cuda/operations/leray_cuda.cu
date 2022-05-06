@@ -110,7 +110,6 @@ void leray_cuda(const zisa::array_view<complex_t, 4> &u_hat) {
   ZISA_CHECK_CUDA_DEBUG;
 }
 
-#if AZEBAN_HAS_MPI
 __global__ void leray_cuda_mpi_kernel(zisa::array_view<complex_t, 3> u_hat,
                                       long k_start) {
   const unsigned long i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -210,6 +209,5 @@ void leray_cuda_mpi(const zisa::array_view<complex_t, 4> &u_hat, long k_start) {
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
 }
-#endif
 
 }
