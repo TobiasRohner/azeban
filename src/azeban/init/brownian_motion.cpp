@@ -202,4 +202,103 @@ void BrownianMotion<3>::do_initialize(
   }
 }
 
+#if AZEBAN_HAS_MPI
+void BrownianMotion<3>::do_initialize(const zisa::array_view<real_t, 4> &u,
+                                      const Grid<3> &grid,
+                                      const Communicator *comm,
+                                      void *work_area) {
+  const long N = grid.N_phys;
+  auto u_hat
+      = grid.make_array_fourier(u.shape(0), zisa::device_type::cuda, comm);
+  if (u.memory_location() == zisa::device_type::cpu) {
+    auto u_device = zisa::array<real_t, 4>(u.shape(), zisa::device_type::cuda);
+    auto fft = make_fft_mpi<3>(u_hat, u_device, comm, FFT_BACKWARD, work_area);
+    do_initialize(u_hat);
+    scale(static_cast<complex_t>(1. / N), u_hat.view());
+    scale(static_cast<complex_t>(1. / N), u_hat.view());
+    scale(static_cast<complex_t>(1. / N), u_hat.view());
+    fft->backward();
+    zisa::copy(u, u_device);
+  } else if (u.memory_location() == zisa::device_type::cuda) {
+    auto fft = make_fft_mpi<3>(u_hat, u, comm, FFT_BACKWARD, work_area);
+    do_initialize(u_hat);
+    scale(static_cast<complex_t>(1. / N), u_hat.view());
+    scale(static_cast<complex_t>(1. / N), u_hat.view());
+    scale(static_cast<complex_t>(1. / N), u_hat.view());
+    fft->backward();
+  } else {
+    LOG_ERR("Unknown memory location");
+  }
+}
+
+void BrownianMotion<3>::do_initialize(
+    const zisa::array_view<complex_t, 4> &u_hat,
+    const Grid<3> &grid,
+    const Communicator *comm,
+    void *work_area) {
+  const auto init = [&](const zisa::array_view<complex_t, 4> &u_hat_host,
+                        real_t H) {
+    const zisa::int_t N = u_hat.shape(3);
+    const zisa::int_t N_fourier = N / 2 + 1;
+    const long k_start = grid.i_fourier(0, comm);
+    for (int d = 0; d < 3; ++d) {
+      for (zisa::int_t i = 0; i < u_hat_host.shape(1); ++i) {
+        const zisa::int_t k3 = i + k_start;
+        for (zisa::int_t j = 0; j < N_fourier; ++j) {
+          const zisa::int_t k2 = j;
+          for (zisa::int_t k = 0; k < N_fourier; ++k) {
+            const zisa::int_t k1 = k;
+            if (k1 == 0 && k2 == 0 && k3 == 0) {
+              u_hat_host(d, i, j, k) = 0;
+              continue;
+            }
+            const real_t ccc = uniform_.get();
+            const real_t ccs = uniform_.get();
+            const real_t csc = uniform_.get();
+            const real_t css = uniform_.get();
+            const real_t scc = uniform_.get();
+            const real_t scs = uniform_.get();
+            const real_t ssc = uniform_.get();
+            const real_t sss = uniform_.get();
+            const real_t fac = static_cast<real_t>(N * N * N)
+                               / zisa::pow(static_cast<real_t>(
+                                               4 * zisa::pi * zisa::pi
+                                               * (k1 * k1 + k2 * k2 + k3 * k3)),
+                                           (H + 1) / 2);
+            u_hat_host(d, i, j, k)
+                = fac * complex_t(ccc - css - scs - ssc, ccs + csc + scc - sss);
+            if (k2 > 0) {
+              u_hat_host(d, i, N - j, k)
+                  = fac
+                    * complex_t(ccc + css - scs + ssc, ccs - csc + scc + sss);
+            }
+            if (k1 > 0) {
+              u_hat_host(d, i, j, N - k)
+                  = fac
+                    * complex_t(ccc - css + scs + ssc, ccs + csc - scc + sss);
+            }
+            if (k1 > 0 && k2 > 0) {
+              u_hat_host(d, i, N - j, N - k)
+                  = fac
+                    * complex_t(ccc + css + scs - ssc, ccs - csc - scc - sss);
+            }
+          }
+        }
+      }
+    }
+  };
+  const real_t H = hurst_.get();
+  if (u_hat.memory_location() == zisa::device_type::cpu) {
+    init(u_hat, H);
+  } else if (u_hat.memory_location() == zisa::device_type::cuda) {
+    auto h_u_hat
+        = zisa::array<complex_t, 4>(u_hat.shape(), zisa::device_type::cpu);
+    init(h_u_hat, H);
+    zisa::copy(u_hat, h_u_hat);
+  } else {
+    LOG_ERR("Unknown Memory Location");
+  }
+}
+#endif
+
 }
