@@ -77,6 +77,9 @@ target_link_libraries(azeban_dependencies INTERFACE fmt::fmt)
 find_package(Boost COMPONENTS program_options REQUIRED)
 target_link_libraries(azeban_dependencies INTERFACE Boost::program_options)
 
+find_package(catalyst 2.0 REQUIRED)
+target_link_libraries(azeban_dependencies INTERFACE catalyst::catalyst)
+
 if(ZISA_HAS_HDF5)
   find_package(HDF5 REQUIRED COMPONENTS CXX)
   target_include_directories(azeban_dependencies INTERFACE ${HDF5_INCLUDE_DIRS})
