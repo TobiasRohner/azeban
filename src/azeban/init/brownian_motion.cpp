@@ -236,6 +236,7 @@ void BrownianMotion<3>::do_initialize(
     const Grid<3> &grid,
     const Communicator *comm,
     void *work_area) {
+  ZISA_UNUSED(work_area);
   const auto init = [&](const zisa::array_view<complex_t, 4> &u_hat_host,
                         real_t H) {
     const zisa::int_t N = u_hat.shape(3);

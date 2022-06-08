@@ -42,7 +42,7 @@ real_t NetCDFSnapshotWriter<Dim>::next_timestep() const {
 template <int Dim>
 void NetCDFSnapshotWriter<Dim>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u, real_t t) {
-  ProfileHost pofile("NetCDFSnapshotWriter::write_snapshot");
+  ProfileHost pofile("NetCDFSnapshotWriter::write");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cpu,
              "u must be on the host");
   auto writer = make_writer(u.shape(1), u.shape(0));
@@ -88,7 +88,7 @@ void NetCDFSnapshotWriter<Dim>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u,
     real_t t,
     const Communicator *comm) {
-  ProfileHost profile("SnapshotWriter::write_snapshot");
+  ProfileHost profile("SnapshotWriter::write");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cpu,
              "u must be on the host");
   const int rank = comm->rank();
@@ -168,7 +168,7 @@ template <int Dim>
 void NetCDFSnapshotWriter<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &,
     real_t,
-    const Communicator *comm) {}
+    const Communicator *) {}
 #endif
 
 template <int Dim>

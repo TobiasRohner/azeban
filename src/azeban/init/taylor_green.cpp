@@ -80,6 +80,7 @@ void TaylorGreen<2>::do_initialize(const zisa::array_view<real_t, 3> &u,
                                    const Grid<2> &grid,
                                    const Communicator *comm,
                                    void *work_area) {
+  ZISA_UNUSED(work_area);
   const auto init = [&](const zisa::array_view<real_t, 3> &u_host) {
     const real_t A = 1;
     const real_t B = -1;
@@ -209,6 +210,7 @@ void TaylorGreen<3>::do_initialize(const zisa::array_view<real_t, 4> &u,
                                    const Grid<3> &grid,
                                    const Communicator *comm,
                                    void *work_area) {
+  ZISA_UNUSED(work_area);
   const auto init = [&](const zisa::array_view<real_t, 4> &u_host) {
     const real_t A = 1;
     const real_t B = -1;
