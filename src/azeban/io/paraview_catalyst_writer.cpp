@@ -10,10 +10,7 @@ ParaviewCatalystWriter<Dim>::ParaviewCatalystWriter(
     const std::vector<real_t> &snapshot_times,
     const std::vector<std::string> &scripts,
     zisa::int_t sample_idx_start)
-    : grid_(grid),
-      snapshot_times_(snapshot_times),
-      sample_idx_(sample_idx_start),
-      snapshot_idx_(0) {
+    : super(grid, snapshot_times, sample_idx_start) {
   conduit_cpp::Node node;
   for (size_t i = 0; i < scripts.size(); ++i) {
     const std::string &script = scripts[i];
@@ -25,20 +22,6 @@ ParaviewCatalystWriter<Dim>::ParaviewCatalystWriter(
     fmt::print(stderr, "Failed to initialize catalyst: {}\n", int(err));
     exit(1);
   }
-}
-
-template <int Dim>
-void ParaviewCatalystWriter<Dim>::reset() {
-  ++sample_idx_;
-  snapshot_idx_ = 0;
-}
-
-template <int Dim>
-real_t ParaviewCatalystWriter<Dim>::next_timestep() const {
-  if (snapshot_idx_ >= snapshot_times_.size()) {
-    return std::numeric_limits<real_t>::infinity();
-  }
-  return snapshot_times_[snapshot_idx_];
 }
 
 template <int Dim>

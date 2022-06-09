@@ -12,6 +12,13 @@ class WriterCollection : public Writer<Dim> {
   using super = Writer<Dim>;
 
 public:
+  WriterCollection(const Grid<Dim> &grid);
+  WriterCollection(const WriterCollection &) = default;
+  WriterCollection(WriterCollection &&) = default;
+  WriterCollection &operator=(const WriterCollection &) = default;
+  WriterCollection &operator=(WriterCollection &&) = default;
+  virtual ~WriterCollection() override = default;
+
   void add_writer(std::unique_ptr<Writer<Dim>> &&writer);
 
   virtual void reset() override;

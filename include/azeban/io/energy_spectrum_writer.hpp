@@ -1,28 +1,27 @@
-#ifndef AZEBAN_IO_PARAVIEW_CATALYST_WRITER_HPP_
-#define AZEBAN_IO_PARAVIEW_CATALYST_WRITER_HPP_
+#ifndef AZEBAN_IO_ENERGY_SPECTRUM_WRITER_HPP_
+#define AZEBAN_IO_ENERGY_SPECTRUM_WRITER_HPP_
 
-#include <azeban/grid.hpp>
 #include <azeban/io/writer.hpp>
 #include <string>
-#include <vector>
+#if AZEBAN_HAS_MPI
+#include <mpi.h>
+#endif
 
 namespace azeban {
 
 template <int Dim>
-class ParaviewCatalystWriter : public Writer<Dim> {
+class EnergySpectrumWriter : public Writer<Dim> {
   using super = Writer<Dim>;
 
 public:
-  ParaviewCatalystWriter(const Grid<Dim> &grid,
-                         const std::vector<real_t> &snapshot_times_,
-                         const std::vector<std::string> &scripts,
-                         zisa::int_t sample_idx_start = 0);
-  ParaviewCatalystWriter(const ParaviewCatalystWriter &) = delete;
-  ParaviewCatalystWriter(ParaviewCatalystWriter &&) = default;
-  ParaviewCatalystWriter &operator=(const ParaviewCatalystWriter &) = delete;
-  ParaviewCatalystWriter &operator=(ParaviewCatalystWriter &&) = default;
+  EnergySpectrumWriter(const std::string &path,
+                       const Grid<Dim> &grid,
+                       const std::vector<real_t> &snapshot_times,
+                       int sampl_idx_start = 0);
+  EnergySpectrumWriter(const EnergySpectrumWriter &) = default;
+  EnergySpectrumWriter &operator=(const EnergySpectrumWriter &) = default;
 
-  virtual ~ParaviewCatalystWriter() override;
+  virtual ~EnergySpectrumWriter() override = default;
 
   using super::next_timestep;
   using super::reset;
@@ -44,6 +43,12 @@ protected:
   using super::sample_idx_;
   using super::snapshot_idx_;
   using super::snapshot_times_;
+
+private:
+  std::string path_;
+#if AZEBAN_HAS_MPI
+  MPI_Comm samples_comm_;
+#endif
 };
 
 }

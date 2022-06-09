@@ -3,6 +3,10 @@
 namespace azeban {
 
 template <int Dim>
+WriterCollection<Dim>::WriterCollection(const Grid<Dim> &grid)
+    : super(grid, std::vector<real_t>()) {}
+
+template <int Dim>
 void WriterCollection<Dim>::add_writer(std::unique_ptr<Writer<Dim>> &&writer) {
   writers_.push_back(std::move(writer));
 }

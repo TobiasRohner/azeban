@@ -253,6 +253,11 @@ ANY_DEVICE_INLINE Scalar abs(const Complex<Scalar> &c) {
 }
 
 template <typename Scalar>
+ANY_DEVICE_INLINE Scalar arg(const Complex<Scalar> &c) {
+  return zisa::atan2(c.y, c.x);
+}
+
+template <typename Scalar>
 std::ostream &operator<<(std::ostream &os, const Complex<Scalar> &c) {
   return os << '(' << c.x << ", " << c.y << ')';
 }

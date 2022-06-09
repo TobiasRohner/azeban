@@ -51,7 +51,8 @@ static void run_from_config_impl(const nlohmann::json &config) {
     fmt::print(stderr, "Config file must contain key \"writer\"\n");
     exit(1);
   }
-  auto writer = make_writer<dim_v>(config["writer"], simulation.grid());
+  auto writer = make_writer<dim_v>(
+      config["writer"], simulation.grid(), sample_idx_start);
 
   auto u_hat_out = simulation.grid().make_array_fourier(simulation.n_vars(),
                                                         zisa::device_type::cpu);
@@ -140,7 +141,8 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
     fmt::print(stderr, "Config file must contain key \"writer\"\n");
     exit(1);
   }
-  auto writer = make_writer<dim_v>(config["writer"], simulation.grid());
+  auto writer = make_writer<dim_v>(
+      config["writer"], simulation.grid(), sample_idx_start);
 
   for (zisa::int_t sample = sample_idx_start;
        sample < sample_idx_start + num_samples;

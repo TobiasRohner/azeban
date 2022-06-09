@@ -11,6 +11,7 @@ template <int Dim>
 std::unique_ptr<NetCDFSnapshotWriter<Dim>>
 make_netcdf_snapshot_writer(const nlohmann::json &config,
                             const Grid<Dim> &grid,
+                            zisa::int_t sample_idx_start,
                             void *wrk_area = nullptr);
 
 }

@@ -10,7 +10,8 @@ namespace azeban {
 template <int Dim>
 std::unique_ptr<ParaviewCatalystWriter<Dim>>
 make_paraview_catalyst_writer(const nlohmann::json &config,
-                              const Grid<Dim> &grid);
+                              const Grid<Dim> &grid,
+                              zisa::int_t sample_idx_start);
 
 }
 

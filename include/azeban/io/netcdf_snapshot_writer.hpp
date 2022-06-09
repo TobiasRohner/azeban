@@ -15,6 +15,7 @@ class NetCDFSnapshotWriter : public Writer<Dim> {
 
 public:
   NetCDFSnapshotWriter(const std::string &path,
+                       bool store_u_hat,
                        const Grid<Dim> &grid,
                        const std::vector<real_t> &snapshot_times,
                        zisa::int_t sample_idx_start,
@@ -27,8 +28,8 @@ public:
   NetCDFSnapshotWriter &operator=(const NetCDFSnapshotWriter &) = default;
   NetCDFSnapshotWriter &operator=(NetCDFSnapshotWriter &&) = default;
 
-  virtual void reset() override;
-  virtual real_t next_timestep() const override;
+  using super::next_timestep;
+  using super::reset;
   virtual void write(const zisa::array_const_view<real_t, Dim + 1> &u,
                      real_t t) override;
   virtual void write(const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
@@ -42,12 +43,15 @@ public:
                      const Communicator *comm) override;
 #endif
 
+protected:
+  using super::grid_;
+  using super::sample_idx_;
+  using super::snapshot_idx_;
+  using super::snapshot_times_;
+
 private:
   std::string path_;
-  Grid<Dim> grid_;
-  std::vector<real_t> snapshot_times_;
-  zisa::int_t sample_idx_;
-  zisa::int_t snapshot_idx_;
+  bool store_u_hat_;
   void *work_area_;
 
   zisa::NetCDFSerialWriter make_writer(zisa::int_t N, zisa::int_t n_vars);

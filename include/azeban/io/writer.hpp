@@ -2,6 +2,7 @@
 #define AZEBAN_IO_WRITER_HPP_
 
 #include <azeban/config.hpp>
+#include <azeban/grid.hpp>
 #include <zisa/memory/array_view.hpp>
 #if AZEBAN_HAS_MPI
 #include <azeban/mpi/communicator.hpp>
@@ -12,10 +13,16 @@ namespace azeban {
 template <int Dim>
 class Writer {
 public:
+  Writer(const Grid<Dim> &grid,
+         const std::vector<real_t> &snapshot_times,
+         zisa::int_t sample_idx_start = 0);
+  Writer(const Writer &) = default;
+  Writer &operator=(const Writer &) = default;
+
   virtual ~Writer() = default;
 
-  virtual void reset() = 0;
-  virtual real_t next_timestep() const = 0;
+  virtual void reset();
+  virtual real_t next_timestep() const;
   virtual void write(const zisa::array_const_view<real_t, Dim + 1> &u, real_t t)
       = 0;
   virtual void write(const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
@@ -33,6 +40,10 @@ public:
 #endif
 
 protected:
+  Grid<Dim> grid_;
+  std::vector<real_t> snapshot_times_;
+  zisa::int_t sample_idx_;
+  zisa::int_t snapshot_idx_;
 };
 
 }
