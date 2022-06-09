@@ -17,7 +17,14 @@ public:
   EnergySpectrumWriter(const std::string &path,
                        const Grid<Dim> &grid,
                        const std::vector<real_t> &snapshot_times,
-                       int sampl_idx_start = 0);
+                       int sample_idx_start);
+#if AZEBAN_HAS_MPI
+  EnergySpectrumWriter(const std::string &path,
+                       const Grid<Dim> &grid,
+                       const std::vector<real_t> &snapshot_times,
+                       int sample_idx_start,
+                       const Communicator *comm);
+#endif
   EnergySpectrumWriter(const EnergySpectrumWriter &) = default;
   EnergySpectrumWriter &operator=(const EnergySpectrumWriter &) = default;
 

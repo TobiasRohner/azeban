@@ -62,10 +62,10 @@ struct Grid {
   }
 
 #if AZEBAN_HAS_MPI
-  zisa::shape_t<dim_v + 1> shape_phys(zisa::int_t n_vars,
-                                      const Communicator *comm) const {
-    const int rank = comm->rank();
-    const int size = comm->size();
+  zisa::shape_t<dim_v + 1> shape_phys(zisa::int_t n_vars, MPI_Comm comm) const {
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
     zisa::shape_t<dim_v + 1> shape;
     shape[0] = n_vars;
     shape[1] = N_phys / size
@@ -74,6 +74,11 @@ struct Grid {
       shape[i] = N_phys;
     }
     return shape;
+  }
+
+  zisa::shape_t<dim_v + 1> shape_phys(zisa::int_t n_vars,
+                                      const Communicator *comm) const {
+    return shape_phys(n_vars, comm->get_mpi_comm());
   }
 #endif
 
@@ -89,9 +94,10 @@ struct Grid {
 
 #if AZEBAN_HAS_MPI
   zisa::shape_t<dim_v + 1> shape_fourier(zisa::int_t n_vars,
-                                         const Communicator *comm) const {
-    const int rank = comm->rank();
-    const int size = comm->size();
+                                         MPI_Comm comm) const {
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
     zisa::shape_t<dim_v + 1> shape;
     shape[0] = n_vars;
     if (dim_v == 1) {
@@ -110,6 +116,11 @@ struct Grid {
     }
     return shape;
   }
+
+  zisa::shape_t<dim_v + 1> shape_fourier(zisa::int_t n_vars,
+                                         const Communicator *comm) const {
+    return shape_fourier(n_vars, comm->get_mpi_comm());
+  }
 #endif
 
   zisa::shape_t<dim_v + 1> shape_phys_pad(zisa::int_t n_vars) const {
@@ -123,9 +134,10 @@ struct Grid {
 
 #if AZEBAN_HAS_MPI
   zisa::shape_t<dim_v + 1> shape_phys_pad(zisa::int_t n_vars,
-                                          const Communicator *comm) const {
-    const int rank = comm->rank();
-    const int size = comm->size();
+                                          MPI_Comm comm) const {
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
     zisa::shape_t<dim_v + 1> shape;
     shape[0] = n_vars;
     shape[1] = N_phys_pad / size
@@ -134,6 +146,11 @@ struct Grid {
       shape[i] = N_phys_pad;
     }
     return shape;
+  }
+
+  zisa::shape_t<dim_v + 1> shape_phys_pad(zisa::int_t n_vars,
+                                          const Communicator *comm) const {
+    return shape_phys_pad(n_vars, comm->get_mpi_comm());
   }
 #endif
 
@@ -149,9 +166,10 @@ struct Grid {
 
 #if AZEBAN_HAS_MPI
   zisa::shape_t<dim_v + 1> shape_fourier_pad(zisa::int_t n_vars,
-                                             const Communicator *comm) const {
-    const int rank = comm->rank();
-    const int size = comm->size();
+                                             MPI_Comm comm) const {
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
     zisa::shape_t<dim_v + 1> shape;
     shape[0] = n_vars;
     if (dim_v == 1) {
@@ -172,6 +190,11 @@ struct Grid {
     }
     return shape;
   }
+
+  zisa::shape_t<dim_v + 1> shape_fourier_pad(zisa::int_t n_vars,
+                                             const Communicator *comm) const {
+    return shape_fourier_pad(n_vars, comm->get_mpi_comm());
+  }
 #endif
 
   zisa::array<real_t, dim_v + 1>
@@ -180,11 +203,17 @@ struct Grid {
   }
 
 #if AZEBAN_HAS_MPI
+  zisa::array<real_t, dim_v + 1> make_array_phys(zisa::int_t n_vars,
+                                                 zisa::device_type device,
+                                                 MPI_Comm comm) const {
+    return zisa::array<real_t, dim_v + 1>(shape_phys(n_vars, comm), device);
+  }
+
   zisa::array<real_t, dim_v + 1>
   make_array_phys(zisa::int_t n_vars,
                   zisa::device_type device,
                   const Communicator *comm) const {
-    return zisa::array<real_t, dim_v + 1>(shape_phys(n_vars, comm), device);
+    return make_array_phys(n_vars, device, comm->get_mpi_comm());
   }
 #endif
 
@@ -194,12 +223,18 @@ struct Grid {
   }
 
 #if AZEBAN_HAS_MPI
+  zisa::array<complex_t, dim_v + 1> make_array_fourier(zisa::int_t n_vars,
+                                                       zisa::device_type device,
+                                                       MPI_Comm comm) const {
+    return zisa::array<complex_t, dim_v + 1>(shape_fourier(n_vars, comm),
+                                             device);
+  }
+
   zisa::array<complex_t, dim_v + 1>
   make_array_fourier(zisa::int_t n_vars,
                      zisa::device_type device,
                      const Communicator *comm) const {
-    return zisa::array<complex_t, dim_v + 1>(shape_fourier(n_vars, comm),
-                                             device);
+    return make_array_fourier(n_vars, device, comm->get_mpi_comm());
   }
 #endif
 
@@ -209,11 +244,17 @@ struct Grid {
   }
 
 #if AZEBAN_HAS_MPI
+  zisa::array<real_t, dim_v + 1> make_array_phys_pad(zisa::int_t n_vars,
+                                                     zisa::device_type device,
+                                                     MPI_Comm comm) const {
+    return zisa::array<real_t, dim_v + 1>(shape_phys_pad(n_vars, comm), device);
+  }
+
   zisa::array<real_t, dim_v + 1>
   make_array_phys_pad(zisa::int_t n_vars,
                       zisa::device_type device,
                       const Communicator *comm) const {
-    return zisa::array<real_t, dim_v + 1>(shape_phys_pad(n_vars, comm), device);
+    return make_array_phys_pad(n_vars, device, comm->get_mpi_comm());
   }
 #endif
 
@@ -223,30 +264,45 @@ struct Grid {
   }
 
 #if AZEBAN_HAS_MPI
+  zisa::array<complex_t, dim_v + 1> make_array_fourier_pad(
+      zisa::int_t n_vars, zisa::device_type device, MPI_Comm comm) const {
+    return zisa::array<complex_t, dim_v + 1>(shape_fourier_pad(n_vars, comm),
+                                             device);
+  }
+
   zisa::array<complex_t, dim_v + 1>
   make_array_fourier_pad(zisa::int_t n_vars,
                          zisa::device_type device,
                          const Communicator *comm) const {
-    return zisa::array<complex_t, dim_v + 1>(shape_fourier_pad(n_vars, comm),
-                                             device);
+    return make_array_fourier_pad(n_vars, device, comm->get_mpi_comm());
   }
 #endif
 
 #if AZEBAN_HAS_MPI
-  zisa::int_t i_phys(zisa::int_t i, int rank, const Communicator *comm) const {
-    const int size = comm->size();
+  zisa::int_t i_phys(zisa::int_t i, int rank, MPI_Comm comm) const {
+    int size;
+    MPI_Comm_size(comm, &size);
     return i + rank * (N_phys / size)
            + zisa::min(zisa::integer_cast<zisa::int_t>(rank), N_phys % size);
   }
 
-  zisa::int_t i_phys(zisa::int_t i, const Communicator *comm) const {
-    const int rank = comm->rank();
+  zisa::int_t i_phys(zisa::int_t i, int rank, const Communicator *comm) const {
+    return i_phys(i, rank, comm->get_mpi_comm());
+  }
+
+  zisa::int_t i_phys(zisa::int_t i, MPI_Comm comm) const {
+    int rank;
+    MPI_Comm_rank(comm, &rank);
     return i_phys(i, rank, comm);
   }
 
-  zisa::int_t
-  i_fourier(zisa::int_t i, int rank, const Communicator *comm) const {
-    const int size = comm->size();
+  zisa::int_t i_phys(zisa::int_t i, const Communicator *comm) const {
+    return i_phys(i, comm->get_mpi_comm());
+  }
+
+  zisa::int_t i_fourier(zisa::int_t i, int rank, MPI_Comm comm) const {
+    int size;
+    MPI_Comm_size(comm, &size);
     if (dim_v == 1) {
       return i;
     } else if (dim_v == 2) {
@@ -262,37 +318,63 @@ struct Grid {
     }
   }
 
-  zisa::int_t i_fourier(zisa::int_t i, const Communicator *comm) const {
-    const int rank = comm->rank();
+  zisa::int_t
+  i_fourier(zisa::int_t i, int rank, const Communicator *comm) const {
+    return i_fourier(i, rank, comm->get_mpi_comm());
+  }
+
+  zisa::int_t i_fourier(zisa::int_t i, MPI_Comm comm) const {
+    int rank;
+    MPI_Comm_rank(comm, &rank);
     return i_fourier(i, rank, comm);
   }
 
-  zisa::int_t j_phys(zisa::int_t j, int rank, const Communicator *comm) const {
+  zisa::int_t i_fourier(zisa::int_t i, const Communicator *comm) const {
+    return i_fourier(i, comm->get_mpi_comm());
+  }
+
+  zisa::int_t j_phys(zisa::int_t j, int rank, MPI_Comm comm) const {
     ZISA_UNUSED(comm);
     ZISA_UNUSED(rank);
     return j;
   }
 
+  zisa::int_t j_phys(zisa::int_t j, int rank, const Communicator *comm) const {
+    return j_phys(j, rank, comm->get_mpi_comm());
+  }
+
+  zisa::int_t j_phys(zisa::int_t j, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return j;
+  }
+
   zisa::int_t j_phys(zisa::int_t j, const Communicator *comm) const {
+    return j_phys(j, comm->get_mpi_comm());
+  }
+
+  zisa::int_t j_fourier(zisa::int_t j, int rank, MPI_Comm comm) const {
+    ZISA_UNUSED(rank);
     ZISA_UNUSED(comm);
     return j;
   }
 
   zisa::int_t
   j_fourier(zisa::int_t j, int rank, const Communicator *comm) const {
-    ZISA_UNUSED(rank);
+    return j_fourier(j, rank, comm->get_mpi_comm());
+  }
+
+  zisa::int_t j_fourier(zisa::int_t j, MPI_Comm comm) const {
     ZISA_UNUSED(comm);
     return j;
   }
 
   zisa::int_t j_fourier(zisa::int_t j, const Communicator *comm) const {
-    ZISA_UNUSED(comm);
-    return j;
+    return j_fourier(j, comm->get_mpi_comm());
   }
 
   template <bool enable = Dim == 3,
             typename = typename std::enable_if<enable>::type>
-  zisa::int_t k_phys(zisa::int_t k, int rank, const Communicator *comm) const {
+  zisa::int_t k_phys(zisa::int_t k, int rank, MPI_Comm comm) const {
     ZISA_UNUSED(rank);
     ZISA_UNUSED(comm);
     return k;
@@ -300,7 +382,27 @@ struct Grid {
 
   template <bool enable = Dim == 3,
             typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_phys(zisa::int_t k, int rank, const Communicator *comm) const {
+    return k_phys(k, rank, comm->get_mpi_comm());
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_phys(zisa::int_t k, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return k;
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
   zisa::int_t k_phys(zisa::int_t k, const Communicator *comm) const {
+    return k_phys(k, comm->get_mpi_comm());
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_fourier(zisa::int_t k, int rank, MPI_Comm comm) const {
+    ZISA_UNUSED(rank);
     ZISA_UNUSED(comm);
     return k;
   }
@@ -309,7 +411,12 @@ struct Grid {
             typename = typename std::enable_if<enable>::type>
   zisa::int_t
   k_fourier(zisa::int_t k, int rank, const Communicator *comm) const {
-    ZISA_UNUSED(rank);
+    return k_fourier(k, rank, comm->get_mpi_comm());
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_fourier(zisa::int_t k, MPI_Comm comm) const {
     ZISA_UNUSED(comm);
     return k;
   }
@@ -317,26 +424,35 @@ struct Grid {
   template <bool enable = Dim == 3,
             typename = typename std::enable_if<enable>::type>
   zisa::int_t k_fourier(zisa::int_t k, const Communicator *comm) const {
-    ZISA_UNUSED(comm);
-    return k;
+    return k_fourier(k, comm->get_mpi_comm());
   }
 
-  zisa::int_t
-  i_phys_pad(zisa::int_t i, int rank, const Communicator *comm) const {
-    const int size = comm->size();
+  zisa::int_t i_phys_pad(zisa::int_t i, int rank, MPI_Comm comm) const {
+    int size;
+    MPI_Comm_size(comm, &size);
     return i + rank * (N_phys_pad / size)
            + zisa::min(zisa::integer_cast<zisa::int_t>(rank),
                        N_phys_pad % size);
   }
 
-  zisa::int_t i_phys_pad(zisa::int_t i, const Communicator *comm) const {
-    const int rank = comm->rank();
+  zisa::int_t
+  i_phys_pad(zisa::int_t i, int rank, const Communicator *comm) const {
+    return i_phys_pad(i, rank, comm->get_mpi_comm());
+  }
+
+  zisa::int_t i_phys_pad(zisa::int_t i, MPI_Comm comm) const {
+    int rank;
+    MPI_Comm_rank(comm, &rank);
     return i_phys_pad(i, rank, comm);
   }
 
-  zisa::int_t
-  i_fourier_pad(zisa::int_t i, int rank, const Communicator *comm) const {
-    const int size = comm->size();
+  zisa::int_t i_phys_pad(zisa::int_t i, const Communicator *comm) const {
+    return i_phys_pad(i, comm->get_mpi_comm());
+  }
+
+  zisa::int_t i_fourier_pad(zisa::int_t i, int rank, MPI_Comm comm) const {
+    int size;
+    MPI_Comm_size(comm, &size);
     if (dim_v == 1) {
       return i;
     } else if (dim_v == 2) {
@@ -352,39 +468,64 @@ struct Grid {
     }
   }
 
-  zisa::int_t i_fourier_pad(zisa::int_t i, const Communicator *comm) const {
-    const int rank = comm->rank();
+  zisa::int_t
+  i_fourier_pad(zisa::int_t i, int rank, const Communicator *comm) const {
+    return i_fourier_pad(i, rank, comm->get_mpi_comm());
+  }
+
+  zisa::int_t i_fourier_pad(zisa::int_t i, MPI_Comm comm) const {
+    int rank;
+    MPI_Comm_rank(comm, &rank);
     return i_fourier_pad(i, rank, comm);
   }
 
-  zisa::int_t
-  j_phys_pad(zisa::int_t j, int rank, const Communicator *comm) const {
+  zisa::int_t i_fourier_pad(zisa::int_t i, const Communicator *comm) const {
+    return i_fourier_pad(i, comm->get_mpi_comm());
+  }
+
+  zisa::int_t j_phys_pad(zisa::int_t j, int rank, MPI_Comm comm) const {
     ZISA_UNUSED(rank);
     ZISA_UNUSED(comm);
     return j;
   }
 
+  zisa::int_t
+  j_phys_pad(zisa::int_t j, int rank, const Communicator *comm) const {
+    return j_phys_pad(j, rank, comm->get_mpi_comm());
+  }
+
+  zisa::int_t j_phys_pad(zisa::int_t j, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return j;
+  }
+
   zisa::int_t j_phys_pad(zisa::int_t j, const Communicator *comm) const {
+    return j_phys_pad(j, comm->get_mpi_comm());
+  }
+
+  zisa::int_t j_fourier_pad(zisa::int_t j, int rank, MPI_Comm comm) const {
+    ZISA_UNUSED(rank);
     ZISA_UNUSED(comm);
     return j;
   }
 
   zisa::int_t
   j_fourier_pad(zisa::int_t j, int rank, const Communicator *comm) const {
-    ZISA_UNUSED(rank);
+    return j_fourier_pad(j, rank, comm->get_mpi_comm());
+  }
+
+  zisa::int_t j_fourier_pad(zisa::int_t j, MPI_Comm comm) const {
     ZISA_UNUSED(comm);
     return j;
   }
 
   zisa::int_t j_fourier_pad(zisa::int_t j, const Communicator *comm) const {
-    ZISA_UNUSED(comm);
-    return j;
+    return j_fourier_pad(j, comm->get_mpi_comm());
   }
 
   template <bool enable = Dim == 3,
             typename = typename std::enable_if<enable>::type>
-  zisa::int_t
-  k_phys_pad(zisa::int_t k, int rank, const Communicator *comm) const {
+  zisa::int_t k_phys_pad(zisa::int_t k, int rank, MPI_Comm comm) const {
     ZISA_UNUSED(rank);
     ZISA_UNUSED(comm);
     return k;
@@ -392,7 +533,28 @@ struct Grid {
 
   template <bool enable = Dim == 3,
             typename = typename std::enable_if<enable>::type>
+  zisa::int_t
+  k_phys_pad(zisa::int_t k, int rank, const Communicator *comm) const {
+    return k_phys_pad(k, rank, comm->get_mpi_comm());
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_phys_pad(zisa::int_t k, MPI_Comm comm) const {
+    ZISA_UNUSED(comm);
+    return k;
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
   zisa::int_t k_phys_pad(zisa::int_t k, const Communicator *comm) const {
+    return k_phys_pad(k, comm->get_mpi_comm());
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_fourier_pad(zisa::int_t k, int rank, MPI_Comm comm) const {
+    ZISA_UNUSED(rank);
     ZISA_UNUSED(comm);
     return k;
   }
@@ -401,7 +563,12 @@ struct Grid {
             typename = typename std::enable_if<enable>::type>
   zisa::int_t
   k_fourier_pad(zisa::int_t k, int rank, const Communicator *comm) const {
-    ZISA_UNUSED(rank);
+    return k_fourier_pad(k, rank, comm->get_mpi_comm());
+  }
+
+  template <bool enable = Dim == 3,
+            typename = typename std::enable_if<enable>::type>
+  zisa::int_t k_fourier_pad(zisa::int_t k, MPI_Comm comm) const {
     ZISA_UNUSED(comm);
     return k;
   }
@@ -409,8 +576,7 @@ struct Grid {
   template <bool enable = Dim == 3,
             typename = typename std::enable_if<enable>::type>
   zisa::int_t k_fourier_pad(zisa::int_t k, const Communicator *comm) const {
-    ZISA_UNUSED(comm);
-    return k;
+    return k_fourier_pad(k, comm->get_mpi_comm());
   }
 #endif
 };

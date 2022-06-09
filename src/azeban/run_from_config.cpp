@@ -142,7 +142,7 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
     exit(1);
   }
   auto writer = make_writer<dim_v>(
-      config["writer"], simulation.grid(), sample_idx_start);
+      config["writer"], simulation.grid(), sample_idx_start, comm);
 
   for (zisa::int_t sample = sample_idx_start;
        sample < sample_idx_start + num_samples;
