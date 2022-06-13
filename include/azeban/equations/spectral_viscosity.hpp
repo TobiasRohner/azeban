@@ -26,19 +26,21 @@ namespace azeban {
 
 template <typename Derived>
 struct SpectralViscosityBase {
-  SpectralViscosityBase(real_t _eps) : eps(_eps) {}
+  SpectralViscosityBase(real_t _eps, real_t _s) : eps(_eps), s(_s) {}
 
   ANY_DEVICE_INLINE real_t eval(real_t k) const {
-    return -eps * k * k * static_cast<const Derived &>(*this).Qk(k);
+    return -eps * zisa::pow(k, 2 * s)
+           * static_cast<const Derived &>(*this).Qk(k);
   }
 
   real_t eps;
+  real_t s;
 };
 
 struct Step1D final : public SpectralViscosityBase<Step1D> {
   using super = SpectralViscosityBase<Step1D>;
 
-  Step1D(real_t _eps, real_t _k0) : super(_eps), k0(_k0) {}
+  Step1D(real_t _eps, real_t _s, real_t _k0) : super(_eps, _s), k0(_k0) {}
 
   ANY_DEVICE_INLINE real_t Qk(real_t k) const {
     return zisa::abs(k) > k0 ? 1 : 0;
@@ -47,13 +49,15 @@ struct Step1D final : public SpectralViscosityBase<Step1D> {
   using super::eval;
 
   using super::eps;
+  using super::s;
   real_t k0;
 };
 
 struct SmoothCutoff1D final : public SpectralViscosityBase<SmoothCutoff1D> {
   using super = SpectralViscosityBase<SmoothCutoff1D>;
 
-  SmoothCutoff1D(real_t _eps, real_t _k0) : super(_eps), k0(_k0) {}
+  SmoothCutoff1D(real_t _eps, real_t _s, real_t _k0)
+      : super(_eps, _s), k0(_k0) {}
 
   ANY_DEVICE_INLINE real_t Qk(real_t k) const {
     const real_t k1 = zisa::abs(k) / k0;
@@ -68,6 +72,7 @@ struct SmoothCutoff1D final : public SpectralViscosityBase<SmoothCutoff1D> {
   using super::eval;
 
   using super::eps;
+  using super::s;
   real_t k0;
 };
 
@@ -96,8 +101,7 @@ struct Quadratic final : public SpectralViscosityBase<Quadratic> {
 */
 
 struct Quadratic final {
-  Quadratic(real_t _eps, zisa::int_t _N_phys)
-      : eps(_eps / _N_phys), N(_N_phys) {}
+  Quadratic(real_t _eps, zisa::int_t _N_phys) : eps(_eps), N(_N_phys) {}
 
   ANY_DEVICE_INLINE real_t Qk(real_t k) const {
     const real_t sqrtN = zisa::sqrt(N);

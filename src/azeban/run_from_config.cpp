@@ -66,7 +66,6 @@ static void run_from_config_impl(const nlohmann::json &config) {
     simulation.reset();
     simulation.set_time(time_offset);
     initializer->initialize(simulation.u());
-    writer->reset();
 
     real_t t = 0;
     while ((t = writer->next_timestep())
@@ -80,6 +79,8 @@ static void run_from_config_impl(const nlohmann::json &config) {
       fft->backward();
       writer->write(u_out, t);
     }
+
+    writer->reset();
   }
 }
 
@@ -151,7 +152,6 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
     simulation.set_time(time_offset);
     initializer->initialize(
         simulation.u(), grid, comm, simulation.equation()->get_fft_work_area());
-    writer->reset();
 
     auto u_hat_out_host = grid.make_array_fourier(
         simulation.n_vars(), zisa::device_type::cpu, comm);
@@ -180,6 +180,8 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
       zisa::copy(u_out_host, u_out_device);
       writer->write(u_out_host, t, comm);
     }
+
+    writer->reset();
   }
 }
 

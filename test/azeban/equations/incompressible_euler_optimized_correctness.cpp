@@ -67,7 +67,7 @@ static azeban::real_t measureConvergence(
         };
 
   azeban::Grid<dim_v> grid_ref(N_ref);
-  azeban::SmoothCutoff1D visc_ref(0.05 / N_ref, 1);
+  azeban::SmoothCutoff1D visc_ref(0.05 / N_ref, 1, 1);
   const auto equation_ref = std::make_shared<
       azeban::IncompressibleEulerNaive<dim_v, azeban::SmoothCutoff1D>>(
       grid_ref, visc_ref, zisa::device_type::cuda);
@@ -81,7 +81,7 @@ static azeban::real_t measureConvergence(
   std::vector<azeban::real_t> errs;
   for (zisa::int_t N = 16; N < N_ref; N <<= 1) {
     azeban::Grid<dim_v> grid(N);
-    azeban::SmoothCutoff1D visc(0.05 / N, 1);
+    azeban::SmoothCutoff1D visc(0.05 / N, 1, 1);
     const auto equation = std::make_shared<
         azeban::IncompressibleEuler<dim_v, azeban::SmoothCutoff1D>>(
         grid, visc, zisa::device_type::cuda);

@@ -48,7 +48,7 @@ static void solveBurgers(const azeban::Grid<1> &grid,
   fft->forward();
 
   auto equation = std::make_shared<azeban::Burgers<azeban::SmoothCutoff1D>>(
-      grid, azeban::SmoothCutoff1D(visc, 1), zisa::device_type::cuda);
+      grid, azeban::SmoothCutoff1D(visc, 1, 1), zisa::device_type::cuda);
   auto timestepper = std::make_shared<azeban::SSP_RK3<1>>(
       zisa::device_type::cuda, d_u_hat.shape(), equation);
   auto simulation = azeban::Simulation<1>(
@@ -77,7 +77,7 @@ TEST_CASE("Burgers Derivative") {
   auto d_dudt = zisa::cuda_array<azeban::complex_t, 2>(shape);
 
   azeban::Burgers<azeban::Step1D> burgers(
-      grid, azeban::Step1D(0, 0), zisa::device_type::cuda);
+      grid, azeban::Step1D(0, 1, 0), zisa::device_type::cuda);
 
   for (zisa::int_t i = 0; i < N_fourier; ++i) {
     h_u[i] = 0;

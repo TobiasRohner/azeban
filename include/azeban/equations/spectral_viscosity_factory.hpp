@@ -29,29 +29,58 @@ namespace azeban {
 template <int Dim>
 SmoothCutoff1D make_smooth_cutoff_1d(const nlohmann::json &config,
                                      const Grid<Dim> &grid) {
+  real_t s = 1;
+  if (config.contains("s")) {
+    s = config["s"];
+  }
+  real_t theta = (2 * s - 1) / (2 * s);
+  if (config.contains("theta")) {
+    theta = config["theta"];
+  }
+  AZEBAN_ERR_IF(theta > (2 * s - 1) / (2 * s),
+                "theta parameter of spectral viscosity is too big\n");
+  real_t m0 = 1;
+  if (config.contains("m0")) {
+    m0 = config["m0"];
+  }
   AZEBAN_ERR_IF(
       !config.contains("eps"),
       "Smooth Cutoff Viscosity expects \"eps\" parameter in config\n");
-
-  AZEBAN_ERR_IF(!config.contains("k0"),
-                "Smooth Cutoff Viscosity expects \"k0\" parameter in config\n");
-
   const real_t eps = config["eps"];
-  const real_t k0 = config["k0"];
 
-  return SmoothCutoff1D(eps / grid.N_phys, k0);
+  const real_t epsN
+      = eps / zisa::pow(static_cast<real_t>(grid.N_phys), 2 * s - 1);
+  const real_t mN = m0 * zisa::pow(static_cast<real_t>(grid.N_phys), theta);
+
+  return SmoothCutoff1D(epsN, s, mN);
 }
 
 template <int Dim>
 Step1D make_step_1d(const nlohmann::json &config, const Grid<Dim> &grid) {
-  AZEBAN_ERR_IF(!config.contains("eps"),
-                "Step Viscosity expects \"eps\" parameter in config\n");
-  AZEBAN_ERR_IF(!config.contains("k0"),
-                "Step Viscosity expects \"k0\" parameter in config\n");
-
+  real_t s = 1;
+  if (config.contains("s")) {
+    s = config["s"];
+  }
+  real_t theta = (2 * s - 1) / (2 * s);
+  if (config.contains("theta")) {
+    theta = config["theta"];
+  }
+  AZEBAN_ERR_IF(theta > (2 * s - 1) / (2 * s),
+                "theta parameter of spectral viscosity is too big\n");
+  real_t m0 = 1;
+  if (config.contains("m0")) {
+    m0 = config["m0"];
+  }
+  AZEBAN_ERR_IF(
+      !config.contains("eps"),
+      "Smooth Cutoff Viscosity expects \"eps\" parameter in config\n");
   const real_t eps = config["eps"];
-  const real_t k0 = config["k0"];
-  return Step1D(eps / grid.N_phys, k0);
+
+  const real_t epsN
+      = eps / zisa::pow(static_cast<real_t>(grid.N_phys), 2 * s - 1);
+  const real_t mN = m0 * zisa::pow(static_cast<real_t>(grid.N_phys), theta);
+
+  return Step1D(epsN, s, mN);
 }
 
 template <int Dim>
@@ -60,7 +89,7 @@ Quadratic make_quadratic(const nlohmann::json &config, const Grid<Dim> &grid) {
                 "Quadratic Viscosity expects \"eps\" parameter in config\n");
 
   const real_t eps = config["eps"];
-  return Quadratic(eps, grid.N_phys);
+  return Quadratic(eps / grid.N_phys, grid.N_phys);
 }
 
 template <int Dim>

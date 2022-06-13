@@ -1,6 +1,7 @@
 #include <azeban/io/energy_spectrum_writer.hpp>
 #include <azeban/operations/energy_spectrum.hpp>
 #include <azeban/profiler.hpp>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <limits>
@@ -52,7 +53,7 @@ void EnergySpectrumWriter<Dim>::write(
   ProfileHost pofile("EnergySpectrumWriter::write");
   ZISA_UNUSED(t);
   const std::vector<real_t> spectrum = energy_spectrum(grid_, u_hat);
-#if AZEBAN_HAS_MPI
+#if 0 // AZEBAN_HAS_MPI
   std::vector<real_t> spectrum_avg(spectrum.size(), 0);
   int reduction_size, reduction_rank;
   MPI_Comm_size(samples_comm_, &reduction_size);
@@ -104,6 +105,7 @@ void EnergySpectrumWriter<Dim>::write(
   ZISA_UNUSED(t);
   const std::vector<real_t> spectrum
       = energy_spectrum(grid_, u_hat, comm->get_mpi_comm());
+  /*
   std::vector<real_t> spectrum_avg(spectrum.size(), 0);
   const int local_rank = comm->rank();
   if (local_rank == 0) {
@@ -128,6 +130,12 @@ void EnergySpectrumWriter<Dim>::write(
              << '\t';
       }
     }
+  }
+  */
+  std::ofstream file(path_ + "/energy_" + std::to_string(sample_idx_) + "_time_"
+                     + std::to_string(snapshot_idx_) + ".txt");
+  for (real_t E : spectrum) {
+    file << std::setw(std::numeric_limits<real_t>::max_digits10) << E << '\t';
   }
   ++snapshot_idx_;
 }

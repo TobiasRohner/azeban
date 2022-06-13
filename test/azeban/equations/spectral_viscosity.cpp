@@ -105,42 +105,42 @@ verify_via_tracer(Visc visc, zisa::int_t N) {
 
 TEST_CASE("Step1D cutoff 0", "[visc]") {
   for (zisa::int_t N = 16; N <= 4096; N <<= 1) {
-    azeban::Step1D visc(0.05, 0);
+    azeban::Step1D visc(0.05, 1, 0);
     verify(visc, N);
   }
 }
 
 TEST_CASE("Step1D cutoff sqrt(N)", "[visc]") {
   for (zisa::int_t N = 16; N <= 4096; N <<= 1) {
-    azeban::Step1D visc(0.05, sqrt(N));
+    azeban::Step1D visc(0.05, 1, sqrt(N));
     verify(visc, N);
   }
 }
 
 TEST_CASE("Step1D cutoff N", "[visc]") {
   for (zisa::int_t N = 16; N <= 4096; N <<= 1) {
-    azeban::Step1D visc(0.05, N);
+    azeban::Step1D visc(0.05, 1, N);
     verify(visc, N);
   }
 }
 
 TEST_CASE("SmoothCutoff1D cutoff 1", "[visc]") {
   for (zisa::int_t N = 16; N <= 4096; N <<= 1) {
-    azeban::SmoothCutoff1D visc(0.05, 1);
+    azeban::SmoothCutoff1D visc(0.05, 1, 1);
     verify(visc, N);
   }
 }
 
 TEST_CASE("SmoothCutoff1D cutoff sqrt(N)", "[visc]") {
   for (zisa::int_t N = 16; N <= 4096; N <<= 1) {
-    azeban::SmoothCutoff1D visc(0.05, sqrt(N));
+    azeban::SmoothCutoff1D visc(0.05, 1, sqrt(N));
     verify(visc, N);
   }
 }
 
 TEST_CASE("SmoothCutoff1D cutoff N", "[visc]") {
   for (zisa::int_t N = 16; N <= 4096; N <<= 1) {
-    azeban::SmoothCutoff1D visc(0.05, N);
+    azeban::SmoothCutoff1D visc(0.05, 1, N);
     verify(visc, N);
   }
 }
@@ -154,7 +154,7 @@ TEST_CASE("Quadratic", "[visc]") {
 
 TEST_CASE("Step1D cutoff 0 tracer", "[visc]") {
   for (zisa::int_t N = 16; N <= 256; N <<= 1) {
-    azeban::Step1D visc(0.05, 0);
+    azeban::Step1D visc(0.05, 1, 0);
     auto result = verify_via_tracer(visc, N);
     std::ofstream os("heat_Step1D_cutoff_0_N" + std::to_string(N) + ".txt");
     os << std::get<0>(result) << '\n';
@@ -174,7 +174,7 @@ TEST_CASE("Step1D cutoff 0 tracer", "[visc]") {
 
 TEST_CASE("Step1D cutoff sqrt(N) tracer", "[visc]") {
   for (zisa::int_t N = 16; N <= 256; N <<= 1) {
-    azeban::Step1D visc(0.05, sqrt(N));
+    azeban::Step1D visc(0.05, 1, sqrt(N));
     auto result = verify_via_tracer(visc, N);
     std::ofstream os("heat_Step1D_cutoff_sqrt(N)_N" + std::to_string(N)
                      + ".txt");
@@ -195,7 +195,7 @@ TEST_CASE("Step1D cutoff sqrt(N) tracer", "[visc]") {
 
 TEST_CASE("Step1D cutoff N tracer", "[visc]") {
   for (zisa::int_t N = 16; N <= 256; N <<= 1) {
-    azeban::Step1D visc(0.05, N);
+    azeban::Step1D visc(0.05, 1, N);
     auto result = verify_via_tracer(visc, N);
     std::ofstream os("heat_Step1D_cutoff_N_N" + std::to_string(N) + ".txt");
     os << std::get<0>(result) << '\n';
@@ -215,7 +215,7 @@ TEST_CASE("Step1D cutoff N tracer", "[visc]") {
 
 TEST_CASE("SmoothCutoff1D cutoff 1 tracer", "[visc]") {
   for (zisa::int_t N = 16; N <= 256; N <<= 1) {
-    azeban::SmoothCutoff1D visc(0.05, 1);
+    azeban::SmoothCutoff1D visc(0.05, 1, 1);
     auto result = verify_via_tracer(visc, N);
     std::ofstream os("heat_SmoothCutoff1D_cutoff_1_N" + std::to_string(N)
                      + ".txt");
@@ -236,7 +236,7 @@ TEST_CASE("SmoothCutoff1D cutoff 1 tracer", "[visc]") {
 
 TEST_CASE("SmoothCutoff1D cutoff sqrt(N) tracer", "[visc]") {
   for (zisa::int_t N = 16; N <= 256; N <<= 1) {
-    azeban::SmoothCutoff1D visc(0.05, sqrt(N));
+    azeban::SmoothCutoff1D visc(0.05, 1, sqrt(N));
     auto result = verify_via_tracer(visc, N);
     std::ofstream os("heat_SmoothCutoff1D_cutoff_sqrt(N)_N" + std::to_string(N)
                      + ".txt");
@@ -257,7 +257,7 @@ TEST_CASE("SmoothCutoff1D cutoff sqrt(N) tracer", "[visc]") {
 
 TEST_CASE("SmoothCutoff1D cutoff N tracer", "[visc]") {
   for (zisa::int_t N = 16; N <= 256; N <<= 1) {
-    azeban::SmoothCutoff1D visc(0.05, N);
+    azeban::SmoothCutoff1D visc(0.05, 1, N);
     auto result = verify_via_tracer(visc, N);
     std::ofstream os("heat_SmoothCutoff1D_cutoff_N_N" + std::to_string(N)
                      + ".txt");

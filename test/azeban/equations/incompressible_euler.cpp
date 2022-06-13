@@ -48,7 +48,7 @@ static azeban::real_t measureConvergence(
     azeban::real_t t) {
   const auto solve_euler = [&](zisa::int_t N) {
     azeban::Grid<dim_v> grid(N);
-    azeban::SmoothCutoff1D visc(0.05 / N, 1);
+    azeban::SmoothCutoff1D visc(0.05 / N, 1, 1);
     const auto equation = std::make_shared<
         azeban::IncompressibleEuler<dim_v, azeban::SmoothCutoff1D>>(
         grid, visc, zisa::device_type::cuda);
@@ -178,7 +178,7 @@ TEST_CASE("2D Euler Derivative") {
       zisa::shape_t<3>(2, N_phys, N_fourier));
 
   azeban::IncompressibleEuler<2, azeban::Step1D> euler(
-      grid, azeban::Step1D(0, 0), zisa::device_type::cuda);
+      grid, azeban::Step1D(0, 1, 0), zisa::device_type::cuda);
 
   for (zisa::int_t i = 0; i < N_phys; ++i) {
     for (zisa::int_t j = 0; j < N_fourier; ++j) {
@@ -227,7 +227,7 @@ TEST_CASE("Taylor Vortex 2D", "[slow]") {
   std::vector<azeban::real_t> errs;
   for (zisa::int_t N = 16; N <= 128; N <<= 1) {
     azeban::Grid<2> grid(N);
-    azeban::SmoothCutoff1D visc(0, 1);
+    azeban::SmoothCutoff1D visc(0, 1, 1);
     const auto equation = std::make_shared<
         azeban::IncompressibleEuler<2, azeban::SmoothCutoff1D>>(
         grid, visc, zisa::device_type::cuda);
@@ -298,7 +298,7 @@ TEST_CASE("Taylor Vortex 3D", "[slow]") {
     std::vector<azeban::real_t> errs;
     for (zisa::int_t N = 16; N <= 128; N <<= 1) {
       azeban::Grid<3> grid(N);
-      azeban::SmoothCutoff1D visc(0, 1);
+      azeban::SmoothCutoff1D visc(0, 1, 1);
       const auto equation = std::make_shared<
           azeban::IncompressibleEuler<3, azeban::SmoothCutoff1D>>(
           grid, visc, zisa::device_type::cuda);
