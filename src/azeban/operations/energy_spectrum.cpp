@@ -11,7 +11,7 @@ energy_spectrum_cpu(const Grid<1> &grid,
                     const zisa::array_const_view<complex_t, 2> &u_hat,
                     long k1_offset = 0) {
   std::vector<real_t> spectrum(grid.N_fourier, 0);
-  for (zisa::int_t d = 0; d < 2; ++d) {
+  for (zisa::int_t d = 0; d < 1; ++d) {
     for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
       long k1 = i + k1_offset;
       if (k1 >= zisa::integer_cast<long>(grid.N_fourier)) {

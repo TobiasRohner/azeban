@@ -8,3 +8,4 @@ reconnect_info
 start_jupyter_nb.sh
 data
 **/__pycache__
+**/.ipynb_checkpoints
