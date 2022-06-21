@@ -2,35 +2,44 @@
 #define AZEBAN_IO_STRUCTURE_FUNCTION_WRITER_HPP_
 
 #include <azeban/io/writer.hpp>
-#include <cmath>
 #include <azeban/operations/structure_function.hpp>
-
+#include <cmath>
 
 namespace azeban {
 
 namespace detail {
 
 struct SFExact {
-  template<int Dim>
-  static std::vector<real_t> eval(const Grid<Dim> &grid, const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
+  template <int Dim>
+  static std::vector<real_t>
+  eval(const Grid<Dim> &grid,
+       const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
     return structure_function_exact<Dim>(grid, u_hat);
   }
 #if AZEBAN_HAS_MPI
-  template<int Dim>
-  static std::vector<real_t> eval(const Grid<Dim> &grid, const zisa::array_const_view<complex_t, Dim + 1> &u_hat, MPI_Comm comm) {
+  template <int Dim>
+  static std::vector<real_t>
+  eval(const Grid<Dim> &grid,
+       const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
+       MPI_Comm comm) {
     return structure_function_exact<Dim>(grid, u_hat, comm);
   }
 #endif
 };
 
 struct SFApprox {
-  template<int Dim>
-  static std::vector<real_t> eval(const Grid<Dim> &grid, const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
+  template <int Dim>
+  static std::vector<real_t>
+  eval(const Grid<Dim> &grid,
+       const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
     return structure_function_approx<Dim>(grid, u_hat);
   }
 #if AZEBAN_HAS_MPI
-  template<int Dim>
-  static std::vector<real_t> eval(const Grid<Dim> &grid, const zisa::array_const_view<complex_t, Dim + 1> &u_hat, MPI_Comm comm) {
+  template <int Dim>
+  static std::vector<real_t>
+  eval(const Grid<Dim> &grid,
+       const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
+       MPI_Comm comm) {
     return structure_function_approx<Dim>(grid, u_hat, comm);
   }
 #endif
@@ -38,14 +47,21 @@ struct SFApprox {
 
 }
 
-template<int Dim, typename SF>
+template <int Dim, typename SF>
 class StructureFunctionWriter : public Writer<Dim> {
   using super = Writer<Dim>;
 
 public:
-  StructureFunctionWriter(const std::string &path, const Grid<Dim> &grid, const std::vector<real_t> &snapshot_times, zisa::int_t sample_idx_start);
+  StructureFunctionWriter(const std::string &path,
+                          const Grid<Dim> &grid,
+                          const std::vector<real_t> &snapshot_times,
+                          zisa::int_t sample_idx_start);
 #if AZEBAN_HAS_MPI
-  StructureFunctionWriter(const std::string &path, const Grid<Dim> &grid, const std::vector<real_t> &snapshot_times, zisa::int_t sample_idx_start, const Communicator *comm);
+  StructureFunctionWriter(const std::string &path,
+                          const Grid<Dim> &grid,
+                          const std::vector<real_t> &snapshot_times,
+                          zisa::int_t sample_idx_start,
+                          const Communicator *comm);
 #endif
   StructureFunctionWriter(const StructureFunctionWriter &) = default;
   StructureFunctionWriter(StructureFunctionWriter &&) = default;
@@ -83,13 +99,14 @@ private:
 #endif
 };
 
-template<int Dim>
-using StructureFunctionWriterExact = StructureFunctionWriter<Dim, detail::SFExact>;
+template <int Dim>
+using StructureFunctionWriterExact
+    = StructureFunctionWriter<Dim, detail::SFExact>;
 
-template<int Dim>
-using StructureFunctionWriterApprox = StructureFunctionWriter<Dim, detail::SFApprox>;
+template <int Dim>
+using StructureFunctionWriterApprox
+    = StructureFunctionWriter<Dim, detail::SFApprox>;
 
 }
-
 
 #endif

@@ -9,12 +9,15 @@
 #include <azeban/mpi/mpi_types.hpp>
 #endif
 
-
-
 namespace azeban {
 
-template<int Dim, typename SF>
-StructureFunctionWriter<Dim, SF>::StructureFunctionWriter(const std::string &path, const Grid<Dim> &grid, const std::vector<real_t> &snapshot_times, zisa::int_t sample_idx_start) : super(grid, snapshot_times, sample_idx_start), path_(path) {
+template <int Dim, typename SF>
+StructureFunctionWriter<Dim, SF>::StructureFunctionWriter(
+    const std::string &path,
+    const Grid<Dim> &grid,
+    const std::vector<real_t> &snapshot_times,
+    zisa::int_t sample_idx_start)
+    : super(grid, snapshot_times, sample_idx_start), path_(path) {
 #if AZEBAN_HAS_MPI
   samples_comm_ = MPI_COMM_WORLD;
 #endif
@@ -37,14 +40,16 @@ StructureFunctionWriter<Dim, SF>::StructureFunctionWriter(
 }
 #endif
 
-template<int Dim, typename SF>
-void StructureFunctionWriter<Dim, SF>::write(const zisa::array_const_view<real_t, Dim + 1> &u, real_t t) {
+template <int Dim, typename SF>
+void StructureFunctionWriter<Dim, SF>::write(
+    const zisa::array_const_view<real_t, Dim + 1> &u, real_t t) {
   ZISA_UNUSED(u);
   ZISA_UNUSED(t);
 }
 
-template<int Dim, typename SF>
-void StructureFunctionWriter<Dim, SF>::write(const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t t) {
+template <int Dim, typename SF>
+void StructureFunctionWriter<Dim, SF>::write(
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t t) {
   ProfileHost pofile("StructureFunctionWriter::write");
   ZISA_UNUSED(t);
   const std::vector<real_t> S = SF::eval(grid_, u_hat);
@@ -57,19 +62,24 @@ void StructureFunctionWriter<Dim, SF>::write(const zisa::array_const_view<comple
 }
 
 #if AZEBAN_HAS_MPI
-template<int Dim, typename SF>
-void StructureFunctionWriter<Dim, SF>::write(const zisa::array_const_view<real_t, Dim + 1> &u, real_t t, const Communicator *comm) {
+template <int Dim, typename SF>
+void StructureFunctionWriter<Dim, SF>::write(
+    const zisa::array_const_view<real_t, Dim + 1> &u,
+    real_t t,
+    const Communicator *comm) {
   ZISA_UNUSED(u);
   ZISA_UNUSED(t);
   ZISA_UNUSED(comm);
 }
 
-template<int Dim, typename SF>
-void StructureFunctionWriter<Dim, SF>::write(const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t t, const Communicator *comm) {
+template <int Dim, typename SF>
+void StructureFunctionWriter<Dim, SF>::write(
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
+    real_t t,
+    const Communicator *comm) {
   ProfileHost pofile("StructureFunctionWriter::write");
   ZISA_UNUSED(t);
-  const std::vector<real_t> S
-      = SF::eval(grid_, u_hat, comm->get_mpi_comm());
+  const std::vector<real_t> S = SF::eval(grid_, u_hat, comm->get_mpi_comm());
   std::ofstream file(path_ + "/S2_" + std::to_string(sample_idx_) + "_time_"
                      + std::to_string(snapshot_idx_) + ".txt");
   for (real_t E : S) {
