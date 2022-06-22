@@ -58,9 +58,7 @@ template <>
 struct IApprox<3> {
   static real_t eval(real_t k, real_t r) {
     const real_t kr = k * r;
-    const real_t kr2 = kr * kr;
-    const real_t kr3 = kr2 * kr;
-    return 2 + 6 * (std::cos(kr) / kr2 - std::sin(kr) / kr3);
+    return std::min(kr * kr / 5, real_t(2));
   }
 };
 
@@ -74,18 +72,18 @@ structure_function_cpu(const Grid<1> &grid,
   const size_t Nr = (grid.N_phys + 1) / 2;
   const real_t dx = 1. / grid.N_phys;
   std::vector<real_t> S(Nr, 0);
-  for (zisa::int_t d = 0; d < 1; ++d) {
-    for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
-      long k1 = i + k1_offset;
-      if (k1 >= zisa::integer_cast<long>(grid.N_fourier)) {
-        k1 -= grid.N_phys;
-      }
-      const real_t K = std::abs(k1);
-      if (K == 0) {
-        continue;
-      }
-      const real_t uk2 = abs2(u_hat(d, i)) / zisa::pow<1>(grid.N_phys);
-      for (zisa::int_t r = 0; r < Nr; ++r) {
+  for (zisa::int_t r = 0; r < Nr; ++r) {
+    for (zisa::int_t d = 0; d < 1; ++d) {
+      for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
+        long k1 = i + k1_offset;
+        if (k1 >= zisa::integer_cast<long>(grid.N_fourier)) {
+          k1 -= grid.N_phys;
+        }
+        const real_t K = std::abs(k1);
+        if (K == 0) {
+          continue;
+        }
+        const real_t uk2 = abs2(u_hat(d, i)) / zisa::pow<1>(grid.N_phys);
         S[r] += I_OP::eval(K, r * dx) * uk2;
       }
     }
@@ -102,28 +100,31 @@ structure_function_cpu(const Grid<2> &grid,
   const size_t Nr = (grid.N_phys + 1) / 2;
   const real_t dx = 1. / grid.N_phys;
   std::vector<real_t> S(Nr, 0);
-  for (zisa::int_t d = 0; d < 2; ++d) {
-    for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
-      for (zisa::int_t j = 0; j < u_hat.shape(2); ++j) {
-        long k1 = i + k1_offset;
-        if (k1 >= zisa::integer_cast<long>(grid.N_fourier)) {
-          k1 -= grid.N_phys;
-        }
-        long k2 = j + k2_offset;
-        if (k2 >= zisa::integer_cast<long>(grid.N_fourier)) {
-          k2 -= grid.N_phys;
-        }
-        const long absk2 = k1 * k1 + k2 * k2;
-        const real_t K = 2 * zisa::pi * zisa::sqrt(absk2);
-        if (K == 0) {
-          continue;
-        }
-        const real_t uk2 = abs2(u_hat(d, i, j)) / zisa::pow<2>(grid.N_phys);
-        for (zisa::int_t r = 0; r < Nr; ++r) {
-          S[r] += I_OP::eval(K, r * dx) * uk2 / 2;
+  for (zisa::int_t r = 0; r < Nr; ++r) {
+    real_t Sr = 0;
+#pragma omp parallel for collapse(2) reduction(+ : Sr)
+    for (zisa::int_t d = 0; d < 2; ++d) {
+      for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
+        for (zisa::int_t j = 0; j < u_hat.shape(2); ++j) {
+          long k1 = i + k1_offset;
+          if (k1 >= zisa::integer_cast<long>(grid.N_fourier)) {
+            k1 -= grid.N_phys;
+          }
+          long k2 = j + k2_offset;
+          if (k2 >= zisa::integer_cast<long>(grid.N_fourier)) {
+            k2 -= grid.N_phys;
+          }
+          const long absk2 = k1 * k1 + k2 * k2;
+          const real_t K = 2 * zisa::pi * zisa::sqrt(absk2);
+          if (K == 0) {
+            continue;
+          }
+          const real_t uk2 = abs2(u_hat(d, i, j)) / zisa::pow<2>(grid.N_phys);
+          Sr += I_OP::eval(K, r * dx) * uk2 / 2;
         }
       }
     }
+    S[r] = Sr;
   }
   return S;
 }
@@ -138,35 +139,38 @@ structure_function_cpu(const Grid<3> &grid,
   const size_t Nr = (grid.N_phys + 1) / 2;
   const real_t dx = 1. / grid.N_phys;
   std::vector<real_t> S(Nr, 0);
-  for (zisa::int_t d = 0; d < 3; ++d) {
-    for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
-      for (zisa::int_t j = 0; j < u_hat.shape(2); ++j) {
-        for (zisa::int_t k = 0; k < u_hat.shape(3); ++k) {
-          long k1 = i + k1_offset;
-          if (k1 >= zisa::integer_cast<long>(grid.N_fourier)) {
-            k1 -= grid.N_phys;
-          }
-          long k2 = j + k2_offset;
-          if (k2 >= zisa::integer_cast<long>(grid.N_fourier)) {
-            k2 -= grid.N_phys;
-          }
-          long k3 = k + k3_offset;
-          if (k3 >= zisa::integer_cast<long>(grid.N_fourier)) {
-            k3 -= grid.N_phys;
-          }
-          const long absk2 = k1 * k1 + k2 * k2 + k3 * k3;
-          const real_t K = 2 * zisa::pi * zisa::sqrt(absk2);
-          if (K == 0) {
-            continue;
-          }
-          const real_t uk2
-              = abs2(u_hat(d, i, j, k)) / zisa::pow<3>(grid.N_phys);
-          for (zisa::int_t r = 0; r < Nr; ++r) {
-            S[r] += I_OP::eval(K, r * dx) * uk2 / 3;
+  for (zisa::int_t r = 0; r < Nr; ++r) {
+    real_t Sr = 0;
+#pragma omp parallel for collapse(2) reduction(+ : Sr)
+    for (zisa::int_t d = 0; d < 3; ++d) {
+      for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
+        for (zisa::int_t j = 0; j < u_hat.shape(2); ++j) {
+          for (zisa::int_t k = 0; k < u_hat.shape(3); ++k) {
+            long k1 = i + k1_offset;
+            if (k1 >= zisa::integer_cast<long>(grid.N_fourier)) {
+              k1 -= grid.N_phys;
+            }
+            long k2 = j + k2_offset;
+            if (k2 >= zisa::integer_cast<long>(grid.N_fourier)) {
+              k2 -= grid.N_phys;
+            }
+            long k3 = k + k3_offset;
+            if (k3 >= zisa::integer_cast<long>(grid.N_fourier)) {
+              k3 -= grid.N_phys;
+            }
+            const long absk2 = k1 * k1 + k2 * k2 + k3 * k3;
+            const real_t K = 2 * zisa::pi * zisa::sqrt(absk2);
+            if (K == 0) {
+              continue;
+            }
+            const real_t uk2
+                = abs2(u_hat(d, i, j, k)) / zisa::pow<3>(grid.N_phys);
+            Sr += I_OP::eval(K, r * dx) * uk2 / 3;
           }
         }
       }
     }
+    S[r] = Sr;
   }
   return S;
 }

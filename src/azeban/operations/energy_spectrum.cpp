@@ -18,7 +18,7 @@ energy_spectrum_cpu(const Grid<1> &grid,
         k1 -= grid.N_phys;
       }
       const long K = std::abs(k1);
-      spectrum[K] += 0.5 * abs2(u_hat(d, i)) / zisa::pow<1>(grid.N_phys);
+      spectrum[K] += 0.5 * abs2(u_hat(d, i) / zisa::pow<1>(grid.N_phys));
     }
   }
   return spectrum;
@@ -42,7 +42,7 @@ energy_spectrum_cpu(const Grid<2> &grid,
           k2 -= grid.N_phys;
         }
         const long K = std::max(std::abs(k1), std::abs(k2));
-        spectrum[K] += 0.5 * abs2(u_hat(d, i, j)) / zisa::pow<2>(grid.N_phys);
+        spectrum[K] += 0.5 * abs2(u_hat(d, i, j) / zisa::pow<2>(grid.N_phys));
       }
     }
   }
@@ -75,7 +75,7 @@ energy_spectrum_cpu(const Grid<3> &grid,
           const long K
               = std::max(std::max(std::abs(k1), std::abs(k2)), std::abs(k3));
           spectrum[K]
-              += 0.5 * abs2(u_hat(d, i, j, k)) / zisa::pow<3>(grid.N_phys);
+              += 0.5 * abs2(u_hat(d, i, j, k) / zisa::pow<3>(grid.N_phys));
         }
       }
     }
