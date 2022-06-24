@@ -79,11 +79,11 @@ structure_function_cpu(const Grid<1> &grid,
         if (k1 >= zisa::integer_cast<long>(grid.N_fourier)) {
           k1 -= grid.N_phys;
         }
-        const real_t K = std::abs(k1);
+        const real_t K = 2 * zisa::pi * std::abs(k1);
         if (K == 0) {
           continue;
         }
-        const real_t uk2 = abs2(u_hat(d, i)) / zisa::pow<1>(grid.N_phys);
+        const real_t uk2 = abs2(u_hat(d, i) / zisa::pow<1>(grid.N_phys));
         S[r] += I_OP::eval(K, r * dx) * uk2;
       }
     }
@@ -119,7 +119,7 @@ structure_function_cpu(const Grid<2> &grid,
           if (K == 0) {
             continue;
           }
-          const real_t uk2 = abs2(u_hat(d, i, j)) / zisa::pow<2>(grid.N_phys);
+          const real_t uk2 = abs2(u_hat(d, i, j) / zisa::pow<2>(grid.N_phys));
           Sr += I_OP::eval(K, r * dx) * uk2 / 2;
         }
       }
@@ -164,7 +164,7 @@ structure_function_cpu(const Grid<3> &grid,
               continue;
             }
             const real_t uk2
-                = abs2(u_hat(d, i, j, k)) / zisa::pow<3>(grid.N_phys);
+                = abs2(u_hat(d, i, j, k) / zisa::pow<3>(grid.N_phys));
             Sr += I_OP::eval(K, r * dx) * uk2 / 3;
           }
         }
@@ -201,7 +201,11 @@ static std::vector<real_t>
 structure_function(const Grid<Dim> &grid,
                    const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
   if (u_hat.memory_location() == zisa::device_type::cpu) {
-    return structure_function_cpu<I_OP>(grid, u_hat);
+    auto S = structure_function_cpu<I_OP>(grid, u_hat);
+    for (real_t &Sr : S) {
+      Sr = std::sqrt(Sr);
+    }
+    return S;
   }
 #if ZISA_HAS_CUDA
   else if (u_hat.memory_location() == zisa::device_type::cuda) {
@@ -254,7 +258,11 @@ structure_function(const Grid<Dim> &grid,
                    const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
                    MPI_Comm comm) {
   if (u_hat.memory_location() == zisa::device_type::cpu) {
-    return structure_function_cpu<Dim, I_OP>(grid, u_hat, comm);
+    auto S = structure_function_cpu<Dim, I_OP>(grid, u_hat, comm);
+    for (real_t &Sr : S) {
+      Sr = std::sqrt(Sr);
+    }
+    return S;
   }
 #if ZISA_HAS_CUDA
   else if (u_hat.memory_location() == zisa::device_type::cuda) {
