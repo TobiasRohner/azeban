@@ -1,6 +1,7 @@
 #include <azeban/operations/structure_function.hpp>
 #include <cmath>
 #include <iostream>
+#include <omp.h>
 #if AZEBAN_HAS_MPI
 #include <azeban/mpi/mpi_types.hpp>
 #endif
@@ -138,14 +139,21 @@ structure_function_cpu(const Grid<3> &grid,
                        long k3_offset = 0) {
   const size_t Nr = (grid.N_phys + 1) / 2;
   const real_t dx = 1. / grid.N_phys;
-  std::vector<real_t> S(Nr, 0);
-  for (zisa::int_t r = 0; r < Nr; ++r) {
-    real_t Sr = 0;
-#pragma omp parallel for collapse(2) reduction(+ : Sr)
+  int N_threads;
+#pragma omp parallel
+  {
+    #pragma omp master
+    N_threads = omp_get_num_threads();
+  }
+  std::vector<std::vector<real_t>> S(N_threads, std::vector<real_t>(Nr, 0));
+  const zisa::int_t N1 = u_hat.shape(1);
+  const zisa::int_t N2 = u_hat.shape(2);
+  const zisa::int_t N3 = u_hat.shape(3);
+#pragma omp parallel for collapse(4)
     for (zisa::int_t d = 0; d < 3; ++d) {
-      for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
-        for (zisa::int_t j = 0; j < u_hat.shape(2); ++j) {
-          for (zisa::int_t k = 0; k < u_hat.shape(3); ++k) {
+      for (zisa::int_t i = 0; i < N1; ++i) {
+        for (zisa::int_t j = 0; j < N2; ++j) {
+          for (zisa::int_t k = 0; k < N3; ++k) {
             long k1 = i + k1_offset;
             if (k1 >= zisa::integer_cast<long>(grid.N_fourier)) {
               k1 -= grid.N_phys;
@@ -165,14 +173,20 @@ structure_function_cpu(const Grid<3> &grid,
             }
             const real_t uk2
                 = abs2(u_hat(d, i, j, k) / zisa::pow<3>(grid.N_phys));
-            Sr += I_OP::eval(K, r * dx) * uk2 / 3;
+	    const int tn = omp_get_thread_num();
+	    for (zisa::int_t r = 0; r < Nr; ++r) {
+	      S[tn][r] += I_OP::eval(K, r * dx) * uk2 / 3;
           }
         }
       }
     }
-    S[r] = Sr;
   }
-  return S;
+  for (int i = 1 ; i < N_threads ; ++i) {
+    for (size_t j = 0 ; j < Nr ; ++j) {
+      S[0][j] += S[i][j];
+    }
+  }
+  return S[0];
 }
 
 #if AZEBAN_HAS_MPI
