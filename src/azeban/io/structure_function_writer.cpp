@@ -80,10 +80,12 @@ void StructureFunctionWriter<Dim, SF>::write(
   ProfileHost pofile("StructureFunctionWriter::write");
   ZISA_UNUSED(t);
   const std::vector<real_t> S = SF::eval(grid_, u_hat, comm->get_mpi_comm());
-  std::ofstream file(path_ + "/S2_" + std::to_string(sample_idx_) + "_time_"
-                     + std::to_string(snapshot_idx_) + ".txt");
-  for (real_t E : S) {
-    file << std::setw(std::numeric_limits<real_t>::max_digits10) << E << '\t';
+  if (comm->rank() == 0) {
+    std::ofstream file(path_ + "/S2_" + std::to_string(sample_idx_) + "_time_"
+		       + std::to_string(snapshot_idx_) + ".txt");
+    for (real_t E : S) {
+      file << std::setw(std::numeric_limits<real_t>::max_digits10) << E << '\t';
+    }
   }
   ++snapshot_idx_;
 }
