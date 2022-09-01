@@ -13,12 +13,10 @@ def solve_NS(executable, u, visc, t_end, tmpdir='/tmp', device='cuda'):
     N = u.shape[1]
     eps = N * visc
     config = {
-                "output": tmpdir,
                 "device": device,
                 "dimension" : dim,
                 "num_samlpes": 1,
                 "time": t_end,
-                "snapshots": [0, t_end],
                 "grid": {
                   "N_phys": N,
                   "N_phys_pad": ""
@@ -27,7 +25,8 @@ def solve_NS(executable, u, visc, t_end, tmpdir='/tmp', device='cuda'):
                   "name": "Euler",
                   "visc": {
                       "type": "Step",
-                      "k0": 1,
+                      "s": 1,
+                      "m0": 1,
                       "eps": eps
                   }
                 },
@@ -40,6 +39,11 @@ def solve_NS(executable, u, visc, t_end, tmpdir='/tmp', device='cuda'):
                   "sample_idx_start": 0,
                   "experiment": tmpdir,
                   "time": "0"
+                },
+                "writer": {
+                    "name": "NetCDF Snapshot",
+                    "path": tmpdir,
+                    "snapshots": [0, t_end]
                 }
               }
     if not os.path.exists(tmpdir):
