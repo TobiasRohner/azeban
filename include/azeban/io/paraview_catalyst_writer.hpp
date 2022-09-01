@@ -1,6 +1,8 @@
 #ifndef AZEBAN_IO_PARAVIEW_CATALYST_WRITER_HPP_
 #define AZEBAN_IO_PARAVIEW_CATALYST_WRITER_HPP_
 
+#if AZEBAN_HAS_CATALYST
+
 #include <azeban/grid.hpp>
 #include <azeban/io/writer.hpp>
 #include <string>
@@ -47,5 +49,7 @@ protected:
 };
 
 }
+
+#endif
 
 #endif

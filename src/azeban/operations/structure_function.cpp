@@ -142,7 +142,7 @@ structure_function_cpu(const Grid<3> &grid,
   int N_threads;
 #pragma omp parallel
   {
-    #pragma omp master
+#pragma omp master
     N_threads = omp_get_num_threads();
   }
   std::vector<std::vector<real_t>> S(N_threads, std::vector<real_t>(Nr, 0));
@@ -150,39 +150,39 @@ structure_function_cpu(const Grid<3> &grid,
   const zisa::int_t N2 = u_hat.shape(2);
   const zisa::int_t N3 = u_hat.shape(3);
 #pragma omp parallel for collapse(4)
-    for (zisa::int_t d = 0; d < 3; ++d) {
-      for (zisa::int_t i = 0; i < N1; ++i) {
-        for (zisa::int_t j = 0; j < N2; ++j) {
-          for (zisa::int_t k = 0; k < N3; ++k) {
-            long k1 = i + k1_offset;
-            if (k1 >= zisa::integer_cast<long>(grid.N_fourier)) {
-              k1 -= grid.N_phys;
-            }
-            long k2 = j + k2_offset;
-            if (k2 >= zisa::integer_cast<long>(grid.N_fourier)) {
-              k2 -= grid.N_phys;
-            }
-            long k3 = k + k3_offset;
-            if (k3 >= zisa::integer_cast<long>(grid.N_fourier)) {
-              k3 -= grid.N_phys;
-            }
-            const long absk2 = k1 * k1 + k2 * k2 + k3 * k3;
-            const real_t K = 2 * zisa::pi * zisa::sqrt(absk2);
-            if (K == 0) {
-              continue;
-            }
-            const real_t uk2
-                = abs2(u_hat(d, i, j, k) / zisa::pow<3>(grid.N_phys));
-	    const int tn = omp_get_thread_num();
-	    for (zisa::int_t r = 0; r < Nr; ++r) {
-	      S[tn][r] += I_OP::eval(K, r * dx) * uk2 / 3;
+  for (zisa::int_t d = 0; d < 3; ++d) {
+    for (zisa::int_t i = 0; i < N1; ++i) {
+      for (zisa::int_t j = 0; j < N2; ++j) {
+        for (zisa::int_t k = 0; k < N3; ++k) {
+          long k1 = i + k1_offset;
+          if (k1 >= zisa::integer_cast<long>(grid.N_fourier)) {
+            k1 -= grid.N_phys;
+          }
+          long k2 = j + k2_offset;
+          if (k2 >= zisa::integer_cast<long>(grid.N_fourier)) {
+            k2 -= grid.N_phys;
+          }
+          long k3 = k + k3_offset;
+          if (k3 >= zisa::integer_cast<long>(grid.N_fourier)) {
+            k3 -= grid.N_phys;
+          }
+          const long absk2 = k1 * k1 + k2 * k2 + k3 * k3;
+          const real_t K = 2 * zisa::pi * zisa::sqrt(absk2);
+          if (K == 0) {
+            continue;
+          }
+          const real_t uk2
+              = abs2(u_hat(d, i, j, k) / zisa::pow<3>(grid.N_phys));
+          const int tn = omp_get_thread_num();
+          for (zisa::int_t r = 0; r < Nr; ++r) {
+            S[tn][r] += I_OP::eval(K, r * dx) * uk2 / 3;
           }
         }
       }
     }
   }
-  for (int i = 1 ; i < N_threads ; ++i) {
-    for (size_t j = 0 ; j < Nr ; ++j) {
+  for (int i = 1; i < N_threads; ++i) {
+    for (size_t j = 0; j < Nr; ++j) {
       S[0][j] += S[i][j];
     }
   }

@@ -1,6 +1,8 @@
 #ifndef AZEBAN_IO_PARAVIEW_CATALYST_WRITER_FACTORY_HPP_
 #define AZEBAN_IO_PARAVIEW_CATALYST_WRITER_FACTORY_HPP_
 
+#if AZEBAN_HAS_CATALYST
+
 #include <azeban/io/paraview_catalyst_writer.hpp>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -14,5 +16,7 @@ make_paraview_catalyst_writer(const nlohmann::json &config,
                               zisa::int_t sample_idx_start);
 
 }
+
+#endif
 
 #endif

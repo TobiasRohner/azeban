@@ -37,9 +37,7 @@ SmoothCutoff1D make_smooth_cutoff_1d(const nlohmann::json &config,
   if (config.contains("theta")) {
     theta = config["theta"];
   }
-  AZEBAN_ERR_IF(theta > (2 * s - 1) / (2 * s),
-                "theta parameter of spectral viscosity is too big\n");
-  real_t m0 = 1;
+  real_t m0 = 2 * zisa::pi;
   if (config.contains("m0")) {
     m0 = config["m0"];
   }
@@ -65,9 +63,7 @@ Step1D make_step_1d(const nlohmann::json &config, const Grid<Dim> &grid) {
   if (config.contains("theta")) {
     theta = config["theta"];
   }
-  AZEBAN_ERR_IF(theta > (2 * s - 1) / (2 * s),
-                "theta parameter of spectral viscosity is too big\n");
-  real_t m0 = 1;
+  real_t m0 = 2 * zisa::pi;
   if (config.contains("m0")) {
     m0 = config["m0"];
   }

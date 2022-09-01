@@ -1,9 +1,11 @@
 #include <azeban/io/energy_spectrum_writer_factory.hpp>
 #include <azeban/io/netcdf_snapshot_writer_factory.hpp>
-#include <azeban/io/paraview_catalyst_writer_factory.hpp>
 #include <azeban/io/structure_function_writer_factory.hpp>
 #include <azeban/io/writer_collection.hpp>
 #include <azeban/io/writer_factory.hpp>
+#if AZEBAN_HAS_CATALYST
+#include <azeban/io/paraview_catalyst_writer_factory.hpp>
+#endif
 
 namespace azeban {
 
@@ -28,9 +30,13 @@ std::unique_ptr<Writer<Dim>> make_writer(const nlohmann::json &config,
     if (name == "NetCDF Snapshot") {
       return make_netcdf_snapshot_writer<Dim>(
           config, grid, sample_idx_start, work_area);
-    } else if (name == "Catalyst") {
+    }
+#if AZEBAN_HAS_CATALYST
+    else if (name == "Catalyst") {
       return make_paraview_catalyst_writer<Dim>(config, grid, sample_idx_start);
-    } else if (name == "Energy Spectrum") {
+    }
+#endif
+    else if (name == "Energy Spectrum") {
       return make_energy_spectrum_writer<Dim>(config, grid, sample_idx_start);
     } else if (name == "Structure Function") {
       return make_structure_function_writer<Dim>(
@@ -65,9 +71,13 @@ std::unique_ptr<Writer<Dim>> make_writer(const nlohmann::json &config,
     if (name == "NetCDF Snapshot") {
       return make_netcdf_snapshot_writer<Dim>(
           config, grid, sample_idx_start, work_area);
-    } else if (name == "Catalyst") {
+    }
+#if AZEBAN_HAS_CATALYST
+    else if (name == "Catalyst") {
       return make_paraview_catalyst_writer<Dim>(config, grid, sample_idx_start);
-    } else if (name == "Energy Spectrum") {
+    }
+#endif
+    else if (name == "Energy Spectrum") {
       return make_energy_spectrum_writer<Dim>(
           config, grid, sample_idx_start, comm);
     } else if (name == "Structure Function") {

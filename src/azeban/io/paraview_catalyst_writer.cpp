@@ -1,3 +1,5 @@
+#if AZEBAN_HAS_CATALYST
+
 #include <azeban/io/paraview_catalyst_writer.hpp>
 #include <azeban/profiler.hpp>
 #include <catalyst.hpp>
@@ -172,3 +174,5 @@ template class ParaviewCatalystWriter<2>;
 template class ParaviewCatalystWriter<3>;
 
 }
+
+#endif

@@ -1,3 +1,5 @@
+#if AZEBAN_HAS_CATALYST
+
 #include <azeban/io/paraview_catalyst_writer_factory.hpp>
 #include <azeban/sequence_factory.hpp>
 
@@ -41,3 +43,5 @@ make_paraview_catalyst_writer<3>(const nlohmann::json &,
                                  zisa::int_t);
 
 }
+
+#endif
