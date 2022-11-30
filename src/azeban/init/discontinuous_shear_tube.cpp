@@ -57,7 +57,7 @@ void DiscontinuousShearTube::do_initialize(
           if (rho == 0) {
             u_(0, i, j, k) = r < 0.25 ? 1 : -1;
           } else {
-            u_(0, i, j, k) = std::tanh(2 * zisa::pi * (r - 0.25) / rho);
+            u_(0, i, j, k) = -std::tanh(2 * zisa::pi * (r - 0.25) / rho);
           }
           u_(1, i, j, k) = 0;
           u_(2, i, j, k) = 0;
