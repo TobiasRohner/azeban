@@ -128,9 +128,9 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
   }
 
   std::mt19937 rng;
-  size_t seed = 1 * rank;
+  size_t seed = 1 + rank;
   if (config.contains("seed")) {
-    seed = config["seed"].get<size_t>() * rank;
+    seed = config["seed"].get<size_t>() + rank;
   }
   rng.seed(seed);
 
