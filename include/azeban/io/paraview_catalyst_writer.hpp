@@ -17,7 +17,7 @@ class ParaviewCatalystWriter : public Writer<Dim> {
 public:
   ParaviewCatalystWriter(const Grid<Dim> &grid,
                          const std::vector<real_t> &snapshot_times_,
-                         const std::vector<std::string> &scripts,
+                         const std::vector<std::vector<std::string>> &scripts,
                          zisa::int_t sample_idx_start = 0);
   ParaviewCatalystWriter(const ParaviewCatalystWriter &) = delete;
   ParaviewCatalystWriter(ParaviewCatalystWriter &&) = default;

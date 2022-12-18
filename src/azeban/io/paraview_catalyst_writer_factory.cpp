@@ -20,8 +20,8 @@ make_paraview_catalyst_writer(const nlohmann::json &config,
     exit(1);
   }
 
-  const std::vector<std::string> scripts
-      = config["scripts"].get<std::vector<std::string>>();
+  const std::vector<std::vector<std::string>> scripts
+      = config["scripts"].get<std::vector<std::vector<std::string>>>();
   const std::vector<real_t> snapshots
       = make_sequence<real_t>(config["snapshots"]);
 

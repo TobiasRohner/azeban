@@ -3,13 +3,12 @@ from paraview.simple import *
 from paraview.catalyst import get_args, get_execute_params
 from paraview import catalyst
 
-# print values for parameters passed via adaptor (note these don't change,
-# and hence must be created as command line params)
-print("executing catalyst_pipeline")
-print("===================================")
-print("pipeline args={}".format(get_args()))
-print("execute params={}".format(get_execute_params()))
-print("===================================")
+import argparse
+
+parser = argparse.ArgumentParser(description="Plot Isosurfaces of Curl")
+parser.add_argument("--output", type=str, help="Name of output files. Use %d for timestep")
+parser.add_argument("--isosurfaces", type=float, nargs="+", help="Values of the isosurfaces")
+args = parser.parse_args(get_args())
 
 
 # registrationName must match the channel name used in the
@@ -34,7 +33,7 @@ cellDatatoPointData1.CellDataArraytoprocess = ['Result']
 
 contour1 = Contour(registrationName='Contour1', Input=cellDatatoPointData1)
 contour1.ContourBy = ['POINTS', 'Result']
-contour1.Isosurfaces = [40]
+contour1.Isosurfaces = args.isosurfaces
 contour1.PointMergeMethod = 'Uniform Binning'
 
 resultLUT = GetColorTransferFunction('Result')
@@ -84,20 +83,12 @@ view.CameraViewUp = [-0.28038806220484247, 0.9021477885353584, -0.32789007641856
 view.CameraParallelScale = 151.5559135019442
 
 
-extractor = CreateExtractor('VTPD', producer, registrationName='VTPD')
-options = catalyst.Options()
-options.ExtractsOutputDirectory = './dst_r1_N256'
-options.GlobalTrigger.Frequency = 1
-
-
 def catalyst_execute(info):
     global producer
 
     contour1.UpdatePipeline()
     view.Update()
 
-    SaveExtractsUsingCatalystOptions(options)
-
-    fname = "dst_r1_N256/isosurface_curl-%d.png" % info.timestep
+    fname = args.output % info.timestep
     ResetCamera()
     SaveScreenshot(fname, ImageResolution=(1024, 1024))

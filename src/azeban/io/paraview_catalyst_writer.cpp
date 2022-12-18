@@ -10,13 +10,17 @@ template <int Dim>
 ParaviewCatalystWriter<Dim>::ParaviewCatalystWriter(
     const Grid<Dim> &grid,
     const std::vector<real_t> &snapshot_times,
-    const std::vector<std::string> &scripts,
+    const std::vector<std::vector<std::string>> &scripts,
     zisa::int_t sample_idx_start)
     : super(grid, snapshot_times, sample_idx_start) {
   conduit_cpp::Node node;
   for (size_t i = 0; i < scripts.size(); ++i) {
-    const std::string &script = scripts[i];
-    node["catalyst/scripts/script" + std::to_string(i)].set_string(script);
+    const std::vector<std::string> &script = scripts[i];
+    auto scriptnode = node["catalyst/scripts/script" + std::to_string(i)];
+    scriptnode["filename"].set_string(script[0]);
+    for (size_t j = 1 ; j < script.size() ; ++j) {
+      scriptnode["args"].append().set_string(script[j]);
+    }
   }
   node["catalyst_load/implementation"] = "paraview";
   catalyst_status err = catalyst_initialize(conduit_cpp::c_node(&node));
