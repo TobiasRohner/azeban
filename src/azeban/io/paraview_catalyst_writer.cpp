@@ -60,18 +60,18 @@ void ParaviewCatalystWriter<Dim>::write(
   fields["velocity/volume_dependent"].set("false");
   fields["velocity/values/x"].set_external(u.raw(),
                                            zisa::pow<Dim>(grid_.N_phys),
-                                           0 * zisa::pow<Dim>(grid_.N_phys)
+                                           (Dim - 1) * zisa::pow<Dim>(grid_.N_phys)
                                                * sizeof(real_t));
   if (Dim > 1) {
     fields["velocity/values/y"].set_external(u.raw(),
                                              zisa::pow<Dim>(grid_.N_phys),
-                                             1 * zisa::pow<Dim>(grid_.N_phys)
+                                             (Dim - 2) * zisa::pow<Dim>(grid_.N_phys)
                                                  * sizeof(real_t));
   }
   if (Dim > 2) {
     fields["velocity/values/z"].set_external(u.raw(),
                                              zisa::pow<Dim>(grid_.N_phys),
-                                             2 * zisa::pow<Dim>(grid_.N_phys)
+                                             (Dim - 3) * zisa::pow<Dim>(grid_.N_phys)
                                                  * sizeof(real_t));
   }
 
@@ -130,14 +130,14 @@ void ParaviewCatalystWriter<Dim>::write(
   fields["velocity/volume_dependent"].set("false");
   const size_t elms_per_comp = zisa::product(u.shape()) / u.shape(0);
   fields["velocity/values/x"].set_external(
-      u.raw(), elms_per_comp, 0 * elms_per_comp * sizeof(real_t));
+      u.raw(), elms_per_comp, (Dim - 1) * elms_per_comp * sizeof(real_t));
   if (Dim > 1) {
     fields["velocity/values/y"].set_external(
-        u.raw(), elms_per_comp, 1 * elms_per_comp * sizeof(real_t));
+        u.raw(), elms_per_comp, (Dim - 2) * elms_per_comp * sizeof(real_t));
   }
   if (Dim > 2) {
     fields["velocity/values/z"].set_external(
-        u.raw(), elms_per_comp, 2 * elms_per_comp * sizeof(real_t));
+        u.raw(), elms_per_comp, (Dim - 3) * elms_per_comp * sizeof(real_t));
   }
 
   catalyst_status err = catalyst_execute(conduit_cpp::c_node(&exec_params));
