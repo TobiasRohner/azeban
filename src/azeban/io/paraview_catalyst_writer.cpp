@@ -116,12 +116,12 @@ void ParaviewCatalystWriter<Dim>::write(
 
   auto mesh = channel["data"];
   mesh["coordsets/coords/type"].set("uniform");
-  mesh["coordsets/coords/dims/i"].set(u.shape(1));
-  mesh["coordsets/coords/dims/j"].set(Dim > 1 ? grid_.N_phys : 1);
-  mesh["coordsets/coords/dims/k"].set(Dim > 2 ? grid_.N_phys : 1);
-  mesh["coordsets/coords/origin/x"].set(static_cast<real_t>(rank) / size);
-  mesh["coordsets/coords/origin/y"].set(0);
-  mesh["coordsets/coords/origin/z"].set(0);
+  mesh["coordsets/coords/dims/i"].set(u.shape(Dim - 0));
+  mesh["coordsets/coords/dims/j"].set(Dim > 1 ? u.shape(Dim - 1) : 1);
+  mesh["coordsets/coords/dims/k"].set(Dim > 2 ? u.shape(Dim - 2) : 1);
+  mesh["coordsets/coords/origin/x"].set(Dim == 1 ? static_cast<real_t>(rank) / size : real_t(0));
+  mesh["coordsets/coords/origin/y"].set(Dim == 2 ? static_cast<real_t>(rank) / size : real_t(0));
+  mesh["coordsets/coords/origin/z"].set(Dim == 3 ? static_cast<real_t>(rank) / size : real_t(0));
   mesh["coordsets/coords/spacing/dx"].set(1. / grid_.N_phys);
   mesh["coordsets/coords/spacing/dy"].set(1. / grid_.N_phys);
   mesh["coordsets/coords/spacing/dz"].set(1. / grid_.N_phys);
