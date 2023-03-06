@@ -30,8 +30,8 @@ public:
   DiscontinuousShearTube(zisa::int_t N,
                          const RandomVariable<real_t> &rho,
                          const RandomVariable<real_t> &delta,
-                         const RandomVariable<real_t> &uniform)
-      : N_(N), rho_(rho), delta_(delta), uniform_(uniform) {}
+                         const RandomVariable<real_t> &perturb)
+      : N_(N), rho_(rho), delta_(delta), perturb_(perturb) {}
   DiscontinuousShearTube(const DiscontinuousShearTube &) = default;
   DiscontinuousShearTube(DiscontinuousShearTube &&) = default;
 
@@ -49,7 +49,7 @@ private:
   zisa::int_t N_;
   RandomVariable<real_t> rho_;
   RandomVariable<real_t> delta_;
-  RandomVariable<real_t> uniform_;
+  RandomVariable<real_t> perturb_;
 };
 
 }

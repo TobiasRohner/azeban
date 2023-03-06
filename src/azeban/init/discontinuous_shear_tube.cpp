@@ -33,10 +33,10 @@ void DiscontinuousShearTube::do_initialize(
     std::vector<real_t> beta_y;
     std::vector<real_t> beta_z;
     for (zisa::int_t i = 0; i < N_; ++i) {
-      alpha_y.push_back(delta * uniform_.get());
-      alpha_z.push_back(delta * uniform_.get());
-      beta_y.push_back(2 * zisa::pi * uniform_.get());
-      beta_z.push_back(2 * zisa::pi * uniform_.get());
+      alpha_y.push_back(delta * perturb_.get());
+      alpha_z.push_back(delta * perturb_.get());
+      beta_y.push_back(2 * zisa::pi * perturb_.get());
+      beta_z.push_back(2 * zisa::pi * perturb_.get());
     }
     for (zisa::int_t i = 0; i < N; ++i) {
       const real_t x = static_cast<real_t>(i) / N;

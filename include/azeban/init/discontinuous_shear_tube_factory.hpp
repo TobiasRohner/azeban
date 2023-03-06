@@ -48,9 +48,12 @@ make_discontinuous_shear_tube(const nlohmann::json &config, RNG &rng) {
         = make_random_variable<real_t>(config["rho"], rng);
     RandomVariable<real_t> delta
         = make_random_variable<real_t>(config["delta"], rng);
-    RandomVariable<real_t> uniform = RandomVariable<real_t>(
+    RandomVariable<real_t> perturb = RandomVariable<real_t>(
         std::make_shared<Uniform<real_t, RNG>>(0, 1, rng));
-    return std::make_shared<DiscontinuousShearTube>(N, rho, delta, uniform);
+    if (config.contains("perturb")) {
+      perturb = make_random_variable<real_t>(config["perturb"], rng);
+    }
+    return std::make_shared<DiscontinuousShearTube>(N, rho, delta, perturb);
   } else {
     fmt::print(stderr, "Shear Tube is only available for 3D simulations\n");
     exit(1);

@@ -26,20 +26,14 @@ namespace azeban {
 
 template <typename Result, typename RNG>
 RandomVariable<Result> make_uniform(const nlohmann::json &config, RNG &rng) {
-  if (!config.contains("min")) {
-    fmt::print(
-        stderr,
-        "Uniform Distribution configuration is missing parameter \"min\"\n");
-    exit(1);
+  Result min = 0;
+  Result max = 1;
+  if (config.contains("min")) {
+    min = config["min"];
   }
-  if (!config.contains("max")) {
-    fmt::print(
-        stderr,
-        "Uniform Distribution configuration is missing parameter \"max\"\n");
-    exit(1);
+  if (config.contains("max")) {
+    max = config["max"];
   }
-  Result min = config["min"];
-  Result max = config["max"];
   return RandomVariable<Result>(
       std::make_shared<Uniform<Result, RNG>>(min, max, rng));
 }
