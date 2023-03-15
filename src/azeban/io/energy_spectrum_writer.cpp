@@ -21,6 +21,9 @@ EnergySpectrumWriter<Dim>::EnergySpectrumWriter(
 #if AZEBAN_HAS_MPI
   samples_comm_ = MPI_COMM_WORLD;
 #endif
+  if (!std::filesystem::exists(path)) {
+    std::filesystem::create_directories(path);
+  }
 }
 
 #if AZEBAN_HAS_MPI
@@ -37,6 +40,11 @@ EnergySpectrumWriter<Dim>::EnergySpectrumWriter(
   int local_rank = comm->rank();
   int color = local_rank == 0 ? 0 : MPI_UNDEFINED;
   MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &samples_comm_);
+  if (local_rank == 0) {
+    if (!std::filesystem::exists(path)) {
+      std::filesystem::create_directories(path);
+    }
+  }
 }
 #endif
 
@@ -79,7 +87,7 @@ void EnergySpectrumWriter<Dim>::write(
   std::ofstream file(path_ + "/energy_" + std::to_string(sample_idx_) + "_time_"
                      + std::to_string(snapshot_idx_) + ".txt");
   for (real_t E : spectrum) {
-    file << std::setw(std::numeric_limits<real_t>::max_digits10) << E << '\t';
+    file << std::setprecision(std::numeric_limits<real_t>::max_digits10) << E << '\t';
   }
 #endif
   ++snapshot_idx_;
@@ -136,7 +144,7 @@ void EnergySpectrumWriter<Dim>::write(
     std::ofstream file(path_ + "/energy_" + std::to_string(sample_idx_)
                        + "_time_" + std::to_string(snapshot_idx_) + ".txt");
     for (real_t E : spectrum) {
-      file << std::setw(std::numeric_limits<real_t>::max_digits10) << E << '\t';
+      file << std::setprecision(std::numeric_limits<real_t>::max_digits10) << E << '\t';
     }
   }
   ++snapshot_idx_;
