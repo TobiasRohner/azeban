@@ -18,7 +18,7 @@ ParaviewCatalystWriter<Dim>::ParaviewCatalystWriter(
     const std::vector<std::string> &script = scripts[i];
     auto scriptnode = node["catalyst/scripts/script" + std::to_string(i)];
     scriptnode["filename"].set_string(script[0]);
-    for (size_t j = 1 ; j < script.size() ; ++j) {
+    for (size_t j = 1; j < script.size(); ++j) {
       scriptnode["args"].append().set_string(script[j]);
     }
   }
@@ -62,21 +62,21 @@ void ParaviewCatalystWriter<Dim>::write(
   fields["velocity/association"].set("vertex");
   fields["velocity/topology"].set("mesh");
   fields["velocity/volume_dependent"].set("false");
-  fields["velocity/values/x"].set_external(u.raw(),
-                                           zisa::pow<Dim>(grid_.N_phys),
-                                           (Dim - 1) * zisa::pow<Dim>(grid_.N_phys)
-                                               * sizeof(real_t));
+  fields["velocity/values/x"].set_external(
+      u.raw(),
+      zisa::pow<Dim>(grid_.N_phys),
+      (Dim - 1) * zisa::pow<Dim>(grid_.N_phys) * sizeof(real_t));
   if (Dim > 1) {
-    fields["velocity/values/y"].set_external(u.raw(),
-                                             zisa::pow<Dim>(grid_.N_phys),
-                                             (Dim - 2) * zisa::pow<Dim>(grid_.N_phys)
-                                                 * sizeof(real_t));
+    fields["velocity/values/y"].set_external(
+        u.raw(),
+        zisa::pow<Dim>(grid_.N_phys),
+        (Dim - 2) * zisa::pow<Dim>(grid_.N_phys) * sizeof(real_t));
   }
   if (Dim > 2) {
-    fields["velocity/values/z"].set_external(u.raw(),
-                                             zisa::pow<Dim>(grid_.N_phys),
-                                             (Dim - 3) * zisa::pow<Dim>(grid_.N_phys)
-                                                 * sizeof(real_t));
+    fields["velocity/values/z"].set_external(
+        u.raw(),
+        zisa::pow<Dim>(grid_.N_phys),
+        (Dim - 3) * zisa::pow<Dim>(grid_.N_phys) * sizeof(real_t));
   }
 
   catalyst_status err = catalyst_execute(conduit_cpp::c_node(&exec_params));
@@ -119,9 +119,12 @@ void ParaviewCatalystWriter<Dim>::write(
   mesh["coordsets/coords/dims/i"].set(u.shape(Dim - 0));
   mesh["coordsets/coords/dims/j"].set(Dim > 1 ? u.shape(Dim - 1) : 1);
   mesh["coordsets/coords/dims/k"].set(Dim > 2 ? u.shape(Dim - 2) : 1);
-  mesh["coordsets/coords/origin/x"].set(Dim == 1 ? static_cast<real_t>(rank) / size : real_t(0));
-  mesh["coordsets/coords/origin/y"].set(Dim == 2 ? static_cast<real_t>(rank) / size : real_t(0));
-  mesh["coordsets/coords/origin/z"].set(Dim == 3 ? static_cast<real_t>(rank) / size : real_t(0));
+  mesh["coordsets/coords/origin/x"].set(
+      Dim == 1 ? static_cast<real_t>(rank) / size : real_t(0));
+  mesh["coordsets/coords/origin/y"].set(
+      Dim == 2 ? static_cast<real_t>(rank) / size : real_t(0));
+  mesh["coordsets/coords/origin/z"].set(
+      Dim == 3 ? static_cast<real_t>(rank) / size : real_t(0));
   mesh["coordsets/coords/spacing/dx"].set(1. / grid_.N_phys);
   mesh["coordsets/coords/spacing/dy"].set(1. / grid_.N_phys);
   mesh["coordsets/coords/spacing/dz"].set(1. / grid_.N_phys);

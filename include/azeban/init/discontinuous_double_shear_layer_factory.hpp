@@ -47,11 +47,14 @@ make_discontinuous_double_shear_layer(const nlohmann::json &config, RNG &rng) {
         = make_random_variable<real_t>(config["rho"], rng);
     RandomVariable<real_t> delta
         = make_random_variable<real_t>(config["delta"], rng);
-    RandomVariable<real_t> uniform = RandomVariable<real_t>(
+    RandomVariable<real_t> perturb = RandomVariable<real_t>(
         std::make_shared<Uniform<real_t, RNG>>(0, 1, rng));
+    if (config.contains("perturb")) {
+      perturb = make_random_variable<real_t>(config["perturb"], rng);
+    }
     if constexpr (Dim == 2) {
       return std::make_shared<DiscontinuousDoubleShearLayer>(
-          N, rho, delta, uniform);
+          N, rho, delta, perturb);
     } else {
       AZEBAN_ERR_IF(
           !config.contains("dimension"),
@@ -59,7 +62,7 @@ make_discontinuous_double_shear_layer(const nlohmann::json &config, RNG &rng) {
 
       const int dim = config["dimension"];
       auto init2d = std::make_shared<DiscontinuousDoubleShearLayer>(
-          N, rho, delta, uniform);
+          N, rho, delta, perturb);
       return std::make_shared<Init3DFrom2D>(dim, init2d);
     }
   }

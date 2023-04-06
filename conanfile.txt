@@ -4,10 +4,11 @@
 
 [requires]
   catch2/2.13.8
-  benchmark/1.5.2
+  benchmark/1.6.2
   nlohmann_json/3.9.1
   fmt/8.1.1
   fftw/3.3.9
   netcdf/4.7.4
   boost/1.78.0
   zlib/1.2.12
+  pybind11/2.10.1

@@ -33,7 +33,7 @@ public:
   template <typename... RVs,
             typename = std::enable_if_t<
                 (... && std::is_convertible_v<RVs, RandomVariable<real_t>>)>>
-  ConstPhys(const RVs &... rvs) : rvs_{rvs...} {}
+  ConstPhys(const RVs &...rvs) : rvs_{rvs...} {}
   ConstPhys(const ConstPhys &) = default;
   ConstPhys(ConstPhys &&) = default;
 
