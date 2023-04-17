@@ -28,7 +28,6 @@
 #include "init_3d_from_2d.hpp"
 #include "init_from_file_factory.hpp"
 #include "initializer.hpp"
-#include "python_factory.hpp"
 #include "shear_tube_factory.hpp"
 #include "shock_factory.hpp"
 #include "sine_1d_factory.hpp"
@@ -40,6 +39,9 @@
 #include <nlohmann/json.hpp>
 #include <string>
 #include <zisa/config.hpp>
+#if AZEBAN_HAS_PYTHON
+#include "python_factory.hpp"
+#endif
 
 namespace azeban {
 
@@ -76,9 +78,13 @@ make_initializer_u(const nlohmann::json &config, RNG &rng) {
     return make_const_phys<Dim>(config, rng);
   } else if (name == "Init From File") {
     return make_init_from_file<Dim>(config);
-  } else if (name == "Python") {
+  } 
+# if AZEBAN_HAS_PYTHON
+  else if (name == "Python") {
     return make_python<Dim>(config, rng);
-  } else {
+  }
+#endif
+  else {
     fmt::print(stderr, "Unknown Initializer: \"{}\"\n", name);
     exit(1);
   }
