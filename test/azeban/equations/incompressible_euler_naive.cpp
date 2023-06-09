@@ -192,7 +192,7 @@ TEST_CASE("2D Euler Naive Derivative") {
   h_u_hat(1, N_fourier, 0) = 0.5 * N_phys * N_phys;
 
   zisa::copy(d_dudt_hat, h_u_hat);
-  euler.dudt(d_dudt_hat, d_dudt_hat);
+  euler.dudt(d_dudt_hat, d_dudt_hat, 0, 0);
   zisa::copy(h_dudt_hat, d_dudt_hat);
 
   for (zisa::int_t dim = 0; dim < 2; ++dim) {

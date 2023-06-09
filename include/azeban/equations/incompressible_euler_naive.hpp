@@ -59,9 +59,10 @@ public:
       = delete;
   IncompressibleEulerNaive &operator=(IncompressibleEulerNaive &&) = default;
 
-  virtual void
-  dudt(const zisa::array_view<complex_t, dim_v + 1> &dudt_hat,
-       const zisa::array_const_view<complex_t, dim_v + 1> &u_hat) override {
+  virtual void dudt(const zisa::array_view<complex_t, dim_v + 1> &dudt_hat,
+                    const zisa::array_const_view<complex_t, dim_v + 1> &u_hat,
+                    real_t,
+                    real_t) override {
     ProfileHost profile("IncompressibleEulerNaive::dudt");
     for (int i = 0; i < dim_v; ++i) {
       copy_to_padded(component(u_hat_, i), component(u_hat, i));

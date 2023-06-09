@@ -7,22 +7,27 @@
 namespace azeban {
 
 template <typename RNG, int Dim>
-WhiteNoise<RNG> make_white_noise(const nlohmann::json &config,
-                                 const Grid<Dim> &grid) {
+WhiteNoise<Dim, RNG> make_white_noise(const nlohmann::json &config,
+                                      const Grid<Dim> &grid) {
   if (!config.contains("sigma")) {
     fmt::print(stderr,
                "Must specify the standard deviation of the White Noise in key "
                "\"sigma\"\n");
     exit(1);
   }
+  if (!config.contains("N")) {
+    fmt::print(stderr, "Must specify the number of modes in key \"N\"\n");
+    exit(1);
+  }
 
   const real_t sigma = config["sigma"];
+  const int N = config["N"];
   unsigned long long seed = 0;
   if (config.contains("seed")) {
     seed = config["seed"];
   }
 
-  return WhiteNoise<RNG>(grid, sigma, seed);
+  return WhiteNoise<Dim, RNG>(grid, sigma, N, seed);
 }
 
 }

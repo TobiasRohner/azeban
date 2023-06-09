@@ -14,6 +14,8 @@ __global__ void incompressible_euler_mpi_2d_cuda_kernel(
     zisa::array_view<complex_t, 3> dudt_hat,
     SpectralViscosity visc,
     Forcing forcing,
+    real_t t,
+    real_t dt,
     unsigned long i_base,
     unsigned long j_base,
     zisa::shape_t<3> shape_phys) {
@@ -38,7 +40,7 @@ __global__ void incompressible_euler_mpi_2d_cuda_kernel(
     const real_t absk2 = k1 * k1 + k2 * k2;
 
     complex_t force1, force2;
-    forcing(0, j_, i_, &force1, &force2);
+    forcing(t, dt, j_, i_, &force1, &force2);
     complex_t L1_hat, L2_hat;
     incompressible_euler_2d_compute_L(k2,
                                       k1,
@@ -66,6 +68,8 @@ __global__ void incompressible_euler_mpi_3d_cuda_kernel(
     zisa::array_view<complex_t, 4> dudt_hat,
     SpectralViscosity visc,
     Forcing forcing,
+    real_t t,
+    real_t dt,
     unsigned long i_base,
     unsigned long j_base,
     unsigned long k_base,
@@ -101,7 +105,7 @@ __global__ void incompressible_euler_mpi_3d_cuda_kernel(
     const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
 
     complex_t force1, force2, force3;
-    forcing(0, k_, j_, i_, &force1, &force2, &force3);
+    forcing(t, dt, k_, j_, i_, &force1, &force2, &force3);
     complex_t L1_hat, L2_hat, L3_hat;
     incompressible_euler_3d_compute_L(k3,
                                       k2,
@@ -134,6 +138,8 @@ __global__ void incompressible_euler_mpi_2d_tracer_cuda_kernel(
     zisa::array_view<complex_t, 3> dudt_hat,
     SpectralViscosity visc,
     Forcing forcing,
+    real_t t,
+    real_t dt,
     unsigned long i_base,
     unsigned long j_base,
     zisa::shape_t<3> shape_phys) {
@@ -158,7 +164,7 @@ __global__ void incompressible_euler_mpi_2d_tracer_cuda_kernel(
     const real_t absk2 = k1 * k1 + k2 * k2;
 
     complex_t force1, force2;
-    forcing(0, j_, i_, &force1, &force2);
+    forcing(t, dt, j_, i_, &force1, &force2);
     complex_t L1_hat, L2_hat, L3_hat;
     incompressible_euler_2d_compute_L(k2,
                                       k1,
@@ -188,6 +194,8 @@ __global__ void incompressible_euler_mpi_3d_tracer_cuda_kernel(
     zisa::array_view<complex_t, 4> dudt_hat,
     SpectralViscosity visc,
     Forcing forcing,
+    real_t t,
+    real_t dt,
     unsigned long i_base,
     unsigned long j_base,
     unsigned long k_base,
@@ -223,7 +231,7 @@ __global__ void incompressible_euler_mpi_3d_tracer_cuda_kernel(
     const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
 
     complex_t force1, force2, force3;
-    forcing(0, k_, j_, i_, &force1, &force2, &force3);
+    forcing(t, dt, k_, j_, i_, &force1, &force2, &force3);
     complex_t L1_hat, L2_hat, L3_hat, L4_hat;
     incompressible_euler_3d_compute_L(k3,
                                       k2,
@@ -259,6 +267,8 @@ void incompressible_euler_mpi_2d_cuda(
     const zisa::array_view<complex_t, 3> &dudt_hat,
     const SpectralViscosity &visc,
     Forcing &forcing,
+    real_t t,
+    real_t dt,
     unsigned long i_base,
     unsigned long j_base,
     const zisa::shape_t<3> &shape_phys) {
@@ -274,7 +284,7 @@ void incompressible_euler_mpi_2d_cuda(
       1);
 
   incompressible_euler_mpi_2d_cuda_kernel<<<block_dims, thread_dims>>>(
-      B_hat, u_hat, dudt_hat, visc, forcing, i_base, j_base, shape_phys);
+      B_hat, u_hat, dudt_hat, visc, forcing, t, dt, i_base, j_base, shape_phys);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
 }
@@ -286,6 +296,8 @@ void incompressible_euler_mpi_3d_cuda(
     const zisa::array_view<complex_t, 4> &dudt_hat,
     const SpectralViscosity &visc,
     Forcing &forcing,
+    real_t t,
+    real_t dt,
     unsigned long i_base,
     unsigned long j_base,
     unsigned long k_base,
@@ -306,6 +318,8 @@ void incompressible_euler_mpi_3d_cuda(
       dudt_hat,
       visc,
       forcing,
+      t,
+      dt,
       i_base,
       j_base,
       k_base,
@@ -321,6 +335,8 @@ void incompressible_euler_mpi_2d_tracer_cuda(
     const zisa::array_view<complex_t, 3> &dudt_hat,
     const SpectralViscosity &visc,
     Forcing &forcing,
+    real_t t,
+    real_t dt,
     unsigned long i_base,
     unsigned long j_base,
     const zisa::shape_t<3> &shape_phys) {
@@ -336,7 +352,7 @@ void incompressible_euler_mpi_2d_tracer_cuda(
       1);
 
   incompressible_euler_mpi_2d_tracer_cuda_kernel<<<block_dims, thread_dims>>>(
-      B_hat, u_hat, dudt_hat, visc, forcing, i_base, j_base, shape_phys);
+      B_hat, u_hat, dudt_hat, visc, forcing, t, dt, i_base, j_base, shape_phys);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
 }
@@ -348,6 +364,8 @@ void incompressible_euler_mpi_3d_tracer_cuda(
     const zisa::array_view<complex_t, 4> &dudt_hat,
     const SpectralViscosity &visc,
     Forcing &forcing,
+    real_t t,
+    real_t dt,
     unsigned long i_base,
     unsigned long j_base,
     unsigned long k_base,
@@ -368,6 +386,8 @@ void incompressible_euler_mpi_3d_tracer_cuda(
       dudt_hat,
       visc,
       forcing,
+      t,
+      dt,
       i_base,
       j_base,
       k_base,

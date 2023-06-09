@@ -85,7 +85,7 @@ TEST_CASE("Burgers Derivative") {
   h_u[1] = 0.5 * N_phys;
 
   zisa::copy(d_dudt, h_u);
-  burgers.dudt(d_dudt, d_dudt);
+  burgers.dudt(d_dudt, d_dudt, 0, 0);
   zisa::copy(h_dudt, d_dudt);
 
   for (zisa::int_t i = 0; i < N_fourier; ++i) {

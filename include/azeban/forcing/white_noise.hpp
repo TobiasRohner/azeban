@@ -2,8 +2,10 @@
 #define AZEBAN_FORCING_WHITE_NOISE_HPP_
 
 #include <azeban/grid.hpp>
+#include <azeban/logging.hpp>
 #include <azeban/random/rng_traits.hpp>
 #if ZISA_HAS_CUDA
+#include <azeban/cuda/forcing/white_noise_cuda.hpp>
 #include <azeban/cuda/random/curand_helpers.hpp>
 #endif
 #include <numeric>
@@ -12,59 +14,142 @@
 
 namespace azeban {
 
-template <typename RNG, zisa::device_type LOCATION = RNGTraits<RNG>::location>
+template <int Dim,
+          typename RNG,
+          zisa::device_type LOCATION = RNGTraits<RNG>::location>
 class WhiteNoise {
   static_assert(LOCATION != LOCATION, "");
 };
 
 template <typename RNG>
-class WhiteNoise<RNG, zisa::device_type::cpu> {
+class WhiteNoise<1, RNG, zisa::device_type::cpu> {
   using state_t = typename RNGTraits<RNG>::state_t;
-  struct padded_state_t {
-    static constexpr int cacheline_size = 64;
-    static constexpr int size_diff
-        = cacheline_size - static_cast<int>(sizeof(state_t));
-    static constexpr int padding_size = size_diff < 0 ? 0 : size_diff;
-    state_t state;
-    char pad[padding_size];
-  };
 
 #ifdef __NVCC__
 public:
-  __device__ void operator()(real_t, long, complex_t *f1) {}
-  __device__ void operator()(real_t, long, long, complex_t *f1, complex_t *f2) {
-  }
-  __device__ void operator()(
-      real_t, long, long, long, complex_t *f1, complex_t *f2, complex_t *f3) {}
+  __device__ void pre(real_t, real_t) {}
+  __device__ void operator()(real_t, real_t, int, complex_t *f1) {}
 #else
+public:
+  explicit WhiteNoise(const Grid<1> &, real_t, int, unsigned long long) {}
+
+  void pre(real_t, real_t) {}
+
+  void operator()(real_t, real_t dt, int k1, complex_t *f1) { *f1 = 0; }
+#endif
+};
+
+template <typename RNG>
+class WhiteNoise<2, RNG, zisa::device_type::cpu> {
+  using state_t = typename RNGTraits<RNG>::state_t;
+
+#ifdef __NVCC__
+public:
+  __device__ void pre(real_t, real_t) {}
+  __device__ void
+  operator()(real_t, real_t, int, int, complex_t *, complex_t *) {}
+#else
+public:
+  explicit WhiteNoise(const Grid<2> &grid,
+                      real_t sigma,
+                      int N,
+                      unsigned long long seed)
+      : state_(seed),
+        dist_(0, zisa::pow<2>(static_cast<real_t>(grid.N_phys)) * sigma),
+        pot_(zisa::shape_t<2>(N, N)) {}
+
+  void pre(real_t, real_t) {
+    for (size_t i = 0; i < pot_.shape(0); ++i) {
+      for (size_t j = 0; j < pot_.shape(1); ++j) {
+        pot_(i, j) = i > 0 && j > 0 ? dist_(state_) : 0;
+      }
+    }
+  }
+
+  void
+  operator()(real_t, real_t dt, int k1, int k2, complex_t *f1, complex_t *f2) {
+    const unsigned absk1 = zisa::abs(k1);
+    const unsigned absk2 = zisa::abs(k2);
+    const real_t knorm = zisa::sqrt(static_cast<real_t>(k1 * k1 + k2 * k2));
+    const int s1 = k1 >= 0 ? 1 : -1;
+    const int s2 = k2 >= 0 ? 1 : -1;
+    if (absk1 < pot_.shape(0) && absk2 < pot_.shape(1)) {
+      const real_t coeff = 2. / knorm * pot_(absk1, absk2) / zisa::sqrt(dt);
+      *f1 = complex_t(coeff * absk2 / 4., 0);
+      *f2 = complex_t(-coeff * absk1 / 4. * s1 * s2, 0);
+    } else {
+      *f1 = 0;
+      *f2 = 0;
+    }
+  }
+#endif
+private:
+#ifndef __NVCC__
+  state_t state_;
+  std::normal_distribution<real_t> dist_;
+  zisa::array<real_t, 2> pot_;
+#endif
+};
+
+template <typename RNG>
+class WhiteNoise<3, RNG, zisa::device_type::cpu> {
+  using state_t = typename RNGTraits<RNG>::state_t;
+
+#ifdef __NVCC__
+public:
+  __device__ void pre(real_t, real_t) {}
+  __device__ void operator()(
+      real_t, real_t, int, int, int, complex_t *, complex_t *, complex_t *) {}
+#else
+public:
+  explicit WhiteNoise(const Grid<3> &grid,
+                      real_t sigma,
+                      int N,
+                      unsigned long long seed)
+      : state_(seed),
+        dist_(0, zisa::pow<3>(static_cast<real_t>(grid.N_phys)) * sigma),
+        pot_(zisa::shape_t<3>(N, N, N)) {}
+
+  void pre(real_t, real_t) {
+    for (size_t i = 0; i < pot_.size(); ++i) {
+      pot_[i] = dist_(state_);
+    }
+  }
+
+  void operator()(real_t,
+                  real_t dt,
+                  int k1,
+                  int k2,
+                  int k3,
+                  complex_t *f1,
+                  complex_t *f2,
+                  complex_t *f3) {
+    AZEBAN_ERR("Not yet Implemented");
+    *f1 = 0;
+    *f2 = 0;
+    *f3 = 0;
+  }
+#endif
+private:
+#ifndef __NVCC__
+  state_t state_;
+  std::normal_distribution<real_t> dist_;
+  zisa::array<real_t, 3> pot_;
+#endif
+};
+
+#if ZISA_HAS_CUDA
+
+template <typename RNG>
+class WhiteNoise<1, RNG, zisa::device_type::cuda> {
+  using state_t = typename RNGTraits<RNG>::state_t;
+
 public:
   template <int Dim>
   explicit WhiteNoise(const Grid<Dim> &grid,
                       real_t sigma,
-                      unsigned long long seed)
-      : state_(),
-        dist_(0,
-              zisa::sqrt(zisa::pow<Dim>(static_cast<real_t>(grid.N_phys) / 2))
-                  * sigma) {
-    int n_threads;
-#pragma omp parallel
-    {
-      if (omp_get_thread_num() == 0) {
-        n_threads = omp_get_num_threads();
-      }
-    }
-    state_.resize(n_threads);
-    std::vector<size_t> idxs(n_threads);
-    std::iota(begin(idxs), end(idxs), seed);
-    std::seed_seq seq(begin(idxs), end(idxs));
-    std::vector<size_t> seeds(n_threads);
-    seq.generate(begin(seeds), end(seeds));
-#pragma omp parallel
-    {
-      const int tid = omp_get_thread_num();
-      state_[tid].state.seed(seeds[tid]);
-    }
-  }
+                      int N,
+                      unsigned long long seed) {}
   WhiteNoise(const WhiteNoise &) = default;
   WhiteNoise(WhiteNoise &&) = default;
 
@@ -73,60 +158,30 @@ public:
   WhiteNoise &operator=(const WhiteNoise &) = default;
   WhiteNoise &operator=(WhiteNoise &&) = default;
 
-  void operator()(real_t, long, complex_t *f1) { *f1 = generate(); }
+  void destroy() {}
 
-  void operator()(real_t, long, long, complex_t *f1, complex_t *f2) {
-    *f1 = generate();
-    *f2 = generate();
+  __device__ __inline__ void pre(real_t, real_t) {}
+
+  __device__ __inline__ void
+  operator()(real_t t, real_t dt, int k1, complex_t *f1) {
+    f1->x = 0;
+    f1->y = 0;
   }
-
-  void operator()(
-      real_t, long, long, long, complex_t *f1, complex_t *f2, complex_t *f3) {
-    *f1 = generate();
-    *f2 = generate();
-    *f3 = generate();
-  }
-
-private:
-  std::vector<padded_state_t> state_;
-  std::normal_distribution<real_t> dist_;
-
-  complex_t generate() {
-    state_t &state = state_[omp_get_thread_num()].state;
-    complex_t res;
-    res.x = dist_(state);
-    res.y = dist_(state);
-    return res;
-  }
-#endif
 };
 
-#if ZISA_HAS_CUDA
-
 template <typename RNG>
-class WhiteNoise<RNG, zisa::device_type::cuda> {
+class WhiteNoise<2, RNG, zisa::device_type::cuda> {
   using state_t = typename RNGTraits<RNG>::state_t;
 
 public:
-  template <int Dim>
-  explicit WhiteNoise(const Grid<Dim> &grid,
+  explicit WhiteNoise(const Grid<2> &grid,
                       real_t sigma,
+                      int N,
                       unsigned long long seed)
-      : sigma_(zisa::sqrt(zisa::pow<Dim>(static_cast<real_t>(grid.N_phys) / 2))
-               * sigma) {
-    Nx_ = grid.N_fourier;
-    Ny_ = 1;
-    Nz_ = 1;
-    if (Dim > 1) {
-      Nx_ = grid.N_phys;
-      Ny_ = grid.N_fourier;
-    }
-    if (Dim > 2) {
-      Ny_ = grid.N_phys;
-      Nz_ = grid.N_fourier;
-    }
-    const size_t N = zisa::pow<Dim - 1>(grid.N_phys) * grid.N_fourier;
-    curand_allocate_state<RNG>(&state_, N, seed);
+      : sigma_(zisa::pow<2>(static_cast<real_t>(grid.N_phys)) * sigma),
+        pot_(zisa::shape_t<2>(N, N), zisa::device_type::cuda) {
+    const size_t Ns = zisa::pow<2>(N);
+    curand_allocate_state<RNG>(&state_, Ns, seed);
   }
   WhiteNoise(const WhiteNoise &) = default;
   WhiteNoise(WhiteNoise &&) = default;
@@ -138,88 +193,63 @@ public:
 
   void destroy() { curand_free_state<RNG>(state_); }
 
-  __device__ __inline__ void operator()(real_t t, long, complex_t *f1) {
-#ifdef __NVCC__
-    const size_t id = blockDim.x * blockIdx.x + threadIdx.x;
-    state_t local_state = state_[id];
-    const auto n = normal2(&local_state);
-    state_[id] = local_state;
-    f1->x = sigma_ * n.x;
-    f1->y = sigma_ * n.y;
-#else
-    f1->x = 0;
-    f1->y = 0;
-#endif
-  }
+  void pre(real_t, real_t) { white_noise_pre_cuda(sigma_, pot_, state_); }
 
   __device__ __inline__ void
-  operator()(real_t, long, long, complex_t *f1, complex_t *f2) {
-#ifdef __NVCC__
-    const size_t idx_x = blockDim.x * blockIdx.x + threadIdx.x;
-    const size_t idx_y = blockDim.y * blockIdx.y + threadIdx.y;
-    const size_t id = Ny_ * idx_x + idx_y;
-    state_t local_state = state_[id];
-    const auto n1 = normal2(&local_state);
-    const auto n2 = normal2(&local_state);
-    state_[id] = local_state;
-    f1->x = sigma_ * n1.x;
-    f1->y = sigma_ * n1.y;
-    f2->x = sigma_ * n2.x;
-    f2->y = sigma_ * n2.y;
-#else
-    f1->x = 0;
-    f1->y = 0;
-    f2->x = 0;
-    f2->y = 0;
-#endif
-  }
-
-  __device__ __inline__ void operator()(
-      real_t, long, long, long, complex_t *f1, complex_t *f2, complex_t *f3) {
-#ifdef __NVCC__
-    const size_t idx_x = blockDim.x * blockIdx.x + threadIdx.x;
-    const size_t idx_y = blockDim.y * blockIdx.y + threadIdx.y;
-    const size_t idx_z = blockDim.z * blockIdx.z + threadIdx.z;
-    const size_t id = Nz_ * (Ny_ * idx_x + idx_y) + idx_z;
-    state_t local_state = state_[id];
-    const auto n1 = normal2(&local_state);
-    const auto n2 = normal2(&local_state);
-    const auto n3 = normal2(&local_state);
-    state_[id] = local_state;
-    f1->x = sigma_ * n1.x;
-    f1->y = sigma_ * n1.y;
-    f2->x = sigma_ * n2.x;
-    f2->y = sigma_ * n2.y;
-    f3->x = sigma_ * n3.x;
-    f3->y = sigma_ * n3.y;
-#else
-    f1->x = 0;
-    f1->y = 0;
-    f2->x = 0;
-    f2->y = 0;
-    f3->x = 0;
-    f3->y = 0;
-#endif
+  operator()(real_t, real_t dt, int k1, int k2, complex_t *f1, complex_t *f2) {
+    const unsigned absk1 = zisa::abs(k1);
+    const unsigned absk2 = zisa::abs(k2);
+    const real_t knorm = zisa::sqrt(static_cast<real_t>(k1 * k1 + k2 * k2));
+    const int s1 = k1 >= 0 ? 1 : -1;
+    const int s2 = k2 >= 0 ? 1 : -1;
+    if (absk1 < pot_.shape(0) && absk2 < pot_.shape(1)) {
+      const real_t coeff = 2. / knorm * pot_(absk1, absk2) / zisa::sqrt(dt);
+      *f1 = complex_t(coeff * absk2 / 4., 0);
+      *f2 = complex_t(-coeff * absk1 / 4. * s1 * s2, 0);
+    } else {
+      *f1 = 0;
+      *f2 = 0;
+    }
   }
 
 private:
   state_t *state_;
   real_t sigma_;
-  zisa::int_t Nx_;
-  zisa::int_t Ny_;
-  zisa::int_t Nz_;
+  zisa::array<real_t, 2> pot_;
+};
 
-  static __device__ __inline__ float2 normal2(RNG *rng, float) {
-    return curand_normal2(rng);
-  }
+template <typename RNG>
+class WhiteNoise<3, RNG, zisa::device_type::cuda> {
+  using state_t = typename RNGTraits<RNG>::state_t;
 
-  static __device__ __inline__ double2 normal2(RNG *rng, double) {
-    return curand_normal2_double(rng);
-  }
+public:
+  explicit WhiteNoise(const Grid<3> &grid,
+                      real_t sigma,
+                      int N,
+                      unsigned long long seed) {}
+  WhiteNoise(const WhiteNoise &) = default;
+  WhiteNoise(WhiteNoise &&) = default;
 
-  static __device__ __inline__ auto normal2(RNG *rng)
-      -> decltype(normal2(rng, real_t{})) {
-    return normal2(rng, real_t{});
+  ~WhiteNoise() = default;
+
+  WhiteNoise &operator=(const WhiteNoise &) = default;
+  WhiteNoise &operator=(WhiteNoise &&) = default;
+
+  void destroy() {}
+
+  __device__ __inline__ void pre(real_t, real_t) {}
+
+  __device__ __inline__ void operator()(real_t t,
+                                        real_t dt,
+                                        int k1,
+                                        int k2,
+                                        int k3,
+                                        complex_t *f1,
+                                        complex_t *f2,
+                                        complex_t *f3) {
+    *f1 = 0;
+    *f2 = 0;
+    *f3 = 0;
   }
 };
 

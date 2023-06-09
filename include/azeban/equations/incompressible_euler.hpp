@@ -100,9 +100,10 @@ public:
   IncompressibleEuler &operator=(const IncompressibleEuler &) = delete;
   IncompressibleEuler &operator=(IncompressibleEuler &&) = default;
 
-  virtual void
-  dudt(const zisa::array_view<complex_t, dim_v + 1> &dudt_hat,
-       const zisa::array_const_view<complex_t, dim_v + 1> &u_hat) override {
+  virtual void dudt(const zisa::array_view<complex_t, dim_v + 1> &dudt_hat,
+                    const zisa::array_const_view<complex_t, dim_v + 1> &u_hat,
+                    real_t t,
+                    real_t dt) override {
     LOG_ERR_IF(dudt_hat.shape(0) != u_hat_.shape(0),
                "Wrong number of variables");
     LOG_ERR_IF(u_hat.shape(0) != u_hat_.shape(0), "Wrong number of variables");
@@ -114,7 +115,7 @@ public:
     u_max_ = max_norm(u_) / zisa::pow<dim_v>(grid_.N_phys_pad);
     computeB();
     fft_B_->forward();
-    computeDudt(dudt_hat, u_hat);
+    computeDudt(dudt_hat, u_hat, t, std::min(dt, this->dt()));
   }
 
   virtual real_t dt() const override { return 1. / (grid_.N_phys * u_max_); }
@@ -225,7 +226,9 @@ private:
 
   void
   computeDudt_cpu_2d(const zisa::array_view<complex_t, Dim + 1> &dudt_hat,
-                     const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
+                     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
+                     real_t t,
+                     real_t dt) {
     const unsigned stride_B = B_hat_.shape(1) * B_hat_.shape(2);
 #pragma omp parallel for collapse(2)
     for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
@@ -242,7 +245,7 @@ private:
         const real_t k2 = 2 * zisa::pi * j;
         const real_t absk2 = k1 * k1 + k2 * k2;
         complex_t force1, force2;
-        forcing_(0, i_, j, &force1, &force2);
+        forcing_(t, dt, i_, j, &force1, &force2);
         complex_t L1_hat, L2_hat;
         // clang-format off
         incompressible_euler_2d_compute_L(
@@ -273,7 +276,9 @@ private:
 
   void
   computeDudt_cpu_3d(const zisa::array_view<complex_t, Dim + 1> &dudt_hat,
-                     const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
+                     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
+                     real_t t,
+                     real_t dt) {
     const unsigned stride_B
         = B_hat_.shape(1) * B_hat_.shape(2) * B_hat_.shape(3);
 #pragma omp parallel for collapse(3)
@@ -301,7 +306,7 @@ private:
           const real_t k3 = 2 * zisa::pi * k;
           const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
           complex_t force1, force2, force3;
-          forcing_(0, i_, j_, k, &force1, &force2, &force3);
+          forcing_(t, dt, i_, j_, k, &force1, &force2, &force3);
           complex_t L1_hat, L2_hat, L3_hat;
           // clang-format off
           incompressible_euler_3d_compute_L(
@@ -332,13 +337,16 @@ private:
   }
 
   void computeDudt(const zisa::array_view<complex_t, Dim + 1> &dudt_hat,
-                   const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
+                   const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
+                   real_t t,
+                   real_t dt) {
     ProfileHost profile("IncompressibleEuler::computeDudt");
+    forcing_.pre(t, dt);
     if (device_ == zisa::device_type::cpu) {
       if constexpr (dim_v == 2) {
-        computeDudt_cpu_2d(dudt_hat, u_hat);
+        computeDudt_cpu_2d(dudt_hat, u_hat, t, dt);
       } else {
-        computeDudt_cpu_3d(dudt_hat, u_hat);
+        computeDudt_cpu_3d(dudt_hat, u_hat, t, dt);
       }
     }
 #if ZISA_HAS_CUDA
@@ -346,18 +354,18 @@ private:
       if (has_tracer_) {
         if constexpr (dim_v == 2) {
           incompressible_euler_2d_tracer_cuda(
-              B_hat_, u_hat, dudt_hat, visc_, forcing_);
+              B_hat_, u_hat, dudt_hat, visc_, forcing_, t, dt);
         } else {
           incompressible_euler_3d_tracer_cuda(
-              B_hat_, u_hat, dudt_hat, visc_, forcing_);
+              B_hat_, u_hat, dudt_hat, visc_, forcing_, t, dt);
         }
       } else {
         if constexpr (dim_v == 2) {
           incompressible_euler_2d_cuda(
-              B_hat_, u_hat, dudt_hat, visc_, forcing_);
+              B_hat_, u_hat, dudt_hat, visc_, forcing_, t, dt);
         } else {
           incompressible_euler_3d_cuda(
-              B_hat_, u_hat, dudt_hat, visc_, forcing_);
+              B_hat_, u_hat, dudt_hat, visc_, forcing_, t, dt);
         }
       }
     }

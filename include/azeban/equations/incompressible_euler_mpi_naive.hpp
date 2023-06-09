@@ -135,9 +135,10 @@ public:
   IncompressibleEuler_MPI_Naive &operator=(IncompressibleEuler_MPI_Naive &&)
       = default;
 
-  virtual void
-  dudt(const zisa::array_view<complex_t, 3> &dudt_hat,
-       const zisa::array_const_view<complex_t, 3> &u_hat) override {
+  virtual void dudt(const zisa::array_view<complex_t, 3> &dudt_hat,
+                    const zisa::array_const_view<complex_t, 3> &u_hat,
+                    real_t t,
+                    real_t dt) override {
     LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cpu,
                "Euler MPI needs CPU arrays");
     LOG_ERR_IF(u_hat.shape(0) != h_u_hat_pad_.shape(0),
@@ -161,7 +162,7 @@ public:
     fft_B_->forward();
     zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
     unpad_B_hat();
-    computeDudt(dudt_hat, u_hat);
+    computeDudt(dudt_hat, u_hat, t, dt);
   }
 
   virtual real_t dt() const override {
@@ -195,7 +196,9 @@ private:
   Forcing forcing_;
 
   void computeDudt(const zisa::array_view<complex_t, 3> &dudt_hat,
-                   const zisa::array_const_view<complex_t, 3> &u_hat) {
+                   const zisa::array_const_view<complex_t, 3> &u_hat,
+                   real_t t,
+                   real_t dt) {
     ProfileHost profile("IncompressibleEuler_MPI_Naive::computeDudt");
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
@@ -219,7 +222,7 @@ private:
         const real_t k2 = 2 * zisa::pi * j_;
         const real_t absk2 = k1 * k1 + k2 * k2;
         complex_t force1, force2;
-        forcing_(0, j_, i_, &force1, &force2);
+        forcing_(t, dt, j_, i_, &force1, &force2);
         complex_t L1_hat, L2_hat;
         incompressible_euler_2d_compute_L(k2,
                                           k1,
@@ -280,9 +283,10 @@ public:
   IncompressibleEuler_MPI_Naive &operator=(IncompressibleEuler_MPI_Naive &&)
       = default;
 
-  virtual void
-  dudt(const zisa::array_view<complex_t, 4> &dudt_hat,
-       const zisa::array_const_view<complex_t, 4> &u_hat) override {
+  virtual void dudt(const zisa::array_view<complex_t, 4> &dudt_hat,
+                    const zisa::array_const_view<complex_t, 4> &u_hat,
+                    real_t t,
+                    real_t dt) override {
     LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cpu,
                "Euler MPI needs CPU arrays");
     LOG_ERR_IF(u_hat.shape(0) != h_u_hat_pad_.shape(0),
@@ -306,7 +310,7 @@ public:
     fft_B_->forward();
     zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
     unpad_B_hat();
-    computeDudt(dudt_hat, u_hat);
+    computeDudt(dudt_hat, u_hat, t, dt);
   }
 
   virtual real_t dt() const override {
@@ -340,7 +344,9 @@ private:
   Forcing forcing_;
 
   void computeDudt(const zisa::array_view<complex_t, 4> &dudt_hat,
-                   const zisa::array_const_view<complex_t, 4> &u_hat) {
+                   const zisa::array_const_view<complex_t, 4> &u_hat,
+                   real_t t,
+                   real_t dt) {
     ProfileHost profile("IncompressibleEuler_MPI_Naive::computeDudt");
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
@@ -374,7 +380,7 @@ private:
           const real_t k3 = 2 * zisa::pi * k_;
           const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
           complex_t force1, force2, force3;
-          forcing_(0, k_, j_, i_, &force1, &force2, &force3);
+          forcing_(t, dt, k_, j_, i_, &force1, &force2, &force3);
           complex_t L1_hat, L2_hat, L3_hat;
           incompressible_euler_3d_compute_L(k3,
                                             k2,

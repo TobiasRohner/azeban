@@ -53,9 +53,10 @@ public:
   Burgers &operator=(const Burgers &) = delete;
   Burgers &operator=(Burgers &&) = default;
 
-  virtual void
-  dudt(const zisa::array_view<scalar_t, dim_v + 1> &dudt_hat,
-       const zisa::array_const_view<scalar_t, dim_v + 1> &u_hat) override {
+  virtual void dudt(const zisa::array_view<scalar_t, dim_v + 1> &dudt_hat,
+                    const zisa::array_const_view<scalar_t, dim_v + 1> &u_hat,
+                    real_t,
+                    real_t) override {
     copy_to_padded(
         zisa::array_view<complex_t, 1>(
             zisa::shape_t<1>(u_hat_.shape(1)), u_hat_.raw(), u_hat_.device()),

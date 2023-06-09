@@ -46,17 +46,18 @@ public:
   SSP_RK3 &operator=(SSP_RK3 &&) = default;
 
   virtual real_t
-  integrate(real_t max_dt,
+  integrate(real_t t,
+            real_t max_dt,
             real_t C,
             const zisa::array_view<complex_t, dim_v + 1> &u) override {
     ProfileHost profile("SSP_RK3::integrate");
-    equation_->dudt(u1_, u);
+    equation_->dudt(u1_, u, t, max_dt);
     const real_t dt = zisa::min(C * equation_->dt(), max_dt);
     axpby<complex_t, dim_v + 1>(1, u, dt, u1_);
-    equation_->dudt(u2_, u1_);
+    equation_->dudt(u2_, u1_, t, dt);
     axpby<complex_t, dim_v + 1>(1, u1_, dt, u2_);
     axpby<complex_t, dim_v + 1>(3. / 4, u, 1. / 4, u2_);
-    equation_->dudt(u1_, u2_);
+    equation_->dudt(u1_, u2_, t, dt);
     axpby<complex_t, dim_v + 1>(1, u2_, dt, u1_);
     axpby<complex_t, dim_v + 1>(2. / 3, u1_, 1. / 3, u);
     return dt;

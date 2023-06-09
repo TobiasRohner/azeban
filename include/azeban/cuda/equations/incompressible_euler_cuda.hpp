@@ -21,6 +21,7 @@
 #include <azeban/config.hpp>
 #include <azeban/equations/spectral_viscosity.hpp>
 #include <azeban/forcing/no_forcing.hpp>
+#include <azeban/forcing/sinusoidal.hpp>
 #include <azeban/forcing/white_noise.hpp>
 #include <azeban/grid.hpp>
 #include <zisa/memory/array_view.hpp>
@@ -45,7 +46,9 @@ void incompressible_euler_2d_cuda(
     const zisa::array_const_view<complex_t, 3> &u_hat,
     const zisa::array_view<complex_t, 3> &dudt_hat,
     const SpectralViscosity &visc,
-    Forcing &forcing);
+    Forcing &forcing,
+    real_t t,
+    real_t dt);
 
 template <typename SpectralViscosity, typename Forcing>
 void incompressible_euler_3d_cuda(
@@ -53,7 +56,9 @@ void incompressible_euler_3d_cuda(
     const zisa::array_const_view<complex_t, 4> &u_hat,
     const zisa::array_view<complex_t, 4> &dudt_hat,
     const SpectralViscosity &visc,
-    Forcing &forcing);
+    Forcing &forcing,
+    real_t t,
+    real_t dt);
 
 template <typename SpectralViscosity, typename Forcing>
 void incompressible_euler_2d_tracer_cuda(
@@ -61,7 +66,9 @@ void incompressible_euler_2d_tracer_cuda(
     const zisa::array_const_view<complex_t, 3> &u_hat,
     const zisa::array_view<complex_t, 3> &dudt_hat,
     const SpectralViscosity &visc,
-    Forcing &forcing);
+    Forcing &forcing,
+    real_t t,
+    real_t dt);
 
 template <typename SpectralViscosity, typename Forcing>
 void incompressible_euler_3d_tracer_cuda(
@@ -69,63 +76,116 @@ void incompressible_euler_3d_tracer_cuda(
     const zisa::array_const_view<complex_t, 4> &u_hat,
     const zisa::array_view<complex_t, 4> &dudt_hat,
     const SpectralViscosity &visc,
-    Forcing &forcing);
+    Forcing &forcing,
+    real_t t,
+    real_t dt);
 
-#define AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(VISC, FORCING)            \
+#define AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(VISC, FORCING)         \
   extern template void incompressible_euler_2d_cuda<VISC, FORCING>(            \
       const zisa::array_const_view<complex_t, 3> &,                            \
       const zisa::array_const_view<complex_t, 3> &,                            \
       const zisa::array_view<complex_t, 3> &,                                  \
       const VISC &,                                                            \
-      FORCING &);                                                              \
-  extern template void incompressible_euler_3d_cuda<VISC, FORCING>(            \
-      const zisa::array_const_view<complex_t, 4> &,                            \
-      const zisa::array_const_view<complex_t, 4> &,                            \
-      const zisa::array_view<complex_t, 4> &,                                  \
-      const VISC &,                                                            \
-      FORCING &);                                                              \
+      FORCING &,                                                               \
+      real_t,                                                                  \
+      real_t);                                                                 \
   extern template void incompressible_euler_2d_tracer_cuda<VISC, FORCING>(     \
       const zisa::array_const_view<complex_t, 3> &,                            \
       const zisa::array_const_view<complex_t, 3> &,                            \
       const zisa::array_view<complex_t, 3> &,                                  \
       const VISC &,                                                            \
-      FORCING &);                                                              \
+      FORCING &,                                                               \
+      real_t,                                                                  \
+      real_t);
+#define AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(VISC, FORCING)         \
+  extern template void incompressible_euler_3d_cuda<VISC, FORCING>(            \
+      const zisa::array_const_view<complex_t, 4> &,                            \
+      const zisa::array_const_view<complex_t, 4> &,                            \
+      const zisa::array_view<complex_t, 4> &,                                  \
+      const VISC &,                                                            \
+      FORCING &,                                                               \
+      real_t,                                                                  \
+      real_t);                                                                 \
   extern template void incompressible_euler_3d_tracer_cuda<VISC, FORCING>(     \
       const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_const_view<complex_t, 4> &,                            \
       const zisa::array_view<complex_t, 4> &,                                  \
       const VISC &,                                                            \
-      FORCING &);
+      FORCING &,                                                               \
+      real_t,                                                                  \
+      real_t);
 
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Step1D, NoForcing)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Step1D,
-                                             WhiteNoise<curandStateMRG32k3a_t>)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Step1D,
-                                             WhiteNoise<curandStateXORWOW_t>)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Step1D, WhiteNoise<std::mt19937>)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(SmoothCutoff1D, NoForcing)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(SmoothCutoff1D,
-                                             WhiteNoise<curandStateMRG32k3a_t>)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(SmoothCutoff1D,
-                                             WhiteNoise<curandStateXORWOW_t>)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(SmoothCutoff1D,
-                                             WhiteNoise<std::mt19937>)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Quadratic, NoForcing)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Quadratic,
-                                             WhiteNoise<curandStateMRG32k3a_t>)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Quadratic,
-                                             WhiteNoise<curandStateXORWOW_t>)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(Quadratic,
-                                             WhiteNoise<std::mt19937>)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(NoViscosity, NoForcing)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(NoViscosity,
-                                             WhiteNoise<curandStateMRG32k3a_t>)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(NoViscosity,
-                                             WhiteNoise<curandStateXORWOW_t>)
-AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA(NoViscosity,
-                                             WhiteNoise<std::mt19937>)
+#define COMMA ,
 
-#undef AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(Step1D, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(
+    Step1D, WhiteNoise<2 COMMA curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(
+    Step1D, WhiteNoise<2 COMMA curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(
+    Step1D, WhiteNoise<2 COMMA std::mt19937>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(Step1D, Sinusoidal)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(SmoothCutoff1D, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(
+    SmoothCutoff1D, WhiteNoise<2 COMMA curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(
+    SmoothCutoff1D, WhiteNoise<2 COMMA curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(
+    SmoothCutoff1D, WhiteNoise<2 COMMA std::mt19937>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(SmoothCutoff1D, Sinusoidal)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(Quadratic, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(
+    Quadratic, WhiteNoise<2 COMMA curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(
+    Quadratic, WhiteNoise<2 COMMA curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(
+    Quadratic, WhiteNoise<2 COMMA std::mt19937>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(Quadratic, Sinusoidal)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(NoViscosity, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(
+    NoViscosity, WhiteNoise<2 COMMA curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(
+    NoViscosity, WhiteNoise<2 COMMA curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(
+    NoViscosity, WhiteNoise<2 COMMA std::mt19937>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D(NoViscosity, Sinusoidal)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(Step1D, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(
+    Step1D, WhiteNoise<3 COMMA curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(
+    Step1D, WhiteNoise<3 COMMA curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(
+    Step1D, WhiteNoise<3 COMMA std::mt19937>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(Step1D, Sinusoidal)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(SmoothCutoff1D, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(
+    SmoothCutoff1D, WhiteNoise<3 COMMA curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(
+    SmoothCutoff1D, WhiteNoise<3 COMMA curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(
+    SmoothCutoff1D, WhiteNoise<3 COMMA std::mt19937>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(SmoothCutoff1D, Sinusoidal)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(Quadratic, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(
+    Quadratic, WhiteNoise<3 COMMA curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(
+    Quadratic, WhiteNoise<3 COMMA curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(
+    Quadratic, WhiteNoise<3 COMMA std::mt19937>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(Quadratic, Sinusoidal)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(NoViscosity, NoForcing)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(
+    NoViscosity, WhiteNoise<3 COMMA curandStateMRG32k3a_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(
+    NoViscosity, WhiteNoise<3 COMMA curandStateXORWOW_t>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(
+    NoViscosity, WhiteNoise<3 COMMA std::mt19937>)
+AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D(NoViscosity, Sinusoidal)
+
+#undef COMMA
+
+#undef AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_2D
+#undef AZEBAN_INSTANTIATE_INCOMPRESSIBLE_EULER_CUDA_3D
 
 }
 

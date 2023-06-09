@@ -142,12 +142,13 @@ public:
   IncompressibleEuler_MPI &operator=(const IncompressibleEuler_MPI &) = delete;
   IncompressibleEuler_MPI &operator=(IncompressibleEuler_MPI &&) = default;
 
-  virtual void
-  dudt(const zisa::array_view<complex_t, 3> &dudt_hat,
-       const zisa::array_const_view<complex_t, 3> &u_hat) override {
+  virtual void dudt(const zisa::array_view<complex_t, 3> &dudt_hat,
+                    const zisa::array_const_view<complex_t, 3> &u_hat,
+                    real_t t,
+                    real_t dt) override {
     ProfileHost profile("IncompressibleEuler_MPI::dudt");
     computeBhat(u_hat);
-    computeDudt(dudt_hat, u_hat);
+    computeDudt(dudt_hat, u_hat, t, dt);
   }
 
   using super::n_vars;
@@ -165,14 +166,16 @@ private:
   Forcing forcing_;
 
   void computeDudt(const zisa::array_view<complex_t, 3> &dudt_hat,
-                   const zisa::array_const_view<complex_t, 3> &u_hat) {
+                   const zisa::array_const_view<complex_t, 3> &u_hat,
+                   real_t t,
+                   real_t dt) {
     ProfileHost profile("IncompressibleEuler_MPI::computeDudt");
     if (device_ == zisa::device_type::cpu) {
-      computeDudt_cpu(dudt_hat, u_hat);
+      computeDudt_cpu(dudt_hat, u_hat, t, dt);
     }
 #if ZISA_HAS_CUDA
     else if (device_ == zisa::device_type::cuda) {
-      computeDudt_cuda(dudt_hat, u_hat);
+      computeDudt_cuda(dudt_hat, u_hat, t, dt);
     }
 #endif
     else {
@@ -181,7 +184,9 @@ private:
   }
 
   void computeDudt_cpu(const zisa::array_view<complex_t, 3> &dudt_hat,
-                       const zisa::array_const_view<complex_t, 3> &u_hat) {
+                       const zisa::array_const_view<complex_t, 3> &u_hat,
+                       real_t t,
+                       real_t dt) {
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const auto shape_phys = grid_.shape_phys(1);
@@ -204,7 +209,7 @@ private:
         const real_t k2 = 2 * zisa::pi * j_;
         const real_t absk2 = k1 * k1 + k2 * k2;
         complex_t force1, force2;
-        forcing_(0, j_, i_, &force1, &force2);
+        forcing_(t, dt, j_, i_, &force1, &force2);
         complex_t L1_hat, L2_hat;
         incompressible_euler_2d_compute_L(k2,
                                           k1,
@@ -231,17 +236,35 @@ private:
 
 #if ZISA_HAS_CUDA
   void computeDudt_cuda(const zisa::array_view<complex_t, 3> &dudt_hat,
-                        const zisa::array_const_view<complex_t, 3> &u_hat) {
+                        const zisa::array_const_view<complex_t, 3> &u_hat,
+                        real_t t,
+                        real_t dt) {
     ProfileHost profile("IncompressibleEuler_MPI::computeDudt");
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const auto shape_phys = grid_.shape_phys(1);
     if (has_tracer_) {
-      incompressible_euler_mpi_2d_tracer_cuda(
-          B_hat_, u_hat, dudt_hat, visc_, forcing_, i_base, j_base, shape_phys);
+      incompressible_euler_mpi_2d_tracer_cuda(B_hat_,
+                                              u_hat,
+                                              dudt_hat,
+                                              visc_,
+                                              forcing_,
+                                              t,
+                                              dt,
+                                              i_base,
+                                              j_base,
+                                              shape_phys);
     } else {
-      incompressible_euler_mpi_2d_cuda(
-          B_hat_, u_hat, dudt_hat, visc_, forcing_, i_base, j_base, shape_phys);
+      incompressible_euler_mpi_2d_cuda(B_hat_,
+                                       u_hat,
+                                       dudt_hat,
+                                       visc_,
+                                       forcing_,
+                                       t,
+                                       dt,
+                                       i_base,
+                                       j_base,
+                                       shape_phys);
     }
   }
 #endif
@@ -278,12 +301,13 @@ public:
   IncompressibleEuler_MPI &operator=(const IncompressibleEuler_MPI &) = delete;
   IncompressibleEuler_MPI &operator=(IncompressibleEuler_MPI &&) = default;
 
-  virtual void
-  dudt(const zisa::array_view<complex_t, 4> &dudt_hat,
-       const zisa::array_const_view<complex_t, 4> &u_hat) override {
+  virtual void dudt(const zisa::array_view<complex_t, 4> &dudt_hat,
+                    const zisa::array_const_view<complex_t, 4> &u_hat,
+                    real_t t,
+                    real_t dt) override {
     ProfileHost profile("IncompressibleEuler_MPI::dudt");
     computeBhat(u_hat);
-    computeDudt(dudt_hat, u_hat);
+    computeDudt(dudt_hat, u_hat, t, dt);
   }
 
   using super::n_vars;
@@ -301,14 +325,16 @@ private:
   Forcing forcing_;
 
   void computeDudt(const zisa::array_view<complex_t, 4> &dudt_hat,
-                   const zisa::array_const_view<complex_t, 4> &u_hat) {
+                   const zisa::array_const_view<complex_t, 4> &u_hat,
+                   real_t t,
+                   real_t dt) {
     ProfileHost profile("IncompressibleEuler_MPI::computeDudt");
     if (device_ == zisa::device_type::cpu) {
-      computeDudt_cpu(dudt_hat, u_hat);
+      computeDudt_cpu(dudt_hat, u_hat, t, dt);
     }
 #if ZISA_HAS_CUDA
     else if (device_ == zisa::device_type::cuda) {
-      computeDudt_cuda(dudt_hat, u_hat);
+      computeDudt_cuda(dudt_hat, u_hat, t, dt);
     }
 #endif
     else {
@@ -317,7 +343,9 @@ private:
   }
 
   void computeDudt_cpu(const zisa::array_view<complex_t, 4> &dudt_hat,
-                       const zisa::array_const_view<complex_t, 4> &u_hat) {
+                       const zisa::array_const_view<complex_t, 4> &u_hat,
+                       real_t t,
+                       real_t dt) {
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const zisa::int_t k_base = grid_.k_fourier(0, comm_);
@@ -350,7 +378,7 @@ private:
           const real_t k3 = 2 * zisa::pi * k_;
           const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
           complex_t force1, force2, force3;
-          forcing_(0, k_, j_, i_, &force1, &force2, &force3);
+          forcing_(t, dt, k_, j_, i_, &force1, &force2, &force3);
           complex_t L1_hat, L2_hat, L3_hat;
           incompressible_euler_3d_compute_L(k3,
                                             k2,
@@ -390,7 +418,9 @@ private:
 
 #if ZISA_HAS_CUDA
   void computeDudt_cuda(const zisa::array_view<complex_t, 4> &dudt_hat,
-                        const zisa::array_const_view<complex_t, 4> &u_hat) {
+                        const zisa::array_const_view<complex_t, 4> &u_hat,
+                        real_t t,
+                        real_t dt) {
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const zisa::int_t k_base = grid_.k_fourier(0, comm_);
@@ -401,6 +431,8 @@ private:
                                               dudt_hat,
                                               visc_,
                                               forcing_,
+                                              t,
+                                              dt,
                                               i_base,
                                               j_base,
                                               k_base,
@@ -411,6 +443,8 @@ private:
                                        dudt_hat,
                                        visc_,
                                        forcing_,
+                                       t,
+                                       dt,
                                        i_base,
                                        j_base,
                                        k_base,
