@@ -16,6 +16,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if AZEBAN_HAS_PYTHON
+
 #include <azeban/init/python.hpp>
 #include <pybind11/embed.h>
 #include <pybind11/numpy.h>
@@ -94,3 +96,5 @@ template class Python<2>;
 template class Python<3>;
 
 }
+
+#endif // AZEBAN_HAS_PYTHON
