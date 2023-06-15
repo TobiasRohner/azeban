@@ -78,8 +78,8 @@ make_initializer_u(const nlohmann::json &config, RNG &rng) {
     return make_const_phys<Dim>(config, rng);
   } else if (name == "Init From File") {
     return make_init_from_file<Dim>(config);
-  } 
-# if AZEBAN_HAS_PYTHON
+  }
+#if AZEBAN_HAS_PYTHON
   else if (name == "Python") {
     return make_python<Dim>(config, rng);
   }

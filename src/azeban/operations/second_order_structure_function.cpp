@@ -1,4 +1,4 @@
-#include <azeban/operations/structure_function.hpp>
+#include <azeban/operations/second_order_structure_function.hpp>
 #include <cmath>
 #include <iostream>
 #include <omp.h>
@@ -66,10 +66,10 @@ struct IApprox<3> {
 }
 
 template <typename I_OP>
-static std::vector<real_t>
-structure_function_cpu(const Grid<1> &grid,
-                       const zisa::array_const_view<complex_t, 2> &u_hat,
-                       long k1_offset = 0) {
+static std::vector<real_t> second_order_structure_function_cpu(
+    const Grid<1> &grid,
+    const zisa::array_const_view<complex_t, 2> &u_hat,
+    long k1_offset = 0) {
   const size_t Nr = (grid.N_phys + 1) / 2;
   const real_t dx = 1. / grid.N_phys;
   std::vector<real_t> S(Nr, 0);
@@ -93,11 +93,11 @@ structure_function_cpu(const Grid<1> &grid,
 }
 
 template <typename I_OP>
-static std::vector<real_t>
-structure_function_cpu(const Grid<2> &grid,
-                       const zisa::array_const_view<complex_t, 3> &u_hat,
-                       long k1_offset = 0,
-                       long k2_offset = 0) {
+static std::vector<real_t> second_order_structure_function_cpu(
+    const Grid<2> &grid,
+    const zisa::array_const_view<complex_t, 3> &u_hat,
+    long k1_offset = 0,
+    long k2_offset = 0) {
   const size_t Nr = (grid.N_phys + 1) / 2;
   const real_t dx = 1. / grid.N_phys;
   std::vector<real_t> S(Nr, 0);
@@ -131,12 +131,12 @@ structure_function_cpu(const Grid<2> &grid,
 }
 
 template <typename I_OP>
-static std::vector<real_t>
-structure_function_cpu(const Grid<3> &grid,
-                       const zisa::array_const_view<complex_t, 4> &u_hat,
-                       long k1_offset = 0,
-                       long k2_offset = 0,
-                       long k3_offset = 0) {
+static std::vector<real_t> second_order_structure_function_cpu(
+    const Grid<3> &grid,
+    const zisa::array_const_view<complex_t, 4> &u_hat,
+    long k1_offset = 0,
+    long k2_offset = 0,
+    long k3_offset = 0) {
   const size_t Nr = (grid.N_phys + 1) / 2;
   const real_t dx = 1. / grid.N_phys;
   int N_threads;
@@ -191,13 +191,13 @@ structure_function_cpu(const Grid<3> &grid,
 
 #if AZEBAN_HAS_MPI
 template <int Dim, typename I_OP>
-static std::vector<real_t>
-structure_function_cpu(const Grid<Dim> &grid,
-                       const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-                       MPI_Comm comm) {
+static std::vector<real_t> second_order_structure_function_cpu(
+    const Grid<Dim> &grid,
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
+    MPI_Comm comm) {
   const long k1_offset = grid.i_fourier(0, comm);
   const std::vector<real_t> local_S
-      = structure_function_cpu<I_OP>(grid, u_hat, k1_offset);
+      = second_order_structure_function_cpu<I_OP>(grid, u_hat, k1_offset);
   std::vector<real_t> S(local_S.size(), 0);
   MPI_Reduce(local_S.data(),
              S.data(),
@@ -211,11 +211,11 @@ structure_function_cpu(const Grid<Dim> &grid,
 #endif
 
 template <int Dim, typename I_OP>
-static std::vector<real_t>
-structure_function(const Grid<Dim> &grid,
-                   const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
+static std::vector<real_t> second_order_structure_function(
+    const Grid<Dim> &grid,
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
   if (u_hat.memory_location() == zisa::device_type::cpu) {
-    auto S = structure_function_cpu<I_OP>(grid, u_hat);
+    auto S = second_order_structure_function_cpu<I_OP>(grid, u_hat);
     for (real_t &Sr : S) {
       Sr = std::sqrt(Sr);
     }
@@ -233,46 +233,41 @@ structure_function(const Grid<Dim> &grid,
 }
 
 template <int Dim>
-std::vector<real_t> structure_function_exact(
+std::vector<real_t> second_order_structure_function_exact(
     const Grid<Dim> &grid,
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
-  return structure_function<Dim, detail::IExact<Dim>>(grid, u_hat);
+  return second_order_structure_function<Dim, detail::IExact<Dim>>(grid, u_hat);
 }
 
 template <int Dim>
-std::vector<real_t> structure_function_approx(
+std::vector<real_t> second_order_structure_function_approx(
     const Grid<Dim> &grid,
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat) {
-  return structure_function<Dim, detail::IApprox<Dim>>(grid, u_hat);
+  return second_order_structure_function<Dim, detail::IApprox<Dim>>(grid,
+                                                                    u_hat);
 }
 
-template std::vector<real_t>
-structure_function_exact(const Grid<1> &,
-                         const zisa::array_const_view<complex_t, 2> &);
-template std::vector<real_t>
-structure_function_exact(const Grid<2> &,
-                         const zisa::array_const_view<complex_t, 3> &);
-template std::vector<real_t>
-structure_function_exact(const Grid<3> &,
-                         const zisa::array_const_view<complex_t, 4> &);
-template std::vector<real_t>
-structure_function_approx(const Grid<1> &,
-                          const zisa::array_const_view<complex_t, 2> &);
-template std::vector<real_t>
-structure_function_approx(const Grid<2> &,
-                          const zisa::array_const_view<complex_t, 3> &);
-template std::vector<real_t>
-structure_function_approx(const Grid<3> &,
-                          const zisa::array_const_view<complex_t, 4> &);
+template std::vector<real_t> second_order_structure_function_exact(
+    const Grid<1> &, const zisa::array_const_view<complex_t, 2> &);
+template std::vector<real_t> second_order_structure_function_exact(
+    const Grid<2> &, const zisa::array_const_view<complex_t, 3> &);
+template std::vector<real_t> second_order_structure_function_exact(
+    const Grid<3> &, const zisa::array_const_view<complex_t, 4> &);
+template std::vector<real_t> second_order_structure_function_approx(
+    const Grid<1> &, const zisa::array_const_view<complex_t, 2> &);
+template std::vector<real_t> second_order_structure_function_approx(
+    const Grid<2> &, const zisa::array_const_view<complex_t, 3> &);
+template std::vector<real_t> second_order_structure_function_approx(
+    const Grid<3> &, const zisa::array_const_view<complex_t, 4> &);
 
 #if AZEBAN_HAS_MPI
 template <int Dim, typename I_OP>
-static std::vector<real_t>
-structure_function(const Grid<Dim> &grid,
-                   const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-                   MPI_Comm comm) {
+static std::vector<real_t> second_order_structure_function(
+    const Grid<Dim> &grid,
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
+    MPI_Comm comm) {
   if (u_hat.memory_location() == zisa::device_type::cpu) {
-    auto S = structure_function_cpu<Dim, I_OP>(grid, u_hat, comm);
+    auto S = second_order_structure_function_cpu<Dim, I_OP>(grid, u_hat, comm);
     for (real_t &Sr : S) {
       Sr = std::sqrt(Sr);
     }
@@ -290,32 +285,34 @@ structure_function(const Grid<Dim> &grid,
 }
 
 template <int Dim>
-std::vector<real_t> structure_function_exact(
+std::vector<real_t> second_order_structure_function_exact(
     const Grid<Dim> &grid,
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
     MPI_Comm comm) {
-  return structure_function<Dim, detail::IExact<Dim>>(grid, u_hat, comm);
+  return second_order_structure_function<Dim, detail::IExact<Dim>>(
+      grid, u_hat, comm);
 }
 
 template <int Dim>
-std::vector<real_t> structure_function_approx(
+std::vector<real_t> second_order_structure_function_approx(
     const Grid<Dim> &grid,
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
     MPI_Comm comm) {
-  return structure_function<Dim, detail::IApprox<Dim>>(grid, u_hat, comm);
+  return second_order_structure_function<Dim, detail::IApprox<Dim>>(
+      grid, u_hat, comm);
 }
 
-template std::vector<real_t> structure_function_exact(
+template std::vector<real_t> second_order_structure_function_exact(
     const Grid<1> &, const zisa::array_const_view<complex_t, 2> &, MPI_Comm);
-template std::vector<real_t> structure_function_exact(
+template std::vector<real_t> second_order_structure_function_exact(
     const Grid<2> &, const zisa::array_const_view<complex_t, 3> &, MPI_Comm);
-template std::vector<real_t> structure_function_exact(
+template std::vector<real_t> second_order_structure_function_exact(
     const Grid<3> &, const zisa::array_const_view<complex_t, 4> &, MPI_Comm);
-template std::vector<real_t> structure_function_approx(
+template std::vector<real_t> second_order_structure_function_approx(
     const Grid<1> &, const zisa::array_const_view<complex_t, 2> &, MPI_Comm);
-template std::vector<real_t> structure_function_approx(
+template std::vector<real_t> second_order_structure_function_approx(
     const Grid<2> &, const zisa::array_const_view<complex_t, 3> &, MPI_Comm);
-template std::vector<real_t> structure_function_approx(
+template std::vector<real_t> second_order_structure_function_approx(
     const Grid<3> &, const zisa::array_const_view<complex_t, 4> &, MPI_Comm);
 #endif
 

@@ -9,6 +9,10 @@ target_sources(azeban_generic_obj
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/energy_spectrum_writer_factory.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/structure_function_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/structure_function_writer_factory.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/structure_function_cube_writer.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/structure_function_cube_writer_factory.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/second_order_structure_function_writer.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/second_order_structure_function_writer_factory.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/writer_factory.cpp
 )
 

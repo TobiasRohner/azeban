@@ -80,7 +80,7 @@ void EnergySpectrumWriter<Dim>::write(
     std::ofstream file(path_ + "/energy_" + std::to_string(sample_idx_)
                        + "_time_" + std::to_string(snapshot_idx_) + ".txt");
     for (real_t E : spectrum_avg) {
-      file << std::setw(std::numeric_limits<real_t>::max_digits10) << E << '\t';
+      file << std::setprecision(std::numeric_limits<real_t>::max_digits10) << E << '\t';
     }
   }
 #else
@@ -135,7 +135,8 @@ void EnergySpectrumWriter<Dim>::write(
       std::ofstream file(path_ + "/energy_" + std::to_string(sample_idx_)
                          + "_time_" + std::to_string(snapshot_idx_) + ".txt");
       for (real_t E : spectrum_avg) {
-        file << std::setw(std::numeric_limits<real_t>::max_digits10) << E
+        file << std::setprecision(std::numeric_limits<real_t>::max_digits10) <<
+  E
              << '\t';
       }
     }

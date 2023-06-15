@@ -241,6 +241,12 @@ if(AZEBAN_HAS_BENCHMARK)
   target_link_libraries(system_properties PRIVATE azeban_warning_flags)
 endif()
 
+# -- Postprocessing Standalone -------------------------------------------------
+add_executable(postprocess)
+target_link_libraries(postprocess PRIVATE azeban_lib)
+target_link_libraries(postprocess PRIVATE azeban_warning_flags)
+set_target_properties(postprocess PROPERTIES CXX_STANDARD 17)
+
 # -- Subdirectories ------------------------------------------------------------
 add_subdirectory(src)
 add_subdirectory(test)

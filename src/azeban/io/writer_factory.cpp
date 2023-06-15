@@ -80,7 +80,7 @@ std::unique_ptr<Writer<Dim>> make_writer(const nlohmann::json &config,
     else if (name == "Energy Spectrum") {
       return make_energy_spectrum_writer<Dim>(
           config, grid, sample_idx_start, comm);
-    } else if (name == "Structure Function") {
+    } else if (name == "Second Order Structure Function") {
       return make_structure_function_writer<Dim>(
           config, grid, sample_idx_start, comm);
     } else {
