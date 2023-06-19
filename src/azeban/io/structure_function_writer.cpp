@@ -31,7 +31,7 @@ void StructureFunctionWriter<Dim, Function>::write(
   ProfileHost pofile("StructureFunctionWriter::write");
   ZISA_UNUSED(t);
   const std::vector<real_t> S = structure_function<Dim>(u, max_h_, func_);
-  std::ofstream file(path_ + "/" + name_ + "S2_" + std::to_string(sample_idx_)
+  std::ofstream file(path_ + "/" + name_ + std::to_string(sample_idx_)
                      + "_time_" + std::to_string(snapshot_idx_) + ".txt");
   for (real_t E : S) {
     file << std::setprecision(std::numeric_limits<real_t>::max_digits10) << E
