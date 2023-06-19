@@ -20,8 +20,7 @@ public:
                               real_t p,
                               ssize_t max_h);
   ANY_DEVICE_INLINE
-  StructureFunctionCubeWriter(const StructureFunctionCubeWriter &)
-      = default;
+  StructureFunctionCubeWriter(const StructureFunctionCubeWriter &) = default;
   ANY_DEVICE_INLINE StructureFunctionCubeWriter(StructureFunctionCubeWriter &&)
       = default;
 

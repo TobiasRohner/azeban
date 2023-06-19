@@ -13,6 +13,8 @@ target_sources(azeban_cuda_obj
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/norm_cuda.cu
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/scale_cuda.cu
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/transpose.cu
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/structure_function.cu
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/reduce_cuda.cu
 )
 
 endif()

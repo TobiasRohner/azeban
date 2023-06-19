@@ -27,7 +27,7 @@
 
 namespace azeban {
 
-__device__ void warpReduce(volatile real_t *sdata, unsigned tid) {
+static __device__ void warpReduce(volatile real_t *sdata, unsigned tid) {
   sdata[tid] += sdata[tid + 32];
   sdata[tid] += sdata[tid + 16];
   sdata[tid] += sdata[tid + 8];
@@ -36,7 +36,7 @@ __device__ void warpReduce(volatile real_t *sdata, unsigned tid) {
   sdata[tid] += sdata[tid + 1];
 }
 
-__device__ void warpReduceMax(volatile real_t *sdata, unsigned tid) {
+static __device__ void warpReduceMax(volatile real_t *sdata, unsigned tid) {
   sdata[tid] = zisa::max(sdata[tid], sdata[tid + 32]);
   sdata[tid] = zisa::max(sdata[tid], sdata[tid + 16]);
   sdata[tid] = zisa::max(sdata[tid], sdata[tid + 8]);

@@ -44,17 +44,32 @@ public:
 
   template <int Dim>
   void read(const zisa::array_view<real_t, Dim> &data) const {
-    ProfileHost pofile("SampleFile::read");
+    ProfileHost profile("SampleFile::read");
     AZEBAN_ERR_IF(Dim != dim() + 1, "Data has wrong dimension");
-    const size_t comp_size = data.size() / data.shape(0);
-    if (Dim > 1) {
-      read_impl("u", data.raw() + 0 * comp_size);
+    const auto read_cpu = [&](const zisa::array_view<real_t, Dim> &data_cpu) {
+      const size_t comp_size = data.size() / data.shape(0);
+      if (Dim > 1) {
+        read_impl("u", data_cpu.raw() + 0 * comp_size);
+      }
+      if (Dim > 2) {
+        read_impl("v", data_cpu.raw() + 1 * comp_size);
+      }
+      if (Dim > 3) {
+        read_impl("w", data_cpu.raw() + 2 * comp_size);
+      }
+    };
+    if (data.memory_location() == zisa::device_type::cpu) {
+      read_cpu(data);
     }
-    if (Dim > 2) {
-      read_impl("v", data.raw() + 1 * comp_size);
+#if ZISA_HAS_CUDA
+    else if (data.memory_location() == zisa::device_type::cuda) {
+      zisa::array<real_t, Dim> data_cpu(data.shape(), zisa::device_type::cpu);
+      read_cpu(data_cpu);
+      zisa::copy(data, data_cpu);
     }
-    if (Dim > 3) {
-      read_impl("w", data.raw() + 2 * comp_size);
+#endif
+    else {
+      AZEBAN_ERR("Unknown memory location");
     }
   }
 
@@ -102,8 +117,22 @@ void run_for_sample(const nlohmann::json &config,
                     const std::unique_ptr<SampleFile> &sample_file) {
   const size_t N = sample_file->N();
   const Grid<Dim> grid(N);
-  zisa::array<real_t, Dim + 1> sample(grid.shape_phys(Dim));
-  zisa::array<complex_t, Dim + 1> sample_hat(grid.shape_fourier(Dim));
+  zisa::device_type device = zisa::device_type::cpu;
+  if (config.contains("device")) {
+    if (config["device"] == "cpu") {
+      device = zisa::device_type::cpu;
+    }
+#if ZISA_HAS_CUDA
+    else if (config["device"] == "cuda") {
+      device = zisa::device_type::cuda;
+    }
+#endif
+    else {
+      AZEBAN_ERR("Unsupported memory location");
+    }
+  }
+  zisa::array<real_t, Dim + 1> sample(grid.shape_phys(Dim), device);
+  zisa::array<complex_t, Dim + 1> sample_hat(grid.shape_fourier(Dim), device);
   auto fft = make_fft<Dim>(sample_hat.view(), sample.view(), FFT_FORWARD);
   sample_file->read(sample.view());
   std::unique_ptr<Writer<Dim>> writer = make_writer<Dim>(config, grid, 0);

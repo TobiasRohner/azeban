@@ -1,6 +1,8 @@
+#include <azeban/io/longitudinal_structure_function_writer_factory.hpp>
 #include <azeban/io/second_order_structure_function_writer_factory.hpp>
 #include <azeban/io/structure_function_cube_writer_factory.hpp>
 #include <azeban/io/structure_function_writer_factory.hpp>
+#include <azeban/io/third_order_structure_function_writer_factory.hpp>
 
 namespace azeban {
 
@@ -18,8 +20,14 @@ make_structure_function_writer(const nlohmann::json &config,
   if (type == "Second Order") {
     return make_second_order_structure_function_writer<Dim>(
         config, grid, sample_idx_start);
+  } else if (type == "Third Order") {
+    return make_third_order_structure_function_writer<Dim>(
+        config, grid, sample_idx_start);
   } else if (type == "Cube") {
     return make_structure_function_cube_writer<Dim>(
+        config, grid, sample_idx_start);
+  } else if (type == "Longitudinal") {
+    return make_longitudinal_structure_function_writer<Dim>(
         config, grid, sample_idx_start);
   } else {
     fmt::print(stderr, "Unknown StructureFunctionWriter type \"{}\"\n", type);
@@ -43,10 +51,20 @@ make_structure_function_writer(const nlohmann::json &config,
   if (type == "Second Order") {
     return make_second_order_structure_function_writer<Dim>(
         config, grid, sample_idx_start, comm);
+  } else if (type == "Third Order") {
+    fmt::print(stderr,
+               "Third Order Structure Function not supported for distributed "
+               "computations\n");
+    exit(1);
   } else if (type == "Cube") {
     fmt::print(
         stderr,
         "Structure Function Cube not supported for distributed computations\n");
+    exit(1);
+  } else if (type == "Longitudinal") {
+    fmt::print(stderr,
+               "Longitudinal Structure Function not supported for distributed "
+               "computations\n");
     exit(1);
   } else {
     fmt::print(stderr, "Unknown StructureFunctionWriter type \"{}\"\n", type);

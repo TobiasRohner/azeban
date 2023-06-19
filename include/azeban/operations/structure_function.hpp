@@ -6,12 +6,15 @@
 #include <azeban/utils/math.hpp>
 #include <vector>
 #include <zisa/memory/array_view.hpp>
+#if ZISA_HAS_CUDA
+#include <azeban/cuda/operations/structure_function_cuda.hpp>
+#endif
 
 namespace azeban {
 
 namespace detail {
 
-ANY_DEVICE_INLINE ssize_t periodic_index(ssize_t i, ssize_t N) {
+inline ssize_t periodic_index(ssize_t i, ssize_t N) {
   if (i < 0) {
     return i + N;
   }
@@ -29,6 +32,7 @@ structure_function_cpu(const zisa::array_const_view<real_t, 2> &u,
                        ssize_t max_h,
                        const Function &func) {
   const ssize_t N = u.shape(1);
+  const real_t vol = 1. / N;
 
   std::vector<real_t> sf(max_h);
 #pragma omp parallel
@@ -41,7 +45,7 @@ structure_function_cpu(const zisa::array_const_view<real_t, 2> &u,
         const ssize_t j = i + di;
         const real_t uj = u(0, detail::periodic_index(j, N));
         const ssize_t h = ::azeban::abs(di);
-        sf[h] += func(ui, uj, di) / N;
+        sf[h] += vol * func(ui, uj, di);
       }
     }
 #pragma omp critical
@@ -60,6 +64,7 @@ structure_function_cpu(const zisa::array_const_view<real_t, 3> &u,
                        ssize_t max_h,
                        const Function &func) {
   const ssize_t N = u.shape(1);
+  const real_t vol = 1. / zisa::pow<2>(N);
 
   std::vector<real_t> sf(max_h);
 #pragma omp parallel
@@ -79,7 +84,7 @@ structure_function_cpu(const zisa::array_const_view<real_t, 3> &u,
             const real_t vkl = u(
                 1, detail::periodic_index(k, N), detail::periodic_index(l, N));
             const ssize_t h = zisa::max(::azeban::abs(di), ::azeban::abs(dj));
-            sf_loc[h] += func(uij, vij, ukl, vkl, di, dj) / zisa::pow<2>(N);
+            sf_loc[h] += vol * func(uij, vij, ukl, vkl, di, dj);
           }
         }
       }
@@ -100,6 +105,7 @@ structure_function_cpu(const zisa::array_const_view<real_t, 4> &u,
                        ssize_t max_h,
                        const Function &func) {
   const ssize_t N = u.shape(1);
+  const real_t vol = 1. / zisa::pow<3>(N);
 
   std::vector<real_t> sf(max_h);
 #pragma omp parallel
@@ -134,8 +140,8 @@ structure_function_cpu(const zisa::array_const_view<real_t, 4> &u,
                     = zisa::max(zisa::max(::azeban::abs(di), ::azeban::abs(dj)),
                                 ::azeban::abs(dk));
                 sf_loc[h]
-                    += func(uijk, vijk, wijk, ulmn, vlmn, wlmn, di, dj, dk)
-                       / zisa::pow<3>(N);
+                    += vol
+                       * func(uijk, vijk, wijk, ulmn, vlmn, wlmn, di, dj, dk);
               }
             }
           }
@@ -152,7 +158,7 @@ structure_function_cpu(const zisa::array_const_view<real_t, 4> &u,
   return sf;
 }
 
-template <int Dim, typename Function>
+template <ssize_t Dim, typename Function>
 std::vector<real_t>
 structure_function(const zisa::array_const_view<real_t, Dim + 1> &u,
                    ssize_t max_h,
@@ -162,7 +168,7 @@ structure_function(const zisa::array_const_view<real_t, Dim + 1> &u,
   }
 #if ZISA_HAS_CUDA
   else if (u.memory_location() == zisa::device_type::cuda) {
-    AZEBAN_ERR("Not yet implemented");
+    return structure_function_cuda(u, max_h, func);
   }
 #endif
   else {
