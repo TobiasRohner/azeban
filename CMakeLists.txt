@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 project(azeban VERSION 0.1 LANGUAGES C CXX)
 
 option(ENABLE_CUDA "Enable CUDA Acceleration" ON)
@@ -77,9 +77,8 @@ find_package(OpenMP REQUIRED)
 target_link_libraries(azeban_dependencies INTERFACE OpenMP::OpenMP_CXX)
 
 find_package(FFTW3 REQUIRED)
-#target_include_directories(azeban_dependencies INTERFACE ${FFTW3_INCLUDE_DIRS})
-#target_link_libraries(azeban_dependencies INTERFACE fftw3f fftw3)
-target_link_libraries(azeban_dependencies INTERFACE FFTW3::fftw3)
+target_include_directories(azeban_dependencies INTERFACE ${FFTW3_INCLUDE_DIRS})
+target_link_libraries(azeban_dependencies INTERFACE fftw3f fftw3)
 
 find_package(nlohmann_json 3.9.1 REQUIRED)
 target_link_libraries(azeban_dependencies INTERFACE nlohmann_json::nlohmann_json)
@@ -107,8 +106,8 @@ endif()
 
 if(ZISA_HAS_NETCDF)
   find_package(NetCDF REQUIRED)
-  target_include_directories(azeban_dependencies INTERFACE ${NETCDF_INCLUDE_DIRS})
-  target_link_libraries(azeban_dependencies INTERFACE ${NETCDF_LIBRARIES})
+  target_include_directories(azeban_dependencies INTERFACE ${NetCDF_INCLUDE_DIRS})
+  target_link_libraries(azeban_dependencies INTERFACE ${NetCDF_LIBRARIES})
   target_compile_definitions(azeban_dependencies INTERFACE ZISA_HAS_NETCDF=1)
 endif()
 

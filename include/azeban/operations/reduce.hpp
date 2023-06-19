@@ -1,6 +1,7 @@
 #ifndef AZEBAN_OPERATIONS_REDUCE_HPP_
 #define AZEBAN_OPERATIONS_REDUCE_HPP_
 
+#include <azeban/profiler.hpp>
 #include <zisa/config.hpp>
 #include <zisa/memory/array.hpp>
 #include <zisa/memory/array_view.hpp>
@@ -12,6 +13,7 @@ namespace azeban {
 
 template <int Dim>
 real_t reduce_sum(const zisa::array_const_view<real_t, Dim> &data) {
+  ProfileHost profile("reduce_sum");
   if (data.memory_location() == zisa::device_type::cpu) {
     real_t val = 0;
     for (zisa::int_t i = 0; i < zisa::product(data.shape()); ++i) {
