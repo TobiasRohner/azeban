@@ -56,6 +56,8 @@ structure_function_cuda_kernel(const zisa::array_const_view<real_t, 3> u,
   const ssize_t j = j0 + blockDim.x * blockIdx.x + threadIdx.x;
   const ssize_t i = i0 + blockDim.y * blockIdx.y + threadIdx.y;
   const ssize_t N = u.shape(1);
+  const size_t h_stride = sf.size() / sf.shape(0);
+  const size_t thread_idx = sf.shape(2) * i + j;
   if (i >= N || j >= N) {
     return;
   }
@@ -71,7 +73,7 @@ structure_function_cuda_kernel(const zisa::array_const_view<real_t, 3> u,
       const real_t vkl
           = u(1, detail::periodic_index(k, N), detail::periodic_index(l, N));
       const ssize_t h = zisa::max(::azeban::abs(di), ::azeban::abs(dj));
-      sf(h, i, j) += vol * func(uij, vij, ukl, vkl, di, dj);
+      sf[h*h_stride + thread_idx] += vol * func(uij, vij, ukl, vkl, di, dj);
     }
   }
 }
@@ -89,6 +91,8 @@ structure_function_cuda_kernel(const zisa::array_const_view<real_t, 4> u,
   const ssize_t j = j0 + blockDim.y * blockIdx.y + threadIdx.y;
   const ssize_t i = i0 + blockDim.z * blockIdx.z + threadIdx.z;
   const ssize_t N = u.shape(1);
+  const size_t h_stride = sf.size() / sf.shape(0);
+  const size_t thread_idx = sf.shape(2) * sf.shape(3) * i + sf.shape(3) * j + k;
   if (i >= N || j >= N || k >= N) {
     return;
   }
@@ -116,7 +120,7 @@ structure_function_cuda_kernel(const zisa::array_const_view<real_t, 4> u,
                               detail::periodic_index(n, N));
         const ssize_t h = zisa::max(
             zisa::max(::azeban::abs(di), ::azeban::abs(dj)), ::azeban::abs(dk));
-        sf(h, i, j, k)
+        sf[h*h_stride + thread_idx]
             += vol * func(uijk, vijk, wijk, ulmn, vlmn, wlmn, di, dj, dk);
       }
     }
