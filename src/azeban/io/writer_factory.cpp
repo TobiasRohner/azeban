@@ -1,4 +1,5 @@
 #include <azeban/io/energy_spectrum_writer_factory.hpp>
+#include <azeban/io/enstrophy_spectrum_writer_factory.hpp>
 #include <azeban/io/netcdf_snapshot_writer_factory.hpp>
 #include <azeban/io/structure_function_writer_factory.hpp>
 #include <azeban/io/writer_collection.hpp>
@@ -38,6 +39,9 @@ std::unique_ptr<Writer<Dim>> make_writer(const nlohmann::json &config,
 #endif
     else if (name == "Energy Spectrum") {
       return make_energy_spectrum_writer<Dim>(config, grid, sample_idx_start);
+    } else if (name == "Enstrophy Spectrum") {
+      return make_enstrophy_spectrum_writer<Dim>(
+          config, grid, sample_idx_start);
     } else if (name == "Structure Function") {
       return make_structure_function_writer<Dim>(
           config, grid, sample_idx_start);

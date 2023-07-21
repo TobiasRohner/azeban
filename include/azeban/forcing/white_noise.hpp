@@ -73,7 +73,8 @@ public:
     const real_t knorm = zisa::sqrt(static_cast<real_t>(k1 * k1 + k2 * k2));
     const int s1 = k1 >= 0 ? 1 : -1;
     const int s2 = k2 >= 0 ? 1 : -1;
-    if (absk1 < pot_.shape(0) && absk2 < pot_.shape(1)) {
+    if (absk1 > 0 && absk1 < pot_.shape(0) && absk2 > 0
+        && absk2 < pot_.shape(1)) {
       const real_t coeff = 2. / knorm * pot_(absk1, absk2) / zisa::sqrt(dt);
       *f1 = complex_t(coeff * absk2 / 4., 0);
       *f2 = complex_t(-coeff * absk1 / 4. * s1 * s2, 0);
@@ -178,7 +179,8 @@ public:
                       real_t sigma,
                       int N,
                       unsigned long long seed)
-      : sigma_(zisa::pow<2>(static_cast<real_t>(grid.N_phys)) * sigma),
+      : grid_(grid),
+        sigma_(sigma),
         pot_(zisa::shape_t<2>(N, N), zisa::device_type::cuda) {
     const size_t Ns = zisa::pow<2>(N);
     curand_allocate_state<RNG>(&state_, Ns, seed);
@@ -193,7 +195,7 @@ public:
 
   void destroy() { curand_free_state<RNG>(state_); }
 
-  void pre(real_t, real_t) { white_noise_pre_cuda(sigma_, pot_, state_); }
+  void pre(real_t, real_t) { white_noise_pre_cuda(pot_, state_); }
 
   __device__ __inline__ void
   operator()(real_t, real_t dt, int k1, int k2, complex_t *f1, complex_t *f2) {
@@ -202,8 +204,11 @@ public:
     const real_t knorm = zisa::sqrt(static_cast<real_t>(k1 * k1 + k2 * k2));
     const int s1 = k1 >= 0 ? 1 : -1;
     const int s2 = k2 >= 0 ? 1 : -1;
-    if (absk1 < pot_.shape(0) && absk2 < pot_.shape(1)) {
-      const real_t coeff = 2. / knorm * pot_(absk1, absk2) / zisa::sqrt(dt);
+    if (absk1 > 0 && absk1 < pot_.shape(0) && absk2 > 0
+        && absk2 < pot_.shape(1)) {
+      const real_t coeff
+          = (2 * sigma_ * zisa::pow<2>(static_cast<real_t>(grid_.N_phys)))
+            / (knorm * zisa::sqrt(dt)) * pot_(absk1, absk2);
       *f1 = complex_t(coeff * absk2 / 4., 0);
       *f2 = complex_t(-coeff * absk1 / 4. * s1 * s2, 0);
     } else {
@@ -213,8 +218,9 @@ public:
   }
 
 private:
-  state_t *state_;
+  Grid<2> grid_;
   real_t sigma_;
+  state_t *state_;
   zisa::array<real_t, 2> pot_;
 };
 

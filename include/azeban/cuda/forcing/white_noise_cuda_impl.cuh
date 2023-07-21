@@ -23,8 +23,7 @@ __device__ __inline__ real_t normal(RNG *rng) {
 }
 
 template <typename RNG>
-__global__ void white_noise_pre_cuda_kernel(real_t sigma,
-                                            zisa::array_view<real_t, 2> pot,
+__global__ void white_noise_pre_cuda_kernel(zisa::array_view<real_t, 2> pot,
                                             RNG *rng) {
   const unsigned i = blockIdx.y * blockDim.y + threadIdx.y;
   const unsigned j = blockIdx.x * blockDim.x + threadIdx.x;
@@ -35,14 +34,12 @@ __global__ void white_noise_pre_cuda_kernel(real_t sigma,
 
   const unsigned id = i * pot.shape(0) + j;
   RNG local_state = rng[id];
-  pot(i, j) = i > 0 && j > 0 ? sigma * normal(&local_state) : 0;
+  pot(i, j) = i > 0 && j > 0 ? normal(&local_state) : 0;
   rng[id] = local_state;
 }
 
 template <typename RNG>
-void white_noise_pre_cuda(real_t sigma,
-                          const zisa::array_view<real_t, 2> &pot,
-                          RNG *rng) {
+void white_noise_pre_cuda(const zisa::array_view<real_t, 2> &pot, RNG *rng) {
   assert(pot.memory_location() == zisa::device_type::cuda);
 
   const dim3 thread_dims(32, 32, 1);
@@ -50,7 +47,7 @@ void white_noise_pre_cuda(real_t sigma,
       zisa::div_up(static_cast<int>(pot.shape(1)), thread_dims.x),
       zisa::div_up(static_cast<int>(pot.shape(0)), thread_dims.y),
       1);
-  white_noise_pre_cuda_kernel<<<block_dims, thread_dims>>>(sigma, pot, rng);
+  white_noise_pre_cuda_kernel<<<block_dims, thread_dims>>>(pot, rng);
   cudaDeviceSynchronize();
   ZISA_CHECK_CUDA_DEBUG;
 }

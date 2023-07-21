@@ -6,8 +6,8 @@
 namespace azeban {
 
 #define AZEBAN_INSTANTIATE_WHITE_NOISE_PRE_CUDA(RNG)                           \
-  template void white_noise_pre_cuda<RNG>(                                     \
-      real_t, const zisa::array_view<real_t, 2> &, RNG *);
+  template void white_noise_pre_cuda<RNG>(const zisa::array_view<real_t, 2> &, \
+                                          RNG *);
 
 AZEBAN_INSTANTIATE_WHITE_NOISE_PRE_CUDA(curandStateMRG32k3a_t)
 AZEBAN_INSTANTIATE_WHITE_NOISE_PRE_CUDA(curandStateXORWOW_t)

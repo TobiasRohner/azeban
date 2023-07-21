@@ -75,7 +75,7 @@ structure_function_cuda_kernel(const zisa::array_const_view<real_t, 3> u,
       const real_t vkl
           = u(1, detail::periodic_index(k, N), detail::periodic_index(l, N));
       const ssize_t h = zisa::max(::azeban::abs(di), ::azeban::abs(dj));
-      sf[h*h_stride + thread_idx] += vol * func(uij, vij, ukl, vkl, di, dj);
+      sf[h * h_stride + thread_idx] += vol * func(uij, vij, ukl, vkl, di, dj);
     }
   }
 }
@@ -97,7 +97,8 @@ structure_function_cuda_kernel(const zisa::array_const_view<real_t, 4> u,
   const ssize_t k = k0 + k_loc;
   const ssize_t N = u.shape(1);
   const size_t h_stride = sf.size() / sf.shape(0);
-  const size_t thread_idx = sf.shape(2) * sf.shape(3) * i_loc + sf.shape(3) * j_loc + k_loc;
+  const size_t thread_idx
+      = sf.shape(2) * sf.shape(3) * i_loc + sf.shape(3) * j_loc + k_loc;
   if (i >= N || j >= N || k >= N) {
     return;
   }
@@ -125,7 +126,7 @@ structure_function_cuda_kernel(const zisa::array_const_view<real_t, 4> u,
                               detail::periodic_index(n, N));
         const ssize_t h = zisa::max(
             zisa::max(::azeban::abs(di), ::azeban::abs(dj)), ::azeban::abs(dk));
-        sf[h*h_stride + thread_idx]
+        sf[h * h_stride + thread_idx]
             += vol * func(uijk, vijk, wijk, ulmn, vlmn, wlmn, di, dj, dk);
       }
     }
@@ -174,8 +175,10 @@ structure_function_cuda(const zisa::array_const_view<real_t, 3> &u,
                                              thread_dims.x * block_dims.x),
                             zisa::device_type::cuda);
   zisa::fill(sf.raw(), sf.device(), sf.size(), real_t(0));
-  for (ssize_t i0 = 0; i0 < static_cast<ssize_t>(u.shape(1)); i0 += grid_dims.y) {
-    for (ssize_t j0 = 0; j0 < static_cast<ssize_t>(u.shape(2)); j0 += grid_dims.x) {
+  for (ssize_t i0 = 0; i0 < static_cast<ssize_t>(u.shape(1));
+       i0 += grid_dims.y) {
+    for (ssize_t j0 = 0; j0 < static_cast<ssize_t>(u.shape(2));
+         j0 += grid_dims.x) {
       structure_function_cuda_kernel<<<block_dims, thread_dims>>>(
           u, max_h, func, sf.view(), i0, j0);
       cudaDeviceSynchronize();
@@ -184,10 +187,10 @@ structure_function_cuda(const zisa::array_const_view<real_t, 3> &u,
   }
   std::vector<real_t> ret(max_h);
   for (ssize_t h = 0; h < max_h; ++h) {
-    ret[h] = reduce_sum(zisa::array_view<real_t, 1>(
-	zisa::shape_t<1>(sf.shape(1) * sf.shape(2)),
-	&sf(h, 0, 0),
-	zisa::device_type::cuda));
+    ret[h] = reduce_sum(
+        zisa::array_view<real_t, 1>(zisa::shape_t<1>(sf.shape(1) * sf.shape(2)),
+                                    &sf(h, 0, 0),
+                                    zisa::device_type::cuda));
   }
   return ret;
 }
@@ -201,7 +204,8 @@ structure_function_cuda(const zisa::array_const_view<real_t, 4> &u,
   const dim3 block_dims(
       zisa::div_up(zisa::min(static_cast<int>(u.shape(1)), 128), thread_dims.x),
       zisa::div_up(zisa::min(static_cast<int>(u.shape(1)), 128), thread_dims.y),
-      zisa::div_up(zisa::min(static_cast<int>(u.shape(3)), 128), thread_dims.z));
+      zisa::div_up(zisa::min(static_cast<int>(u.shape(3)), 128),
+                   thread_dims.z));
   const dim3 grid_dims(thread_dims.x * block_dims.x,
                        thread_dims.y * block_dims.y,
                        thread_dims.z * block_dims.z);
@@ -211,9 +215,12 @@ structure_function_cuda(const zisa::array_const_view<real_t, 4> &u,
                                              thread_dims.x * block_dims.x),
                             zisa::device_type::cuda);
   zisa::fill(sf.raw(), sf.device(), sf.size(), real_t(0));
-  for (ssize_t i0 = 0; i0 < static_cast<ssize_t>(u.shape(1)); i0 += grid_dims.z) {
-    for (ssize_t j0 = 0; j0 < static_cast<ssize_t>(u.shape(2)); j0 += grid_dims.y) {
-      for (ssize_t k0 = 0; k0 < static_cast<ssize_t>(u.shape(3)); k0 += grid_dims.x) {
+  for (ssize_t i0 = 0; i0 < static_cast<ssize_t>(u.shape(1));
+       i0 += grid_dims.z) {
+    for (ssize_t j0 = 0; j0 < static_cast<ssize_t>(u.shape(2));
+         j0 += grid_dims.y) {
+      for (ssize_t k0 = 0; k0 < static_cast<ssize_t>(u.shape(3));
+           k0 += grid_dims.x) {
         structure_function_cuda_kernel<<<block_dims, thread_dims>>>(
             u, max_h, func, sf.view(), i0, j0, k0);
         cudaDeviceSynchronize();
@@ -224,9 +231,9 @@ structure_function_cuda(const zisa::array_const_view<real_t, 4> &u,
   std::vector<real_t> ret(max_h);
   for (ssize_t h = 0; h < max_h; ++h) {
     ret[h] = reduce_sum(zisa::array_view<real_t, 1>(
-	zisa::shape_t<1>(sf.shape(1) * sf.shape(2) * sf.shape(3)),
-	&sf(h, 0, 0, 0),
-	zisa::device_type::cuda));
+        zisa::shape_t<1>(sf.shape(1) * sf.shape(2) * sf.shape(3)),
+        &sf(h, 0, 0, 0),
+        zisa::device_type::cuda));
   }
   return ret;
 }

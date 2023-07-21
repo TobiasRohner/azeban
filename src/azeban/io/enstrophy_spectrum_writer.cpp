@@ -1,5 +1,5 @@
-#include <azeban/io/energy_spectrum_writer.hpp>
-#include <azeban/operations/energy_spectrum.hpp>
+#include <azeban/io/enstrophy_spectrum_writer.hpp>
+#include <azeban/operations/enstrophy_spectrum.hpp>
 #include <azeban/profiler.hpp>
 #include <filesystem>
 #include <fstream>
@@ -12,7 +12,7 @@
 namespace azeban {
 
 template <int Dim>
-EnergySpectrumWriter<Dim>::EnergySpectrumWriter(
+EnstrophySpectrumWriter<Dim>::EnstrophySpectrumWriter(
     const std::string &path,
     const Grid<Dim> &grid,
     const std::vector<real_t> &snapshot_times,
@@ -28,7 +28,7 @@ EnergySpectrumWriter<Dim>::EnergySpectrumWriter(
 
 #if AZEBAN_HAS_MPI
 template <int Dim>
-EnergySpectrumWriter<Dim>::EnergySpectrumWriter(
+EnstrophySpectrumWriter<Dim>::EnstrophySpectrumWriter(
     const std::string &path,
     const Grid<Dim> &grid,
     const std::vector<real_t> &snapshot_times,
@@ -49,20 +49,20 @@ EnergySpectrumWriter<Dim>::EnergySpectrumWriter(
 #endif
 
 template <int Dim>
-void EnergySpectrumWriter<Dim>::write(
+void EnstrophySpectrumWriter<Dim>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u, real_t t) {
   ZISA_UNUSED(u);
   ZISA_UNUSED(t);
 }
 
 template <int Dim>
-void EnergySpectrumWriter<Dim>::write(
+void EnstrophySpectrumWriter<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t t) {
-  ProfileHost pofile("EnergySpectrumWriter::write");
+  ProfileHost pofile("EnstrophySpectrumWriter::write");
   ZISA_UNUSED(t);
-  const std::vector<real_t> spectrum = energy_spectrum(grid_, u_hat);
-  std::ofstream file(path_ + "/energy_" + std::to_string(sample_idx_) + "_time_"
-                     + std::to_string(snapshot_idx_) + ".txt");
+  const std::vector<real_t> spectrum = enstrophy_spectrum(grid_, u_hat);
+  std::ofstream file(path_ + "/enstrophy_" + std::to_string(sample_idx_)
+                     + "_time_" + std::to_string(snapshot_idx_) + ".txt");
   for (real_t E : spectrum) {
     file << std::setprecision(std::numeric_limits<real_t>::max_digits10) << E
          << '\t';
@@ -72,7 +72,7 @@ void EnergySpectrumWriter<Dim>::write(
 
 #if AZEBAN_HAS_MPI
 template <int Dim>
-void EnergySpectrumWriter<Dim>::write(
+void EnstrophySpectrumWriter<Dim>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u,
     real_t t,
     const Communicator *comm) {
@@ -82,16 +82,16 @@ void EnergySpectrumWriter<Dim>::write(
 }
 
 template <int Dim>
-void EnergySpectrumWriter<Dim>::write(
+void EnstrophySpectrumWriter<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
     real_t t,
     const Communicator *comm) {
-  ProfileHost pofile("EnergySpectrumWriter::write");
+  ProfileHost pofile("EnstrophySpectrumWriter::write");
   ZISA_UNUSED(t);
   const std::vector<real_t> spectrum
-      = energy_spectrum(grid_, u_hat, comm->get_mpi_comm());
+      = enstrophy_spectrum(grid_, u_hat, comm->get_mpi_comm());
   if (comm->rank() == 0) {
-    std::ofstream file(path_ + "/energy_" + std::to_string(sample_idx_)
+    std::ofstream file(path_ + "/enstrophy_" + std::to_string(sample_idx_)
                        + "_time_" + std::to_string(snapshot_idx_) + ".txt");
     for (real_t E : spectrum) {
       file << std::setprecision(std::numeric_limits<real_t>::max_digits10) << E
@@ -102,8 +102,8 @@ void EnergySpectrumWriter<Dim>::write(
 }
 #endif
 
-template class EnergySpectrumWriter<1>;
-template class EnergySpectrumWriter<2>;
-template class EnergySpectrumWriter<3>;
+template class EnstrophySpectrumWriter<1>;
+template class EnstrophySpectrumWriter<2>;
+template class EnstrophySpectrumWriter<3>;
 
 }
