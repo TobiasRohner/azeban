@@ -2,6 +2,7 @@
 #define AZEBAN_IO_ENERGY_SPECTRUM_WRITER_HPP_
 
 #include <azeban/io/writer.hpp>
+#include <fstream>
 #include <string>
 #if AZEBAN_HAS_MPI
 #include <mpi.h>
@@ -31,7 +32,7 @@ public:
   virtual ~EnergySpectrumWriter() override = default;
 
   using super::next_timestep;
-  using super::reset;
+  virtual void reset() override;
   virtual void write(const zisa::array_const_view<real_t, Dim + 1> &u,
                      real_t t) override;
   virtual void write(const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
@@ -53,6 +54,7 @@ protected:
 
 private:
   std::string path_;
+  std::ofstream file_;
 #if AZEBAN_HAS_MPI
   MPI_Comm samples_comm_;
 #endif

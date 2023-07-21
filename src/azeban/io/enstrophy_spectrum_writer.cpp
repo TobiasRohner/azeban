@@ -2,7 +2,6 @@
 #include <azeban/operations/enstrophy_spectrum.hpp>
 #include <azeban/profiler.hpp>
 #include <filesystem>
-#include <fstream>
 #include <iomanip>
 #include <limits>
 #if AZEBAN_HAS_MPI
@@ -49,6 +48,12 @@ EnstrophySpectrumWriter<Dim>::EnstrophySpectrumWriter(
 #endif
 
 template <int Dim>
+void EnstrophySpectrumWriter<Dim>::reset() {
+  file_.close();
+  super::reset();
+}
+
+template <int Dim>
 void EnstrophySpectrumWriter<Dim>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u, real_t t) {
   ZISA_UNUSED(u);
@@ -61,12 +66,14 @@ void EnstrophySpectrumWriter<Dim>::write(
   ProfileHost pofile("EnstrophySpectrumWriter::write");
   ZISA_UNUSED(t);
   const std::vector<real_t> spectrum = enstrophy_spectrum(grid_, u_hat);
-  std::ofstream file(path_ + "/enstrophy_" + std::to_string(sample_idx_)
-                     + "_time_" + std::to_string(snapshot_idx_) + ".txt");
-  for (real_t E : spectrum) {
-    file << std::setprecision(std::numeric_limits<real_t>::max_digits10) << E
-         << '\t';
+  if (!file_.is_open()) {
+    file_.open(path_ + "/enstrophy_" + std::to_string(sample_idx_) + ".txt");
   }
+  for (real_t E : spectrum) {
+    file_ << std::setprecision(std::numeric_limits<real_t>::max_digits10) << E
+          << '\t';
+  }
+  file_ << '\n';
   ++snapshot_idx_;
 }
 
@@ -91,12 +98,14 @@ void EnstrophySpectrumWriter<Dim>::write(
   const std::vector<real_t> spectrum
       = enstrophy_spectrum(grid_, u_hat, comm->get_mpi_comm());
   if (comm->rank() == 0) {
-    std::ofstream file(path_ + "/enstrophy_" + std::to_string(sample_idx_)
-                       + "_time_" + std::to_string(snapshot_idx_) + ".txt");
-    for (real_t E : spectrum) {
-      file << std::setprecision(std::numeric_limits<real_t>::max_digits10) << E
-           << '\t';
+    if (!file_.is_open()) {
+      file_.open(path_ + "/enstrophy_" + std::to_string(sample_idx_) + ".txt");
     }
+    for (real_t E : spectrum) {
+      file_ << std::setprecision(std::numeric_limits<real_t>::max_digits10) << E
+            << '\t';
+    }
+    file_ << '\n';
   }
   ++snapshot_idx_;
 }
