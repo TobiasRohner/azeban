@@ -70,10 +70,10 @@ structure_function_cuda_kernel(const zisa::array_const_view<real_t, 3> u,
     const ssize_t k = i + di;
     for (ssize_t dj = -max_h + 1; dj < max_h; ++dj) {
       const ssize_t l = j + dj;
-      const real_t ukl
-          = u(0, detail::periodic_index(k, N), detail::periodic_index(l, N));
-      const real_t vkl
-          = u(1, detail::periodic_index(k, N), detail::periodic_index(l, N));
+      const ssize_t pik = detail::periodic_index(k, N);
+      const ssize_t pil = detail::periodic_index(l, N);
+      const real_t ukl = u(0, pik, pil);
+      const real_t vkl = u(1, pik, pil);
       const ssize_t h = zisa::max(::azeban::abs(di), ::azeban::abs(dj));
       sf[h * h_stride + thread_idx] += vol * func(uij, vij, ukl, vkl, di, dj);
     }
@@ -112,18 +112,12 @@ structure_function_cuda_kernel(const zisa::array_const_view<real_t, 4> u,
       const ssize_t m = j + dj;
       for (ssize_t dk = -max_h + 1; dk < max_h; ++dk) {
         const ssize_t n = k + dk;
-        const real_t ulmn = u(0,
-                              detail::periodic_index(l, N),
-                              detail::periodic_index(m, N),
-                              detail::periodic_index(n, N));
-        const real_t vlmn = u(1,
-                              detail::periodic_index(l, N),
-                              detail::periodic_index(m, N),
-                              detail::periodic_index(n, N));
-        const real_t wlmn = u(2,
-                              detail::periodic_index(l, N),
-                              detail::periodic_index(m, N),
-                              detail::periodic_index(n, N));
+	const ssize_t pil = detail::periodic_index(l, N);
+	const ssize_t pim = detail::periodic_index(m, N);
+	const ssize_t pin = detail::periodic_index(n, N);
+        const real_t ulmn = u(0, pil, pim, pin);
+        const real_t vlmn = u(1, pil, pim, pin);
+        const real_t wlmn = u(2, pil, pim, pin);
         const ssize_t h = zisa::max(
             zisa::max(::azeban::abs(di), ::azeban::abs(dj)), ::azeban::abs(dk));
         sf[h * h_stride + thread_idx]

@@ -18,6 +18,11 @@ void Writer<Dim>::reset() {
   ++sample_idx_;
 }
 
+template<int Dim>
+void Writer<Dim>::set_snapshot_idx(zisa::int_t idx) {
+  snapshot_idx_ = idx;
+}
+
 template <int Dim>
 real_t Writer<Dim>::next_timestep() const {
   if (snapshot_idx_ >= snapshot_times_.size()) {

@@ -22,6 +22,7 @@ public:
   virtual ~Writer() = default;
 
   virtual void reset();
+  void set_snapshot_idx(zisa::int_t idx);
   virtual real_t next_timestep() const;
   virtual void write(const zisa::array_const_view<real_t, Dim + 1> &u, real_t t)
       = 0;

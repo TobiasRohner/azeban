@@ -114,7 +114,9 @@ nlohmann::json read_config(std::string_view config_filename) {
 
 template <int Dim>
 void run_for_sample(const nlohmann::json &config,
-                    const std::unique_ptr<SampleFile> &sample_file) {
+                    const std::unique_ptr<SampleFile> &sample_file,
+		    zisa::int_t sample_idx,
+		    zisa::int_t time_idx) {
   const size_t N = sample_file->N();
   const Grid<Dim> grid(N);
   zisa::device_type device = zisa::device_type::cpu;
@@ -135,7 +137,8 @@ void run_for_sample(const nlohmann::json &config,
   zisa::array<complex_t, Dim + 1> sample_hat(grid.shape_fourier(Dim), device);
   auto fft = make_fft<Dim>(sample_hat.view(), sample.view(), FFT_FORWARD);
   sample_file->read(sample.view());
-  std::unique_ptr<Writer<Dim>> writer = make_writer<Dim>(config, grid, 0);
+  std::unique_ptr<Writer<Dim>> writer = make_writer<Dim>(config, grid, sample_idx);
+  writer->set_snapshot_idx(time_idx);
   writer->write(sample, 0);
   fft->forward();
   writer->write(sample_hat, 0);
@@ -146,13 +149,15 @@ int main(int argc, char *argv[]) {
 
   std::string sample_path;
   std::string config_path;
+  zisa::int_t sample_idx;
+  zisa::int_t time;
   po::options_description desc("Allowed options");
-  desc.add_options()("help,h", "Produce help message")(
-      "sample",
-      po::value<std::string>(&sample_path)->required(),
-      "Path to the sample")("config",
-                            po::value<std::string>(&config_path)->required(),
-                            "Path to the config file");
+  desc.add_options()
+    ("help,h", "Produce help message")
+    ("sample", po::value<std::string>(&sample_path)->required(), "Path to the sample")
+    ("config", po::value<std::string>(&config_path)->required(), "Path to the config file")
+    ("sample_idx", po::value<zisa::int_t>(&sample_idx)->default_value(0), "Index under which to store the output")
+    ("time", po::value<zisa::int_t>(&time)->default_value(0), "Index of the time step");
   po::variables_map vm;
   po::store(po::command_line_parser(argc, argv).options(desc).run(), vm);
   if (vm.count("help")) {
@@ -166,13 +171,13 @@ int main(int argc, char *argv[]) {
   const int dim = sample_file->dim();
   switch (dim) {
   case 1:
-    run_for_sample<1>(config, sample_file);
+    run_for_sample<1>(config, sample_file, sample_idx, time);
     break;
   case 2:
-    run_for_sample<2>(config, sample_file);
+    run_for_sample<2>(config, sample_file, sample_idx, time);
     break;
   case 3:
-    run_for_sample<3>(config, sample_file);
+    run_for_sample<3>(config, sample_file, sample_idx, time);
     break;
   default:
     std::cout << "Invalid dimension: " << dim << std::endl;
