@@ -113,8 +113,9 @@ spectrum_cpu(const Grid<2> &grid,
              const zisa::array_const_view<complex_t, 3> &u_hat,
              MPI_Comm comm) {
   const long k1_offset = grid.i_fourier(0, comm);
+  const long k2_offset = grid.j_fourier(0, comm);
   const std::vector<real_t> local_spectrum
-      = spectrum_cpu<Op>(grid, u_hat, k1_offset);
+      = spectrum_cpu<Op>(grid, u_hat, k1_offset, k2_offset);
   std::vector<real_t> spectrum(local_spectrum.size(), 0);
   MPI_Reduce(local_spectrum.data(),
              spectrum.data(),
@@ -132,8 +133,10 @@ spectrum_cpu(const Grid<3> &grid,
              const zisa::array_const_view<complex_t, 4> &u_hat,
              MPI_Comm comm) {
   const long k1_offset = grid.i_fourier(0, comm);
+  const long k2_offset = grid.j_fourier(0, comm);
+  const long k3_offset = grid.k_fourier(0, comm);
   const std::vector<real_t> local_spectrum
-      = spectrum_cpu<Op>(grid, u_hat, k1_offset);
+      = spectrum_cpu<Op>(grid, u_hat, k1_offset, k2_offset, k3_offset);
   std::vector<real_t> spectrum(local_spectrum.size(), 0);
   MPI_Reduce(local_spectrum.data(),
              spectrum.data(),
