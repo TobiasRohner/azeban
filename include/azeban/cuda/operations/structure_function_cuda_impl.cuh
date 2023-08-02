@@ -112,9 +112,9 @@ structure_function_cuda_kernel(const zisa::array_const_view<real_t, 4> u,
       const ssize_t m = j + dj;
       for (ssize_t dk = -max_h + 1; dk < max_h; ++dk) {
         const ssize_t n = k + dk;
-	const ssize_t pil = detail::periodic_index(l, N);
-	const ssize_t pim = detail::periodic_index(m, N);
-	const ssize_t pin = detail::periodic_index(n, N);
+        const ssize_t pil = detail::periodic_index(l, N);
+        const ssize_t pim = detail::periodic_index(m, N);
+        const ssize_t pin = detail::periodic_index(n, N);
         const real_t ulmn = u(0, pil, pim, pin);
         const real_t vlmn = u(1, pil, pim, pin);
         const real_t wlmn = u(2, pil, pim, pin);

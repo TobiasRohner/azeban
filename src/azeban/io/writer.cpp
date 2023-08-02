@@ -18,7 +18,7 @@ void Writer<Dim>::reset() {
   ++sample_idx_;
 }
 
-template<int Dim>
+template <int Dim>
 void Writer<Dim>::set_snapshot_idx(zisa::int_t idx) {
   snapshot_idx_ = idx;
 }
