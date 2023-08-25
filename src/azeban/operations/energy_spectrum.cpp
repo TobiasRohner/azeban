@@ -8,21 +8,21 @@
 namespace azeban {
 
 struct EnergySpectrumOperator {
-  static real_t eval(const Grid<1> &grid, long k1, complex_t u) {
+  static real_t eval(const Grid<1> &grid, long, complex_t u) {
     const real_t norm = 1. / zisa::pow<1>(grid.N_phys);
     return 0.5 * abs2(norm * u);
   }
 
   static real_t
-  eval(const Grid<2> &grid, long k1, long k2, complex_t u, complex_t v) {
+  eval(const Grid<2> &grid, long, long, complex_t u, complex_t v) {
     const real_t norm = 1. / zisa::pow<2>(grid.N_phys);
     return 0.5 * (abs2(norm * u) + abs2(norm * v));
   }
 
   static real_t eval(const Grid<3> &grid,
-                     long k1,
-                     long k2,
-                     long k3,
+                     long,
+                     long,
+                     long,
                      complex_t u,
                      complex_t v,
                      complex_t w) {

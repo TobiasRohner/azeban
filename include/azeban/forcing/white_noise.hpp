@@ -125,10 +125,27 @@ public:
                   complex_t *f1,
                   complex_t *f2,
                   complex_t *f3) {
-    AZEBAN_ERR("Not yet Implemented");
-    *f1 = 0;
-    *f2 = 0;
-    *f3 = 0;
+    const unsigned absk1 = zisa::abs(k1);
+    const unsigned absk2 = zisa::abs(k2);
+    const unsigned absk3 = zisa::abs(k3);
+    const real_t fnorm
+        = zisa::sqrt(0.125 * k2 * k2 * k3 * k3 + 0.03125 * k1 * k1 * k2 * k2
+                     + 0.03125 * k1 * k1 * k3 * k3);
+    const int s1 = k1 >= 0 ? 1 : -1;
+    const int s2 = k2 >= 0 ? 1 : -1;
+    const int s3 = k3 >= 0 ? 1 : -1;
+    if (absk1 > 0 && absk1 < pot_.shape(0) && absk2 > 0 && absk2 < pot_.shape(1)
+        && absk3 > 0 && absk3 < pot_.shape(2)) {
+      const real_t coeff
+          = 2. / fnorm * pot_(absk1, absk2, absk3) / zisa::sqrt(dt);
+      *f1 = complex_t(0, -coeff * absk2 * absk3 / 8 * s1);
+      *f2 = complex_t(0, coeff * absk1 * absk3 / 16 * s2);
+      *f3 = complex_t(0, coeff * absk1 * absk2 / 16 * s3);
+    } else {
+      *f1 = 0;
+      *f2 = 0;
+      *f3 = 0;
+    }
   }
 #endif
 private:
@@ -147,10 +164,7 @@ class WhiteNoise<1, RNG, zisa::device_type::cuda> {
 
 public:
   template <int Dim>
-  explicit WhiteNoise(const Grid<Dim> &grid,
-                      real_t sigma,
-                      int N,
-                      unsigned long long seed) {}
+  explicit WhiteNoise(const Grid<Dim> &, real_t, int, unsigned long long) {}
   WhiteNoise(const WhiteNoise &) = default;
   WhiteNoise(WhiteNoise &&) = default;
 
@@ -232,7 +246,13 @@ public:
   explicit WhiteNoise(const Grid<3> &grid,
                       real_t sigma,
                       int N,
-                      unsigned long long seed) {}
+                      unsigned long long seed)
+      : grid_(grid),
+        sigma_(sigma),
+        pot_(zisa::shape_t<3>(N, N, N), zisa::device_type::cuda) {
+    const size_t Ns = zisa::pow<3>(static_cast<size_t>(N));
+    curand_allocate_state<RNG>(&state_, Ns, seed);
+  }
   WhiteNoise(const WhiteNoise &) = default;
   WhiteNoise(WhiteNoise &&) = default;
 
@@ -241,11 +261,11 @@ public:
   WhiteNoise &operator=(const WhiteNoise &) = default;
   WhiteNoise &operator=(WhiteNoise &&) = default;
 
-  void destroy() {}
+  void destroy() { curand_free_state<RNG>(state_); }
 
-  __device__ __inline__ void pre(real_t, real_t) {}
+  void pre(real_t, real_t) { white_noise_pre_cuda(pot_, state_); }
 
-  __device__ __inline__ void operator()(real_t t,
+  __device__ __inline__ void operator()(real_t,
                                         real_t dt,
                                         int k1,
                                         int k2,
@@ -253,10 +273,35 @@ public:
                                         complex_t *f1,
                                         complex_t *f2,
                                         complex_t *f3) {
-    *f1 = 0;
-    *f2 = 0;
-    *f3 = 0;
+    const unsigned absk1 = zisa::abs(k1);
+    const unsigned absk2 = zisa::abs(k2);
+    const unsigned absk3 = zisa::abs(k3);
+    const real_t fnorm
+        = zisa::sqrt(0.125 * k2 * k2 * k3 * k3 + 0.03125 * k1 * k1 * k2 * k2
+                     + 0.03125 * k1 * k1 * k3 * k3);
+    const int s1 = k1 >= 0 ? 1 : -1;
+    const int s2 = k2 >= 0 ? 1 : -1;
+    const int s3 = k3 >= 0 ? 1 : -1;
+    if (absk1 > 0 && absk1 < pot_.shape(0) && absk2 > 0 && absk2 < pot_.shape(1)
+        && absk3 > 0 && absk3 < pot_.shape(2)) {
+      const real_t coeff
+          = (2. * sigma_ * zisa::pow<3>(static_cast<real_t>(grid_.N_phys)))
+            / fnorm * pot_(absk1, absk2, absk3) / zisa::sqrt(dt);
+      *f1 = complex_t(0, -coeff * absk2 * absk3 / 8 * s1);
+      *f2 = complex_t(0, coeff * absk1 * absk3 / 16 * s2);
+      *f3 = complex_t(0, coeff * absk1 * absk2 / 16 * s3);
+    } else {
+      *f1 = 0;
+      *f2 = 0;
+      *f3 = 0;
+    }
   }
+
+private:
+  Grid<3> grid_;
+  real_t sigma_;
+  state_t *state_;
+  zisa::array<real_t, 3> pot_;
 };
 
 #endif
