@@ -106,8 +106,9 @@ endif()
 
 if(ZISA_HAS_NETCDF)
   find_package(NetCDF REQUIRED)
-  target_include_directories(azeban_dependencies INTERFACE ${NetCDF_INCLUDE_DIRS})
-  target_link_libraries(azeban_dependencies INTERFACE ${NetCDF_LIBRARIES})
+  #target_include_directories(azeban_dependencies INTERFACE ${NetCDF_INCLUDE_DIRS})
+  #target_link_libraries(azeban_dependencies INTERFACE ${NetCDF_LIBRARIES})
+  target_link_libraries(azeban_dependencies INTERFACE NetCDF::NetCDF)
   target_compile_definitions(azeban_dependencies INTERFACE ZISA_HAS_NETCDF=1)
 endif()
 
