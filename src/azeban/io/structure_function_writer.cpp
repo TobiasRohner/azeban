@@ -79,5 +79,8 @@ template class StructureFunctionWriter<3, SFThirdOrderFunctional>;
 template class StructureFunctionWriter<1, SFLongitudinalFunctional>;
 template class StructureFunctionWriter<2, SFLongitudinalFunctional>;
 template class StructureFunctionWriter<3, SFLongitudinalFunctional>;
+template class StructureFunctionWriter<1, SFAbsoluteLongitudinalFunctional>;
+template class StructureFunctionWriter<2, SFAbsoluteLongitudinalFunctional>;
+template class StructureFunctionWriter<3, SFAbsoluteLongitudinalFunctional>;
 
 }

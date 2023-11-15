@@ -19,6 +19,8 @@ target_sources(azeban_generic_obj
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/third_order_structure_function_writer_factory.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/longitudinal_structure_function_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/longitudinal_structure_function_writer_factory.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/absolute_longitudinal_structure_function_writer.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/absolute_longitudinal_structure_function_writer_factory.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/writer_factory.cpp
 )
 

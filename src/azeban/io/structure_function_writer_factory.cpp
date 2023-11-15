@@ -1,3 +1,4 @@
+#include <azeban/io/absolute_longitudinal_structure_function_writer_factory.hpp>
 #include <azeban/io/longitudinal_structure_function_writer_factory.hpp>
 #include <azeban/io/second_order_structure_function_writer_factory.hpp>
 #include <azeban/io/structure_function_cube_writer_factory.hpp>
@@ -28,6 +29,9 @@ make_structure_function_writer(const nlohmann::json &config,
         config, grid, sample_idx_start);
   } else if (type == "Longitudinal") {
     return make_longitudinal_structure_function_writer<Dim>(
+        config, grid, sample_idx_start);
+  } else if (type == "Absolute Longitudinal") {
+    return make_absolute_longitudinal_structure_function_writer<Dim>(
         config, grid, sample_idx_start);
   } else {
     fmt::print(stderr, "Unknown StructureFunctionWriter type \"{}\"\n", type);

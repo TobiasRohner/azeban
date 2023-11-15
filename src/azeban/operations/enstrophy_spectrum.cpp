@@ -8,7 +8,7 @@
 namespace azeban {
 
 struct EnstrophySpectrumOperator {
-  static real_t eval(const Grid<1> &grid, long k1, complex_t u) { return 0; }
+  static real_t eval(const Grid<1> &, long, complex_t) { return 0; }
 
   static real_t
   eval(const Grid<2> &grid, long k1, long k2, complex_t u, complex_t v) {
@@ -56,7 +56,7 @@ enstrophy_spectrum(const Grid<3> &grid,
 
 #if AZEBAN_HAS_MPI
 struct EnstrophySpectrumOperatorMPI {
-  static real_t eval(const Grid<1> &grid, long k1, complex_t u) { return 0; }
+  static real_t eval(const Grid<1> &, long, complex_t) { return 0; }
 
   static real_t
   eval(const Grid<2> &grid, long k1, long k2, complex_t u, complex_t v) {
