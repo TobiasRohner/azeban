@@ -32,6 +32,7 @@
 #include "shock_factory.hpp"
 #include "sine_1d_factory.hpp"
 #include "sphere_factory.hpp"
+#include "cube_factory.hpp"
 #include "taylor_green_factory.hpp"
 #include "taylor_vortex_factory.hpp"
 #include "velocity_and_tracer.hpp"
@@ -101,6 +102,8 @@ make_initializer_rho(const nlohmann::json &config) {
   std::string name = config["name"];
   if (name == "Sphere") {
     return make_sphere<Dim>(config);
+  } else if (name == "Cube") {
+    return make_cube<Dim>(config);
   } else if (name == "Const Fourier") {
     return make_const_fourier_tracer<Dim>(config);
   } else {

@@ -130,6 +130,11 @@ if(ZISA_HAS_CUDA)
   target_compile_options(azeban_dependencies INTERFACE
     $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>>
   )
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(azeban_dependencies INTERFACE
+      $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CUDA>:-g -G>>
+    )
+  endif()
   target_link_libraries(azeban_dependencies INTERFACE CUDA::cudart)
   target_link_libraries(azeban_dependencies INTERFACE CUDA::cufft)
   target_link_libraries(azeban_dependencies INTERFACE CUDA::curand)
