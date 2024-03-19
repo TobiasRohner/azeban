@@ -28,14 +28,20 @@ public:
 
   ANY_DEVICE_INLINE void operator()(real_t,
                                     real_t,
-                                    long,
-                                    long,
-                                    long,
+                                    int k1,
+                                    int k2,
+                                    int k3,
                                     complex_t *f1,
                                     complex_t *f2,
                                     complex_t *f3) {
-    *f1 = 0;
-    *f2 = 0;
+    const real_t factor = N_phys_ * N_phys_ * N_phys_ * amplitude_ / 2;
+    if (zisa::abs(k1) == 1 && zisa::abs(k2) == 1 && k3 == 0) {
+      *f1 = complex_t(factor, 0);
+      *f2 = complex_t(0, -factor);
+    } else {
+      *f1 = 0;
+      *f2 = 0;
+    }
     *f3 = 0;
   }
 

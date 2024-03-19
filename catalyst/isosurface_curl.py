@@ -24,23 +24,11 @@ computeDerivatives1.Vectors = ['POINTS', 'velocity']
 computeDerivatives1.OutputVectorType = 'Vorticity'
 computeDerivatives1.OutputTensorType = 'Nothing'
 
-calculator2 = Calculator(registrationName='Calculator2', Input=computeDerivatives1)
-calculator2.AttributeType = 'Cell Data'
-calculator2.Function = 'mag(Vorticity)'
+resultLUT = GetColorTransferFunction('Vorticity')
 
-cellDatatoPointData1 = CellDatatoPointData(registrationName='CellDatatoPointData1', Input=calculator2)
-cellDatatoPointData1.CellDataArraytoprocess = ['Result']
-
-contour1 = Contour(registrationName='Contour1', Input=cellDatatoPointData1)
-contour1.ContourBy = ['POINTS', 'Result']
-contour1.Isosurfaces = args.isosurfaces
-contour1.PointMergeMethod = 'Uniform Binning'
-
-resultLUT = GetColorTransferFunction('Result')
-
-display = Show(contour1, view, 'GeometryRepresentation')
-display.Representation = 'Surface'
-display.ColorArrayName = ['POINTS', 'Result']
+display = Show(computeDerivatives1, view, 'GeometryRepresentation')
+display.Representation = 'Volume'
+display.ColorArrayName = ['POINTS', 'Vorticity']
 display.LookupTable = resultLUT
 display.SelectTCoordArray = 'None'
 display.SelectNormalArray = 'Normals'
@@ -62,11 +50,11 @@ display.PolarAxes = 'PolarAxesRepresentation'
 display.SelectInputVectors = ['POINTS', 'Vorticity']
 display.WriteLog = ''
 
-display.ScaleTransferFunction.Points = [1.641363501548767, 0.0, 0.5, 0.0, 1.641607642173767, 1.0, 0.5, 0.0]
-display.OpacityTransferFunction.Points = [1.641363501548767, 0.0, 0.5, 0.0, 1.641607642173767, 1.0, 0.5, 0.0]
+display.ScaleTransferFunction.Points = [0, 0.0, 0.5, 0.0, 0.75, 1.0, 0.5, 0.0]
+display.OpacityTransferFunction.Points = [0, 0.0, 0.5, 0.0, 0.75, 0.25, 0.5, 0.0]
 display.SetScalarBarVisibility(view, False)
-resultPWF = GetOpacityTransferFunction('Result')
-resultTF2D = GetTransferFunction2D('Result')
+resultPWF = GetOpacityTransferFunction('Vorticity')
+resultTF2D = GetTransferFunction2D('Vorticity')
 ColorBy(display, None)
 HideScalarBarIfNotNeeded(resultLUT, view)
 display.AmbientColor = [0.3333333333333333, 0.0, 1.0]

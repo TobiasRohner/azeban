@@ -21,7 +21,8 @@
 namespace azeban {
 
 template <int dim_v>
-static void run_from_config_impl(const nlohmann::json &config) {
+static void run_from_config_impl(const nlohmann::json &config,
+                                 zisa::int_t total_samples) {
   zisa::int_t num_samples = 1;
   if (config.contains("num_samples")) {
     num_samples = config["num_samples"];
@@ -51,8 +52,11 @@ static void run_from_config_impl(const nlohmann::json &config) {
     fmt::print(stderr, "Config file must contain key \"writer\"\n");
     exit(1);
   }
-  auto writer = make_writer<dim_v>(
-      config["writer"], simulation.grid(), sample_idx_start);
+  auto writer = make_writer<dim_v>(config["writer"],
+                                   simulation.grid(),
+                                   simulation.n_vars() > dim_v,
+                                   total_samples,
+                                   sample_idx_start);
 
   auto u_hat_out = simulation.grid().make_array_fourier(simulation.n_vars(),
                                                         zisa::device_type::cpu);
@@ -84,7 +88,7 @@ static void run_from_config_impl(const nlohmann::json &config) {
   }
 }
 
-void run_from_config(const nlohmann::json &config) {
+void run_from_config(const nlohmann::json &config, zisa::int_t total_samples) {
   if (!config.contains("dimension")) {
     fmt::print(stderr, "Must provide dimension of simulation\n");
     exit(1);
@@ -92,13 +96,13 @@ void run_from_config(const nlohmann::json &config) {
   const int dim = config["dimension"];
   switch (dim) {
   case 1:
-    run_from_config_impl<1>(config);
+    run_from_config_impl<1>(config, total_samples);
     break;
   case 2:
-    run_from_config_impl<2>(config);
+    run_from_config_impl<2>(config, total_samples);
     break;
   case 3:
-    run_from_config_impl<3>(config);
+    run_from_config_impl<3>(config, total_samples);
     break;
   default:
     fmt::print(stderr, "Invalid Dimension: {}\n", dim);
@@ -109,6 +113,7 @@ void run_from_config(const nlohmann::json &config) {
 #if AZEBAN_HAS_MPI
 template <int dim_v>
 static void run_from_config_MPI_impl(const nlohmann::json &config,
+                                     zisa::int_t total_samples,
                                      const Communicator *comm) {
   const int rank = comm->rank();
 
@@ -142,8 +147,12 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
     fmt::print(stderr, "Config file must contain key \"writer\"\n");
     exit(1);
   }
-  auto writer = make_writer<dim_v>(
-      config["writer"], simulation.grid(), sample_idx_start, comm);
+  auto writer = make_writer<dim_v>(config["writer"],
+                                   simulation.grid(),
+                                   simulation.n_vars() > dim_v,
+                                   total_samples,
+                                   sample_idx_start,
+                                   comm);
 
   for (zisa::int_t sample = sample_idx_start;
        sample < sample_idx_start + num_samples;
@@ -185,7 +194,9 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
   }
 }
 
-void run_from_config(const nlohmann::json &config, const Communicator *comm) {
+void run_from_config(const nlohmann::json &config,
+                     zisa::int_t total_samples,
+                     const Communicator *comm) {
   if (!config.contains("dimension")) {
     fmt::print(stderr, "Must provide dimension of simulation\n");
     exit(1);
@@ -193,10 +204,10 @@ void run_from_config(const nlohmann::json &config, const Communicator *comm) {
   const int dim = config["dimension"];
   switch (dim) {
   case 2:
-    run_from_config_MPI_impl<2>(config, comm);
+    run_from_config_MPI_impl<2>(config, total_samples, comm);
     break;
   case 3:
-    run_from_config_MPI_impl<3>(config, comm);
+    run_from_config_MPI_impl<3>(config, total_samples, comm);
     break;
   default:
     fmt::print(stderr, "Invalid Dimension: {}\n", dim);

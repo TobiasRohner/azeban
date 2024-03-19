@@ -81,7 +81,7 @@ void Python<Dim>::do_initialize(
     const zisa::array_view<complex_t, Dim + 1> &u_hat) {
   const zisa::int_t N = u_hat.shape(1);
   zisa::shape_t<Dim + 1> shape;
-  shape[0] = 2;
+  shape[0] = Dim;
   for (int d = 0; d < Dim; ++d) {
     shape[d + 1] = N;
   }
