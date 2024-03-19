@@ -48,7 +48,11 @@ public:
           for (zisa::int_t j = 0; j < N; ++j) {
             const real_t x = static_cast<real_t>(i) / N;
             const real_t y = static_cast<real_t>(j) / N;
-            u_(0, i, j) = x >= corner_[0] && x <= corner_[0] + size_[0] && y >= corner_[1] && y <= corner_[1] + size_[1] ? 1 : 0;
+            u_(0, i, j) = x >= corner_[0] && x <= corner_[0] + size_[0]
+                                  && y >= corner_[1]
+                                  && y <= corner_[1] + size_[1]
+                              ? 1
+                              : 0;
           }
         }
       } else if constexpr (dim_v == 3) {
@@ -58,7 +62,12 @@ public:
               const real_t x = static_cast<real_t>(i) / N;
               const real_t y = static_cast<real_t>(j) / N;
               const real_t z = static_cast<real_t>(k) / N;
-	      u_(0, i, j, k) = x >= corner_[0] && x <= corner_[0] + size_[0] && y >= corner_[1] && y <= corner_[1] + size_[1] && z >= corner_[2] && z <= corner_[2] + size_[2] ? 1 : 0;
+              u_(0, i, j, k)
+                  = x >= corner_[0] && x <= corner_[0] + size_[0]
+                            && y >= corner_[1] && y <= corner_[1] + size_[1]
+                            && z >= corner_[2] && z <= corner_[2] + size_[2]
+                        ? 1
+                        : 0;
             }
           }
         }

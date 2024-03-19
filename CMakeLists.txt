@@ -30,16 +30,94 @@ else()
   set(FP_PRECISION "double")
 endif()
 
+if(ZISA_HAS_CUDA)
+  enable_language(CUDA)
+endif()
+
+include(FetchContent)
+
+FetchContent_Declare(
+  nlohmann_json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  OVERRIDE_FIND_PACKAGE
+)
+FetchContent_Declare(
+  Catch2
+  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+  GIT_TAG v2.13.7
+  OVERRIDE_FIND_PACKAGE
+)
+FetchContent_Declare(
+  ZisaCore
+  GIT_REPOSITORY https://github.com/1uc/ZisaCore.git
+  GIT_TAG 9243c391b70f5b1ff8c0275905351158c4f59eab
+  OVERRIDE_FIND_PACKAGE
+)
+FetchContent_Declare(
+  ZisaMemory
+  GIT_REPOSITORY https://github.com/1uc/ZisaMemory.git
+  GIT_TAG 321013db1830fb77589e13139400aeaea8796f79
+  OVERRIDE_FIND_PACKAGE
+)
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG main
+  OVERRIDE_FIND_PACKAGE
+)
+FetchContent_Declare(
+  benchmark
+  GIT_REPOSITORY https://github.com/google/benchmark.git
+  GIT_TAG main
+  OVERRIDE_FIND_PACKAGE
+)
+if (AZEBAN_HAS_PYTHON)
+  FetchContent_Declare(
+    pybind11
+    GIT_REPOSITORY https://github.com/pybind/pybind11.git
+    OVERRIDE_FIND_PACKAGE
+  )
+endif()
+if (ZISA_HAS_NETCDF)
+  if (ENABLE_MPI)
+    find_package(MPI REQUIRED COMPONENTS C)
+    include_directories(${MPI_C_INCLUDE_PATH})
+  endif()
+  set(HDF5_PREFER_PARALLEL ON)
+  set(BUILD_UTILITIES OFF)
+  set(ENABLE_EXAMPLES OFF)
+  set(ENABLE_TESTS OFF)
+  set(ENABLE_DAP OFF)
+  set(ENABLE_HDF5 ON)
+  set(HDF5_PARALLEL ON)
+  set(ENABLE_NETCDF4 ON)
+  set(ENABLE_PNETCDF ON)
+  set(ENABLE_PARALLEL4 ON)
+  set(ENABLE_PARALLEL ON)
+  set(USE_PARALLEL ON)
+  FetchContent_Declare(
+    netcdf
+    GIT_REPOSITORY https://github.com/Unidata/netcdf-c.git
+    GIT_TAG main
+    OVERRIDE_FIND_PACKAGE
+  )
+endif()
+
+FetchContent_MakeAvailable(nlohmann_json Catch2 ZisaCore ZisaMemory googletest benchmark)
+if (AZEBAN_HAS_PYTHON)
+  FetchContent_MakeAvailable(pybind11)
+endif()
+if (ZISA_HAS_NETCDF)
+  FetchContent_MakeAvailable(netcdf)
+  add_library(NetCDF::NetCDF ALIAS netcdf)
+endif()
+
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/azeban/config.hpp.in
   ${CMAKE_CURRENT_BINARY_DIR}/include/azeban/config.hpp
   @ONLY
 )
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
-
-if(ZISA_HAS_CUDA)
-  enable_language(CUDA)
-endif()
 
 include("cmake/has_build_type.cmake")
 include("cmake/warning_flags.cmake")
@@ -105,7 +183,7 @@ if(ZISA_HAS_HDF5)
 endif()
 
 if(ZISA_HAS_NETCDF)
-  find_package(NetCDF REQUIRED)
+  find_package(netCDF REQUIRED)
   #target_include_directories(azeban_dependencies INTERFACE ${NetCDF_INCLUDE_DIRS})
   #target_link_libraries(azeban_dependencies INTERFACE ${NetCDF_LIBRARIES})
   target_link_libraries(azeban_dependencies INTERFACE NetCDF::NetCDF)

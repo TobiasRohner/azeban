@@ -96,8 +96,8 @@ structure_function_cuda_kernel(const zisa::array_const_view<real_t, 4> u,
   const ssize_t j = j0 + j_loc;
   const ssize_t k = k0 + k_loc;
   const ssize_t N = u.shape(1);
-  const size_t h_stride = sf.size() / sf.shape(0);
-  const size_t thread_idx
+  const ssize_t h_stride = sf.size() / sf.shape(0);
+  const ssize_t thread_idx
       = sf.shape(2) * sf.shape(3) * i_loc + sf.shape(3) * j_loc + k_loc;
   if (i >= N || j >= N || k >= N) {
     return;

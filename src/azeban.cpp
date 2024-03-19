@@ -38,14 +38,16 @@ nlohmann::json read_config(const std::string &config_filename) {
   return config;
 }
 
-void run_azeban(const nlohmann::json &config) {
+void run_azeban(const nlohmann::json &config, zisa::int_t total_samples) {
   fmt::print("Running azeban in single-node mode.\nRun cofiguration is\n{}\n",
              config.dump(2));
-  run_from_config(config);
+  run_from_config(config, total_samples);
 }
 
 #if AZEBAN_HAS_MPI
-void run_azeban(const nlohmann::json &config, MPI_Comm comm) {
+void run_azeban(const nlohmann::json &config,
+                zisa::int_t total_samples,
+                MPI_Comm comm) {
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
@@ -57,9 +59,9 @@ void run_azeban(const nlohmann::json &config, MPI_Comm comm) {
           config.dump(2));
     }
     Communicator communicator(comm);
-    run_from_config(config, &communicator);
+    run_from_config(config, total_samples, &communicator);
   } else {
-    run_azeban(config);
+    run_azeban(config, total_samples);
   }
 }
 #endif
@@ -114,6 +116,10 @@ int main(int argc, char *argv[]) {
   auto config = read_config(config_path);
 
   Profiler::start();
+  int num_samples = 1;
+  if (config.contains("num_samples")) {
+    num_samples = config["num_samples"];
+  }
 #if AZEBAN_HAS_MPI
   const int color = rank / ranks_per_sample;
   MPI_Comm subcomm;
@@ -121,10 +127,6 @@ int main(int argc, char *argv[]) {
   int sample_idx_start = 0;
   if (config.contains("sample_idx_start")) {
     sample_idx_start = config["sample_idx_start"];
-  }
-  int num_samples = 1;
-  if (config.contains("num_samples")) {
-    num_samples = config["num_samples"];
   }
   size_t seed = 1;
   if (config.contains("seed")) {
@@ -135,9 +137,9 @@ int main(int argc, char *argv[]) {
   config["seed"] = seed + color;
   config["num_samples"] = samples_per_comm;
   config["sample_idx_start"] = sample_idx_start + color * samples_per_comm;
-  run_azeban(config, subcomm);
+  run_azeban(config, num_samples, subcomm);
 #else
-  run_azeban(config);
+  run_azeban(config, num_samples);
 #endif
   Profiler::stop();
 

@@ -37,8 +37,7 @@ std::shared_ptr<Initializer<Dim>> make_cube(const nlohmann::json &config) {
     }
     const std::vector<real_t> corner
         = config["corner"].get<std::vector<real_t>>();
-    const std::vector<real_t> size
-        = config["size"].get<std::vector<real_t>>();
+    const std::vector<real_t> size = config["size"].get<std::vector<real_t>>();
     if (corner.size() != Dim) {
       fmt::print(stderr,
                  "Corner of cube initializer must have {} components instead "
@@ -58,13 +57,11 @@ std::shared_ptr<Initializer<Dim>> make_cube(const nlohmann::json &config) {
     if constexpr (Dim == 2) {
       return std::make_shared<Cube<Dim>>(
           std::array<real_t, 2>{corner[0], corner[1]},
-	  std::array<real_t, 2>{size[0], size[1]}
-	);
+          std::array<real_t, 2>{size[0], size[1]});
     } else {
       return std::make_shared<Cube<Dim>>(
           std::array<real_t, 3>{corner[0], corner[1], corner[2]},
-          std::array<real_t, 3>{size[0], size[1], size[2]}
-	);
+          std::array<real_t, 3>{size[0], size[1], size[2]});
     }
   } else {
     fmt::print(stderr, "Cube initializer is only defined for 2D or 3D\n");

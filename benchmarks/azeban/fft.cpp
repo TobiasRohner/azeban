@@ -199,5 +199,5 @@ static void bm_fft_3d_forward_mpi(benchmark::State &state) {
   }
 }
 
-// BENCHMARK(bm_fft_3d_forward_mpi)->Apply(fft_3d_params_mpi);
+BENCHMARK(bm_fft_3d_forward_mpi)->Apply(fft_3d_params_mpi);
 #endif
