@@ -26,6 +26,10 @@ make_netcdf_collective_snapshot_writer(const nlohmann::json &config,
   const std::string path = config["path"];
   const std::vector<real_t> snapshots
       = make_sequence<real_t>(config["snapshots"]);
+  bool save_pressure = false;
+  if (config.contains("save_pressure")) {
+    save_pressure = config["save_pressure"];
+  }
 
   return std::make_unique<NetCDFCollectiveSnapshotWriter<Dim>>(path,
                                                                grid,
@@ -33,6 +37,7 @@ make_netcdf_collective_snapshot_writer(const nlohmann::json &config,
                                                                has_tracer,
                                                                num_samples,
                                                                sample_idx_start,
+                                                               save_pressure,
                                                                work_area);
 }
 
