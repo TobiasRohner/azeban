@@ -279,11 +279,11 @@ void NetCDFCollectiveSnapshotWriter<2>::compute_B_pad() {
 #pragma omp parallel for collapse(2)
   for (zisa::int_t i = 0; i < u_pad_.shape(1); ++i) {
     for (zisa::int_t j = 0; j < u_pad_.shape(2); ++j) {
-      const real_t u1 = u_pad_(0, i, j);
-      const real_t u2 = u_pad_(1, i, j);
-      B_pad_(0, i, j) = norm * u1 * u1;
-      B_pad_(1, i, j) = norm * u2 * u1;
-      B_pad_(2, i, j) = norm * u2 * u2;
+      const real_t u1 = norm * u_pad_(0, i, j);
+      const real_t u2 = norm * u_pad_(1, i, j);
+      B_pad_(0, i, j) = u1 * u1;
+      B_pad_(1, i, j) = u2 * u1;
+      B_pad_(2, i, j) = u2 * u2;
     }
   }
 }
@@ -299,15 +299,15 @@ void NetCDFCollectiveSnapshotWriter<3>::compute_B_pad() {
   for (zisa::int_t i = 0; i < u_pad_.shape(1); ++i) {
     for (zisa::int_t j = 0; j < u_pad_.shape(2); ++j) {
       for (zisa::int_t k = 0; k < u_pad_.shape(3); ++k) {
-        const real_t u1 = u_pad_(0, i, j, k);
-        const real_t u2 = u_pad_(1, i, j, k);
-        const real_t u3 = u_pad_(2, i, j, k);
-        B_pad_(0, i, j, k) = norm * u1 * u1;
-        B_pad_(1, i, j, k) = norm * u2 * u1;
-        B_pad_(2, i, j, k) = norm * u2 * u2;
-        B_pad_(3, i, j, k) = norm * u3 * u1;
-        B_pad_(4, i, j, k) = norm * u3 * u2;
-        B_pad_(5, i, j, k) = norm * u3 * u3;
+        const real_t u1 = norm * u_pad_(0, i, j, k);
+        const real_t u2 = norm * u_pad_(1, i, j, k);
+        const real_t u3 = norm * u_pad_(2, i, j, k);
+        B_pad_(0, i, j, k) = u1 * u1;
+        B_pad_(1, i, j, k) = u2 * u1;
+        B_pad_(2, i, j, k) = u2 * u2;
+        B_pad_(3, i, j, k) = u3 * u1;
+        B_pad_(4, i, j, k) = u3 * u2;
+        B_pad_(5, i, j, k) = u3 * u3;
       }
     }
   }
@@ -326,7 +326,8 @@ void NetCDFCollectiveSnapshotWriter<2>::compute_p_hat() {
   const long N_phys = p_.shape(1);
   const long N_fourier = N_phys / 2 + 1;
   const long N_phys_pad = u_pad_.shape(1);
-  //#pragma omp parallel for collapse(2)
+  const real_t norm = 1.0 / zisa::pow<2>(N_phys);
+#pragma omp parallel for collapse(2)
   for (long i = 0; i < N_phys; ++i) {
     for (long j = 0; j < N_fourier; ++j) {
       const long i_B = i >= N_fourier ? N_phys_pad - N_phys + i : i;
@@ -339,10 +340,9 @@ void NetCDFCollectiveSnapshotWriter<2>::compute_p_hat() {
       const complex_t B21 = B12;
       const complex_t B22 = B_hat_pad_(2, i_B, j);
       p_hat_(0, i, j)
-          = -(k1 * k1 * B11 + k1 * k2 * B12 + k2 * k1 * B21 + k2 * k2 * B22)
+          = -norm
+            * (k1 * k1 * B11 + k1 * k2 * B12 + k2 * k1 * B21 + k2 * k2 * B22)
             / absk2;
-      // std::cout << "k = (" << k1 << ',' << k2 << ")\t" << "p_hat_(" << i <<
-      // ',' << j << ") = " << p_hat_(0, i, j) << std::endl;
     }
   }
   p_hat_(0, 0, 0) = 0;
@@ -353,7 +353,8 @@ void NetCDFCollectiveSnapshotWriter<3>::compute_p_hat() {
   const long N_phys = p_.shape(1);
   const long N_fourier = N_phys / 2 + 1;
   const long N_phys_pad = u_pad_.shape(1);
-  //#pragma omp parallel for collapse(3)
+  const real_t norm = 1.0 / zisa::pow<3>(N_phys);
+#pragma omp parallel for collapse(3)
   for (long i = 0; i < N_phys; ++i) {
     for (long j = 0; j < N_phys; ++j) {
       for (long k = 0; k < N_fourier; ++k) {
@@ -374,12 +375,11 @@ void NetCDFCollectiveSnapshotWriter<3>::compute_p_hat() {
         const complex_t B31 = B13;
         const complex_t B32 = B23;
         const complex_t B33 = B_hat_pad_(5, i_B, j_B, k);
-        p_hat_(0, i, j, k) = -(k1 * k1 * B11 + k1 * k2 * B12 + k1 * k3 * B13
-                               + k2 * k1 * B21 + k2 * k2 * B22 + k2 * k3 * B23
-                               + k3 * k1 * B31 + k3 * k2 * B32 + k3 * k3 * B33)
+        p_hat_(0, i, j, k) = -norm
+                             * (k1 * k1 * B11 + k1 * k2 * B12 + k1 * k3 * B13
+                                + k2 * k1 * B21 + k2 * k2 * B22 + k2 * k3 * B23
+                                + k3 * k1 * B31 + k3 * k2 * B32 + k3 * k3 * B33)
                              / absk2;
-        // std::cout << "p_hat_(" << i << ',' << j << ',' << k << ") = " <<
-        // p_hat_(0, i, j, k) << std::endl;
       }
     }
   }
