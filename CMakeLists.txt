@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 project(azeban VERSION 0.1 LANGUAGES C CXX)
 
+include(FetchContent)
+
 option(ENABLE_CUDA "Enable CUDA Acceleration" ON)
 option(ENABLE_MPI "Enable scaling to multiple nodes using MPI" ON)
 option(ENABLE_CUDA_AWARE_MPI "Enable CUDA aware MPI if available" ON)
@@ -34,8 +36,6 @@ if(ZISA_HAS_CUDA)
   enable_language(CUDA)
 endif()
 
-include(FetchContent)
-
 FetchContent_Declare(
   nlohmann_json
   GIT_REPOSITORY https://github.com/nlohmann/json.git
@@ -62,19 +62,21 @@ FetchContent_Declare(
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG main
+  GIT_TAG v1.14.0
   OVERRIDE_FIND_PACKAGE
 )
 FetchContent_Declare(
   benchmark
   GIT_REPOSITORY https://github.com/google/benchmark.git
-  GIT_TAG main
+  GIT_TAG v1.8.3
   OVERRIDE_FIND_PACKAGE
 )
 if (AZEBAN_HAS_PYTHON)
+  set(PYBIND11_FINDPYTHON ON)
   FetchContent_Declare(
     pybind11
     GIT_REPOSITORY https://github.com/pybind/pybind11.git
+    GIT_TAG master
     OVERRIDE_FIND_PACKAGE
   )
 endif()
@@ -83,18 +85,18 @@ if (ZISA_HAS_NETCDF)
     find_package(MPI REQUIRED COMPONENTS C)
     include_directories(${MPI_C_INCLUDE_PATH})
   endif()
-  set(NETCDF_HDF5_PREFER_PARALLEL ON)
-  set(NETCDF_BUILD_UTILITIES OFF)
-  set(NETCDF_ENABLE_EXAMPLES OFF)
-  set(NETCDF_ENABLE_TESTS OFF)
-  set(NETCDF_ENABLE_DAP OFF)
-  set(NETCDF_ENABLE_HDF5 ON)
-  set(NETCDF_HDF5_PARALLEL ON)
-  set(NETCDF_ENABLE_NETCDF_4 ON)
-  set(NETCDF_ENABLE_PNETCDF ON)
-  set(NETCDF_ENABLE_PARALLEL4 ON)
-  set(NETCDF_ENABLE_PARALLEL ON)
-  set(NETCDF_USE_PARALLEL ON)
+  set(HDF5_PREFER_PARALLEL ON)
+  set(BUILD_UTILITIES OFF)
+  set(ENABLE_EXAMPLES OFF)
+  set(ENABLE_TESTS OFF)
+  set(ENABLE_DAP OFF)
+  set(ENABLE_HDF5 ON)
+  set(HDF5_PARALLEL ON)
+  set(ENABLE_NETCDF4 ON)
+  set(ENABLE_PNETCDF ON)
+  set(ENABLE_PARALLEL4 ON)
+  set(ENABLE_PARALLEL ON)
+  set(USE_PARALLEL ON)
   FetchContent_Declare(
     netcdf
     GIT_REPOSITORY https://github.com/Unidata/netcdf-c.git

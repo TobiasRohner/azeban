@@ -49,6 +49,8 @@ NetCDFCollectiveSnapshotWriter<Dim>::NetCDFCollectiveSnapshotWriter(
   CHECK_NETCDF(nc_set_fill(ncid_, NC_NOFILL, NULL));
   setup_file(grid, snapshot_times, has_tracer, save_pressure, num_samples);
   if (save_pressure_) {
+    u_ = grid.make_array_phys(Dim, zisa::device_type::cpu);
+    u_hat_ = grid.make_array_fourier(Dim, zisa::device_type::cpu);
     u_hat_pad_ = grid.make_array_fourier_pad(Dim, zisa::device_type::cpu);
     u_pad_ = grid.make_array_phys_pad(Dim, zisa::device_type::cpu);
     B_pad_ = grid.make_array_phys_pad((Dim * Dim + Dim) / 2,
@@ -57,7 +59,8 @@ NetCDFCollectiveSnapshotWriter<Dim>::NetCDFCollectiveSnapshotWriter(
                                              zisa::device_type::cpu);
     p_hat_ = grid.make_array_fourier(1, zisa::device_type::cpu);
     p_ = grid.make_array_phys(1, zisa::device_type::cpu);
-    fft_u_ = make_fft<Dim>(u_hat_pad_, u_pad_, FFT_BACKWARD);
+    fft_u_ = make_fft<Dim>(u_hat_, u_, FFT_FORWARD);
+    fft_u_pad_ = make_fft<Dim>(u_hat_pad_, u_pad_, FFT_BACKWARD);
     fft_B_ = make_fft<Dim>(B_hat_pad_, B_pad_, FFT_FORWARD);
     fft_p_ = make_fft<Dim>(p_hat_, p_, FFT_BACKWARD);
   }
@@ -100,13 +103,71 @@ void NetCDFCollectiveSnapshotWriter<Dim>::write(
     CHECK_NETCDF(
         nc_put_vara(ncid_, varids_[3], start, count, &u[Dim * slice_size]));
   }
+  if (save_pressure_) {
+    zisa::copy(u_, u);
+    compute_u_hat();
+    compute_u_hat_pad();
+    compute_u_pad();
+    compute_B_pad();
+    compute_B_hat_pad();
+    compute_p_hat();
+    compute_p();
+    CHECK_NETCDF(nc_put_vara(ncid_, varids_[4], start, count, p_.raw()));
+  }
   ++snapshot_idx_;
 }
 
 template <int Dim>
 void NetCDFCollectiveSnapshotWriter<Dim>::write(
-    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t) {
-  if (save_pressure_) {
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t) {}
+
+#if AZEBAN_HAS_MPI
+template <int Dim>
+void NetCDFCollectiveSnapshotWriter<Dim>::write(
+    const zisa::array_const_view<real_t, Dim + 1> &u,
+    real_t t,
+    const Communicator *comm) {
+  ProfileHost pofile("NetCDFCollectiveSnapshotWriter::write");
+  LOG_ERR_IF(u.memory_location() != zisa::device_type::cpu,
+             "u must be on the host");
+  const int rank = comm->rank();
+  const int size = comm->size();
+
+  std::vector<int> cnts(size);
+  std::vector<int> displs(size);
+  for (int r = 0; r < size; ++r) {
+    cnts[r] = zisa::pow<Dim - 1>(grid_.N_phys)
+              * (grid_.N_phys / size
+                 + (zisa::integer_cast<zisa::int_t>(r) < grid_.N_phys % size));
+  }
+  displs[0] = 0;
+  for (int r = 1; r < size; ++r) {
+    displs[r] = displs[r - 1] + cnts[r - 1];
+  }
+  const zisa::int_t n_elems_per_component_glob
+      = zisa::product(grid_.shape_phys(1));
+  const zisa::int_t n_elems_per_component_loc
+      = zisa::product(grid_.shape_phys(1, comm));
+
+  std::vector<MPI_Request> reqs(u.shape(0));
+  for (zisa::int_t i = 0; i < u.shape(0); ++i) {
+    MPI_Igatherv(u.raw() + i * n_elems_per_component_loc,
+                 cnts[rank],
+                 mpi_type<real_t>(),
+                 u_.raw() + i * n_elems_per_component_glob,
+                 cnts.data(),
+                 displs.data(),
+                 mpi_type<real_t>(),
+                 0,
+                 comm->get_mpi_comm(),
+                 &reqs[i]);
+  }
+  MPI_Waitall(u.shape(0), reqs.data(), MPI_STATUSES_IGNORE);
+  if (rank == 0) {
+    size_t slice_size = 1;
+    for (int i = 0; i < Dim; ++i) {
+      slice_size *= u_.shape(i + 1);
+    }
     size_t start[Dim + 2];
     size_t count[Dim + 2];
     start[0] = sample_idx_;
@@ -115,32 +176,41 @@ void NetCDFCollectiveSnapshotWriter<Dim>::write(
     count[1] = 1;
     for (int i = 0; i < Dim; ++i) {
       start[i + 2] = 0;
-      count[i + 2] = u_hat.shape(1);
+      count[i + 2] = u_.shape(i + 1);
     }
-    compute_u_hat_pad(u_hat);
-    compute_u_pad();
-    compute_B_pad();
-    compute_B_hat_pad();
-    compute_p_hat();
-    compute_p();
-    CHECK_NETCDF(nc_put_vara(ncid_, varids_[4], start, count, p_.raw()));
+    CHECK_NETCDF(
+        nc_put_vara(ncid_, varids_[0], start, count, &u_[0 * slice_size]));
+    CHECK_NETCDF(
+        nc_put_vara(ncid_, varids_[1], start, count, &u_[1 * slice_size]));
+    if (Dim > 2) {
+      CHECK_NETCDF(
+          nc_put_vara(ncid_, varids_[2], start, count, &u_[2 * slice_size]));
+    }
+    if (u.shape(0) == Dim + 1) {
+      CHECK_NETCDF(
+          nc_put_vara(ncid_, varids_[3], start, count, &u_[Dim * slice_size]));
+    }
+    if (save_pressure_) {
+      compute_u_hat();
+      compute_u_hat_pad();
+      compute_u_pad();
+      compute_B_pad();
+      compute_B_hat_pad();
+      compute_p_hat();
+      compute_p();
+      CHECK_NETCDF(nc_put_vara(ncid_, varids_[4], start, count, p_.raw()));
+    }
   }
-}
-
-#if AZEBAN_HAS_MPI
-template <int Dim>
-void NetCDFCollectiveSnapshotWriter<Dim>::write(
-    const zisa::array_const_view<real_t, Dim + 1> &,
-    real_t,
-    const Communicator *) {
-  LOG_ERR("Not yet implemented");
+  ++snapshot_idx_;
 }
 
 template <int Dim>
 void NetCDFCollectiveSnapshotWriter<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &,
     real_t,
-    const Communicator *) {}
+    const Communicator *) {
+  LOG_ERR("Not yet implemented");
+}
 #endif
 
 template <int Dim>
@@ -220,21 +290,24 @@ void NetCDFCollectiveSnapshotWriter<Dim>::setup_file(
   }
 }
 
-template <>
-void NetCDFCollectiveSnapshotWriter<1>::compute_u_hat_pad(
-    const zisa::array_const_view<complex_t, 2> &) {}
+template <int Dim>
+void NetCDFCollectiveSnapshotWriter<Dim>::compute_u_hat() {
+  fft_u_->forward();
+}
 
 template <>
-void NetCDFCollectiveSnapshotWriter<2>::compute_u_hat_pad(
-    const zisa::array_const_view<complex_t, 3> &u_hat) {
-  zisa::shape_t<2> slice_u_hat_shape(u_hat.shape(1), u_hat.shape(2));
+void NetCDFCollectiveSnapshotWriter<1>::compute_u_hat_pad() {}
+
+template <>
+void NetCDFCollectiveSnapshotWriter<2>::compute_u_hat_pad() {
+  zisa::shape_t<2> slice_u_hat_shape(u_hat_.shape(1), u_hat_.shape(2));
   zisa::shape_t<2> slice_u_hat_pad_shape(u_hat_pad_.shape(1),
                                          u_hat_pad_.shape(2));
   for (int i = 0; i < 2; ++i) {
     const zisa::array_const_view<complex_t, 2> slice_u_hat(
         slice_u_hat_shape,
-        u_hat.raw() + i * zisa::product(slice_u_hat_shape),
-        u_hat.memory_location());
+        u_hat_.raw() + i * zisa::product(slice_u_hat_shape),
+        zisa::device_type::cpu);
     const zisa::array_view<complex_t, 2> slice_u_hat_pad(
         slice_u_hat_pad_shape,
         u_hat_pad_.raw() + i * zisa::product(slice_u_hat_pad_shape),
@@ -244,17 +317,16 @@ void NetCDFCollectiveSnapshotWriter<2>::compute_u_hat_pad(
 }
 
 template <>
-void NetCDFCollectiveSnapshotWriter<3>::compute_u_hat_pad(
-    const zisa::array_const_view<complex_t, 4> &u_hat) {
+void NetCDFCollectiveSnapshotWriter<3>::compute_u_hat_pad() {
   zisa::shape_t<3> slice_u_hat_shape(
-      u_hat.shape(1), u_hat.shape(2), u_hat.shape(3));
+      u_hat_.shape(1), u_hat_.shape(2), u_hat_.shape(3));
   zisa::shape_t<3> slice_u_hat_pad_shape(
       u_hat_pad_.shape(1), u_hat_pad_.shape(2), u_hat_pad_.shape(3));
   for (int i = 0; i < 3; ++i) {
     const zisa::array_const_view<complex_t, 3> slice_u_hat(
         slice_u_hat_shape,
-        u_hat.raw() + i * zisa::product(slice_u_hat_shape),
-        u_hat.memory_location());
+        u_hat_.raw() + i * zisa::product(slice_u_hat_shape),
+        zisa::device_type::cpu);
     const zisa::array_view<complex_t, 3> slice_u_hat_pad(
         slice_u_hat_pad_shape,
         u_hat_pad_.raw() + i * zisa::product(slice_u_hat_pad_shape),

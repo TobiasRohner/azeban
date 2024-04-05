@@ -60,6 +60,8 @@ private:
   int ncid_;
   int dimids_[5];
   int varids_[5];
+  zisa::array<real_t, Dim + 1> u_;
+  zisa::array<complex_t, Dim + 1> u_hat_;
   zisa::array<complex_t, Dim + 1> u_hat_pad_;
   zisa::array<real_t, Dim + 1> u_pad_;
   zisa::array<real_t, Dim + 1> B_pad_;
@@ -67,6 +69,7 @@ private:
   zisa::array<complex_t, Dim + 1> p_hat_;
   zisa::array<real_t, Dim + 1> p_;
   std::shared_ptr<FFT<Dim, real_t>> fft_u_;
+  std::shared_ptr<FFT<Dim, real_t>> fft_u_pad_;
   std::shared_ptr<FFT<Dim, real_t>> fft_B_;
   std::shared_ptr<FFT<Dim, real_t>> fft_p_;
   void *work_area_;
@@ -77,8 +80,8 @@ private:
                   bool save_pressure,
                   zisa::int_t num_samples);
 
-  void
-  compute_u_hat_pad(const zisa::array_const_view<complex_t, Dim + 1> &u_hat);
+  void compute_u_hat();
+  void compute_u_hat_pad();
   void compute_u_pad();
   void compute_B_pad();
   void compute_B_hat_pad();
