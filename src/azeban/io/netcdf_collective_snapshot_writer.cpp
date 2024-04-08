@@ -209,7 +209,6 @@ void NetCDFCollectiveSnapshotWriter<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &,
     real_t,
     const Communicator *) {
-  LOG_ERR("Not yet implemented");
 }
 #endif
 
@@ -337,7 +336,7 @@ void NetCDFCollectiveSnapshotWriter<3>::compute_u_hat_pad() {
 
 template <int Dim>
 void NetCDFCollectiveSnapshotWriter<Dim>::compute_u_pad() {
-  fft_u_->backward();
+  fft_u_pad_->backward();
 }
 
 template <>

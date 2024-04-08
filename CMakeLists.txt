@@ -37,8 +37,15 @@ if(ZISA_HAS_CUDA)
 endif()
 
 FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+  GIT_TAG 10.2.1
+  OVERRIDE_FIND_PACKAGE
+)
+FetchContent_Declare(
   nlohmann_json
   GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG v3.11.3
   OVERRIDE_FIND_PACKAGE
 )
 FetchContent_Declare(
@@ -92,8 +99,8 @@ if (ZISA_HAS_NETCDF)
   set(ENABLE_DAP OFF)
   set(ENABLE_HDF5 ON)
   set(HDF5_PARALLEL ON)
-  set(ENABLE_NETCDF4 ON)
-  set(ENABLE_PNETCDF ON)
+  set(ENABLE_NETCDF_4 ON)
+  set(ENABLE_PNETCDF OFF)
   set(ENABLE_PARALLEL4 ON)
   set(ENABLE_PARALLEL ON)
   set(USE_PARALLEL ON)
