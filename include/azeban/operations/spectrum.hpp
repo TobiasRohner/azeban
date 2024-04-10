@@ -12,6 +12,7 @@ template <typename Op>
 static std::vector<real_t>
 spectrum_cpu(const Grid<1> &grid,
              const zisa::array_const_view<complex_t, 2> &u_hat,
+             int reduced_dim,
              long k1_offset = 0) {
   std::vector<real_t> spectrum(grid.N_fourier, 0);
   for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
@@ -20,7 +21,11 @@ spectrum_cpu(const Grid<1> &grid,
       k1 -= grid.N_phys;
     }
     const long K = std::abs(k1);
-    spectrum[K] += Op::eval(grid, k1, u_hat(0, i));
+    const complex_t u = u_hat(0, i);
+    spectrum[K] += Op::eval(grid, k1, u);
+    if (reduced_dim == 0 && k1 != 0) {
+      spectrum[K] += Op::eval(grid, -k1, conj(u));
+    }
   }
   return spectrum;
 }
@@ -29,6 +34,7 @@ template <typename Op>
 static std::vector<real_t>
 spectrum_cpu(const Grid<2> &grid,
              const zisa::array_const_view<complex_t, 3> &u_hat,
+             int reduced_dim,
              long k1_offset = 0,
              long k2_offset = 0) {
   std::vector<real_t> spectrum(grid.N_fourier, 0);
@@ -43,7 +49,15 @@ spectrum_cpu(const Grid<2> &grid,
         k2 -= grid.N_phys;
       }
       const long K = std::max(std::abs(k1), std::abs(k2));
-      spectrum[K] += Op::eval(grid, k1, k2, u_hat(0, i, j), u_hat(1, i, j));
+      const complex_t u = u_hat(0, i, j);
+      const complex_t v = u_hat(1, i, j);
+      spectrum[K] += Op::eval(grid, k1, k2, u, v);
+      if (reduced_dim == 0 && k1 != 0) {
+        spectrum[K] += Op::eval(grid, -k1, -k2, conj(u), conj(v));
+      }
+      if (reduced_dim == 1 && k2 != 0) {
+        spectrum[K] += Op::eval(grid, -k1, -k2, conj(u), conj(v));
+      }
     }
   }
   return spectrum;
@@ -53,6 +67,7 @@ template <typename Op>
 static std::vector<real_t>
 spectrum_cpu(const Grid<3> &grid,
              const zisa::array_const_view<complex_t, 4> &u_hat,
+             int reduced_dim,
              long k1_offset = 0,
              long k2_offset = 0,
              long k3_offset = 0) {
@@ -74,6 +89,9 @@ spectrum_cpu(const Grid<3> &grid,
         }
         const long K
             = std::max(std::max(std::abs(k1), std::abs(k2)), std::abs(k3));
+        const complex_t u = u_hat(0, i, j, k);
+        const complex_t v = u_hat(1, i, j, k);
+        const complex_t w = u_hat(2, i, j, k);
         spectrum[K] += Op::eval(grid,
                                 k1,
                                 k2,
@@ -81,6 +99,18 @@ spectrum_cpu(const Grid<3> &grid,
                                 u_hat(0, i, j, k),
                                 u_hat(1, i, j, k),
                                 u_hat(2, i, j, k));
+        if (reduced_dim == 0 && k1 != 0) {
+          spectrum[K]
+              += Op::eval(grid, -k1, -k2, -k3, conj(u), conj(v), conj(w));
+        }
+        if (reduced_dim == 1 && k2 != 0) {
+          spectrum[K]
+              += Op::eval(grid, -k1, -k2, -k3, conj(u), conj(v), conj(w));
+        }
+        if (reduced_dim == 2 && k3 != 0) {
+          spectrum[K]
+              += Op::eval(grid, -k1, -k2, -k3, conj(u), conj(v), conj(w));
+        }
       }
     }
   }
@@ -95,7 +125,7 @@ spectrum_cpu(const Grid<1> &grid,
              MPI_Comm comm) {
   const long k1_offset = grid.i_fourier(0, comm);
   const std::vector<real_t> local_spectrum
-      = spectrum_cpu<Op>(grid, u_hat, k1_offset);
+      = spectrum_cpu<Op>(grid, u_hat, 0, k1_offset);
   std::vector<real_t> spectrum(local_spectrum.size(), 0);
   MPI_Reduce(local_spectrum.data(),
              spectrum.data(),
@@ -115,7 +145,7 @@ spectrum_cpu(const Grid<2> &grid,
   const long k1_offset = grid.i_fourier(0, comm);
   const long k2_offset = grid.j_fourier(0, comm);
   const std::vector<real_t> local_spectrum
-      = spectrum_cpu<Op>(grid, u_hat, k1_offset, k2_offset);
+      = spectrum_cpu<Op>(grid, u_hat, 0, k1_offset, k2_offset);
   std::vector<real_t> spectrum(local_spectrum.size(), 0);
   MPI_Reduce(local_spectrum.data(),
              spectrum.data(),
@@ -136,7 +166,7 @@ spectrum_cpu(const Grid<3> &grid,
   const long k2_offset = grid.j_fourier(0, comm);
   const long k3_offset = grid.k_fourier(0, comm);
   const std::vector<real_t> local_spectrum
-      = spectrum_cpu<Op>(grid, u_hat, k1_offset, k2_offset, k3_offset);
+      = spectrum_cpu<Op>(grid, u_hat, 0, k1_offset, k2_offset, k3_offset);
   std::vector<real_t> spectrum(local_spectrum.size(), 0);
   MPI_Reduce(local_spectrum.data(),
              spectrum.data(),
@@ -154,7 +184,7 @@ std::vector<real_t>
 spectrum(const Grid<1> &grid,
          const zisa::array_const_view<complex_t, 2> &u_hat) {
   if (u_hat.memory_location() == zisa::device_type::cpu) {
-    return spectrum_cpu<Op>(grid, u_hat);
+    return spectrum_cpu<Op>(grid, u_hat, 0);
   }
 #if ZISA_HAS_CUDA
   else if (u_hat.memory_location() == zisa::device_type::cuda) {
@@ -172,7 +202,7 @@ std::vector<real_t>
 spectrum(const Grid<2> &grid,
          const zisa::array_const_view<complex_t, 3> &u_hat) {
   if (u_hat.memory_location() == zisa::device_type::cpu) {
-    return spectrum_cpu<Op>(grid, u_hat);
+    return spectrum_cpu<Op>(grid, u_hat, 1);
   }
 #if ZISA_HAS_CUDA
   else if (u_hat.memory_location() == zisa::device_type::cuda) {
@@ -190,7 +220,7 @@ std::vector<real_t>
 spectrum(const Grid<3> &grid,
          const zisa::array_const_view<complex_t, 4> &u_hat) {
   if (u_hat.memory_location() == zisa::device_type::cpu) {
-    return spectrum_cpu<Op>(grid, u_hat);
+    return spectrum_cpu<Op>(grid, u_hat, 2);
   }
 #if ZISA_HAS_CUDA
   else if (u_hat.memory_location() == zisa::device_type::cuda) {
