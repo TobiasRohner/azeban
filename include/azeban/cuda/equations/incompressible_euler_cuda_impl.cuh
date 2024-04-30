@@ -145,8 +145,10 @@ incompressible_euler_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
     const real_t k2 = 2 * zisa::pi * j;
     const real_t absk2 = k1 * k1 + k2 * k2;
 
+    const complex_t u = u_hat[0 * stride_u + idx_u];
+    const complex_t v = u_hat[1 * stride_u + idx_u];
     complex_t force1, force2;
-    forcing(t, dt, i_, j, &force1, &force2);
+    forcing(t, dt, u, v, 1, i_, j, &force1, &force2);
     complex_t L1_hat, L2_hat;
     incompressible_euler_2d_compute_L(k1,
                                       k2,
@@ -159,11 +161,11 @@ incompressible_euler_2d_cuda_kernel(zisa::array_const_view<complex_t, 3> B_hat,
                                       &L1_hat,
                                       &L2_hat);
 
-    const real_t v = visc.eval(zisa::sqrt(absk2));
+    const real_t nu = visc.eval(zisa::sqrt(absk2));
     dudt_hat[0 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L1_hat + v * u_hat[0 * stride_u + idx_u];
+        = absk2 == 0 ? 0 : -L1_hat + nu * u;
     dudt_hat[1 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L2_hat + v * u_hat[1 * stride_u + idx_u];
+        = absk2 == 0 ? 0 : -L2_hat + nu * v;
   }
 }
 
@@ -204,8 +206,11 @@ incompressible_euler_3d_cuda_kernel(zisa::array_const_view<complex_t, 4> B_hat,
     const real_t k3 = 2 * zisa::pi * k;
     const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
 
+    const complex_t u = u_hat[0 * stride_u + idx_u];
+    const complex_t v = u_hat[1 * stride_u + idx_u];
+    const complex_t w = u_hat[2 * stride_u + idx_u];
     complex_t force1, force2, force3;
-    forcing(t, dt, i_, j_, k, &force1, &force2, &force3);
+    forcing(t, dt, u, v, w, 1, i_, j_, k, &force1, &force2, &force3);
     complex_t L1_hat, L2_hat, L3_hat;
     incompressible_euler_3d_compute_L(k1,
                                       k2,
@@ -221,13 +226,13 @@ incompressible_euler_3d_cuda_kernel(zisa::array_const_view<complex_t, 4> B_hat,
                                       &L2_hat,
                                       &L3_hat);
 
-    const real_t v = visc.eval(zisa::sqrt(absk2));
+    const real_t nu = visc.eval(zisa::sqrt(absk2));
     dudt_hat[0 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L1_hat + v * u_hat[0 * stride_u + idx_u];
+        = absk2 == 0 ? 0 : -L1_hat + nu * u;
     dudt_hat[1 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L2_hat + v * u_hat[1 * stride_u + idx_u];
+        = absk2 == 0 ? 0 : -L2_hat + nu * v;
     dudt_hat[2 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L3_hat + v * u_hat[2 * stride_u + idx_u];
+        = absk2 == 0 ? 0 : -L3_hat + nu * w;
   }
 }
 
@@ -258,8 +263,11 @@ __global__ void incompressible_euler_2d_tracer_cuda_kernel(
     const real_t k2 = 2 * zisa::pi * j;
     const real_t absk2 = k1 * k1 + k2 * k2;
 
+    const complex_t u = u_hat[0 * stride_u + idx_u];
+    const complex_t v = u_hat[1 * stride_u + idx_u];
+    const complex_t rho = u_hat[2 * stride_u + idx_u];
     complex_t force1, force2;
-    forcing(t, dt, i_, j, &force1, &force2);
+    forcing(t, dt, u, v, rho, i_, j, &force1, &force2);
     complex_t L1_hat, L2_hat, L3_hat;
     incompressible_euler_2d_compute_L(k1,
                                       k2,
@@ -273,12 +281,12 @@ __global__ void incompressible_euler_2d_tracer_cuda_kernel(
                                       &L2_hat);
     advection_2d(k1, k2, stride_B, idx_B, B_hat.raw() + 3 * stride_B, &L3_hat);
 
-    const real_t v = visc.eval(zisa::sqrt(absk2));
+    const real_t nu = visc.eval(zisa::sqrt(absk2));
     dudt_hat[0 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L1_hat + v * u_hat[0 * stride_u + idx_u];
+        = absk2 == 0 ? 0 : -L1_hat + nu * u;
     dudt_hat[1 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L2_hat + v * u_hat[1 * stride_u + idx_u];
-    dudt_hat[2 * stride_u + idx_u] = -L3_hat + v * u_hat[2 * stride_u + idx_u];
+        = absk2 == 0 ? 0 : -L2_hat + nu * v;
+    dudt_hat[2 * stride_u + idx_u] = -L3_hat + nu * rho;
   }
 }
 
@@ -319,8 +327,12 @@ __global__ void incompressible_euler_3d_tracer_cuda_kernel(
     const real_t k3 = 2 * zisa::pi * k;
     const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
 
+    const complex_t u = u_hat[0 * stride_u + idx_u];
+    const complex_t v = u_hat[1 * stride_u + idx_u];
+    const complex_t w = u_hat[2 * stride_u + idx_u];
+    const complex_t rho = u_hat[3 * stride_u + idx_u];
     complex_t force1, force2, force3;
-    forcing(t, dt, i_, j_, k, &force1, &force2, &force3);
+    forcing(t, dt, u, v, w, rho, i_, j_, k, &force1, &force2, &force3);
     complex_t L1_hat, L2_hat, L3_hat, L4_hat;
     incompressible_euler_3d_compute_L(k1,
                                       k2,
@@ -338,14 +350,14 @@ __global__ void incompressible_euler_3d_tracer_cuda_kernel(
     advection_3d(
         k1, k2, k3, stride_B, idx_B, B_hat.raw() + 6 * stride_B, &L4_hat);
 
-    const real_t v = visc.eval(zisa::sqrt(absk2));
+    const real_t nu = visc.eval(zisa::sqrt(absk2));
     dudt_hat[0 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L1_hat + v * u_hat[0 * stride_u + idx_u];
+        = absk2 == 0 ? 0 : -L1_hat + nu * u;
     dudt_hat[1 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L2_hat + v * u_hat[1 * stride_u + idx_u];
+        = absk2 == 0 ? 0 : -L2_hat + nu * v;
     dudt_hat[2 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L3_hat + v * u_hat[2 * stride_u + idx_u];
-    dudt_hat[3 * stride_u + idx_u] = -L4_hat + v * u_hat[3 * stride_u + idx_u];
+        = absk2 == 0 ? 0 : -L3_hat + nu * w;
+    dudt_hat[3 * stride_u + idx_u] = -L4_hat + nu * rho;
   }
 }
 

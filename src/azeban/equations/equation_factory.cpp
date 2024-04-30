@@ -4,6 +4,7 @@
 #include <azeban/equations/incompressible_euler_naive_factory.hpp>
 #include <azeban/equations/spectral_viscosity_factory.hpp>
 #include <azeban/forcing/no_forcing.hpp>
+#include <azeban/forcing/boussinesq.hpp>
 #include <azeban/forcing/sinusoidal_factory.hpp>
 #include <azeban/forcing/white_noise_factory.hpp>
 #include <string>
@@ -72,6 +73,12 @@ make_equation(const nlohmann::json &config,
     else {
       LOG_ERR("Unsupported device");
     }
+  } else if (forcing_type == "Boussinesq") {
+    if (!has_tracer) {
+      LOG_ERR("Boussinesq forcing only makes sense with tracer density enabled");
+    }
+    Boussinesq forcing;
+    return make_equation(grid, has_tracer, visc, forcing, equation_name, device);
   } else {
     fmt::print(stderr, "Unknown forcing type: {}\n", forcing_type);
     exit(1);
