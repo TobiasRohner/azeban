@@ -61,6 +61,9 @@ private:
   void read_u(int ncid, const zisa::array_view<real_t, Dim + 1> &u) const;
   void read_u_hat(int ncid,
                   const zisa::array_view<complex_t, Dim + 1> &u_hat) const;
+  void read_rho(int ncid, const zisa::array_view<real_t, Dim + 1> &rho) const;
+  void read_rho_hat(int ncid,
+                  const zisa::array_view<complex_t, Dim + 1> &rho_hat) const;
   void read_omega(int ncid,
                   const zisa::array_view<real_t, Dim + 1> &omega) const;
   void

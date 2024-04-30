@@ -13,7 +13,7 @@ static std::vector<real_t>
 spectrum_cpu(const Grid<1> &grid,
              const zisa::array_const_view<complex_t, 2> &u_hat,
              int reduced_dim,
-             long k1_offset = 0) {
+             long k1_offset) {
   std::vector<real_t> spectrum(grid.N_fourier, 0);
   for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
     long k1 = i + k1_offset;
@@ -35,8 +35,8 @@ static std::vector<real_t>
 spectrum_cpu(const Grid<2> &grid,
              const zisa::array_const_view<complex_t, 3> &u_hat,
              int reduced_dim,
-             long k1_offset = 0,
-             long k2_offset = 0) {
+             long k1_offset,
+             long k2_offset) {
   std::vector<real_t> spectrum(grid.N_fourier, 0);
   for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
     for (zisa::int_t j = 0; j < u_hat.shape(2); ++j) {
@@ -68,9 +68,9 @@ static std::vector<real_t>
 spectrum_cpu(const Grid<3> &grid,
              const zisa::array_const_view<complex_t, 4> &u_hat,
              int reduced_dim,
-             long k1_offset = 0,
-             long k2_offset = 0,
-             long k3_offset = 0) {
+             long k1_offset,
+             long k2_offset,
+             long k3_offset) {
   std::vector<real_t> spectrum(grid.N_fourier, 0);
   for (zisa::int_t i = 0; i < u_hat.shape(1); ++i) {
     for (zisa::int_t j = 0; j < u_hat.shape(2); ++j) {
@@ -184,7 +184,7 @@ std::vector<real_t>
 spectrum(const Grid<1> &grid,
          const zisa::array_const_view<complex_t, 2> &u_hat) {
   if (u_hat.memory_location() == zisa::device_type::cpu) {
-    return spectrum_cpu<Op>(grid, u_hat, 0);
+    return spectrum_cpu<Op>(grid, u_hat, 0, 0);
   }
 #if ZISA_HAS_CUDA
   else if (u_hat.memory_location() == zisa::device_type::cuda) {
@@ -202,7 +202,7 @@ std::vector<real_t>
 spectrum(const Grid<2> &grid,
          const zisa::array_const_view<complex_t, 3> &u_hat) {
   if (u_hat.memory_location() == zisa::device_type::cpu) {
-    return spectrum_cpu<Op>(grid, u_hat, 1);
+    return spectrum_cpu<Op>(grid, u_hat, 1, 0, 0);
   }
 #if ZISA_HAS_CUDA
   else if (u_hat.memory_location() == zisa::device_type::cuda) {
@@ -220,7 +220,7 @@ std::vector<real_t>
 spectrum(const Grid<3> &grid,
          const zisa::array_const_view<complex_t, 4> &u_hat) {
   if (u_hat.memory_location() == zisa::device_type::cpu) {
-    return spectrum_cpu<Op>(grid, u_hat, 2);
+    return spectrum_cpu<Op>(grid, u_hat, 2, 0, 0, 0);
   }
 #if ZISA_HAS_CUDA
   else if (u_hat.memory_location() == zisa::device_type::cuda) {

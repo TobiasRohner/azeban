@@ -170,6 +170,35 @@ void InitFromFile<Dim>::read_u_hat(
 }
 
 template <int Dim>
+void InitFromFile<Dim>::read_rho(
+    int ncid, const zisa::array_view<real_t, Dim + 1> &rho) const {
+  AZEBAN_ERR_IF(rho.memory_location() != zisa::device_type::cpu,
+                "Expected CPU array");
+  zisa::shape_t<Dim> view_shape;
+  for (int d = 0; d < Dim; ++d) {
+    view_shape[d] = rho.shape(d + 1);
+  }
+  zisa::array_view<real_t, Dim> view_rho(
+      view_shape, rho.raw(), zisa::device_type::cpu);
+  read_component(ncid, "rho", view_rho);
+}
+
+template <int Dim>
+void InitFromFile<Dim>::read_rho_hat(
+    int ncid, const zisa::array_view<complex_t, Dim + 1> &rho_hat) const {
+  const zisa::int_t N_phys = rho_hat.shape(1);
+  zisa::shape_t<Dim+1> shape_rho;
+  shape_rho[0] = 1;
+  for (int d = 0; d < Dim; ++d) {
+    shape_rho[d+1] = N_phys;
+  }
+  zisa::array<real_t, Dim+1> rho(shape_rho, zisa::device_type::cpu);
+  auto fft = make_fft<Dim>(rho_hat, rho);
+  read_rho(ncid, rho);
+  fft->forward();
+}
+
+template <int Dim>
 void InitFromFile<Dim>::read_omega(
     int ncid, const zisa::array_view<real_t, Dim + 1> &omega) const {
   AZEBAN_ERR_IF(Dim != 2, "Loading from vorticity only supported for 2D");
@@ -207,6 +236,7 @@ void InitFromFile<Dim>::init(int ncid,
   bool contains_v = false;
   bool contains_w = false;
   bool contains_omega = false;
+  bool contains_rho = false;
   for (const auto &varname : varnames) {
     if (varname == "u") {
       contains_u = true;
@@ -219,6 +249,9 @@ void InitFromFile<Dim>::init(int ncid,
     }
     if (varname == "omega") {
       contains_omega = true;
+    }
+    if (varname == "rho") {
+      contains_rho = true;
     }
   }
   if (contains_u && (Dim <= 1 || contains_v) && (Dim <= 2 || contains_w)) {
@@ -251,6 +284,15 @@ void InitFromFile<Dim>::init(int ncid,
   } else {
     LOG_ERR("Invlid input file provided");
   }
+  if (contains_rho && u.shape(0) > Dim) {
+    zisa::shape_t<Dim+1> shape_rho;
+    shape_rho[0] = 1;
+    for (int d = 0 ;  d < Dim ; ++d) {
+      shape_rho[d+1] = u.shape(d+1);
+    }
+    zisa::array_view<real_t, Dim+1> rho_view(shape_rho, u.raw()+Dim*zisa::product(shape_rho), u.memory_location());
+    read_rho(ncid, rho_view);
+  }
 }
 
 template <int Dim>
@@ -261,6 +303,7 @@ void InitFromFile<Dim>::init(
   bool contains_v = false;
   bool contains_w = false;
   bool contains_omega = false;
+  bool contains_rho = false;
   for (const auto &varname : varnames) {
     if (varname == "u") {
       contains_u = true;
@@ -273,6 +316,9 @@ void InitFromFile<Dim>::init(
     }
     if (varname == "omega") {
       contains_omega = true;
+    }
+    if (varname == "rho") {
+      contains_rho = true;
     }
   }
   if (contains_u && (Dim <= 1 || contains_v) && (Dim <= 2 || contains_w)) {
@@ -297,6 +343,15 @@ void InitFromFile<Dim>::init(
     inverse_curl(omega_hat_view, u_hat_view);
   } else {
     LOG_ERR("Invlid input file provided");
+  }
+  if (contains_rho && u_hat.shape(0) > Dim) {
+    zisa::shape_t<Dim+1> shape_rho_hat;
+    shape_rho_hat[0] = 1;
+    for (int d = 0 ;  d < Dim ; ++d) {
+      shape_rho_hat[d+1] = u_hat.shape(d+1);
+    }
+    zisa::array_view<complex_t, Dim+1> rho_hat_view(shape_rho_hat, u_hat.raw()+Dim*zisa::product(shape_rho_hat), u_hat.memory_location());
+    read_rho_hat(ncid, rho_hat_view);
   }
 }
 

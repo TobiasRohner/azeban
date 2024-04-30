@@ -34,6 +34,7 @@ Python<Dim>::Python(
     std::vector<std::tuple<std::string, size_t, RandomVariable<real_t>>> &rvs)
     : script_(script), rvs_(rvs) {
   py::initialize_interpreter();
+  py::exec("import sys; print(sys.path)");
 }
 
 template <int Dim>
