@@ -12,10 +12,20 @@ public:
 
   ANY_DEVICE_INLINE void pre(real_t, real_t) {}
 
-  ANY_DEVICE_INLINE void operator()(real_t, complex_t, complex_t, long, complex_t *f1) { *f1 = 0; }
-
   ANY_DEVICE_INLINE void
-  operator()(real_t, real_t, complex_t, complex_t, complex_t, long k1, long k2, complex_t *f1, complex_t *f2) {
+  operator()(real_t, complex_t, complex_t, long, complex_t *f1) {
+    *f1 = 0;
+  }
+
+  ANY_DEVICE_INLINE void operator()(real_t,
+                                    real_t,
+                                    complex_t,
+                                    complex_t,
+                                    complex_t,
+                                    long k1,
+                                    long k2,
+                                    complex_t *f1,
+                                    complex_t *f2) {
     const real_t factor = N_phys_ * N_phys_ * amplitude_ / 2;
     if (k1 == 1 && k2 == 1) {
       *f1 = complex_t(factor, 0);
@@ -28,10 +38,10 @@ public:
 
   ANY_DEVICE_INLINE void operator()(real_t,
                                     real_t,
-				    complex_t,
-				    complex_t,
-				    complex_t,
-				    complex_t,
+                                    complex_t,
+                                    complex_t,
+                                    complex_t,
+                                    complex_t,
                                     int k1,
                                     int k2,
                                     int k3,

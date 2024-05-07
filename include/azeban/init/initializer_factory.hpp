@@ -121,7 +121,8 @@ std::shared_ptr<Initializer<Dim>> make_initializer(const nlohmann::json &config,
   }
 
   auto init_u = make_initializer_u<Dim>(config["init"], rng);
-  if (config["init"].contains("tracer") && std::string(config["init"]["tracer"]["name"]) != "Init From File") {
+  if (config["init"].contains("tracer")
+      && std::string(config["init"]["tracer"]["name"]) != "Init From File") {
     auto init_rho = make_initializer_rho<Dim>(config["init"]["tracer"]);
     return std::make_shared<VelocityAndTracer<Dim>>(init_u, init_rho);
   } else {

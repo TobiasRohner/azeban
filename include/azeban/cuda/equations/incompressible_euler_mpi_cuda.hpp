@@ -3,10 +3,10 @@
 
 #include <azeban/config.hpp>
 #include <azeban/equations/spectral_viscosity.hpp>
+#include <azeban/forcing/boussinesq.hpp>
 #include <azeban/forcing/no_forcing.hpp>
 #include <azeban/forcing/sinusoidal.hpp>
 #include <azeban/forcing/white_noise.hpp>
-#include <azeban/forcing/boussinesq.hpp>
 #include <azeban/grid.hpp>
 #include <zisa/memory/array_view.hpp>
 

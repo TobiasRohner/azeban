@@ -6,8 +6,8 @@
 #include <azeban/equations/incompressible_euler_mpi_naive_factory.hpp>
 #endif
 #include <azeban/equations/spectral_viscosity_factory.hpp>
-#include <azeban/forcing/no_forcing.hpp>
 #include <azeban/forcing/boussinesq.hpp>
+#include <azeban/forcing/no_forcing.hpp>
 #include <azeban/forcing/sinusoidal_factory.hpp>
 #include <azeban/forcing/white_noise_factory.hpp>
 #include <fmt/core.h>
@@ -24,7 +24,8 @@ make_equation_mpi(const nlohmann::json &config,
                   const std::string &visc_type,
                   const std::string &forcing_type,
                   const std::string &equation_name,
-                  zisa::device_type device) {
+                  zisa::device_type device,
+                  size_t seed) {
   if (visc_type == "Smooth Cutoff") {
     SmoothCutoff1D visc = make_smooth_cutoff_1d(config["visc"], grid);
     return make_equation_mpi<Dim>(config,
@@ -34,7 +35,8 @@ make_equation_mpi(const nlohmann::json &config,
                                   visc,
                                   forcing_type,
                                   equation_name,
-                                  device);
+                                  device,
+                                  seed);
   } else if (visc_type == "Step") {
     Step1D visc = make_step_1d(config["visc"], grid);
     return make_equation_mpi<Dim>(config,
@@ -44,7 +46,8 @@ make_equation_mpi(const nlohmann::json &config,
                                   visc,
                                   forcing_type,
                                   equation_name,
-                                  device);
+                                  device,
+                                  seed);
   } else if (visc_type == "Quadratic") {
     Quadratic visc = make_quadratic(config["visc"], grid);
     return make_equation_mpi<Dim>(config,
@@ -54,7 +57,8 @@ make_equation_mpi(const nlohmann::json &config,
                                   visc,
                                   forcing_type,
                                   equation_name,
-                                  device);
+                                  device,
+                                  seed);
   } else {
     fmt::print(stderr, "Unknown viscosity type: {}\n", visc_type);
     exit(1);
@@ -71,7 +75,8 @@ make_equation_mpi(const nlohmann::json &config,
                   const SpectralViscosity &visc,
                   const std::string &forcing_type,
                   const std::string &equation_name,
-                  zisa::device_type device) {
+                  zisa::device_type device,
+                  size_t seed) {
   if (forcing_type == "No Forcing") {
     NoForcing forcing;
     return make_equation_mpi(
@@ -83,14 +88,14 @@ make_equation_mpi(const nlohmann::json &config,
   } else if (forcing_type == "White Noise") {
     if (device == zisa::device_type::cpu) {
       WhiteNoise forcing
-          = make_white_noise<std::mt19937>(config["forcing"], grid);
+          = make_white_noise<std::mt19937>(config["forcing"], grid, seed);
       return make_equation_mpi(
           grid, comm, has_tracer, visc, forcing, equation_name, device);
     }
 #if ZISA_HAS_CUDA
     else if (device == zisa::device_type::cuda) {
-      WhiteNoise forcing
-          = make_white_noise<curandStateXORWOW_t>(config["forcing"], grid);
+      WhiteNoise forcing = make_white_noise<curandStateXORWOW_t>(
+          config["forcing"], grid, seed);
       return make_equation_mpi(
           grid, comm, has_tracer, visc, forcing, equation_name, device);
     }
@@ -139,7 +144,8 @@ std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
                                                  const Grid<Dim> &grid,
                                                  const Communicator *comm,
                                                  bool has_tracer,
-                                                 zisa::device_type device) {
+                                                 zisa::device_type device,
+                                                 size_t seed) {
   if (!config.contains("name")) {
     fmt::print(stderr, "Equation config must contain key \"name\"\n");
     exit(1);
@@ -172,7 +178,8 @@ std::shared_ptr<Equation<Dim>> make_equation_mpi(const nlohmann::json &config,
                            visc_type,
                            forcing_type,
                            equation_name,
-                           device);
+                           device,
+                           seed);
   // Make compiler happy
   return nullptr;
 }
@@ -182,13 +189,15 @@ make_equation_mpi<2>(const nlohmann::json &config,
                      const Grid<2> &grid,
                      const Communicator *comm,
                      bool has_tracer,
-                     zisa::device_type device);
+                     zisa::device_type device,
+                     size_t seed);
 template std::shared_ptr<Equation<3>>
 make_equation_mpi<3>(const nlohmann::json &config,
                      const Grid<3> &grid,
                      const Communicator *comm,
                      bool has_tracer,
-                     zisa::device_type device);
+                     zisa::device_type device,
+                     size_t seed);
 
 }
 

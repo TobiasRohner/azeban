@@ -7,20 +7,30 @@ class NoForcing {
 public:
   ANY_DEVICE_INLINE void pre(real_t, real_t) {}
 
-  ANY_DEVICE_INLINE void operator()(real_t, complex_t, complex_t, long, complex_t *f1) { *f1 = 0; }
-
   ANY_DEVICE_INLINE void
-  operator()(real_t, real_t, complex_t, complex_t, complex_t, long, long, complex_t *f1, complex_t *f2) {
+  operator()(real_t, complex_t, complex_t, long, complex_t *f1) {
+    *f1 = 0;
+  }
+
+  ANY_DEVICE_INLINE void operator()(real_t,
+                                    real_t,
+                                    complex_t,
+                                    complex_t,
+                                    complex_t,
+                                    long,
+                                    long,
+                                    complex_t *f1,
+                                    complex_t *f2) {
     *f1 = 0;
     *f2 = 0;
   }
 
   ANY_DEVICE_INLINE void operator()(real_t,
                                     real_t,
-				    complex_t,
-				    complex_t,
-				    complex_t,
-				    complex_t,
+                                    complex_t,
+                                    complex_t,
+                                    complex_t,
+                                    complex_t,
                                     long,
                                     long,
                                     long,

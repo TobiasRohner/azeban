@@ -26,7 +26,8 @@ namespace azeban {
 
 template <int Dim>
 Simulation<Dim> make_simulation_mpi(const nlohmann::json &config,
-                                    const Communicator *comm);
+                                    const Communicator *comm,
+                                    size_t seed);
 
 }
 

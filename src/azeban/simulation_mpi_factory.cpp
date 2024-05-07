@@ -10,12 +10,13 @@ namespace azeban {
 
 template <int Dim>
 Simulation<Dim> make_simulation_mpi(const nlohmann::json &config,
-                                    const Communicator *comm) {
+                                    const Communicator *comm,
+                                    size_t seed) {
   const int size = comm->size();
   ;
   if (size == 1) {
     // No MPI
-    return make_simulation<Dim>(config);
+    return make_simulation<Dim>(config, seed);
   } else {
     zisa::device_type device;
     if (!config.contains("device")) {
@@ -46,7 +47,7 @@ Simulation<Dim> make_simulation_mpi(const nlohmann::json &config,
     const bool has_tracer
         = config.contains("init") && config["init"].contains("tracer");
     auto equation = make_equation_mpi<Dim>(
-        config["equation"], grid, comm, has_tracer, device);
+        config["equation"], grid, comm, has_tracer, device, seed);
 
     if (!config.contains("timestepper")) {
       fmt::print("Config is missing timestepper specifications\n");
@@ -66,9 +67,11 @@ Simulation<Dim> make_simulation_mpi(const nlohmann::json &config,
 }
 
 template Simulation<2> make_simulation_mpi<2>(const nlohmann::json &config,
-                                              const Communicator *comm);
+                                              const Communicator *comm,
+                                              size_t seed);
 template Simulation<3> make_simulation_mpi<3>(const nlohmann::json &config,
-                                              const Communicator *comm);
+                                              const Communicator *comm,
+                                              size_t seed);
 
 }
 

@@ -187,12 +187,12 @@ template <int Dim>
 void InitFromFile<Dim>::read_rho_hat(
     int ncid, const zisa::array_view<complex_t, Dim + 1> &rho_hat) const {
   const zisa::int_t N_phys = rho_hat.shape(1);
-  zisa::shape_t<Dim+1> shape_rho;
+  zisa::shape_t<Dim + 1> shape_rho;
   shape_rho[0] = 1;
   for (int d = 0; d < Dim; ++d) {
-    shape_rho[d+1] = N_phys;
+    shape_rho[d + 1] = N_phys;
   }
-  zisa::array<real_t, Dim+1> rho(shape_rho, zisa::device_type::cpu);
+  zisa::array<real_t, Dim + 1> rho(shape_rho, zisa::device_type::cpu);
   auto fft = make_fft<Dim>(rho_hat, rho);
   read_rho(ncid, rho);
   fft->forward();
@@ -285,12 +285,15 @@ void InitFromFile<Dim>::init(int ncid,
     LOG_ERR("Invlid input file provided");
   }
   if (contains_rho && u.shape(0) > Dim) {
-    zisa::shape_t<Dim+1> shape_rho;
+    zisa::shape_t<Dim + 1> shape_rho;
     shape_rho[0] = 1;
-    for (int d = 0 ;  d < Dim ; ++d) {
-      shape_rho[d+1] = u.shape(d+1);
+    for (int d = 0; d < Dim; ++d) {
+      shape_rho[d + 1] = u.shape(d + 1);
     }
-    zisa::array_view<real_t, Dim+1> rho_view(shape_rho, u.raw()+Dim*zisa::product(shape_rho), u.memory_location());
+    zisa::array_view<real_t, Dim + 1> rho_view(
+        shape_rho,
+        u.raw() + Dim * zisa::product(shape_rho),
+        u.memory_location());
     read_rho(ncid, rho_view);
   }
 }
@@ -345,12 +348,15 @@ void InitFromFile<Dim>::init(
     LOG_ERR("Invlid input file provided");
   }
   if (contains_rho && u_hat.shape(0) > Dim) {
-    zisa::shape_t<Dim+1> shape_rho_hat;
+    zisa::shape_t<Dim + 1> shape_rho_hat;
     shape_rho_hat[0] = 1;
-    for (int d = 0 ;  d < Dim ; ++d) {
-      shape_rho_hat[d+1] = u_hat.shape(d+1);
+    for (int d = 0; d < Dim; ++d) {
+      shape_rho_hat[d + 1] = u_hat.shape(d + 1);
     }
-    zisa::array_view<complex_t, Dim+1> rho_hat_view(shape_rho_hat, u_hat.raw()+Dim*zisa::product(shape_rho_hat), u_hat.memory_location());
+    zisa::array_view<complex_t, Dim + 1> rho_hat_view(
+        shape_rho_hat,
+        u_hat.raw() + Dim * zisa::product(shape_rho_hat),
+        u_hat.memory_location());
     read_rho_hat(ncid, rho_hat_view);
   }
 }

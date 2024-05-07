@@ -208,8 +208,7 @@ template <int Dim>
 void NetCDFCollectiveSnapshotWriter<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &,
     real_t,
-    const Communicator *) {
-}
+    const Communicator *) {}
 #endif
 
 template <int Dim>

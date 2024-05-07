@@ -28,14 +28,18 @@ class WhiteNoise<1, RNG, zisa::device_type::cpu> {
 #ifdef __NVCC__
 public:
   __device__ void pre(real_t, real_t) {}
-  __device__ void operator()(real_t, real_t, complex_t, complex_t, int, complex_t *f1) {}
+  __device__ void
+  operator()(real_t, real_t, complex_t, complex_t, int, complex_t *f1) {}
 #else
 public:
   explicit WhiteNoise(const Grid<1> &, real_t, int, unsigned long long) {}
 
   void pre(real_t, real_t) {}
 
-  void operator()(real_t, real_t dt, complex_t, complex_t, int k1, complex_t *f1) { *f1 = 0; }
+  void
+  operator()(real_t, real_t dt, complex_t, complex_t, int k1, complex_t *f1) {
+    *f1 = 0;
+  }
 #endif
 };
 
@@ -46,8 +50,15 @@ class WhiteNoise<2, RNG, zisa::device_type::cpu> {
 #ifdef __NVCC__
 public:
   __device__ void pre(real_t, real_t) {}
-  __device__ void
-  operator()(real_t, real_t, complex_t, complex_t, complex_t, int, int, complex_t *, complex_t *) {}
+  __device__ void operator()(real_t,
+                             real_t,
+                             complex_t,
+                             complex_t,
+                             complex_t,
+                             int,
+                             int,
+                             complex_t *,
+                             complex_t *) {}
 #else
 public:
   explicit WhiteNoise(const Grid<2> &grid,
@@ -66,8 +77,15 @@ public:
     }
   }
 
-  void
-  operator()(real_t, real_t dt, complex_t, complex_t, complex_t, int k1, int k2, complex_t *f1, complex_t *f2) {
+  void operator()(real_t,
+                  real_t dt,
+                  complex_t,
+                  complex_t,
+                  complex_t,
+                  int k1,
+                  int k2,
+                  complex_t *f1,
+                  complex_t *f2) {
     const unsigned absk1 = zisa::abs(k1);
     const unsigned absk2 = zisa::abs(k2);
     const real_t knorm = zisa::sqrt(static_cast<real_t>(k1 * k1 + k2 * k2));
@@ -99,8 +117,18 @@ class WhiteNoise<3, RNG, zisa::device_type::cpu> {
 #ifdef __NVCC__
 public:
   __device__ void pre(real_t, real_t) {}
-  __device__ void operator()(
-      real_t, real_t, complex_t, complex_t, complex_t, complex_t, int, int, int, complex_t *, complex_t *, complex_t *) {}
+  __device__ void operator()(real_t,
+                             real_t,
+                             complex_t,
+                             complex_t,
+                             complex_t,
+                             complex_t,
+                             int,
+                             int,
+                             int,
+                             complex_t *,
+                             complex_t *,
+                             complex_t *) {}
 #else
 public:
   explicit WhiteNoise(const Grid<3> &grid,
@@ -119,10 +147,10 @@ public:
 
   void operator()(real_t,
                   real_t dt,
-		  complex_t,
-		  complex_t,
-		  complex_t,
-		  complex_t,
+                  complex_t,
+                  complex_t,
+                  complex_t,
+                  complex_t,
                   int k1,
                   int k2,
                   int k3,
@@ -215,8 +243,15 @@ public:
 
   void pre(real_t, real_t) { white_noise_pre_cuda(pot_, state_); }
 
-  __device__ __inline__ void
-  operator()(real_t, real_t dt, complex_t, complex_t, complex_t, int k1, int k2, complex_t *f1, complex_t *f2) {
+  __device__ __inline__ void operator()(real_t,
+                                        real_t dt,
+                                        complex_t,
+                                        complex_t,
+                                        complex_t,
+                                        int k1,
+                                        int k2,
+                                        complex_t *f1,
+                                        complex_t *f2) {
     const unsigned absk1 = zisa::abs(k1);
     const unsigned absk2 = zisa::abs(k2);
     const real_t knorm = zisa::sqrt(static_cast<real_t>(k1 * k1 + k2 * k2));
@@ -271,10 +306,10 @@ public:
 
   __device__ __inline__ void operator()(real_t,
                                         real_t dt,
-					complex_t,
-					complex_t,
-					complex_t,
-					complex_t,
+                                        complex_t,
+                                        complex_t,
+                                        complex_t,
+                                        complex_t,
                                         int k1,
                                         int k2,
                                         int k3,

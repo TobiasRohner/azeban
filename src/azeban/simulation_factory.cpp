@@ -6,7 +6,7 @@
 namespace azeban {
 
 template <int Dim>
-Simulation<Dim> make_simulation(const nlohmann::json &config) {
+Simulation<Dim> make_simulation(const nlohmann::json &config, size_t seed) {
   zisa::device_type device;
   if (!config.contains("device")) {
     fmt::print(stderr, "Device not specified. Defaulting to CPU");
@@ -36,7 +36,7 @@ Simulation<Dim> make_simulation(const nlohmann::json &config) {
   const bool has_tracer
       = config.contains("init") && config["init"].contains("tracer");
   auto equation
-      = make_equation<Dim>(config["equation"], grid, has_tracer, device);
+      = make_equation<Dim>(config["equation"], grid, has_tracer, device, seed);
 
   if (!config.contains("timestepper")) {
     fmt::print("Config is missing timestepper specifications\n");
@@ -54,8 +54,11 @@ Simulation<Dim> make_simulation(const nlohmann::json &config) {
   return Simulation<Dim>(grid, C, timestepper, device);
 }
 
-template Simulation<1> make_simulation<1>(const nlohmann::json &config);
-template Simulation<2> make_simulation<2>(const nlohmann::json &config);
-template Simulation<3> make_simulation<3>(const nlohmann::json &config);
+template Simulation<1> make_simulation<1>(const nlohmann::json &config,
+                                          size_t seed);
+template Simulation<2> make_simulation<2>(const nlohmann::json &config,
+                                          size_t seed);
+template Simulation<3> make_simulation<3>(const nlohmann::json &config,
+                                          size_t seed);
 
 }

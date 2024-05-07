@@ -56,10 +56,8 @@ __global__ void incompressible_euler_mpi_2d_cuda_kernel(
                                       &L2_hat);
 
     const real_t nu = visc.eval(zisa::sqrt(absk2));
-    dudt_hat[0 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L1_hat + nu * u;
-    dudt_hat[1 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L2_hat + nu * v;
+    dudt_hat[0 * stride_u + idx_u] = absk2 == 0 ? 0 : -L1_hat + nu * u;
+    dudt_hat[1 * stride_u + idx_u] = absk2 == 0 ? 0 : -L2_hat + nu * v;
   }
 }
 
@@ -127,12 +125,9 @@ __global__ void incompressible_euler_mpi_3d_cuda_kernel(
                                       &L3_hat);
 
     const real_t nu = visc.eval(zisa::sqrt(absk2));
-    dudt_hat[0 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L1_hat + nu * u;
-    dudt_hat[1 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L2_hat + nu * v;
-    dudt_hat[2 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L3_hat + nu * w;
+    dudt_hat[0 * stride_u + idx_u] = absk2 == 0 ? 0 : -L1_hat + nu * u;
+    dudt_hat[1 * stride_u + idx_u] = absk2 == 0 ? 0 : -L2_hat + nu * v;
+    dudt_hat[2 * stride_u + idx_u] = absk2 == 0 ? 0 : -L3_hat + nu * w;
   }
 }
 
@@ -187,10 +182,8 @@ __global__ void incompressible_euler_mpi_2d_tracer_cuda_kernel(
     advection_2d(k2, k1, stride_B, idx_B, B_hat.raw() + 3 * stride_B, &L3_hat);
 
     const real_t nu = visc.eval(zisa::sqrt(absk2));
-    dudt_hat[0 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L1_hat + nu * u;
-    dudt_hat[1 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L2_hat + nu * v;
+    dudt_hat[0 * stride_u + idx_u] = absk2 == 0 ? 0 : -L1_hat + nu * u;
+    dudt_hat[1 * stride_u + idx_u] = absk2 == 0 ? 0 : -L2_hat + nu * v;
     dudt_hat[2 * stride_u + idx_u] = -L3_hat + nu * rho;
   }
 }
@@ -262,12 +255,9 @@ __global__ void incompressible_euler_mpi_3d_tracer_cuda_kernel(
         k3, k2, k1, stride_B, idx_B, B_hat.raw() + 6 * stride_B, &L4_hat);
 
     const real_t nu = visc.eval(zisa::sqrt(absk2));
-    dudt_hat[0 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L1_hat + nu * u;
-    dudt_hat[1 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L2_hat + nu * v;
-    dudt_hat[2 * stride_u + idx_u]
-        = absk2 == 0 ? 0 : -L3_hat + nu * w;
+    dudt_hat[0 * stride_u + idx_u] = absk2 == 0 ? 0 : -L1_hat + nu * u;
+    dudt_hat[1 * stride_u + idx_u] = absk2 == 0 ? 0 : -L2_hat + nu * v;
+    dudt_hat[2 * stride_u + idx_u] = absk2 == 0 ? 0 : -L3_hat + nu * w;
     dudt_hat[3 * stride_u + idx_u] = -L4_hat + nu * rho;
   }
 }

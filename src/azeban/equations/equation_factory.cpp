@@ -3,8 +3,8 @@
 #include <azeban/equations/incompressible_euler_factory.hpp>
 #include <azeban/equations/incompressible_euler_naive_factory.hpp>
 #include <azeban/equations/spectral_viscosity_factory.hpp>
-#include <azeban/forcing/no_forcing.hpp>
 #include <azeban/forcing/boussinesq.hpp>
+#include <azeban/forcing/no_forcing.hpp>
 #include <azeban/forcing/sinusoidal_factory.hpp>
 #include <azeban/forcing/white_noise_factory.hpp>
 #include <string>
@@ -19,19 +19,38 @@ make_equation(const nlohmann::json &config,
               const std::string &visc_type,
               const std::string &forcing_type,
               const std::string &equation_name,
-              zisa::device_type device) {
+              zisa::device_type device,
+              size_t seed) {
   if (visc_type == "Smooth Cutoff") {
     SmoothCutoff1D visc = make_smooth_cutoff_1d(config["visc"], grid);
-    return make_equation<Dim>(
-        config, grid, has_tracer, visc, forcing_type, equation_name, device);
+    return make_equation<Dim>(config,
+                              grid,
+                              has_tracer,
+                              visc,
+                              forcing_type,
+                              equation_name,
+                              device,
+                              seed);
   } else if (visc_type == "Step") {
     Step1D visc = make_step_1d(config["visc"], grid);
-    return make_equation<Dim>(
-        config, grid, has_tracer, visc, forcing_type, equation_name, device);
+    return make_equation<Dim>(config,
+                              grid,
+                              has_tracer,
+                              visc,
+                              forcing_type,
+                              equation_name,
+                              device,
+                              seed);
   } else if (visc_type == "Quadratic") {
     Quadratic visc = make_quadratic(config["visc"], grid);
-    return make_equation<Dim>(
-        config, grid, has_tracer, visc, forcing_type, equation_name, device);
+    return make_equation<Dim>(config,
+                              grid,
+                              has_tracer,
+                              visc,
+                              forcing_type,
+                              equation_name,
+                              device,
+                              seed);
   } else {
     fmt::print(stderr, "Unknown viscosity type: {}\n", visc_type);
     exit(1);
@@ -46,7 +65,8 @@ make_equation(const nlohmann::json &config,
               const SpectralViscosity &visc,
               const std::string &forcing_type,
               const std::string &equation_name,
-              zisa::device_type device) {
+              zisa::device_type device,
+              size_t seed) {
   if (forcing_type == "No Forcing") {
     NoForcing forcing;
     return make_equation(
@@ -58,14 +78,14 @@ make_equation(const nlohmann::json &config,
   } else if (forcing_type == "White Noise") {
     if (device == zisa::device_type::cpu) {
       WhiteNoise forcing
-          = make_white_noise<std::mt19937>(config["forcing"], grid);
+          = make_white_noise<std::mt19937>(config["forcing"], grid, seed);
       return make_equation(
           grid, has_tracer, visc, forcing, equation_name, device);
     }
 #if ZISA_HAS_CUDA
     else if (device == zisa::device_type::cuda) {
-      WhiteNoise forcing
-          = make_white_noise<curandStateXORWOW_t>(config["forcing"], grid);
+      WhiteNoise forcing = make_white_noise<curandStateXORWOW_t>(
+          config["forcing"], grid, seed);
       return make_equation(
           grid, has_tracer, visc, forcing, equation_name, device);
     }
@@ -75,10 +95,12 @@ make_equation(const nlohmann::json &config,
     }
   } else if (forcing_type == "Boussinesq") {
     if (!has_tracer) {
-      LOG_ERR("Boussinesq forcing only makes sense with tracer density enabled");
+      LOG_ERR(
+          "Boussinesq forcing only makes sense with tracer density enabled");
     }
     Boussinesq forcing;
-    return make_equation(grid, has_tracer, visc, forcing, equation_name, device);
+    return make_equation(
+        grid, has_tracer, visc, forcing, equation_name, device);
   } else {
     fmt::print(stderr, "Unknown forcing type: {}\n", forcing_type);
     exit(1);
@@ -119,7 +141,8 @@ template <int Dim>
 std::shared_ptr<Equation<Dim>> make_equation(const nlohmann::json &config,
                                              const Grid<Dim> &grid,
                                              bool has_tracer,
-                                             zisa::device_type device) {
+                                             zisa::device_type device,
+                                             size_t seed) {
   if (!config.contains("name")) {
     fmt::print(stderr, "Equation config must contain key \"name\"\n");
     exit(1);
@@ -145,24 +168,33 @@ std::shared_ptr<Equation<Dim>> make_equation(const nlohmann::json &config,
     forcing_type = config["forcing"]["type"];
   }
 
-  return make_equation(
-      config, grid, has_tracer, visc_type, forcing_type, equation_name, device);
+  return make_equation(config,
+                       grid,
+                       has_tracer,
+                       visc_type,
+                       forcing_type,
+                       equation_name,
+                       device,
+                       seed);
 }
 
 template std::shared_ptr<Equation<1>>
 make_equation<1>(const nlohmann::json &config,
                  const Grid<1> &grid,
                  bool has_tracer,
-                 zisa::device_type device);
+                 zisa::device_type device,
+                 size_t seed);
 template std::shared_ptr<Equation<2>>
 make_equation<2>(const nlohmann::json &config,
                  const Grid<2> &grid,
                  bool has_tracer,
-                 zisa::device_type device);
+                 zisa::device_type device,
+                 size_t seed);
 template std::shared_ptr<Equation<3>>
 make_equation<3>(const nlohmann::json &config,
                  const Grid<3> &grid,
                  bool has_tracer,
-                 zisa::device_type device);
+                 zisa::device_type device,
+                 size_t seed);
 
 }

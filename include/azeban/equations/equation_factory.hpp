@@ -28,7 +28,8 @@ template <int Dim>
 std::shared_ptr<Equation<Dim>> make_equation(const nlohmann::json &config,
                                              const Grid<Dim> &grid,
                                              bool has_tracer,
-                                             zisa::device_type device);
+                                             zisa::device_type device,
+                                             size_t seed);
 
 }
 #endif

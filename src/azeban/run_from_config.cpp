@@ -45,7 +45,7 @@ static void run_from_config_impl(const nlohmann::json &config,
   }
   rng.seed(seed);
 
-  auto simulation = make_simulation<dim_v>(config);
+  auto simulation = make_simulation<dim_v>(config, seed);
   auto initializer = make_initializer<dim_v>(config, rng);
 
   if (!config.contains("writer")) {
@@ -139,7 +139,7 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
   }
   rng.seed(seed);
 
-  auto simulation = make_simulation_mpi<dim_v>(config, comm);
+  auto simulation = make_simulation_mpi<dim_v>(config, comm, seed);
   const auto &grid = simulation.grid();
   auto initializer = make_initializer<dim_v>(config, rng);
 

@@ -24,7 +24,7 @@
 namespace azeban {
 
 template <int Dim>
-Simulation<Dim> make_simulation(const nlohmann::json &config);
+Simulation<Dim> make_simulation(const nlohmann::json &config, size_t seed);
 
 }
 

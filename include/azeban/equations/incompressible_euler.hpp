@@ -244,9 +244,9 @@ private:
         const real_t k1 = 2 * zisa::pi * i_;
         const real_t k2 = 2 * zisa::pi * j;
         const real_t absk2 = k1 * k1 + k2 * k2;
-	const complex_t u = u_hat(0, i, j);
-	const complex_t v = u_hat(1, i, j);
-	const complex_t rho = has_tracer_ ? u_hat(2, i, j) : 1;
+        const complex_t u = u_hat(0, i, j);
+        const complex_t v = u_hat(1, i, j);
+        const complex_t rho = has_tracer_ ? u_hat(2, i, j) : 1;
         complex_t force1, force2;
         forcing_(t, dt, u, v, rho, i_, j, &force1, &force2);
         complex_t L1_hat, L2_hat;
@@ -308,10 +308,10 @@ private:
           const real_t k2 = 2 * zisa::pi * j_;
           const real_t k3 = 2 * zisa::pi * k;
           const real_t absk2 = k1 * k1 + k2 * k2 + k3 * k3;
-	  const complex_t u = u_hat(0, i, j, k);
-	  const complex_t v = u_hat(1, i, j, k);
-	  const complex_t w = u_hat(2, i, j, k);
-	  const complex_t rho = has_tracer_ ? u_hat(3, i, j, k) : 1;
+          const complex_t u = u_hat(0, i, j, k);
+          const complex_t v = u_hat(1, i, j, k);
+          const complex_t w = u_hat(2, i, j, k);
+          const complex_t rho = has_tracer_ ? u_hat(3, i, j, k) : 1;
           complex_t force1, force2, force3;
           forcing_(t, dt, u, v, w, rho, i_, j_, k, &force1, &force2, &force3);
           complex_t L1_hat, L2_hat, L3_hat;
