@@ -56,16 +56,43 @@ __global__ void incompressible_euler_compute_B_cuda_kernel<3>(
   const unsigned i = blockIdx.z * blockDim.z + threadIdx.z;
   const unsigned j = blockIdx.y * blockDim.y + threadIdx.y;
   const unsigned k = blockIdx.x * blockDim.x + threadIdx.x;
-  const unsigned stride = u.shape(1) * u.shape(2) * u.shape(3);
-  const unsigned idx = i * u.shape(2) * u.shape(3) + j * u.shape(3) + k;
+  const size_t stride = u.shape(1) * u.shape(2) * u.shape(3);
+  const size_t idx = 4 * i * u.shape(2) * u.shape(3) + j * u.shape(3) + k;
+  const size_t jump = u.shape(2) * u.shape(3);
 
   const real_t norm
       = 1.0 / (zisa::pow(grid.N_phys, 1.5) * zisa::pow(grid.N_phys_pad, 1.5));
-  if (i < u.shape(1) && j < u.shape(2) && k < u.shape(3)) {
-    const real_t u1 = norm * u[0 * stride + idx];
-    const real_t u2 = norm * u[1 * stride + idx];
-    const real_t u3 = norm * u[2 * stride + idx];
-    incompressible_euler_3d_compute_B(stride, idx, u1, u2, u3, B.raw());
+  const size_t i0 = 0 * stride + idx;
+  const size_t i1 = 1 * stride + idx;
+  const size_t i2 = 2 * stride + idx;
+  if (j < u.shape(2) && k < u.shape(3)) {
+    if (i < u.shape(1)) {
+      const real_t u1 = norm * u[i0];
+      const real_t u2 = norm * u[i1];
+      const real_t u3 = norm * u[i2];
+      incompressible_euler_3d_compute_B(stride, idx, u1, u2, u3, B.raw());
+    }
+    if (i + 1 < u.shape(1)) {
+      const real_t u1 = norm * u[i0 + jump];
+      const real_t u2 = norm * u[i1 + jump];
+      const real_t u3 = norm * u[i2 + jump];
+      incompressible_euler_3d_compute_B(
+          stride, idx + jump, u1, u2, u3, B.raw());
+    }
+    if (i + 2 < u.shape(1)) {
+      const real_t u1 = norm * u[i0 + 2 * jump];
+      const real_t u2 = norm * u[i1 + 2 * jump];
+      const real_t u3 = norm * u[i2 + 2 * jump];
+      incompressible_euler_3d_compute_B(
+          stride, idx + 2 * jump, u1, u2, u3, B.raw());
+    }
+    if (i + 3 < u.shape(1)) {
+      const real_t u1 = norm * u[i0 + 3 * jump];
+      const real_t u2 = norm * u[i1 + 3 * jump];
+      const real_t u3 = norm * u[i2 + 3 * jump];
+      incompressible_euler_3d_compute_B(
+          stride, idx + 3 * jump, u1, u2, u3, B.raw());
+    }
   }
 }
 
@@ -392,7 +419,7 @@ void incompressible_euler_compute_B_cuda<3>(
   const dim3 block_dims(
       zisa::div_up(static_cast<int>(u.shape(3)), thread_dims.x),
       zisa::div_up(static_cast<int>(u.shape(2)), thread_dims.y),
-      zisa::div_up(static_cast<int>(u.shape(1)), thread_dims.z));
+      zisa::div_up(static_cast<int>(u.shape(1) / 4), thread_dims.z));
   incompressible_euler_compute_B_cuda_kernel<3>
       <<<block_dims, thread_dims>>>(B, u, grid);
   cudaDeviceSynchronize();

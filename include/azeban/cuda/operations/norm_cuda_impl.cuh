@@ -37,12 +37,12 @@ static __device__ void warpReduce(volatile real_t *sdata, unsigned tid) {
 }
 
 static __device__ void warpReduceMax(volatile real_t *sdata, unsigned tid) {
-  sdata[tid] = zisa::max(sdata[tid], sdata[tid + 32]);
-  sdata[tid] = zisa::max(sdata[tid], sdata[tid + 16]);
-  sdata[tid] = zisa::max(sdata[tid], sdata[tid + 8]);
-  sdata[tid] = zisa::max(sdata[tid], sdata[tid + 4]);
-  sdata[tid] = zisa::max(sdata[tid], sdata[tid + 2]);
-  sdata[tid] = zisa::max(sdata[tid], sdata[tid + 1]);
+  sdata[tid] = max(sdata[tid], sdata[tid + 32]);
+  sdata[tid] = max(sdata[tid], sdata[tid + 16]);
+  sdata[tid] = max(sdata[tid], sdata[tid + 8]);
+  sdata[tid] = max(sdata[tid], sdata[tid + 4]);
+  sdata[tid] = max(sdata[tid], sdata[tid + 2]);
+  sdata[tid] = max(sdata[tid], sdata[tid + 1]);
 }
 
 template <typename Scalar>
@@ -93,13 +93,13 @@ __global__ void max_norm_cuda_kernel(zisa::array_const_view<Scalar, 1> in_data,
     sdata[tid] = abs(in_data[i]);
   }
   if (i + blockDim.x < in_data.shape(0)) {
-    sdata[tid] = zisa::max(sdata[tid], real_t(abs(in_data[i + blockDim.x])));
+    sdata[tid] = max(sdata[tid], real_t(abs(in_data[i + blockDim.x])));
   }
   __syncthreads();
 
   for (zisa::int_t s = blockDim.x / 2; s > 32; s >>= 1) {
     if (tid < s) {
-      sdata[tid] = zisa::max(sdata[tid], sdata[tid + s]);
+      sdata[tid] = max(sdata[tid], sdata[tid + s]);
     }
     __syncthreads();
   }
@@ -120,17 +120,19 @@ real_t norm_cuda(const zisa::array_const_view<Scalar, 1> &data, real_t p) {
   auto out_data = zisa::cuda_array<real_t, 1>(zisa::shape_t<1>(block_dims));
   norm_cuda_kernel<<<block_dims, thread_dims, thread_dims * sizeof(real_t)>>>(
       data, zisa::array_view<real_t, 1>(out_data), p);
-  cudaDeviceSynchronize();
-  ZISA_CHECK_CUDA_DEBUG;
+  // cudaDeviceSynchronize();
+  // ZISA_CHECK_CUDA_DEBUG;
   while (block_dims > 1) {
     block_dims = zisa::div_up(block_dims, 2 * thread_dims);
     norm_cuda_kernel<<<block_dims, thread_dims, thread_dims * sizeof(real_t)>>>(
         zisa::array_const_view<real_t, 1>(out_data),
         zisa::array_view<real_t, 1>(out_data),
         p);
-    cudaDeviceSynchronize();
-    ZISA_CHECK_CUDA_DEBUG;
+    // cudaDeviceSynchronize();
+    // ZISA_CHECK_CUDA_DEBUG;
   }
+  cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
   zisa::array<real_t, 1> value(zisa::shape_t<1>(1));
   zisa::internal::copy(
       value.raw(), value.device(), out_data.raw(), out_data.device(), 1);
@@ -147,8 +149,8 @@ real_t max_norm_cuda(const zisa::array_const_view<Scalar, 1> &data) {
                          thread_dims,
                          thread_dims * sizeof(real_t)>>>(
       data, zisa::array_view<real_t, 1>(out_data));
-  cudaDeviceSynchronize();
-  ZISA_CHECK_CUDA_DEBUG;
+  // cudaDeviceSynchronize();
+  // ZISA_CHECK_CUDA_DEBUG;
   while (block_dims > 1) {
     block_dims = zisa::div_up(block_dims, 2 * thread_dims);
     max_norm_cuda_kernel<<<block_dims,
@@ -156,9 +158,11 @@ real_t max_norm_cuda(const zisa::array_const_view<Scalar, 1> &data) {
                            thread_dims * sizeof(real_t)>>>(
         zisa::array_const_view<real_t, 1>(out_data),
         zisa::array_view<real_t, 1>(out_data));
-    cudaDeviceSynchronize();
-    ZISA_CHECK_CUDA_DEBUG;
+    // cudaDeviceSynchronize();
+    // ZISA_CHECK_CUDA_DEBUG;
   }
+  cudaDeviceSynchronize();
+  ZISA_CHECK_CUDA_DEBUG;
   zisa::array<real_t, 1> value(zisa::shape_t<1>(1));
   zisa::internal::copy(
       value.raw(), value.device(), out_data.raw(), out_data.device(), 1);

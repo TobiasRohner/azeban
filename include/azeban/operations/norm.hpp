@@ -18,6 +18,7 @@
 #ifndef NORM_H_
 #define NORM_H_
 
+#include <azeban/profiler.hpp>
 #include <zisa/config.hpp>
 #include <zisa/memory/array.hpp>
 #include <zisa/memory/array_view.hpp>
@@ -29,6 +30,7 @@ namespace azeban {
 
 template <int Dim, typename Scalar>
 real_t norm(const zisa::array_const_view<Scalar, Dim> &data, real_t p) {
+  ProfileHost profile("norm");
   if (data.memory_location() == zisa::device_type::cpu) {
     real_t val = 0;
     for (zisa::int_t i = 0; i < zisa::product(data.shape()); ++i) {
@@ -69,6 +71,7 @@ real_t norm(const zisa::array<Scalar, Dim> &data, real_t p) {
 
 template <int Dim, typename Scalar>
 real_t max_norm(const zisa::array_const_view<Scalar, Dim> &data) {
+  ProfileHost profile("max_norm");
   if (data.memory_location() == zisa::device_type::cpu) {
     using zisa::abs;
     real_t val = abs(data[0]);

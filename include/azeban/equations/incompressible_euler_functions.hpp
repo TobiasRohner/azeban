@@ -62,10 +62,12 @@ ANY_DEVICE_INLINE void incompressible_euler_2d_compute_L(real_t k1,
   const complex_t b2_hat
       = complex_t(0, k1) * B12_hat + complex_t(0, k2) * B22_hat - force2;
 
-  *L1_hat
-      = (1. - (k1 * k1) / absk2) * b1_hat + (0. - (k1 * k2) / absk2) * b2_hat;
-  *L2_hat
-      = (0. - (k2 * k1) / absk2) * b1_hat + (1. - (k2 * k2) / absk2) * b2_hat;
+  const real_t absk2inv = real_t{1.} / absk2;
+  const real_t k11 = k1 * k1 * absk2inv;
+  const real_t k12 = k1 * k2 * absk2inv;
+  const real_t k22 = k2 * k2 * absk2inv;
+  *L1_hat = (1. - k11) * b1_hat + (0. - k12) * b2_hat;
+  *L2_hat = (0. - k12) * b1_hat + (1. - k22) * b2_hat;
 }
 
 ANY_DEVICE_INLINE void incompressible_euler_3d_compute_L(real_t k1,
@@ -97,15 +99,16 @@ ANY_DEVICE_INLINE void incompressible_euler_3d_compute_L(real_t k1,
                            + complex_t(0, k2) * B32_hat
                            + complex_t(0, k3) * B33_hat - force3;
 
-  *L1_hat = (1. - (k1 * k1) / absk2) * b1_hat
-            + (0. - (k1 * k2) / absk2) * b2_hat
-            + (0. - (k1 * k3) / absk2) * b3_hat;
-  *L2_hat = (0. - (k2 * k1) / absk2) * b1_hat
-            + (1. - (k2 * k2) / absk2) * b2_hat
-            + (0. - (k2 * k3) / absk2) * b3_hat;
-  *L3_hat = (0. - (k3 * k1) / absk2) * b1_hat
-            + (0. - (k3 * k2) / absk2) * b2_hat
-            + (1. - (k3 * k3) / absk2) * b3_hat;
+  const real_t absk2inv = real_t{1.} / absk2;
+  const real_t k11 = k1 * k1 * absk2inv;
+  const real_t k12 = k1 * k2 * absk2inv;
+  const real_t k13 = k1 * k3 * absk2inv;
+  const real_t k22 = k2 * k2 * absk2inv;
+  const real_t k23 = k2 * k3 * absk2inv;
+  const real_t k33 = k3 * k3 * absk2inv;
+  *L1_hat = (1. - k11) * b1_hat + (0. - k12) * b2_hat + (0. - k13) * b3_hat;
+  *L2_hat = (0. - k12) * b1_hat + (1. - k22) * b2_hat + (0. - k23) * b3_hat;
+  *L3_hat = (0. - k13) * b1_hat + (0. - k23) * b2_hat + (1. - k33) * b3_hat;
 }
 
 }
