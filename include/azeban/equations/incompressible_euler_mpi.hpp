@@ -170,6 +170,7 @@ private:
                    real_t t,
                    real_t dt) {
     ProfileHost profile("IncompressibleEuler_MPI::computeDudt");
+    forcing_.pre(t, dt);
     if (device_ == zisa::device_type::cpu) {
       computeDudt_cpu(dudt_hat, u_hat, t, dt);
     }
@@ -332,6 +333,7 @@ private:
                    real_t t,
                    real_t dt) {
     ProfileHost profile("IncompressibleEuler_MPI::computeDudt");
+    forcing_.pre(t, dt);
     if (device_ == zisa::device_type::cpu) {
       computeDudt_cpu(dudt_hat, u_hat, t, dt);
     }
