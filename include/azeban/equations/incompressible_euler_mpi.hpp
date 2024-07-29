@@ -128,7 +128,7 @@ public:
                           zisa::device_type device,
                           bool has_tracer = false)
       : IncompressibleEuler_MPI(
-          grid, comm, visc, NoForcing{}, device, has_tracer) {}
+            grid, comm, visc, NoForcing{}, device, has_tracer) {}
   IncompressibleEuler_MPI(const Grid<2> &grid,
                           const Communicator *comm,
                           const SpectralViscosity &visc,
@@ -291,7 +291,7 @@ public:
                           zisa::device_type device,
                           bool has_tracer = false)
       : IncompressibleEuler_MPI(
-          grid, comm, visc, NoForcing{}, device, has_tracer) {}
+            grid, comm, visc, NoForcing{}, device, has_tracer) {}
   IncompressibleEuler_MPI(const Grid<3> &grid,
                           const Communicator *comm,
                           const SpectralViscosity &visc,

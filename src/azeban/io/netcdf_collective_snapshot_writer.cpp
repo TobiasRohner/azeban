@@ -1,22 +1,13 @@
 #include <azeban/io/netcdf_collective_snapshot_writer.hpp>
+#include <azeban/netcdf.hpp>
 #include <azeban/operations/copy_to_padded.hpp>
 #include <azeban/profiler.hpp>
 #include <filesystem>
-#include <netcdf.h>
-#include <netcdf_par.h>
 #if AZEBAN_HAS_MPI
 #include <mpi.h>
 #endif
 
 namespace azeban {
-
-#define CHECK_NETCDF(...)                                                      \
-  if (int status = (__VA_ARGS__); status != NC_NOERR) {                        \
-    LOG_ERR(nc_strerror(status));                                              \
-  }
-
-static constexpr nc_type netcdf_type(float) { return NC_FLOAT; }
-static constexpr nc_type netcdf_type(double) { return NC_DOUBLE; }
 
 template <int Dim>
 NetCDFCollectiveSnapshotWriter<Dim>::NetCDFCollectiveSnapshotWriter(
@@ -68,7 +59,7 @@ NetCDFCollectiveSnapshotWriter<Dim>::NetCDFCollectiveSnapshotWriter(
 
 template <int Dim>
 NetCDFCollectiveSnapshotWriter<Dim>::~NetCDFCollectiveSnapshotWriter() {
-  CHECK_NETCDF(nc_close(ncid_));
+  nc_close(ncid_);
 }
 
 template <int Dim>
@@ -119,13 +110,13 @@ void NetCDFCollectiveSnapshotWriter<Dim>::write(
 
 template <int Dim>
 void NetCDFCollectiveSnapshotWriter<Dim>::write(
-    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t) {}
+    const zisa::array_const_view<complex_t, Dim + 1> &, real_t) {}
 
 #if AZEBAN_HAS_MPI
 template <int Dim>
 void NetCDFCollectiveSnapshotWriter<Dim>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u,
-    real_t t,
+    real_t,
     const Communicator *comm) {
   ProfileHost pofile("NetCDFCollectiveSnapshotWriter::write");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cpu,

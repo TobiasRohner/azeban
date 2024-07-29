@@ -116,7 +116,7 @@ public:
                                 const SpectralViscosity &visc,
                                 bool has_tracer = false)
       : IncompressibleEuler_MPI_Naive(
-          grid, comm, visc, NoForcing{}, has_tracer) {}
+            grid, comm, visc, NoForcing{}, has_tracer) {}
   IncompressibleEuler_MPI_Naive(const Grid<2> &grid,
                                 const Communicator *comm,
                                 const SpectralViscosity &visc,
@@ -267,7 +267,7 @@ public:
                                 const SpectralViscosity &visc,
                                 bool has_tracer = false)
       : IncompressibleEuler_MPI_Naive(
-          grid, comm, visc, NoForcing{}, has_tracer) {}
+            grid, comm, visc, NoForcing{}, has_tracer) {}
   IncompressibleEuler_MPI_Naive(const Grid<3> &grid,
                                 const Communicator *comm,
                                 const SpectralViscosity &visc,

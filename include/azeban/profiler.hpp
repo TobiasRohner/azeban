@@ -123,13 +123,13 @@ private:
 class ProfileHost {
 public:
   ProfileHost(const std::string &){};
-  void stop(){};
+  void stop() {};
 };
 #if ZISA_HAS_CUDA
 class ProfileDevice {
 public:
   ProfileDevice(const std::string &, cudaStream_t){};
-  void stop(){};
+  void stop() {};
 };
 #endif
 #endif

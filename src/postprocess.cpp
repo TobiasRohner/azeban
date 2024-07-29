@@ -138,7 +138,13 @@ void run_for_sample(const nlohmann::json &config,
   auto fft = make_fft<Dim>(sample_hat.view(), sample.view(), FFT_FORWARD);
   sample_file->read(sample.view());
   std::unique_ptr<Writer<Dim>> writer
-      = make_writer<Dim>(config["writer"], grid, false, 1, sample_idx);
+      = make_writer<Dim>(config["writer"],
+                         grid,
+                         false,
+                         1,
+                         sample_idx,
+                         config.dump(2, ' ', true),
+                         "");
   writer->set_snapshot_idx(time_idx);
   writer->write(sample, 0);
   fft->forward();

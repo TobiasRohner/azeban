@@ -39,8 +39,8 @@ class FFT {
 public:
   static constexpr int dim_v = Dim;
   using scalar_u_t = ScalarU;
-  static_assert(std::is_same_v<scalar_u_t,
-                               real_t> || std::is_same_v<scalar_u_t, complex_t>,
+  static_assert(std::is_same_v<scalar_u_t, real_t>
+                    || std::is_same_v<scalar_u_t, complex_t>,
                 "ScalarU must be eiter real_t or complex_t");
 
   template <bool enable = Dim == 1, typename = std::enable_if_t<enable>>

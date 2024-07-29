@@ -1,6 +1,10 @@
 target_sources(azeban_generic_obj
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/writer_collection.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_file.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_file_factory.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_writer.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_energy_spectrum_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_snapshot_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_snapshot_writer_factory.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_collective_snapshot_writer.cpp

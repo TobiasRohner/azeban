@@ -16,6 +16,8 @@ std::unique_ptr<Writer<Dim>> make_writer(const nlohmann::json &config,
                                          bool has_tracer,
                                          zisa::int_t num_samples,
                                          zisa::int_t sample_idx_start,
+                                         const std::string &full_config,
+                                         const std::string &init_script,
                                          void *work_area = nullptr);
 #if AZEBAN_HAS_MPI
 template <int Dim>
@@ -24,6 +26,8 @@ std::unique_ptr<Writer<Dim>> make_writer(const nlohmann::json &config,
                                          bool has_tracer,
                                          zisa::int_t num_samples,
                                          zisa::int_t sample_idx_start,
+                                         const std::string &full_config,
+                                         const std::string &init_script,
                                          const Communicator *comm,
                                          void *work_area = nullptr);
 #endif
