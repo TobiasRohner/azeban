@@ -1,22 +1,24 @@
-#ifndef AZEBAN_NETCDF_ENERGY_SPECTRUM_WRITER_HPP_
-#define AZEBAN_NETCDF_ENERGY_SPECTRUM_WRITER_HPP_
+#ifndef AZEBAN_NETCDF_SAMPLE_WRITER_HPP_
+#define AZEBAN_NETCDF_SAMPLE_WRITER_HPP_
 
 #include <azeban/grid.hpp>
 #include <azeban/io/netcdf_writer.hpp>
+#include <azeban/operations/fft_factory.hpp>
 #include <chrono>
 
 namespace azeban {
 
 template <int Dim>
-class NetCDFEnergySpectrumWriter : public NetCDFWriter<Dim> {
+class NetCDFSampleWriter : public NetCDFWriter<Dim> {
   using super = NetCDFWriter<Dim>;
 
 public:
-  NetCDFEnergySpectrumWriter(int ncid,
-                             const Grid<Dim> &grid,
-                             const std::vector<real_t> &snapshot_times,
-                             int sample_idx_start);
-  virtual ~NetCDFEnergySpectrumWriter() override = default;
+  NetCDFSampleWriter(int ncid,
+                     const Grid<Dim> &grid,
+                     zisa::int_t N,
+                     const std::vector<real_t> &snapshot_times,
+                     zisa::int_t sample_idx_start);
+  virtual ~NetCDFSampleWriter() override = default;
 
 protected:
   using super::grid_;
@@ -39,9 +41,15 @@ protected:
 
 private:
   std::chrono::time_point<std::chrono::steady_clock> start_time_;
+  zisa::int_t N_;
   int grpid_;
   int varid_real_time_;
-  int varid_ek_;
+  int varids_uvw_[Dim];
+  zisa::array<complex_t, Dim + 1> u_hat_down_;
+  zisa::array<real_t, Dim + 1> u_down_;
+  std::shared_ptr<FFT<Dim, real_t>> fft_down_;
+
+  void store_u(const zisa::array_const_view<real_t, Dim + 1> &u);
 };
 
 }

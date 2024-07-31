@@ -82,9 +82,22 @@ void NetCDFEnergySpectrumWriter<Dim>::write(
 template <int Dim>
 void NetCDFEnergySpectrumWriter<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-    real_t t,
+    real_t,
     const Communicator *comm) {
-  // TODO: Implement
+  const std::vector<real_t> spectrum
+      = energy_spectrum(grid_, u_hat, comm->get_mpi_comm());
+  if (comm->rank() == 0) {
+    const size_t start[3] = {sample_idx_, snapshot_idx_, 0};
+    const size_t count[3] = {1, 1, grid_.N_fourier};
+    CHECK_NETCDF(nc_put_vara(grpid_, varid_ek_, start, count, spectrum.data()));
+    const auto time = std::chrono::steady_clock::now();
+    const auto elapsed
+        = std::chrono::duration_cast<std::chrono::duration<real_t>>(
+            time - start_time_);
+    const size_t index[2] = {sample_idx_, snapshot_idx_};
+    const real_t elapsed_count = elapsed.count();
+    CHECK_NETCDF(nc_put_var1(grpid_, varid_real_time_, index, &elapsed_count));
+  }
   ++snapshot_idx_;
 }
 #endif
