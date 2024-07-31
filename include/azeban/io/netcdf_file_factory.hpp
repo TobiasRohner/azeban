@@ -12,6 +12,7 @@ template <int Dim>
 std::unique_ptr<NetCDFFile<Dim>>
 make_netcdf_file(const nlohmann::json &writer_config,
                  const Grid<Dim> &grid,
+                 bool has_tracer,
                  zisa::int_t num_samples,
                  zisa::int_t sample_idx_start,
                  const std::string &full_config,

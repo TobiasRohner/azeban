@@ -17,6 +17,7 @@ public:
                      const Grid<Dim> &grid,
                      zisa::int_t N,
                      const std::vector<real_t> &snapshot_times,
+                     bool has_trcer,
                      zisa::int_t sample_idx_start);
   virtual ~NetCDFSampleWriter() override = default;
 
@@ -42,9 +43,10 @@ protected:
 private:
   std::chrono::time_point<std::chrono::steady_clock> start_time_;
   zisa::int_t N_;
+  bool has_tracer_;
   int grpid_;
   int varid_real_time_;
-  int varids_uvw_[Dim];
+  int varids_uvw_[Dim + 1];
   zisa::array<complex_t, Dim + 1> u_hat_down_;
   zisa::array<real_t, Dim + 1> u_down_;
   std::shared_ptr<FFT<Dim, real_t>> fft_down_;

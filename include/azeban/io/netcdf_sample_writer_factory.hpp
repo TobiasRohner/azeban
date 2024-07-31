@@ -11,6 +11,7 @@ std::unique_ptr<NetCDFSampleWriter<Dim>>
 make_netcdf_sample_writer(int ncid,
                           const nlohmann::json &config,
                           const Grid<Dim> &grid,
+                          bool has_tracer,
                           zisa::int_t sample_idx_start) {
   if (!config.contains("snapshots")) {
     LOG_ERR("NetCDFSampleWriter config needs key \"snapshots\"");
@@ -22,7 +23,7 @@ make_netcdf_sample_writer(int ncid,
     N = config["N"];
   }
   return std::make_unique<NetCDFSampleWriter<Dim>>(
-      ncid, grid, N, snapshots, sample_idx_start);
+      ncid, grid, N, snapshots, has_tracer, sample_idx_start);
 }
 
 }

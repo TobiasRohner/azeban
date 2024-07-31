@@ -8,6 +8,7 @@ template <int Dim>
 std::unique_ptr<NetCDFFile<Dim>>
 make_netcdf_file(const nlohmann::json &config,
                  const Grid<Dim> &grid,
+                 bool has_tracer,
                  zisa::int_t num_samples,
                  zisa::int_t sample_idx_start,
                  const std::string &full_config,
@@ -21,8 +22,8 @@ make_netcdf_file(const nlohmann::json &config,
       path, grid, num_samples, sample_idx_start, full_config, init_script);
   if (config.contains("contents")) {
     for (const auto &cont : config["contents"]) {
-      file->add_writer(
-          make_netcdf_writer(file->ncid(), cont, grid, sample_idx_start));
+      file->add_writer(make_netcdf_writer(
+          file->ncid(), cont, grid, has_tracer, sample_idx_start));
     }
   }
   return file;
@@ -31,6 +32,7 @@ make_netcdf_file(const nlohmann::json &config,
 template std::unique_ptr<NetCDFFile<1>>
 make_netcdf_file<1>(const nlohmann::json &config,
                     const Grid<1> &grid,
+                    bool has_tracer,
                     zisa::int_t num_samples,
                     zisa::int_t sample_idx_start,
                     const std::string &full_config,
@@ -38,6 +40,7 @@ make_netcdf_file<1>(const nlohmann::json &config,
 template std::unique_ptr<NetCDFFile<2>>
 make_netcdf_file<2>(const nlohmann::json &config,
                     const Grid<2> &grid,
+                    bool has_tracer,
                     zisa::int_t num_samples,
                     zisa::int_t sample_idx_start,
                     const std::string &full_config,
@@ -45,6 +48,7 @@ make_netcdf_file<2>(const nlohmann::json &config,
 template std::unique_ptr<NetCDFFile<3>>
 make_netcdf_file<3>(const nlohmann::json &config,
                     const Grid<3> &grid,
+                    bool has_tracer,
                     zisa::int_t num_samples,
                     zisa::int_t sample_idx_start,
                     const std::string &full_config,
