@@ -70,9 +70,13 @@ public:
 
 protected:
   virtual void
-  do_initialize(const zisa::array_view<real_t, dim_v + 1> &) override {}
+  do_initialize(const zisa::array_view<real_t, dim_v + 1> &u) override {
+    initialize(u);
+  }
   virtual void
-  do_initialize(const zisa::array_view<complex_t, dim_v + 1> &) override {}
+  do_initialize(const zisa::array_view<complex_t, dim_v + 1> &u_hat) override {
+    initialize(u_hat);
+  }
 
 private:
   std::shared_ptr<Initializer<Dim>> init_u_;

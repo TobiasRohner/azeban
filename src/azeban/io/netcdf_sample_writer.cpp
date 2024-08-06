@@ -2,6 +2,7 @@
 #include <azeban/netcdf.hpp>
 #include <azeban/operations/copy_from_padded.hpp>
 #include <azeban/operations/scale.hpp>
+#include <azeban/operations/transpose.hpp>
 
 namespace azeban {
 
@@ -141,7 +142,7 @@ void NetCDFSampleWriter<Dim>::write(
   if (N_ < grid_.N_phys) {
     zisa::shape_t<Dim> slice_shape;
     zisa::shape_t<Dim> slice_shape_down;
-    for (int d = 0; d < u_hat.shape(0); ++d) {
+    for (int d = 0; d < Dim; ++d) {
       slice_shape[d] = u_hat.shape(d + 1);
       slice_shape_down[d] = u_hat_down_.shape(d + 1);
     }
@@ -216,9 +217,66 @@ void NetCDFSampleWriter<Dim>::write(
 template <int Dim>
 void NetCDFSampleWriter<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-    real_t,
+    real_t t,
     const Communicator *comm) {
-  // TODO: Implement
+  if constexpr (Dim > 1) {
+    const int rank = comm->rank();
+    const int size = comm->size();
+
+    std::vector<int> cnts(size);
+    std::vector<int> displs(size);
+    for (int r = 0; r < size; ++r) {
+      cnts[r]
+          = zisa::pow<Dim - 1>(grid_.N_phys)
+            * (grid_.N_fourier / size
+               + (zisa::integer_cast<zisa::int_t>(r) < grid_.N_fourier % size));
+    }
+    displs[0] = 0;
+    for (int r = 1; r < size; ++r) {
+      displs[r] = displs[r - 1] + cnts[r - 1];
+    }
+    const zisa::int_t n_elems_per_component_glob
+        = zisa::product(grid_.shape_fourier(1));
+    const zisa::int_t n_elems_per_component_loc
+        = zisa::product(grid_.shape_fourier(1, comm));
+
+    zisa::shape_t<Dim + 1> shape_u_hat_T;
+    shape_u_hat_T[0] = u_hat.shape(0);
+    shape_u_hat_T[1]
+        = grid_.N_phys / size
+          + (zisa::integer_cast<zisa::int_t>(rank) < grid_.N_phys % size);
+    for (int d = 2; d < Dim; ++d) {
+      shape_u_hat_T[d] = grid_.N_phys;
+    }
+    shape_u_hat_T[Dim] = grid_.N_fourier;
+    zisa::array<complex_t, Dim + 1> u_hat_T(shape_u_hat_T,
+                                            zisa::device_type::cpu);
+    transpose(u_hat_T.view(), u_hat, comm);
+
+    zisa::array<complex_t, Dim + 1> u_hat_full;
+    if (rank == 0) {
+      u_hat_full
+          = grid_.make_array_fourier(u_hat.shape(0), zisa::device_type::cpu);
+    }
+    std::vector<MPI_Request> reqs(u_hat.shape(0));
+    for (zisa::int_t i = 0; i < u_hat.shape(0); ++i) {
+      MPI_Igatherv(u_hat_T.raw() + i * n_elems_per_component_loc,
+                   cnts[rank],
+                   mpi_type<complex_t>(),
+                   u_hat_full.raw() + i * n_elems_per_component_glob,
+                   cnts.data(),
+                   displs.data(),
+                   mpi_type<complex_t>(),
+                   0,
+                   comm->get_mpi_comm(),
+                   &reqs[i]);
+    }
+    MPI_Waitall(u_hat.shape(0), reqs.data(), MPI_STATUSES_IGNORE);
+
+    if (rank == 0) {
+      write(u_hat_full, t);
+    }
+  }
 }
 #endif
 

@@ -61,7 +61,6 @@ std::unique_ptr<Writer<Dim>> make_writer(const nlohmann::json &config,
       return make_structure_function_writer<Dim>(
           config, grid, sample_idx_start);
     } else if (name == "NetCDF File") {
-      // TODO: Add init script as well
       return make_netcdf_file(config,
                               grid,
                               num_samples,

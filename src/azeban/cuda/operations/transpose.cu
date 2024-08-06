@@ -199,7 +199,7 @@ void transpose_cuda_postprocess(
       to_shapes[to_rank][0], to_shapes[to_rank][1], from_shapes[from_rank][1]};
   const dim3 thread_dims(32, 32, 1);
   const dim3 block_dims(
-      zisa::min(zisa::div_up(block_shape[3],
+      zisa::min(zisa::div_up(block_shape[2],
                              zisa::integer_cast<zisa::int_t>(thread_dims.x)),
                 static_cast<zisa::int_t>(1024)),
       zisa::min(zisa::div_up(block_shape[1],
