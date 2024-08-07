@@ -13,10 +13,13 @@ NetCDFSampleWriter<Dim>::NetCDFSampleWriter(
     zisa::int_t N,
     const std::vector<real_t> &snapshot_times,
     bool has_tracer,
+    bool store_mean_var,
     zisa::int_t sample_idx_start)
     : super(ncid, grid, snapshot_times, sample_idx_start),
       N_(N),
-      has_tracer_(has_tracer) {
+      has_tracer_(has_tracer),
+      store_mean_var_(store_mean_var),
+      statistics_() {
   // Define own group
   CHECK_NETCDF(
       nc_def_grp(ncid_, ("flow_field_" + std::to_string(N_)).c_str(), &grpid_));
@@ -42,6 +45,11 @@ NetCDFSampleWriter<Dim>::NetCDFSampleWriter(
     if constexpr (Dim > 2) {
       CHECK_NETCDF(nc_def_dim(grpid_, "z", N, dimid_dims + 2));
     }
+  }
+  // Define groups
+  if (store_mean_var_) {
+    CHECK_NETCDF(nc_def_grp(grpid_, "mean", &grpid_mean_));
+    CHECK_NETCDF(nc_def_grp(grpid_, "variance", &grpid_var_));
   }
   // Define variables
   int varid_sim_time;
@@ -89,6 +97,76 @@ NetCDFSampleWriter<Dim>::NetCDFSampleWriter(
     CHECK_NETCDF(nc_def_var_chunking(
         grpid_, varids_uvw_[Dim], NC_CHUNKED, fields_chunksizes));
   }
+  if (store_mean_var_) {
+    CHECK_NETCDF(nc_def_var(grpid_mean_,
+                            "u",
+                            NC_REAL,
+                            1 + Dim,
+                            dimids_fields + 1,
+                            varids_mean_uvw_));
+    CHECK_NETCDF(nc_def_var_chunking(
+        grpid_mean_, varids_mean_uvw_[0], NC_CHUNKED, fields_chunksizes + 1));
+    CHECK_NETCDF(nc_def_var(
+        grpid_var_, "u", NC_REAL, 1 + Dim, dimids_fields + 1, varids_var_uvw_));
+    CHECK_NETCDF(nc_def_var_chunking(
+        grpid_var_, varids_var_uvw_[0], NC_CHUNKED, fields_chunksizes + 1));
+    if constexpr (Dim > 1) {
+      CHECK_NETCDF(nc_def_var(grpid_mean_,
+                              "v",
+                              NC_REAL,
+                              1 + Dim,
+                              dimids_fields + 1,
+                              varids_mean_uvw_ + 1));
+      CHECK_NETCDF(nc_def_var_chunking(
+          grpid_mean_, varids_mean_uvw_[1], NC_CHUNKED, fields_chunksizes + 1));
+      CHECK_NETCDF(nc_def_var(grpid_var_,
+                              "v",
+                              NC_REAL,
+                              1 + Dim,
+                              dimids_fields + 1,
+                              varids_var_uvw_ + 1));
+      CHECK_NETCDF(nc_def_var_chunking(
+          grpid_var_, varids_var_uvw_[1], NC_CHUNKED, fields_chunksizes + 1));
+    }
+    if constexpr (Dim > 2) {
+      CHECK_NETCDF(nc_def_var(grpid_mean_,
+                              "w",
+                              NC_REAL,
+                              1 + Dim,
+                              dimids_fields + 1,
+                              varids_mean_uvw_ + 2));
+      CHECK_NETCDF(nc_def_var_chunking(
+          grpid_mean_, varids_mean_uvw_[2], NC_CHUNKED, fields_chunksizes + 1));
+      CHECK_NETCDF(nc_def_var(grpid_var_,
+                              "w",
+                              NC_REAL,
+                              1 + Dim,
+                              dimids_fields + 1,
+                              varids_var_uvw_ + 2));
+      CHECK_NETCDF(nc_def_var_chunking(
+          grpid_var_, varids_var_uvw_[2], NC_CHUNKED, fields_chunksizes + 1));
+    }
+    if (has_tracer_) {
+      CHECK_NETCDF(nc_def_var(grpid_mean_,
+                              "rho",
+                              NC_REAL,
+                              1 + Dim,
+                              dimids_fields + 1,
+                              varids_mean_uvw_ + Dim));
+      CHECK_NETCDF(nc_def_var_chunking(grpid_mean_,
+                                       varids_mean_uvw_[Dim],
+                                       NC_CHUNKED,
+                                       fields_chunksizes + 1));
+      CHECK_NETCDF(nc_def_var(grpid_var_,
+                              "rho",
+                              NC_REAL,
+                              1 + Dim,
+                              dimids_fields + 1,
+                              varids_var_uvw_ + Dim));
+      CHECK_NETCDF(nc_def_var_chunking(
+          grpid_var_, varids_var_uvw_[Dim], NC_CHUNKED, fields_chunksizes + 1));
+    }
+  }
   // Initialize variables
   CHECK_NETCDF(nc_put_var(grpid_, varid_sim_time, snapshot_times.data()));
   if (N != grid_.N_phys) {
@@ -113,8 +191,40 @@ NetCDFSampleWriter<Dim>::NetCDFSampleWriter(
         = grid_down.make_array_phys(Dim + has_tracer_, zisa::device_type::cpu);
     fft_down_ = make_fft<Dim>(u_hat_down_, u_down_, FFT_BACKWARD);
   }
+  // Initialize statistics recorders
+  statistics_.reserve(snapshot_times.size());
+  for (const auto t : snapshot_times) {
+    Grid<Dim> grid_down(N_);
+    statistics_.emplace_back(grid_down, has_tracer_);
+  }
   // Record the current time
   start_time_ = std::chrono::steady_clock::now();
+}
+
+template <int Dim>
+NetCDFSampleWriter<Dim>::~NetCDFSampleWriter() {
+  if (store_mean_var_) {
+    for (size_t t = 0; t < statistics_.size(); ++t) {
+      auto &stat = statistics_[t];
+      stat.finalize();
+      const auto mean = stat.mean();
+      const auto var = stat.variance();
+      const size_t start[4] = {t, 0, 0, 0};
+      const size_t count[4] = {1, N_, N_, N_};
+      for (int d = 0; d < Dim + has_tracer_; ++d) {
+        CHECK_NETCDF(nc_put_vara(grpid_mean_,
+                                 varids_mean_uvw_[d],
+                                 start,
+                                 count,
+                                 mean.raw() + d * zisa::pow<Dim>(N_)));
+        CHECK_NETCDF(nc_put_vara(grpid_var_,
+                                 varids_var_uvw_[d],
+                                 start,
+                                 count,
+                                 var.raw() + d * zisa::pow<Dim>(N_)));
+      }
+    }
+  }
 }
 
 template <int Dim>
@@ -123,6 +233,10 @@ void NetCDFSampleWriter<Dim>::write(
   // Store the flow field
   if (N_ == grid_.N_phys) {
     store_u(u);
+  }
+  // Update the statistics
+  if (N_ == grid_.N_phys && store_mean_var_) {
+    statistics_[snapshot_idx_].update(u);
   }
   // Store the current time
   const auto time = std::chrono::steady_clock::now();
@@ -160,6 +274,10 @@ void NetCDFSampleWriter<Dim>::write(
     fft_down_->backward();
     scale(real_t{1} / zisa::pow<Dim>(grid_.N_phys), u_down_.view());
     store_u(u_down_);
+    // Update the statistics
+    if (store_mean_var_) {
+      statistics_[snapshot_idx_].update(u_down_);
+    }
   }
 }
 

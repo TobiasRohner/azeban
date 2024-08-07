@@ -84,6 +84,7 @@ NetCDFFile<Dim>::NetCDFFile(const std::string &path,
 
 template <int Dim>
 NetCDFFile<Dim>::~NetCDFFile() {
+  writers_.clear();
   nc_close(ncid_);
 }
 

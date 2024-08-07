@@ -10,6 +10,7 @@ target_sources(azeban_generic_obj
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/leray.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/second_order_structure_function.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/transpose.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/statistics_recorder.cpp
 )
 
 if(ZISA_HAS_CUDA)

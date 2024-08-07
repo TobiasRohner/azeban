@@ -22,8 +22,17 @@ make_netcdf_sample_writer(int ncid,
   if (config.contains("N")) {
     N = config["N"];
   }
-  return std::make_unique<NetCDFSampleWriter<Dim>>(
-      ncid, grid, N, snapshots, has_tracer, sample_idx_start);
+  bool save_mean_variance = false;
+  if (config.contains("save_statistics")) {
+    save_mean_variance = config["save_statistics"];
+  }
+  return std::make_unique<NetCDFSampleWriter<Dim>>(ncid,
+                                                   grid,
+                                                   N,
+                                                   snapshots,
+                                                   has_tracer,
+                                                   save_mean_variance,
+                                                   sample_idx_start);
 }
 
 }
