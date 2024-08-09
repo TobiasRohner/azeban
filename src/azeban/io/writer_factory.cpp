@@ -63,8 +63,8 @@ std::unique_ptr<Writer<Dim>> make_writer(const nlohmann::json &config,
     } else if (name == "NetCDF File") {
       return make_netcdf_file(config,
                               grid,
-                              num_samples,
                               has_tracer,
+                              num_samples,
                               sample_idx_start,
                               full_config,
                               init_script);
@@ -135,7 +135,8 @@ std::unique_ptr<Writer<Dim>> make_writer(const nlohmann::json &config,
                               num_samples,
                               sample_idx_start,
                               full_config,
-                              init_script);
+                              init_script,
+                              comm);
     } else {
       fmt::print(stderr, "Unknown writer type: \"{}\"\n", name);
       exit(1);

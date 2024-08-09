@@ -8,10 +8,13 @@
 
 namespace azeban {
 
-void run_from_config(const nlohmann::json &config, zisa::int_t total_samples);
+void run_from_config(const nlohmann::json &config,
+                     zisa::int_t total_samples,
+                     const std::string &original_config);
 #if AZEBAN_HAS_MPI
 void run_from_config(const nlohmann::json &config,
                      zisa::int_t total_samples,
+                     const std::string &original_config,
                      const Communicator *comm);
 #endif
 

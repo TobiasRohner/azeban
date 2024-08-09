@@ -58,6 +58,82 @@ void StatisticsRecorder<Dim>::finalize() {
   is_finalized_ = true;
 }
 
+#if AZEBAN_HAS_MPI
+template <int Dim>
+void StatisticsRecorder<Dim>::finalize(MPI_Comm comm) {
+  static constexpr size_t BUFFER_SIZE = 4 * 1024 * 1024 / sizeof(real_t);
+  LOG_ERR_IF(is_finalized_,
+             "Cannot finalize an already finalized statistics recorder");
+  int size;
+  int rank;
+  MPI_Comm_size(comm, &size);
+  MPI_Comm_rank(comm, &rank);
+  std::unique_ptr<zisa::int_t[]> counts = std::make_unique<zisa::int_t[]>(size);
+  std::unique_ptr<real_t[]> buffer_Mk = std::make_unique<real_t[]>(BUFFER_SIZE);
+  std::unique_ptr<real_t[]> buffer_Sk = std::make_unique<real_t[]>(BUFFER_SIZE);
+  MPI_Allgather(&count_,
+                1,
+                mpi_type<zisa::int_t>(),
+                counts.get(),
+                1,
+                mpi_type<zisa::int_t>(),
+                comm);
+  for (int num_ranks = size; num_ranks > 1;
+       num_ranks = zisa::div_up(num_ranks, 2)) {
+    const int num_recv = zisa::div_up(num_ranks, 2);
+    for (zisa::int_t offset = 0; offset < Mk_.size(); offset += BUFFER_SIZE) {
+      const zisa::int_t num_elements
+          = zisa::min(BUFFER_SIZE, Mk_.size() - offset);
+      if (rank < num_recv) {
+        if (rank + num_recv < num_ranks) {
+          const int src = rank + num_recv;
+          fmt::print("Combining {} -> {}\n", src, rank);
+          MPI_Recv(buffer_Mk.get(),
+                   num_elements,
+                   mpi_type<real_t>(),
+                   src,
+                   0,
+                   comm,
+                   MPI_STATUS_IGNORE);
+          MPI_Recv(buffer_Sk.get(),
+                   num_elements,
+                   mpi_type<real_t>(),
+                   src,
+                   1,
+                   comm,
+                   MPI_STATUS_IGNORE);
+          const zisa::int_t nA = counts[rank];
+          const zisa::int_t nB = counts[src];
+          const zisa::int_t nAB = nA + nB;
+          counts[rank] = nAB;
+          count_ = nAB;
+          for (size_t i = 0; i < num_elements; ++i) {
+            const real_t MkA = Mk_[offset + i];
+            const real_t MkB = buffer_Mk[i];
+            const real_t SkA = Sk_[offset + i];
+            const real_t SkB = buffer_Sk[i];
+            const real_t delta = MkB - MkA;
+            const real_t MkAB = (nA * MkA + nB * MkB) / nAB;
+            const real_t SkAB = SkA + SkB + (delta * delta * nA * nB) / nAB;
+            Mk_[offset + i] = MkAB;
+            Sk_[offset + i] = SkAB;
+          }
+        }
+      } else if (rank < num_ranks) {
+        const int dst = rank - num_recv;
+        MPI_Send(
+            Mk_.raw() + offset, num_elements, mpi_type<real_t>(), dst, 0, comm);
+        MPI_Send(
+            Sk_.raw() + offset, num_elements, mpi_type<real_t>(), dst, 1, comm);
+      }
+    }
+  }
+  if (rank == 0) {
+    finalize();
+  }
+}
+#endif
+
 template <int Dim>
 zisa::array_const_view<real_t, Dim + 1> StatisticsRecorder<Dim>::mean() const {
   LOG_ERR_IF(

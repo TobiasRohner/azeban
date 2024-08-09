@@ -21,6 +21,16 @@ public:
                      bool has_trcer,
                      bool store_mean_var,
                      zisa::int_t sample_idx_start);
+#if AZEBAN_HAS_MPI
+  NetCDFSampleWriter(int ncid,
+                     const Grid<Dim> &grid,
+                     zisa::int_t N,
+                     const std::vector<real_t> &snapshot_times,
+                     bool has_trcer,
+                     bool store_mean_var,
+                     zisa::int_t sample_idx_start,
+                     const Communicator *comm);
+#endif
   virtual ~NetCDFSampleWriter() override;
 
 protected:
@@ -29,6 +39,7 @@ protected:
   using super::sample_idx_;
   using super::sample_idx_start_;
   using super::snapshot_idx_;
+  using super::snapshot_times_;
 
   virtual void write(const zisa::array_const_view<real_t, Dim + 1> &u,
                      real_t t) override;
@@ -59,7 +70,9 @@ private:
   zisa::array<real_t, Dim + 1> u_down_;
   std::shared_ptr<FFT<Dim, real_t>> fft_down_;
   std::vector<StatisticsRecorder<Dim>> statistics_;
+  MPI_Comm sample_comm_;
 
+  void init_file_structure();
   void store_u(const zisa::array_const_view<real_t, Dim + 1> &u);
 };
 

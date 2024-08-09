@@ -22,6 +22,9 @@ public:
 
   void update(const zisa::array_const_view<real_t, Dim + 1> &u);
   void finalize();
+#if AZEBAN_HAS_MPI
+  void finalize(MPI_Comm comm);
+#endif
 
   zisa::array_const_view<real_t, Dim + 1> mean() const;
   zisa::array_const_view<real_t, Dim + 1> variance() const;

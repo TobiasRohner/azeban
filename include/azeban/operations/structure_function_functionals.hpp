@@ -176,7 +176,7 @@ public:
         = ::azeban::rhypot(static_cast<real_t>(di), static_cast<real_t>(dj));
     const real_t nx = rabsn * static_cast<real_t>(di);
     const real_t ny = rabsn * static_cast<real_t>(dj);
-    return zisa::pow(zisa::abs(du * nx + dv * ny), p_);
+    return zisa::pow(static_cast<real_t>(zisa::abs(du * nx + dv * ny)), p_);
   }
 
   ANY_DEVICE_INLINE real_t operator()(real_t uijk,
@@ -197,7 +197,8 @@ public:
     const real_t nx = rabsn * static_cast<real_t>(di);
     const real_t ny = rabsn * static_cast<real_t>(dj);
     const real_t nz = rabsn * static_cast<real_t>(dk);
-    return zisa::pow(zisa::abs(du * nx + dv * ny + dw * nz), p_);
+    return zisa::pow(
+        static_cast<real_t>(zisa::abs(du * nx + dv * ny + dw * nz)), p_);
   }
 
 private:

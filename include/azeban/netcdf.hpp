@@ -2,12 +2,14 @@
 #define AZEBAN_NETCDF_HPP_
 
 #include <azeban/config.hpp>
+#include <fmt/core.h>
 #include <netcdf.h>
 #include <netcdf_par.h>
 
 #define CHECK_NETCDF(...)                                                      \
   if (int status = (__VA_ARGS__); status != NC_NOERR) {                        \
-    LOG_ERR(nc_strerror(status));                                              \
+    fmt::print("{}\n", nc_strerror(status));                                   \
+    exit(status);                                                              \
   }
 
 namespace azeban {

@@ -22,7 +22,8 @@ namespace azeban {
 
 template <int dim_v>
 static void run_from_config_impl(const nlohmann::json &config,
-                                 zisa::int_t total_samples) {
+                                 zisa::int_t total_samples,
+                                 const std::string &original_config) {
   zisa::int_t num_samples = 1;
   if (config.contains("num_samples")) {
     num_samples = config["num_samples"];
@@ -68,7 +69,7 @@ static void run_from_config_impl(const nlohmann::json &config,
                                    simulation.n_vars() > dim_v,
                                    total_samples,
                                    sample_idx_start,
-                                   config.dump(2, ' ', true),
+                                   original_config,
                                    init_script);
 
   auto u_hat_out = simulation.grid().make_array_fourier(simulation.n_vars(),
@@ -101,7 +102,9 @@ static void run_from_config_impl(const nlohmann::json &config,
   }
 }
 
-void run_from_config(const nlohmann::json &config, zisa::int_t total_samples) {
+void run_from_config(const nlohmann::json &config,
+                     zisa::int_t total_samples,
+                     const std::string &original_config) {
   if (!config.contains("dimension")) {
     fmt::print(stderr, "Must provide dimension of simulation\n");
     exit(1);
@@ -109,13 +112,13 @@ void run_from_config(const nlohmann::json &config, zisa::int_t total_samples) {
   const int dim = config["dimension"];
   switch (dim) {
   case 1:
-    run_from_config_impl<1>(config, total_samples);
+    run_from_config_impl<1>(config, total_samples, original_config);
     break;
   case 2:
-    run_from_config_impl<2>(config, total_samples);
+    run_from_config_impl<2>(config, total_samples, original_config);
     break;
   case 3:
-    run_from_config_impl<3>(config, total_samples);
+    run_from_config_impl<3>(config, total_samples, original_config);
     break;
   default:
     fmt::print(stderr, "Invalid Dimension: {}\n", dim);
@@ -127,6 +130,7 @@ void run_from_config(const nlohmann::json &config, zisa::int_t total_samples) {
 template <int dim_v>
 static void run_from_config_MPI_impl(const nlohmann::json &config,
                                      zisa::int_t total_samples,
+                                     const std::string &original_config,
                                      const Communicator *comm) {
   const int rank = comm->rank();
 
@@ -176,7 +180,7 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
                                    simulation.n_vars() > dim_v,
                                    total_samples,
                                    sample_idx_start,
-                                   config.dump(2, ' ', true),
+                                   original_config,
                                    init_script,
                                    comm);
 
@@ -222,6 +226,7 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
 
 void run_from_config(const nlohmann::json &config,
                      zisa::int_t total_samples,
+                     const std::string &original_config,
                      const Communicator *comm) {
   if (!config.contains("dimension")) {
     fmt::print(stderr, "Must provide dimension of simulation\n");
@@ -230,10 +235,10 @@ void run_from_config(const nlohmann::json &config,
   const int dim = config["dimension"];
   switch (dim) {
   case 2:
-    run_from_config_MPI_impl<2>(config, total_samples, comm);
+    run_from_config_MPI_impl<2>(config, total_samples, original_config, comm);
     break;
   case 3:
-    run_from_config_MPI_impl<3>(config, total_samples, comm);
+    run_from_config_MPI_impl<3>(config, total_samples, original_config, comm);
     break;
   default:
     fmt::print(stderr, "Invalid Dimension: {}\n", dim);

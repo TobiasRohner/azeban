@@ -38,15 +38,18 @@ nlohmann::json read_config(const std::string &config_filename) {
   return config;
 }
 
-void run_azeban(const nlohmann::json &config, zisa::int_t total_samples) {
+void run_azeban(const nlohmann::json &config,
+                zisa::int_t total_samples,
+                const std::string &original_config) {
   fmt::print("Running azeban in single-node mode.\nRun cofiguration is\n{}\n",
              config.dump(2));
-  run_from_config(config, total_samples);
+  run_from_config(config, total_samples, original_config);
 }
 
 #if AZEBAN_HAS_MPI
 void run_azeban(const nlohmann::json &config,
                 zisa::int_t total_samples,
+                const std::string &original_config,
                 MPI_Comm comm) {
   int rank, size;
   MPI_Comm_rank(comm, &rank);
@@ -59,9 +62,9 @@ void run_azeban(const nlohmann::json &config,
           config.dump(2));
     }
     Communicator communicator(comm);
-    run_from_config(config, total_samples, &communicator);
+    run_from_config(config, total_samples, original_config, &communicator);
   } else {
-    run_azeban(config, total_samples);
+    run_azeban(config, total_samples, original_config);
   }
 }
 #endif
@@ -114,6 +117,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   auto config = read_config(config_path);
+  const std::string original_config = config.dump(2, ' ', true);
 
   Profiler::start();
   int num_samples = 1;
@@ -137,9 +141,9 @@ int main(int argc, char *argv[]) {
   config["seed"] = seed + color;
   config["num_samples"] = samples_per_comm;
   config["sample_idx_start"] = sample_idx_start + color * samples_per_comm;
-  run_azeban(config, num_samples, subcomm);
+  run_azeban(config, num_samples, original_config, subcomm);
 #else
-  run_azeban(config, num_samples);
+  run_azeban(config, num_samples, original_config);
 #endif
   Profiler::stop();
 

@@ -85,6 +85,9 @@ NetCDFFile<Dim>::NetCDFFile(const std::string &path,
 template <int Dim>
 NetCDFFile<Dim>::~NetCDFFile() {
   writers_.clear();
+#if AZEBAN_HAS_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
   nc_close(ncid_);
 }
 
