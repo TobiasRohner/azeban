@@ -8,7 +8,7 @@
 namespace azeban {
 
 template <int Dim>
-std::unique_ptr<Writer<Dim>>
+std::unique_ptr<NetCDFWriter<Dim>>
 make_netcdf_second_order_structure_function_writer(int ncid,
 						   const nlohmann::json &config,
 						   const Grid<Dim> &grid,

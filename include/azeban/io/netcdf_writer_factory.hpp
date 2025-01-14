@@ -9,7 +9,7 @@
 namespace azeban {
 
 template <int Dim>
-std::unique_ptr<Writer<Dim>>
+std::unique_ptr<NetCDFWriter<Dim>>
 make_netcdf_writer(int ncid,
                    const nlohmann::json &config,
                    const Grid<Dim> &grid,
@@ -34,7 +34,7 @@ make_netcdf_writer(int ncid,
 
 #if AZEBAN_HAS_MPI
 template <int Dim>
-std::unique_ptr<Writer<Dim>>
+std::unique_ptr<NetCDFWriter<Dim>>
 make_netcdf_writer(int ncid,
                    const nlohmann::json &config,
                    const Grid<Dim> &grid,

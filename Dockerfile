@@ -5,13 +5,6 @@ ARG SINGLE_PRECISION=ON
 
 WORKDIR azeban
 
-COPY cmake cmake
-COPY benchmarks benchmarks
-COPY include include
-COPY src src
-COPY test test
-COPY CMakeLists.txt .
-
 RUN apt-get update && \
     apt-get install --no-install-recommends -y git cmake wget libssl-dev libhdf5-mpi-dev python3-dev libfftw3-dev python3-numpy
 
@@ -28,7 +21,14 @@ RUN git clone https://gitlab.kitware.com/paraview/catalyst.git --branch v2.0.0-r
     cmake --build build -j$(nproc) && \
     cmake --install build
 
+COPY cmake cmake
+COPY benchmarks benchmarks
+COPY include include
+COPY src src
+COPY test test
+COPY CMakeLists.txt .
+
 RUN cmake -DCMAKE_MODULE_PATH=cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_PROFILING=${ENABLE_PROFILING} -DSINGLE_PRECISION=${SINGLE_PRECISION} -DENABLE_PYTHON=ON -DENABLE_INSITU=ON -DENABLE_BENCHMARKS=OFF -S . -B build && \
-    cmake --build build -j$(nproc)
+    cmake --build build
 
 ENTRYPOINT ["/azeban/build/azeban"]
