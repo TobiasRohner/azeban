@@ -1,6 +1,6 @@
 #include <azeban/io/netcdf_snapshot_writer.hpp>
 #include <azeban/profiler.hpp>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <zisa/io/netcdf_file.hpp>
 
 namespace azeban {
@@ -17,9 +17,9 @@ NetCDFSnapshotWriter<Dim>::NetCDFSnapshotWriter(
       path_(path),
       store_u_hat_(store_u_hat),
       work_area_(work_area) {
-  std::filesystem::path sample_folder = path_;
-  if (!std::filesystem::exists(sample_folder)) {
-    std::filesystem::create_directories(sample_folder);
+	std::experimental::filesystem::path sample_folder = path_;
+  if (!std::experimental::filesystem::exists(sample_folder)) {
+    std::experimental::filesystem::create_directories(sample_folder);
   }
 }
 

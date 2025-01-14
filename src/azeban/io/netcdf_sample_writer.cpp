@@ -20,7 +20,7 @@ NetCDFSampleWriter<Dim>::NetCDFSampleWriter(
       has_tracer_(has_tracer),
       store_mean_var_(store_mean_var),
       statistics_(),
-      sample_comm_(nullptr) {
+      sample_comm_(0) {
   init_file_structure();
   // Initialize statistics recorders
   statistics_.reserve(snapshot_times_.size());

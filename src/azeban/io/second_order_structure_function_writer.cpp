@@ -1,7 +1,6 @@
 #include <azeban/io/second_order_structure_function_writer.hpp>
 #include <azeban/operations/second_order_structure_function.hpp>
 #include <azeban/profiler.hpp>
-#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <limits>

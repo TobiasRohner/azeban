@@ -48,7 +48,7 @@ public:
 #endif
 
 private:
-  int ncid_;
+  int ncid_ = 0;
   int dimid_member_;
   int dimid_dim_[Dim];
   std::vector<std::unique_ptr<NetCDFWriter<Dim>>> writers_;

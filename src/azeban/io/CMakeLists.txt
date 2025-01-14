@@ -22,6 +22,7 @@ target_sources(azeban_generic_obj
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/structure_function_cube_writer_factory.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/second_order_structure_function_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/second_order_structure_function_writer_factory.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_second_order_structure_function_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/third_order_structure_function_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/third_order_structure_function_writer_factory.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/longitudinal_structure_function_writer.cpp

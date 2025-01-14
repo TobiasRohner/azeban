@@ -1,7 +1,7 @@
 #include <azeban/io/netcdf_file.hpp>
 #include <azeban/netcdf.hpp>
 #include <azeban/profiler.hpp>
-#include <filesystem>
+#include <experimental/filesystem>
 #if AZEBAN_HAS_MPI
 #include <mpi.h>
 #endif
@@ -19,7 +19,9 @@ NetCDFFile<Dim>::NetCDFFile(const std::string &path,
   // Open new NetCDF4 file
 #if AZEBAN_HAS_MPI
   int size;
+  int rank;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if (size > 1) {
     CHECK_NETCDF(nc_create_par(path.c_str(),
                                NC_CLOBBER | NC_NETCDF4,

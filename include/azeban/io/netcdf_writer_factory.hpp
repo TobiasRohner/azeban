@@ -3,12 +3,13 @@
 
 #include <azeban/io/netcdf_energy_spectrum_writer_factory.hpp>
 #include <azeban/io/netcdf_sample_writer_factory.hpp>
+#include <azeban/io/netcdf_second_order_structure_function_writer_factory.hpp>
 #include <azeban/io/netcdf_writer.hpp>
 
 namespace azeban {
 
 template <int Dim>
-std::unique_ptr<NetCDFWriter<Dim>>
+std::unique_ptr<Writer<Dim>>
 make_netcdf_writer(int ncid,
                    const nlohmann::json &config,
                    const Grid<Dim> &grid,
@@ -24,6 +25,8 @@ make_netcdf_writer(int ncid,
   } else if (name == "Energy Spectrum") {
     return make_netcdf_energy_spectrum_writer(
         ncid, config, grid, sample_idx_start);
+  } else if (name == "Second Order Structure Function") {
+    return make_netcdf_second_order_structure_function_writer(ncid, config, grid, sample_idx_start);
   } else {
     LOG_ERR("Unknown NetCDF Writer type");
   }
@@ -31,7 +34,7 @@ make_netcdf_writer(int ncid,
 
 #if AZEBAN_HAS_MPI
 template <int Dim>
-std::unique_ptr<NetCDFWriter<Dim>>
+std::unique_ptr<Writer<Dim>>
 make_netcdf_writer(int ncid,
                    const nlohmann::json &config,
                    const Grid<Dim> &grid,
@@ -48,6 +51,8 @@ make_netcdf_writer(int ncid,
   } else if (name == "Energy Spectrum") {
     return make_netcdf_energy_spectrum_writer(
         ncid, config, grid, sample_idx_start);
+  } else if (name == "Second Order Structure Function") {
+    return make_netcdf_second_order_structure_function_writer(ncid, config, grid, sample_idx_start);
   } else {
     LOG_ERR("Unknown NetCDF Writer type");
   }

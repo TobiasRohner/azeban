@@ -1,7 +1,7 @@
 #include <azeban/io/enstrophy_spectrum_writer.hpp>
 #include <azeban/operations/enstrophy_spectrum.hpp>
 #include <azeban/profiler.hpp>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <iomanip>
 #include <limits>
 #if AZEBAN_HAS_MPI
@@ -20,8 +20,8 @@ EnstrophySpectrumWriter<Dim>::EnstrophySpectrumWriter(
 #if AZEBAN_HAS_MPI
   samples_comm_ = MPI_COMM_WORLD;
 #endif
-  if (!std::filesystem::exists(path)) {
-    std::filesystem::create_directories(path);
+  if (!std::experimental::filesystem::exists(path)) {
+    std::experimental::filesystem::create_directories(path);
   }
 }
 
@@ -40,8 +40,8 @@ EnstrophySpectrumWriter<Dim>::EnstrophySpectrumWriter(
   int color = local_rank == 0 ? 0 : MPI_UNDEFINED;
   MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &samples_comm_);
   if (local_rank == 0) {
-    if (!std::filesystem::exists(path)) {
-      std::filesystem::create_directories(path);
+    if (!std::experimental::filesystem::exists(path)) {
+      std::experimental::filesystem::create_directories(path);
     }
   }
 }

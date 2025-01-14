@@ -1,7 +1,13 @@
-cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 project(azeban VERSION 0.1 LANGUAGES C CXX)
 
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0074 NEW)
+set(CMAKE_POLICY_DEFAULT_CMP0175 OLD)
+set(CMAKE_POLICY_DEFAULT_CMP0097 NEW)
+
 include(FetchContent)
+set(FETCHCONTENT_QUIET OFF)
 
 option(ENABLE_CUDA "Enable CUDA Acceleration" ON)
 option(ENABLE_MPI "Enable scaling to multiple nodes using MPI" ON)
@@ -36,6 +42,13 @@ if(ZISA_HAS_CUDA)
   enable_language(CUDA)
 endif()
 
+set(BOOST_INCLUDE_LIBRARIES program_options)
+FetchContent_Declare(
+  Boost
+  GIT_REPOSITORY https://github.com/boostorg/boost.git
+  GIT_TAG boost-1.85.0
+  OVERRIDE_FIND_PACKAGE
+)
 FetchContent_Declare(
   fmt
   GIT_REPOSITORY https://github.com/fmtlib/fmt.git
@@ -52,18 +65,6 @@ FetchContent_Declare(
   Catch2
   GIT_REPOSITORY https://github.com/catchorg/Catch2.git
   GIT_TAG v2.13.7
-  OVERRIDE_FIND_PACKAGE
-)
-FetchContent_Declare(
-  ZisaCore
-  GIT_REPOSITORY https://github.com/1uc/ZisaCore.git
-  GIT_TAG 9243c391b70f5b1ff8c0275905351158c4f59eab
-  OVERRIDE_FIND_PACKAGE
-)
-FetchContent_Declare(
-  ZisaMemory
-  GIT_REPOSITORY https://github.com/1uc/ZisaMemory.git
-  GIT_TAG 321013db1830fb77589e13139400aeaea8796f79
   OVERRIDE_FIND_PACKAGE
 )
 FetchContent_Declare(
@@ -89,8 +90,11 @@ if (AZEBAN_HAS_PYTHON)
 endif()
 if (ZISA_HAS_NETCDF)
   if (ENABLE_MPI)
-    find_package(MPI REQUIRED COMPONENTS C)
+    find_package(MPI REQUIRED COMPONENTS C CXX)
     include_directories(${MPI_C_INCLUDE_PATH})
+    include_directories(${MPI_CXX_INCLUDE_PATH})
+    add_compile_options($<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CXX>:${MPI_CXX_COMPILE_FLAGS}>>)
+    link_libraries(${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
   endif()
   set(HDF5_PREFER_PARALLEL ON)
   set(BUILD_UTILITIES OFF)
@@ -107,12 +111,12 @@ if (ZISA_HAS_NETCDF)
   FetchContent_Declare(
     netcdf
     GIT_REPOSITORY https://github.com/Unidata/netcdf-c.git
-    GIT_TAG main
+    GIT_TAG v4.9.3-rc1
     OVERRIDE_FIND_PACKAGE
   )
 endif()
 
-FetchContent_MakeAvailable(nlohmann_json Catch2 ZisaCore ZisaMemory googletest benchmark)
+FetchContent_MakeAvailable(Boost nlohmann_json Catch2 googletest benchmark)
 if (AZEBAN_HAS_PYTHON)
   FetchContent_MakeAvailable(pybind11)
 endif()
@@ -138,17 +142,20 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 add_library(azeban_dependencies INTERFACE)
 
 if(AZEBAN_HAS_MPI)
-  find_package(MPI REQUIRED COMPONENTS CXX)
+  #find_package(MPI REQUIRED COMPONENTS CXX)
   target_compile_definitions(azeban_dependencies INTERFACE 
     $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CXX>:AZEBAN_HAS_MPI=1>>)
   if(ZISA_HAS_CUDA AND AZEBAN_HAS_CUDA_AWARE_MPI)
     target_compile_definitions(azeban_dependencies INTERFACE 
       $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CXX>:AZEBAN_HAS_CUDA_AWARE_MPI=1>>)
   endif()
-  target_include_directories(azeban_dependencies INTERFACE ${MPI_CXX_INCLUDE_PATH})
-  target_compile_options(azeban_dependencies INTERFACE
-    $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CXX>:${MPI_CXX_COMPILE_FLAGS}>>)
-  target_link_libraries(azeban_dependencies INTERFACE ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
+  target_link_libraries(azeban_dependencies INTERFACE MPI::MPI_C)
+  target_link_libraries(azeban_dependencies INTERFACE MPI::MPI_CXX)
+  #target_include_directories(azeban_dependencies INTERFACE ${MPI_C_INCLUDE_PATH})
+  #target_include_directories(azeban_dependencies INTERFACE ${MPI_CXX_INCLUDE_PATH})
+  #target_compile_options(azeban_dependencies INTERFACE
+  #$<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CXX>:${MPI_CXX_COMPILE_FLAGS}>>)
+  #target_link_libraries(azeban_dependencies INTERFACE ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS})
 endif()
 
 if(AZEBAN_HAS_PYTHON)
@@ -192,7 +199,7 @@ if(ZISA_HAS_HDF5)
 endif()
 
 if(ZISA_HAS_NETCDF)
-  find_package(netCDF REQUIRED)
+  find_package(NetCDF REQUIRED)
   #target_include_directories(azeban_dependencies INTERFACE ${NetCDF_INCLUDE_DIRS})
   #target_link_libraries(azeban_dependencies INTERFACE ${NetCDF_LIBRARIES})
   target_link_libraries(azeban_dependencies INTERFACE NetCDF::NetCDF)
@@ -223,12 +230,31 @@ if(ZISA_HAS_CUDA)
       $<BUILD_INTERFACE:$<$<COMPILE_LANGUAGE:CUDA>:-g -G>>
     )
   endif()
-  target_link_libraries(azeban_dependencies INTERFACE CUDA::cudart)
+  #target_link_libraries(azeban_dependencies INTERFACE CUDA::cudart)
   target_link_libraries(azeban_dependencies INTERFACE CUDA::cufft)
   target_link_libraries(azeban_dependencies INTERFACE CUDA::curand)
 endif()
 
 # -- internal ----------------------------------------------------------------------
+FetchContent_Declare(
+  ZisaCore
+  GIT_REPOSITORY https://github.com/1uc/ZisaCore.git
+  GIT_TAG 9243c391b70f5b1ff8c0275905351158c4f59eab
+  GIT_SUBMODULES ""
+  GIT_SUBMODULES_RECURSE OFF
+  OVERRIDE_FIND_PACKAGE
+)
+FetchContent_Declare(
+  ZisaMemory
+  GIT_REPOSITORY https://github.com/1uc/ZisaMemory.git
+  GIT_TAG 321013db1830fb77589e13139400aeaea8796f79
+  GIT_SUBMODULES ""
+  GIT_SUBMODULES_RECURSE OFF
+  OVERRIDE_FIND_PACKAGE
+)
+
+FetchContent_MakeAvailable(ZisaCore ZisaMemory)
+
 find_package(ZisaCore REQUIRED)
 target_link_libraries(azeban_dependencies INTERFACE Zisa::core)
 
@@ -295,6 +321,7 @@ target_link_libraries(azeban_unit_tests PRIVATE Catch2::Catch2)
 target_link_libraries(azeban_unit_tests PRIVATE azeban_lib)
 target_include_directories(azeban_unit_tests PRIVATE test)
 target_link_libraries(azeban_unit_tests PRIVATE azeban_warning_flags)
+#target_link_libraries(azeban_unit_tests PRIVATE MPI::MPI_CXX)
 
 enable_testing()
 add_test(NAME AzebanUnitTests COMMAND unit_tests)

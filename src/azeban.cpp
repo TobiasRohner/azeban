@@ -22,8 +22,13 @@
 #include <fstream>
 #include <iomanip>
 #include <nlohmann/json.hpp>
+#include <azeban/netcdf.hpp>
 #if AZEBAN_HAS_MPI
 #include <azeban/mpi/manual_cuda_aware_communicator.hpp>
+#endif
+#if ZISA_HAS_CUDA
+#include <cuda_runtime.h>
+#include <azeban/cuda/cuda_check_error.hpp>
 #endif
 
 using namespace azeban;
@@ -78,6 +83,9 @@ int main(int argc, char *argv[]) {
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+#if ZISA_HAS_CUDA
+  cudaCheckError(cudaSetDevice(0));
 #endif
 
   int ranks_per_sample;
