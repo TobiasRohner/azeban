@@ -6,6 +6,7 @@ target_sources(azeban_generic_obj
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_sample_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_energy_spectrum_writer.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_enstrophy_spectrum_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_snapshot_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_snapshot_writer_factory.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_collective_snapshot_writer.cpp
@@ -23,6 +24,7 @@ target_sources(azeban_generic_obj
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/second_order_structure_function_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/second_order_structure_function_writer_factory.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_second_order_structure_function_writer.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/netcdf_structure_function_cube_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/third_order_structure_function_writer.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/third_order_structure_function_writer_factory.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/longitudinal_structure_function_writer.cpp
