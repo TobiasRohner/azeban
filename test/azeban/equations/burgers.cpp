@@ -34,7 +34,7 @@
 static void solveBurgers(const azeban::Grid<1> &grid,
                          const zisa::array_view<azeban::real_t, 2> &h_u,
                          azeban::real_t visc,
-                         azeban::real_t t) {
+                         double t) {
   auto d_u
       = zisa::cuda_array<azeban::real_t, 2>(zisa::shape_t<2>(1, grid.N_phys));
   auto d_u_hat = zisa::cuda_array<azeban::complex_t, 2>(
@@ -85,7 +85,7 @@ TEST_CASE("Burgers Derivative") {
   h_u[1] = 0.5 * N_phys;
 
   zisa::copy(d_dudt, h_u);
-  burgers.dudt(d_dudt, d_dudt, 0, 0);
+  burgers.dudt(d_dudt, d_dudt, 0, 0, 1);
   zisa::copy(h_dudt, d_dudt);
 
   for (zisa::int_t i = 0; i < N_fourier; ++i) {
@@ -113,7 +113,7 @@ TEST_CASE("Burgers Convergence") {
   const azeban::Grid<1> grid_max(4 * 1024);
   const zisa::int_t N_max = grid_max.N_phys;
   const azeban::real_t visc = 0;
-  const azeban::real_t t_final = 0.1; // At t=0.125 a shock develops
+  const double t_final = 0.1; // At t=0.125 a shock develops
 
   auto u_ref = zisa::array<azeban::real_t, 2>(zisa::shape_t<2>{1, N_max});
   for (zisa::int_t i = 0; i < N_max; ++i) {
@@ -152,7 +152,7 @@ TEST_CASE("Burgers Shock Speed") {
   const azeban::Grid<1> grid(1024);
   const zisa::int_t N = grid.N_phys;
   const azeban::real_t visc = 0.05 / N;
-  const azeban::real_t t_final = 0.5;
+  const double t_final = 0.5;
 
   auto u = zisa::array<azeban::real_t, 2>(zisa::shape_t<2>{1, N});
   for (zisa::int_t i = 0; i < N; ++i) {
@@ -222,9 +222,9 @@ TEST_CASE("Burgers Corrctness Shock Free") {
         };
 
   const auto solve_fd
-      = [&](const zisa::array_view<azeban::real_t, 1> u, azeban::real_t t) {
-          azeban::real_t time = 0;
-          azeban::real_t dt = cfl(u, 0.1);
+      = [&](const zisa::array_view<azeban::real_t, 1> u, double t) {
+          double time = 0;
+          double dt = cfl(u, 0.1);
           while (t - time > dt) {
             ssp_rk2(u, dt);
             time += dt;
@@ -235,7 +235,7 @@ TEST_CASE("Burgers Corrctness Shock Free") {
 
   const azeban::Grid<1> grid(1024);
   const zisa::int_t N = grid.N_phys;
-  const azeban::real_t t_final = 0.1;
+  const double t_final = 0.1;
 
   auto u_ref = zisa::array<azeban::real_t, 1>(zisa::shape_t<1>{N});
   auto u_spectral = zisa::array<azeban::real_t, 2>(zisa::shape_t<2>{1, N});

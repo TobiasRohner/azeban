@@ -16,8 +16,8 @@ make_netcdf_sample_writer(int ncid,
   if (!config.contains("snapshots")) {
     LOG_ERR("NetCDFSampleWriter config needs key \"snapshots\"");
   }
-  const std::vector<real_t> snapshots
-      = make_sequence<real_t>(config["snapshots"]);
+  const std::vector<double> snapshots
+      = make_sequence<double>(config["snapshots"]);
   zisa::int_t N = grid.N_phys;
   if (config.contains("N")) {
     N = config["N"];
@@ -47,8 +47,8 @@ make_netcdf_sample_writer(int ncid,
   if (!config.contains("snapshots")) {
     LOG_ERR("NetCDFSampleWriter config needs key \"snapshots\"");
   }
-  const std::vector<real_t> snapshots
-      = make_sequence<real_t>(config["snapshots"]);
+  const std::vector<double> snapshots
+      = make_sequence<double>(config["snapshots"]);
   zisa::int_t N = grid.N_phys;
   if (config.contains("N")) {
     N = config["N"];

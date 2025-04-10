@@ -15,43 +15,52 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef FORWARD_EULER_H_
-#define FORWARD_EULER_H_
+#ifndef EULER_MARUYAMA_H_
+#define EULER_MARUYAMA_H_
 
 #include "time_integrator.hpp"
 #include <azeban/operations/axpy.hpp>
+#include <azeban/operations/clamp.hpp>
+#include <azeban/operations/norm.hpp>
+#include <azeban/operations/scale.hpp>
 #include <azeban/profiler.hpp>
 
 namespace azeban {
 
 template <int Dim>
-class ForwardEuler final : public TimeIntegrator<Dim> {
+class EulerMaruyama final : public TimeIntegrator<Dim> {
   using super = TimeIntegrator<Dim>;
 
 public:
   static constexpr int dim_v = Dim;
 
-  ForwardEuler() = delete;
-  ForwardEuler(zisa::device_type device,
-               const zisa::shape_t<dim_v + 1> &shape,
-               const std::shared_ptr<Equation<dim_v>> &equation)
+  EulerMaruyama() = delete;
+  EulerMaruyama(zisa::device_type device,
+                const zisa::shape_t<dim_v + 1> &shape,
+                const std::shared_ptr<Equation<dim_v>> &equation)
       : super(device, equation), dudt_(shape, device) {}
-  ForwardEuler(const ForwardEuler &) = delete;
-  ForwardEuler(ForwardEuler &&) = default;
+  EulerMaruyama(const EulerMaruyama &) = delete;
+  EulerMaruyama(EulerMaruyama &&) = default;
 
-  virtual ~ForwardEuler() override = default;
+  virtual ~EulerMaruyama() override = default;
 
-  ForwardEuler &operator=(const ForwardEuler &) = delete;
-  ForwardEuler &operator=(ForwardEuler &&) = default;
+  EulerMaruyama &operator=(const EulerMaruyama &) = delete;
+  EulerMaruyama &operator=(EulerMaruyama &&) = default;
 
   virtual double
   integrate(double t,
             double max_dt,
             double C,
             const zisa::array_view<complex_t, dim_v + 1> &u) override {
-    ProfileHost profile("forward_euler::integrate");
+    ProfileHost profile("euler_maruyama::integrate");
     equation_->dudt(dudt_, u, t, max_dt, C);
     const double dt = zisa::min(equation_->dt(C), max_dt);
+    const real_t max_allowed_step = zisa::pow<2 * dim_v>(u.shape(1)) / dt;
+    const real_t current_step = norm(dudt_, 2);
+    if (current_step > max_allowed_step) {
+      scale(complex_t(max_allowed_step / current_step), dudt_.view());
+    }
+    // clamp(dudt_.view(), max_allowed_step);
     axpy(complex_t(dt), zisa::array_const_view<complex_t, dim_v + 1>(dudt_), u);
     return dt;
   }

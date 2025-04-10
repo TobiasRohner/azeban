@@ -70,13 +70,13 @@ verify_via_tracer(Visc visc, zisa::int_t N) {
       = std::make_shared<azeban::VelocityAndTracer<2>>(init_u, init_rho);
   azeban::Simulation<2> simulation(grid, 0.2, timestepper);
   initializer->initialize(simulation.u());
-  const azeban::real_t dt = 0.001 / N;
+  const double dt = 0.001 / N;
   std::get<0>(out) = dt;
   for (zisa::int_t i = 0; i < N / 2 + 1; i += 16) {
     std::get<1>(out).push_back(2 * zisa::pi * i);
     std::get<2>(out).push_back(visc.eval(zisa::sqrt(2) * 2 * zisa::pi * i));
   }
-  for (azeban::real_t t = dt; t < 0.01; t += dt) {
+  for (double t = dt; t < 0.01; t += dt) {
     simulation.simulate_until(t);
     for (zisa::int_t i = 0; i < simulation.u().shape(1); ++i) {
       for (zisa::int_t j = 0; j < simulation.u().shape(2); ++j) {

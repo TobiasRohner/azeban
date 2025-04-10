@@ -7,7 +7,7 @@ ANY_DEVICE AbsoluteLongitudinalStructureFunctionWriter<Dim>::
     AbsoluteLongitudinalStructureFunctionWriter(
         const std::string &path,
         const Grid<Dim> &grid,
-        const std::vector<real_t> &snapshot_times,
+        const std::vector<double> &snapshot_times,
         zisa::int_t sample_idx_start,
         real_t p,
         ssize_t max_h)

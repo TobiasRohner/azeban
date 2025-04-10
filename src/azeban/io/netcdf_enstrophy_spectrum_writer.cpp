@@ -8,7 +8,7 @@ template <int Dim>
 NetCDFEnstrophySpectrumWriter<Dim>::NetCDFEnstrophySpectrumWriter(
     int ncid,
     const Grid<Dim> &grid,
-    const std::vector<real_t> &snapshot_times,
+    const std::vector<double> &snapshot_times,
     int sample_idx_start)
     : super(ncid, grid, snapshot_times, sample_idx_start) {
   // Define own group
@@ -24,11 +24,11 @@ NetCDFEnstrophySpectrumWriter<Dim>::NetCDFEnstrophySpectrumWriter(
   int varid_sim_time;
   int varid_k;
   CHECK_NETCDF(
-      nc_def_var(grpid_, "time", NC_REAL, 1, &dimid_time, &varid_sim_time));
+      nc_def_var(grpid_, "time", NC_DOUBLE, 1, &dimid_time, &varid_sim_time));
   CHECK_NETCDF(nc_def_var(grpid_, "k", NC_REAL, 1, &dimid_k, &varid_k));
   const int dimids_real_time[2] = {dimid_member, dimid_time};
   CHECK_NETCDF(nc_def_var(
-      grpid_, "real_time", NC_REAL, 2, dimids_real_time, &varid_real_time_));
+      grpid_, "real_time", NC_DOUBLE, 2, dimids_real_time, &varid_real_time_));
   CHECK_NETCDF(
       nc_put_att_text(grpid_, varid_real_time_, "units", 8, "seconds"));
   const int dimids_Ek[3] = {dimid_member, dimid_time, dimid_k};
@@ -49,23 +49,23 @@ NetCDFEnstrophySpectrumWriter<Dim>::NetCDFEnstrophySpectrumWriter(
 
 template <int Dim>
 void NetCDFEnstrophySpectrumWriter<Dim>::write(
-    const zisa::array_const_view<real_t, Dim + 1> &, real_t) {
+    const zisa::array_const_view<real_t, Dim + 1> &, double) {
   // Nothing to do here
 }
 
 template <int Dim>
 void NetCDFEnstrophySpectrumWriter<Dim>::write(
-    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t) {
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, double) {
   const std::vector<real_t> spectrum = enstrophy_spectrum(grid_, u_hat);
   const size_t start[3] = {sample_idx_, snapshot_idx_, 0};
   const size_t count[3] = {1, 1, grid_.N_fourier};
   CHECK_NETCDF(nc_put_vara(grpid_, varid_ek_, start, count, spectrum.data()));
   const auto time = std::chrono::steady_clock::now();
   const auto elapsed
-      = std::chrono::duration_cast<std::chrono::duration<real_t>>(
+      = std::chrono::duration_cast<std::chrono::duration<double>>(
           time - start_time_);
   const size_t index[2] = {sample_idx_, snapshot_idx_};
-  const real_t elapsed_count = elapsed.count();
+  const double elapsed_count = elapsed.count();
   CHECK_NETCDF(nc_put_var1(grpid_, varid_real_time_, index, &elapsed_count));
   ++snapshot_idx_;
 }
@@ -74,7 +74,7 @@ void NetCDFEnstrophySpectrumWriter<Dim>::write(
 template <int Dim>
 void NetCDFEnstrophySpectrumWriter<Dim>::write(
     const zisa::array_const_view<real_t, Dim + 1> &,
-    real_t,
+    double,
     const Communicator *) {
   // Nothing to do here
 }
@@ -82,7 +82,7 @@ void NetCDFEnstrophySpectrumWriter<Dim>::write(
 template <int Dim>
 void NetCDFEnstrophySpectrumWriter<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-    real_t,
+    double,
     const Communicator *comm) {
   const std::vector<real_t> spectrum
       = enstrophy_spectrum(grid_, u_hat, comm->get_mpi_comm());
@@ -92,10 +92,10 @@ void NetCDFEnstrophySpectrumWriter<Dim>::write(
     CHECK_NETCDF(nc_put_vara(grpid_, varid_ek_, start, count, spectrum.data()));
     const auto time = std::chrono::steady_clock::now();
     const auto elapsed
-        = std::chrono::duration_cast<std::chrono::duration<real_t>>(
+        = std::chrono::duration_cast<std::chrono::duration<double>>(
             time - start_time_);
     const size_t index[2] = {sample_idx_, snapshot_idx_};
-    const real_t elapsed_count = elapsed.count();
+    const double elapsed_count = elapsed.count();
     CHECK_NETCDF(nc_put_var1(grpid_, varid_real_time_, index, &elapsed_count));
   }
   ++snapshot_idx_;

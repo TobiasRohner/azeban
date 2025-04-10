@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+#include <azeban/netcdf.hpp>
 #include <azeban/profiler.hpp>
 #include <azeban/run_from_config.hpp>
 #include <boost/program_options.hpp>
@@ -22,13 +23,12 @@
 #include <fstream>
 #include <iomanip>
 #include <nlohmann/json.hpp>
-#include <azeban/netcdf.hpp>
 #if AZEBAN_HAS_MPI
 #include <azeban/mpi/manual_cuda_aware_communicator.hpp>
 #endif
 #if ZISA_HAS_CUDA
-#include <cuda_runtime.h>
 #include <azeban/cuda/cuda_check_error.hpp>
+#include <cuda_runtime.h>
 #endif
 
 using namespace azeban;

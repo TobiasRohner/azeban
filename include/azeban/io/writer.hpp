@@ -14,7 +14,7 @@ template <int Dim>
 class Writer {
 public:
   Writer(const Grid<Dim> &grid,
-         const std::vector<real_t> &snapshot_times,
+         const std::vector<double> &snapshot_times,
          zisa::int_t sample_idx_start = 0);
   Writer(const Writer &) = default;
   Writer &operator=(const Writer &) = default;
@@ -23,26 +23,26 @@ public:
 
   virtual void reset();
   void set_snapshot_idx(zisa::int_t idx);
-  virtual real_t next_timestep() const;
-  virtual void write(const zisa::array_const_view<real_t, Dim + 1> &u, real_t t)
+  virtual double next_timestep() const;
+  virtual void write(const zisa::array_const_view<real_t, Dim + 1> &u, double t)
       = 0;
   virtual void write(const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-                     real_t t)
+                     double t)
       = 0;
 #if AZEBAN_HAS_MPI
   virtual void write(const zisa::array_const_view<real_t, Dim + 1> &u,
-                     real_t t,
+                     double t,
                      const Communicator *comm)
       = 0;
   virtual void write(const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-                     real_t t,
+                     double t,
                      const Communicator *comm)
       = 0;
 #endif
 
 protected:
   Grid<Dim> grid_;
-  std::vector<real_t> snapshot_times_;
+  std::vector<double> snapshot_times_;
   zisa::int_t sample_idx_;
   zisa::int_t snapshot_idx_;
 };

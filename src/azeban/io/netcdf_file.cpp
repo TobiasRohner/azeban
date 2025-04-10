@@ -15,7 +15,7 @@ NetCDFFile<Dim>::NetCDFFile(const std::string &path,
                             zisa::int_t sample_idx_start,
                             const std::string &config,
                             const std::string &script)
-    : super(grid, std::vector<real_t>(), sample_idx_start) {
+    : super(grid, std::vector<double>(), sample_idx_start) {
   // Open new NetCDF4 file
 #if AZEBAN_HAS_MPI
   int size;
@@ -111,8 +111,8 @@ void NetCDFFile<Dim>::reset() {
 }
 
 template <int Dim>
-real_t NetCDFFile<Dim>::next_timestep() const {
-  real_t t = writers_[0]->next_timestep();
+double NetCDFFile<Dim>::next_timestep() const {
+  double t = writers_[0]->next_timestep();
   for (size_t i = 1; i < writers_.size(); ++i) {
     t = zisa::min(t, writers_[i]->next_timestep());
   }
@@ -121,7 +121,7 @@ real_t NetCDFFile<Dim>::next_timestep() const {
 
 template <int Dim>
 void NetCDFFile<Dim>::write(const zisa::array_const_view<real_t, Dim + 1> &u,
-                            real_t t) {
+                            double t) {
   for (auto &writer : writers_) {
     if (writer->next_timestep() == t) {
       writer->write(u, t);
@@ -131,7 +131,7 @@ void NetCDFFile<Dim>::write(const zisa::array_const_view<real_t, Dim + 1> &u,
 
 template <int Dim>
 void NetCDFFile<Dim>::write(
-    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t t) {
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, double t) {
   for (auto &writer : writers_) {
     if (writer->next_timestep() == t) {
       writer->write(u_hat, t);
@@ -142,7 +142,7 @@ void NetCDFFile<Dim>::write(
 #if AZEBAN_HAS_MPI
 template <int Dim>
 void NetCDFFile<Dim>::write(const zisa::array_const_view<real_t, Dim + 1> &u,
-                            real_t t,
+                            double t,
                             const Communicator *comm) {
   for (auto &writer : writers_) {
     if (writer->next_timestep() == t) {
@@ -154,7 +154,7 @@ void NetCDFFile<Dim>::write(const zisa::array_const_view<real_t, Dim + 1> &u,
 template <int Dim>
 void NetCDFFile<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-    real_t t,
+    double t,
     const Communicator *comm) {
   for (auto &writer : writers_) {
     if (writer->next_timestep() == t) {

@@ -38,7 +38,9 @@ public:
   IncompressibleEuler_MPI_Base &operator=(IncompressibleEuler_MPI_Base &&)
       = default;
 
-  virtual real_t dt() const override { return 1. / (grid_.N_phys * u_max_); }
+  virtual double dt(double C) const override {
+    return C / (grid_.N_phys * u_max_);
+  }
 
   virtual int n_vars() const override { return dim_v + (has_tracer_ ? 1 : 0); }
 
@@ -144,11 +146,12 @@ public:
 
   virtual void dudt(const zisa::array_view<complex_t, 3> &dudt_hat,
                     const zisa::array_const_view<complex_t, 3> &u_hat,
-                    real_t t,
-                    real_t dt) override {
+                    double t,
+                    double dt,
+                    double C) override {
     ProfileHost profile("IncompressibleEuler_MPI::dudt");
     computeBhat(u_hat);
-    computeDudt(dudt_hat, u_hat, t, dt);
+    computeDudt(dudt_hat, u_hat, t, std::min(dt, this->dt(C)));
   }
 
   using super::n_vars;
@@ -167,8 +170,8 @@ private:
 
   void computeDudt(const zisa::array_view<complex_t, 3> &dudt_hat,
                    const zisa::array_const_view<complex_t, 3> &u_hat,
-                   real_t t,
-                   real_t dt) {
+                   double t,
+                   double dt) {
     ProfileHost profile("IncompressibleEuler_MPI::computeDudt");
     forcing_.pre(t, dt);
     if (device_ == zisa::device_type::cpu) {
@@ -186,8 +189,8 @@ private:
 
   void computeDudt_cpu(const zisa::array_view<complex_t, 3> &dudt_hat,
                        const zisa::array_const_view<complex_t, 3> &u_hat,
-                       real_t t,
-                       real_t dt) {
+                       double t,
+                       double dt) {
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const auto shape_phys = grid_.shape_phys(1);
@@ -241,8 +244,8 @@ private:
 #if ZISA_HAS_CUDA
   void computeDudt_cuda(const zisa::array_view<complex_t, 3> &dudt_hat,
                         const zisa::array_const_view<complex_t, 3> &u_hat,
-                        real_t t,
-                        real_t dt) {
+                        double t,
+                        double dt) {
     ProfileHost profile("IncompressibleEuler_MPI::computeDudt");
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
@@ -307,11 +310,12 @@ public:
 
   virtual void dudt(const zisa::array_view<complex_t, 4> &dudt_hat,
                     const zisa::array_const_view<complex_t, 4> &u_hat,
-                    real_t t,
-                    real_t dt) override {
+                    double t,
+                    double dt,
+                    double C) override {
     ProfileHost profile("IncompressibleEuler_MPI::dudt");
     computeBhat(u_hat);
-    computeDudt(dudt_hat, u_hat, t, dt);
+    computeDudt(dudt_hat, u_hat, t, std::min(dt, this->dt(C)));
   }
 
   using super::n_vars;
@@ -330,8 +334,8 @@ private:
 
   void computeDudt(const zisa::array_view<complex_t, 4> &dudt_hat,
                    const zisa::array_const_view<complex_t, 4> &u_hat,
-                   real_t t,
-                   real_t dt) {
+                   double t,
+                   double dt) {
     ProfileHost profile("IncompressibleEuler_MPI::computeDudt");
     forcing_.pre(t, dt);
     if (device_ == zisa::device_type::cpu) {
@@ -349,8 +353,8 @@ private:
 
   void computeDudt_cpu(const zisa::array_view<complex_t, 4> &dudt_hat,
                        const zisa::array_const_view<complex_t, 4> &u_hat,
-                       real_t t,
-                       real_t dt) {
+                       double t,
+                       double dt) {
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const zisa::int_t k_base = grid_.k_fourier(0, comm_);
@@ -425,8 +429,8 @@ private:
 #if ZISA_HAS_CUDA
   void computeDudt_cuda(const zisa::array_view<complex_t, 4> &dudt_hat,
                         const zisa::array_const_view<complex_t, 4> &u_hat,
-                        real_t t,
-                        real_t dt) {
+                        double t,
+                        double dt) {
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
     const zisa::int_t k_base = grid_.k_fourier(0, comm_);

@@ -19,8 +19,8 @@ make_netcdf_snapshot_writer(const nlohmann::json &config,
   }
 
   const std::string path = config["path"];
-  const std::vector<real_t> snapshots
-      = make_sequence<real_t>(config["snapshots"]);
+  const std::vector<double> snapshots
+      = make_sequence<double>(config["snapshots"]);
   bool store_u_hat = false;
   if (config.contains("fourier")) {
     store_u_hat = config["fourier"];

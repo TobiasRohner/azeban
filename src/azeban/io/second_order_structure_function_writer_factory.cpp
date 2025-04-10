@@ -23,8 +23,8 @@ make_second_order_structure_function_writer_type(const nlohmann::json &config,
   }
 
   const std::string path = config["path"];
-  const std::vector<real_t> snapshots
-      = make_sequence<real_t>(config["snapshots"]);
+  const std::vector<double> snapshots
+      = make_sequence<double>(config["snapshots"]);
 
   return std::make_unique<WRITER>(path, grid, snapshots, sample_idx_start);
 }
@@ -69,8 +69,8 @@ make_second_order_structure_function_writer_type(const nlohmann::json &config,
   }
 
   const std::string path = config["path"];
-  const std::vector<real_t> snapshots
-      = make_sequence<real_t>(config["snapshots"]);
+  const std::vector<double> snapshots
+      = make_sequence<double>(config["snapshots"]);
 
   return std::make_unique<WRITER>(
       path, grid, snapshots, sample_idx_start, comm);

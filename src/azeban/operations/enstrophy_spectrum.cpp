@@ -15,7 +15,7 @@ struct EnstrophySpectrumOperator {
     const complex_t curl_z
         = 2 * zisa::pi * (complex_t(0, k1) * v - complex_t(0, k2) * u);
     const real_t norm = 1. / zisa::pow<2>(grid.N_phys);
-    return abs2(norm * curl_z);
+    return 0.5 * abs2(norm * curl_z);
   }
 
   static real_t eval(const Grid<3> &grid,
@@ -32,7 +32,8 @@ struct EnstrophySpectrumOperator {
     const complex_t curl_z
         = 2 * zisa::pi * (complex_t(0, k1) * v - complex_t(0, k2) * u);
     const real_t norm = 1. / zisa::pow<3>(grid.N_phys);
-    return abs2(norm * curl_x) + abs2(norm * curl_y) + abs2(norm * curl_z);
+    return 0.5
+           * (abs2(norm * curl_x) + abs2(norm * curl_y) + abs2(norm * curl_z));
   }
 };
 
@@ -63,7 +64,7 @@ struct EnstrophySpectrumOperatorMPI {
     const complex_t curl_z
         = 2 * zisa::pi * (complex_t(0, k2) * v - complex_t(0, k1) * u);
     const real_t norm = 1. / zisa::pow<2>(grid.N_phys);
-    return abs2(norm * curl_z);
+    return 0.5 * abs2(norm * curl_z);
   }
 
   static real_t eval(const Grid<3> &grid,
@@ -80,7 +81,8 @@ struct EnstrophySpectrumOperatorMPI {
     const complex_t curl_z
         = 2 * zisa::pi * (complex_t(0, k3) * v - complex_t(0, k2) * u);
     const real_t norm = 1. / zisa::pow<3>(grid.N_phys);
-    return abs2(norm * curl_x) + abs2(norm * curl_y) + abs2(norm * curl_z);
+    return 0.5
+           * (abs2(norm * curl_x) + abs2(norm * curl_y) + abs2(norm * curl_z));
   }
 };
 

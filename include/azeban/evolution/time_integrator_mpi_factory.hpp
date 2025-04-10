@@ -19,6 +19,7 @@
 #define TIMESTEP_INTEGRATOR_MPI_FACTORY_H_
 
 #include <azeban/equations/equation.hpp>
+#include <azeban/evolution/euler_maruyama.hpp>
 #include <azeban/evolution/forward_euler.hpp>
 #include <azeban/evolution/ssp_rk2.hpp>
 #include <azeban/evolution/ssp_rk3.hpp>
@@ -52,6 +53,9 @@ make_timestepper_mpi(const nlohmann::json &config,
         device, grid.shape_fourier(equation->n_vars(), comm), equation);
   } else if (type == "SSP RK3") {
     return std::make_shared<SSP_RK3<Dim>>(
+        device, grid.shape_fourier(equation->n_vars(), comm), equation);
+  } else if (type == "Euler Maruyama") {
+    return std::make_shared<EulerMaruyama<Dim>>(
         device, grid.shape_fourier(equation->n_vars(), comm), equation);
   } else {
     fmt::print(stderr, "Unknown time integrator: \"{}\"\n", type);

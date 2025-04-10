@@ -8,7 +8,7 @@
 
 #define CHECK_NETCDF(...)                                                      \
   if (int status = (__VA_ARGS__); status != NC_NOERR) {                        \
-    fmt::print("NetCDF Error {}: {}\n", status, nc_strerror(status));                                   \
+    fmt::print("NetCDF Error {}: {}\n", status, nc_strerror(status));          \
     exit(status);                                                              \
   }
 

@@ -10,14 +10,14 @@ NetCDFSnapshotWriter<Dim>::NetCDFSnapshotWriter(
     const std::string &path,
     bool store_u_hat,
     const Grid<Dim> &grid,
-    const std::vector<real_t> &snapshot_times,
+    const std::vector<double> &snapshot_times,
     zisa::int_t sample_idx_start,
     void *work_area)
     : super(grid, snapshot_times, sample_idx_start),
       path_(path),
       store_u_hat_(store_u_hat),
       work_area_(work_area) {
-	std::experimental::filesystem::path sample_folder = path_;
+  std::experimental::filesystem::path sample_folder = path_;
   if (!std::experimental::filesystem::exists(sample_folder)) {
     std::experimental::filesystem::create_directories(sample_folder);
   }
@@ -25,7 +25,7 @@ NetCDFSnapshotWriter<Dim>::NetCDFSnapshotWriter(
 
 template <int Dim>
 void NetCDFSnapshotWriter<Dim>::write(
-    const zisa::array_const_view<real_t, Dim + 1> &u, real_t t) {
+    const zisa::array_const_view<real_t, Dim + 1> &u, double t) {
   if (!store_u_hat_) {
     ProfileHost pofile("NetCDFSnapshotWriter::write");
     LOG_ERR_IF(u.memory_location() != zisa::device_type::cpu,
@@ -66,7 +66,7 @@ void NetCDFSnapshotWriter<Dim>::write(
 
 template <int Dim>
 void NetCDFSnapshotWriter<Dim>::write(
-    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t t) {
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, double t) {
   if (store_u_hat_) {
     ProfileHost pofile("NetCDFSnapshotWriter::write");
     LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cpu,
@@ -136,7 +136,7 @@ void NetCDFSnapshotWriter<Dim>::write(
 template <int Dim>
 void NetCDFSnapshotWriter<Dim>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u,
-    real_t t,
+    double t,
     const Communicator *comm) {
   if (!store_u_hat_) {
     ProfileHost profile("SnapshotWriter::write");
@@ -220,7 +220,7 @@ void NetCDFSnapshotWriter<Dim>::write(
 template <int Dim>
 void NetCDFSnapshotWriter<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &,
-    real_t,
+    double,
     const Communicator *) {
   if (store_u_hat_) {
     LOG_ERR("Not yet implemented");
@@ -238,7 +238,7 @@ NetCDFSnapshotWriter<Dim>::make_writer(zisa::int_t N, zisa::int_t n_vars) {
   std::vector<nc_var_t> vars;
   dims.emplace_back("t", 1);
   std::vector<std::string> tdim(1, "t");
-  vars.emplace_back("t", tdim, zisa::erase_data_type<real_t>());
+  vars.emplace_back("t", tdim, zisa::erase_data_type<double>());
   dims.emplace_back("N", N);
   if (store_u_hat_) {
     dims.emplace_back("Nf", N / 2 + 1);

@@ -41,7 +41,7 @@ template <int dim_v>
 static azeban::real_t measureConvergence(
     const std::shared_ptr<azeban::Initializer<dim_v>> &initializer,
     zisa::int_t N_ref,
-    azeban::real_t t) {
+    double t) {
   const auto solve_euler
       = [&](const zisa::array_view<azeban::real_t, dim_v + 1> &u,
             const azeban::Grid<dim_v> &grid,

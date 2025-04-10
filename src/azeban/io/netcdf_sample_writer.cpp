@@ -11,7 +11,7 @@ NetCDFSampleWriter<Dim>::NetCDFSampleWriter(
     int ncid,
     const Grid<Dim> &grid,
     zisa::int_t N,
-    const std::vector<real_t> &snapshot_times,
+    const std::vector<double> &snapshot_times,
     bool has_tracer,
     bool store_mean_var,
     zisa::int_t sample_idx_start)
@@ -38,7 +38,7 @@ NetCDFSampleWriter<Dim>::NetCDFSampleWriter(
     int ncid,
     const Grid<Dim> &grid,
     zisa::int_t N,
-    const std::vector<real_t> &snapshot_times,
+    const std::vector<double> &snapshot_times,
     bool has_tracer,
     bool store_mean_var,
     zisa::int_t sample_idx_start,
@@ -117,7 +117,7 @@ NetCDFSampleWriter<Dim>::~NetCDFSampleWriter() {
 
 template <int Dim>
 void NetCDFSampleWriter<Dim>::write(
-    const zisa::array_const_view<real_t, Dim + 1> &u, real_t) {
+    const zisa::array_const_view<real_t, Dim + 1> &u, double) {
   // Store the flow field
   if (N_ == grid_.N_phys) {
     store_u(u);
@@ -129,17 +129,17 @@ void NetCDFSampleWriter<Dim>::write(
   // Store the current time
   const auto time = std::chrono::steady_clock::now();
   const auto elapsed
-      = std::chrono::duration_cast<std::chrono::duration<real_t>>(
+      = std::chrono::duration_cast<std::chrono::duration<double>>(
           time - start_time_);
   const size_t index[2] = {sample_idx_, snapshot_idx_};
-  const real_t elapsed_count = elapsed.count();
+  const double elapsed_count = elapsed.count();
   CHECK_NETCDF(nc_put_var1(grpid_, varid_real_time_, index, &elapsed_count));
   ++snapshot_idx_;
 }
 
 template <int Dim>
 void NetCDFSampleWriter<Dim>::write(
-    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t) {
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, double) {
   // Store the downsampled flow field
   if (N_ < grid_.N_phys) {
     zisa::shape_t<Dim> slice_shape;
@@ -173,7 +173,7 @@ void NetCDFSampleWriter<Dim>::write(
 template <int Dim>
 void NetCDFSampleWriter<Dim>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u,
-    real_t t,
+    double t,
     const Communicator *comm) {
   const int rank = comm->rank();
   const int size = comm->size();
@@ -223,7 +223,7 @@ void NetCDFSampleWriter<Dim>::write(
 template <int Dim>
 void NetCDFSampleWriter<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-    real_t t,
+    double t,
     const Communicator *comm) {
   if constexpr (Dim > 1) {
     const int rank = comm->rank();
@@ -323,7 +323,7 @@ void NetCDFSampleWriter<Dim>::init_file_structure() {
   int varid_sim_time;
   int varids_xyz[3];
   CHECK_NETCDF(
-      nc_def_var(grpid_, "time", NC_REAL, 1, &dimid_time, &varid_sim_time));
+      nc_def_var(grpid_, "time", NC_DOUBLE, 1, &dimid_time, &varid_sim_time));
   if (N_ != grid_.N_phys) {
     CHECK_NETCDF(nc_def_var(grpid_, "x", NC_REAL, 1, dimid_dims, varids_xyz));
     if constexpr (Dim > 1) {
@@ -337,7 +337,7 @@ void NetCDFSampleWriter<Dim>::init_file_structure() {
   }
   const int dimids_real_time[2] = {dimid_member, dimid_time};
   CHECK_NETCDF(nc_def_var(
-      grpid_, "real_time", NC_REAL, 2, dimids_real_time, &varid_real_time_));
+      grpid_, "real_time", NC_DOUBLE, 2, dimids_real_time, &varid_real_time_));
   CHECK_NETCDF(
       nc_put_att_text(grpid_, varid_real_time_, "units", 8, "seconds"));
   const int dimids_fields[5]

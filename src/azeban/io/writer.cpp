@@ -5,7 +5,7 @@ namespace azeban {
 
 template <int Dim>
 Writer<Dim>::Writer(const Grid<Dim> &grid,
-                    const std::vector<real_t> &snapshot_times,
+                    const std::vector<double> &snapshot_times,
                     zisa::int_t sample_idx_start)
     : grid_(grid),
       snapshot_times_(snapshot_times),
@@ -24,9 +24,9 @@ void Writer<Dim>::set_snapshot_idx(zisa::int_t idx) {
 }
 
 template <int Dim>
-real_t Writer<Dim>::next_timestep() const {
+double Writer<Dim>::next_timestep() const {
   if (snapshot_idx_ >= snapshot_times_.size()) {
-    return std::numeric_limits<real_t>::infinity();
+    return std::numeric_limits<double>::infinity();
   }
   return snapshot_times_[snapshot_idx_];
 }

@@ -61,8 +61,9 @@ public:
 
   virtual void dudt(const zisa::array_view<complex_t, dim_v + 1> &dudt_hat,
                     const zisa::array_const_view<complex_t, dim_v + 1> &u_hat,
-                    real_t,
-                    real_t) override {
+                    double,
+                    double,
+                    double) override {
     ProfileHost profile("IncompressibleEulerNaive::dudt");
     for (int i = 0; i < dim_v; ++i) {
       copy_to_padded(component(u_hat_, i), component(u_hat, i));
@@ -173,8 +174,8 @@ public:
     }
   }
 
-  virtual real_t dt() const override {
-    return zisa::pow<Dim - 1>(grid_.N_phys) / u_max_;
+  virtual double dt(double C) const override {
+    return C * zisa::pow<Dim - 1>(grid_.N_phys) / u_max_;
   }
 
   virtual int n_vars() const override { return dim_v; }

@@ -24,8 +24,8 @@ make_netcdf_collective_snapshot_writer(const nlohmann::json &config,
   }
 
   const std::string path = config["path"];
-  const std::vector<real_t> snapshots
-      = make_sequence<real_t>(config["snapshots"]);
+  const std::vector<double> snapshots
+      = make_sequence<double>(config["snapshots"]);
   bool save_pressure = false;
   if (config.contains("save_pressure")) {
     save_pressure = config["save_pressure"];

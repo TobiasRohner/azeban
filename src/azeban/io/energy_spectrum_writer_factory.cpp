@@ -18,8 +18,8 @@ make_energy_spectrum_writer(const nlohmann::json &config,
   }
 
   const std::string path = config["path"];
-  const std::vector<real_t> snapshots
-      = make_sequence<real_t>(config["snapshots"]);
+  const std::vector<double> snapshots
+      = make_sequence<double>(config["snapshots"]);
 
   return std::make_unique<EnergySpectrumWriter<Dim>>(
       path, grid, snapshots, sample_idx_start);
@@ -42,8 +42,8 @@ make_energy_spectrum_writer(const nlohmann::json &config,
   }
 
   const std::string path = config["path"];
-  const std::vector<real_t> snapshots
-      = make_sequence<real_t>(config["snapshots"]);
+  const std::vector<double> snapshots
+      = make_sequence<double>(config["snapshots"]);
 
   return std::make_unique<EnergySpectrumWriter<Dim>>(
       path, grid, snapshots, sample_idx_start, comm);

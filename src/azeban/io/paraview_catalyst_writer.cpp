@@ -32,7 +32,7 @@ ParaviewCatalystWriter<Dim>::ParaviewCatalystWriter(
 
 template <int Dim>
 void ParaviewCatalystWriter<Dim>::write(
-    const zisa::array_const_view<real_t, Dim + 1> &u, real_t t) {
+    const zisa::array_const_view<real_t, Dim + 1> &u, double t) {
   ProfileHost pofile("ParaviewCatalystWriter::write");
 
   conduit_cpp::Node exec_params;
@@ -90,7 +90,7 @@ void ParaviewCatalystWriter<Dim>::write(
 
 template <int Dim>
 void ParaviewCatalystWriter<Dim>::write(
-    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t t) {
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, double t) {
   ZISA_UNUSED(u_hat);
   ZISA_UNUSED(t);
 }
@@ -98,7 +98,7 @@ void ParaviewCatalystWriter<Dim>::write(
 template <int Dim>
 void ParaviewCatalystWriter<Dim>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u,
-    real_t t,
+    double t,
     const Communicator *comm) {
   ProfileHost pofile("ParaviewCatalystWriter::write");
 
@@ -159,7 +159,7 @@ void ParaviewCatalystWriter<Dim>::write(
 template <int Dim>
 void ParaviewCatalystWriter<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-    real_t t,
+    double t,
     const Communicator *comm) {
   ZISA_UNUSED(u_hat);
   ZISA_UNUSED(t);

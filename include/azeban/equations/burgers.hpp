@@ -55,8 +55,9 @@ public:
 
   virtual void dudt(const zisa::array_view<scalar_t, dim_v + 1> &dudt_hat,
                     const zisa::array_const_view<scalar_t, dim_v + 1> &u_hat,
-                    real_t,
-                    real_t) override {
+                    double,
+                    double,
+                    double) override {
     copy_to_padded(
         zisa::array_view<complex_t, 1>(
             zisa::shape_t<1>(u_hat_.shape(1)), u_hat_.raw(), u_hat_.device()),
@@ -88,7 +89,7 @@ public:
     }
   }
 
-  virtual real_t dt() const override { return 1. / u_max_; }
+  virtual double dt(double C) const override { return C / u_max_; }
 
   virtual int n_vars() const override { return 1; }
 

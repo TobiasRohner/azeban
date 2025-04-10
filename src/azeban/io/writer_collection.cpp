@@ -4,7 +4,7 @@ namespace azeban {
 
 template <int Dim>
 WriterCollection<Dim>::WriterCollection(const Grid<Dim> &grid)
-    : super(grid, std::vector<real_t>()) {}
+    : super(grid, std::vector<double>()) {}
 
 template <int Dim>
 void WriterCollection<Dim>::add_writer(std::unique_ptr<Writer<Dim>> &&writer) {
@@ -19,8 +19,8 @@ void WriterCollection<Dim>::reset() {
 }
 
 template <int Dim>
-real_t WriterCollection<Dim>::next_timestep() const {
-  real_t t = writers_[0]->next_timestep();
+double WriterCollection<Dim>::next_timestep() const {
+  double t = writers_[0]->next_timestep();
   for (size_t i = 1; i < writers_.size(); ++i) {
     t = zisa::min(t, writers_[i]->next_timestep());
   }
@@ -29,7 +29,7 @@ real_t WriterCollection<Dim>::next_timestep() const {
 
 template <int Dim>
 void WriterCollection<Dim>::write(
-    const zisa::array_const_view<real_t, Dim + 1> &u, real_t t) {
+    const zisa::array_const_view<real_t, Dim + 1> &u, double t) {
   for (auto &writer : writers_) {
     if (writer->next_timestep() == t) {
       writer->write(u, t);
@@ -39,7 +39,7 @@ void WriterCollection<Dim>::write(
 
 template <int Dim>
 void WriterCollection<Dim>::write(
-    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t t) {
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, double t) {
   for (auto &writer : writers_) {
     if (writer->next_timestep() == t) {
       writer->write(u_hat, t);
@@ -51,7 +51,7 @@ void WriterCollection<Dim>::write(
 template <int Dim>
 void WriterCollection<Dim>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u,
-    real_t t,
+    double t,
     const Communicator *comm) {
   for (auto &writer : writers_) {
     if (writer->next_timestep() == t) {
@@ -63,7 +63,7 @@ void WriterCollection<Dim>::write(
 template <int Dim>
 void WriterCollection<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-    real_t t,
+    double t,
     const Communicator *comm) {
   for (auto &writer : writers_) {
     if (writer->next_timestep() == t) {

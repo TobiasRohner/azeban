@@ -14,7 +14,7 @@ template <int Dim, typename SF>
 SecondOrderStructureFunctionWriter<Dim, SF>::SecondOrderStructureFunctionWriter(
     const std::string &path,
     const Grid<Dim> &grid,
-    const std::vector<real_t> &snapshot_times,
+    const std::vector<double> &snapshot_times,
     zisa::int_t sample_idx_start)
     : super(grid, snapshot_times, sample_idx_start), path_(path) {
 #if AZEBAN_HAS_MPI
@@ -27,7 +27,7 @@ template <int Dim, typename SF>
 SecondOrderStructureFunctionWriter<Dim, SF>::SecondOrderStructureFunctionWriter(
     const std::string &path,
     const Grid<Dim> &grid,
-    const std::vector<real_t> &snapshot_times,
+    const std::vector<double> &snapshot_times,
     zisa::int_t sample_idx_start,
     const Communicator *comm)
     : super(grid, snapshot_times, sample_idx_start), path_(path) {
@@ -41,14 +41,14 @@ SecondOrderStructureFunctionWriter<Dim, SF>::SecondOrderStructureFunctionWriter(
 
 template <int Dim, typename SF>
 void SecondOrderStructureFunctionWriter<Dim, SF>::write(
-    const zisa::array_const_view<real_t, Dim + 1> &u, real_t t) {
+    const zisa::array_const_view<real_t, Dim + 1> &u, double t) {
   ZISA_UNUSED(u);
   ZISA_UNUSED(t);
 }
 
 template <int Dim, typename SF>
 void SecondOrderStructureFunctionWriter<Dim, SF>::write(
-    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t t) {
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, double t) {
   ProfileHost pofile("SecondOrderStructureFunctionWriter::write");
   ZISA_UNUSED(t);
   const std::vector<real_t> S = SF::eval(grid_, u_hat);
@@ -65,7 +65,7 @@ void SecondOrderStructureFunctionWriter<Dim, SF>::write(
 template <int Dim, typename SF>
 void SecondOrderStructureFunctionWriter<Dim, SF>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u,
-    real_t t,
+    double t,
     const Communicator *comm) {
   ZISA_UNUSED(u);
   ZISA_UNUSED(t);
@@ -75,7 +75,7 @@ void SecondOrderStructureFunctionWriter<Dim, SF>::write(
 template <int Dim, typename SF>
 void SecondOrderStructureFunctionWriter<Dim, SF>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-    real_t t,
+    double t,
     const Communicator *comm) {
   ProfileHost pofile("SecondOrderStructureFunctionWriter::write");
   ZISA_UNUSED(t);

@@ -16,7 +16,7 @@ class NetCDFCollectiveSnapshotWriter : public Writer<Dim> {
 public:
   NetCDFCollectiveSnapshotWriter(const std::string &path,
                                  const Grid<Dim> &grid,
-                                 const std::vector<real_t> &snapshot_times,
+                                 const std::vector<double> &snapshot_times,
                                  bool has_tracer,
                                  zisa::int_t num_samples,
                                  zisa::int_t sample_idx_start,
@@ -37,15 +37,15 @@ public:
   using super::next_timestep;
   using super::reset;
   virtual void write(const zisa::array_const_view<real_t, Dim + 1> &u,
-                     real_t t) override;
+                     double t) override;
   virtual void write(const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-                     real_t t) override;
+                     double t) override;
 #if AZEBAN_HAS_MPI
   virtual void write(const zisa::array_const_view<real_t, Dim + 1> &u,
-                     real_t t,
+                     double t,
                      const Communicator *comm) override;
   virtual void write(const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-                     real_t t,
+                     double t,
                      const Communicator *comm) override;
 #endif
 
@@ -75,7 +75,7 @@ private:
   void *work_area_;
 
   void setup_file(const Grid<Dim> &grid,
-                  const std::vector<real_t> &snapshot_times,
+                  const std::vector<double> &snapshot_times,
                   bool has_tracer,
                   bool save_pressure,
                   zisa::int_t num_samples);

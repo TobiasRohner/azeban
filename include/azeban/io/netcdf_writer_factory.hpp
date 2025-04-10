@@ -31,9 +31,11 @@ make_netcdf_writer(int ncid,
     return make_netcdf_enstrophy_spectrum_writer(
         ncid, config, grid, sample_idx_start);
   } else if (name == "Second Order Structure Function") {
-    return make_netcdf_second_order_structure_function_writer(ncid, config, grid, sample_idx_start);
+    return make_netcdf_second_order_structure_function_writer(
+        ncid, config, grid, sample_idx_start);
   } else if (name == "Structure Function Cube") {
-    return make_netcdf_structure_function_cube_writer(ncid, config, grid, sample_idx_start);
+    return make_netcdf_structure_function_cube_writer(
+        ncid, config, grid, sample_idx_start);
   } else {
     LOG_ERR("Unknown NetCDF Writer type");
   }
@@ -62,7 +64,8 @@ make_netcdf_writer(int ncid,
     return make_netcdf_enstrophy_spectrum_writer(
         ncid, config, grid, sample_idx_start);
   } else if (name == "Second Order Structure Function") {
-    return make_netcdf_second_order_structure_function_writer(ncid, config, grid, sample_idx_start);
+    return make_netcdf_second_order_structure_function_writer(
+        ncid, config, grid, sample_idx_start);
   } else {
     LOG_ERR("Unknown NetCDF Writer type");
   }

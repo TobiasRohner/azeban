@@ -39,11 +39,12 @@ public:
   // Replaces the contents of u with its time derivative
   virtual void dudt(const zisa::array_view<complex_t, dim_v + 1> &dudt,
                     const zisa::array_const_view<complex_t, dim_v + 1> &u,
-                    real_t t,
-                    real_t dt)
+                    double t,
+                    double dt,
+                    double C)
       = 0;
 
-  virtual real_t dt() const = 0;
+  virtual double dt(double C) const = 0;
 
   virtual int n_vars() const = 0;
   virtual real_t visc() const { return 0; }

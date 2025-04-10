@@ -13,7 +13,7 @@ template <int Dim>
 NetCDFCollectiveSnapshotWriter<Dim>::NetCDFCollectiveSnapshotWriter(
     const std::string &path,
     const Grid<Dim> &grid,
-    const std::vector<real_t> &snapshot_times,
+    const std::vector<double> &snapshot_times,
     bool has_tracer,
     zisa::int_t num_samples,
     zisa::int_t sample_idx_start,
@@ -64,7 +64,7 @@ NetCDFCollectiveSnapshotWriter<Dim>::~NetCDFCollectiveSnapshotWriter() {
 
 template <int Dim>
 void NetCDFCollectiveSnapshotWriter<Dim>::write(
-    const zisa::array_const_view<real_t, Dim + 1> &u, real_t) {
+    const zisa::array_const_view<real_t, Dim + 1> &u, double) {
   ProfileHost pofile("NetCDFCollectiveSnapshotWriter::write");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cpu,
              "u must be on the host");
@@ -110,13 +110,13 @@ void NetCDFCollectiveSnapshotWriter<Dim>::write(
 
 template <int Dim>
 void NetCDFCollectiveSnapshotWriter<Dim>::write(
-    const zisa::array_const_view<complex_t, Dim + 1> &, real_t) {}
+    const zisa::array_const_view<complex_t, Dim + 1> &, double) {}
 
 #if AZEBAN_HAS_MPI
 template <int Dim>
 void NetCDFCollectiveSnapshotWriter<Dim>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u,
-    real_t,
+    double,
     const Communicator *comm) {
   ProfileHost pofile("NetCDFCollectiveSnapshotWriter::write");
   LOG_ERR_IF(u.memory_location() != zisa::device_type::cpu,
@@ -198,14 +198,14 @@ void NetCDFCollectiveSnapshotWriter<Dim>::write(
 template <int Dim>
 void NetCDFCollectiveSnapshotWriter<Dim>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &,
-    real_t,
+    double,
     const Communicator *) {}
 #endif
 
 template <int Dim>
 void NetCDFCollectiveSnapshotWriter<Dim>::setup_file(
     const Grid<Dim> &grid,
-    const std::vector<real_t> &snapshot_times,
+    const std::vector<double> &snapshot_times,
     bool has_tracer,
     bool save_pressure,
     zisa::int_t num_samples) {
@@ -221,7 +221,7 @@ void NetCDFCollectiveSnapshotWriter<Dim>::setup_file(
   CHECK_NETCDF(
       nc_def_var(ncid_, "member", NC_INT, 1, &dimids_[0], &varid_member));
   CHECK_NETCDF(nc_def_var(
-      ncid_, "time", netcdf_type(real_t{}), 1, &dimids_[1], &varid_time));
+      ncid_, "time", netcdf_type(double{}), 1, &dimids_[1], &varid_time));
   CHECK_NETCDF(
       nc_def_var(ncid_, "x", netcdf_type(real_t{}), 1, &dimids_[2], &varid_x));
   CHECK_NETCDF(

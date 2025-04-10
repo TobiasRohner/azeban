@@ -137,8 +137,9 @@ public:
 
   virtual void dudt(const zisa::array_view<complex_t, 3> &dudt_hat,
                     const zisa::array_const_view<complex_t, 3> &u_hat,
-                    real_t t,
-                    real_t dt) override {
+                    double t,
+                    double dt,
+                    double C) override {
     LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cpu,
                "Euler MPI needs CPU arrays");
     LOG_ERR_IF(u_hat.shape(0) != h_u_hat_pad_.shape(0),
@@ -162,11 +163,11 @@ public:
     fft_B_->forward();
     zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
     unpad_B_hat();
-    computeDudt(dudt_hat, u_hat, t, dt);
+    computeDudt(dudt_hat, u_hat, t, std::min(dt, this->dt(C)));
   }
 
-  virtual real_t dt() const override {
-    return zisa::pow<1>(grid_.N_phys) / u_max_;
+  virtual double dt(double C) const override {
+    return C * zisa::pow<1>(grid_.N_phys) / u_max_;
   }
 
   using super::n_vars;
@@ -197,8 +198,8 @@ private:
 
   void computeDudt(const zisa::array_view<complex_t, 3> &dudt_hat,
                    const zisa::array_const_view<complex_t, 3> &u_hat,
-                   real_t t,
-                   real_t dt) {
+                   double t,
+                   double dt) {
     ProfileHost profile("IncompressibleEuler_MPI_Naive::computeDudt");
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);
@@ -288,8 +289,9 @@ public:
 
   virtual void dudt(const zisa::array_view<complex_t, 4> &dudt_hat,
                     const zisa::array_const_view<complex_t, 4> &u_hat,
-                    real_t t,
-                    real_t dt) override {
+                    double t,
+                    double dt,
+                    double C) override {
     LOG_ERR_IF(u_hat.memory_location() != zisa::device_type::cpu,
                "Euler MPI needs CPU arrays");
     LOG_ERR_IF(u_hat.shape(0) != h_u_hat_pad_.shape(0),
@@ -313,11 +315,11 @@ public:
     fft_B_->forward();
     zisa::copy(h_B_hat_pad_, d_B_hat_pad_);
     unpad_B_hat();
-    computeDudt(dudt_hat, u_hat, t, dt);
+    computeDudt(dudt_hat, u_hat, t, std::min(dt, this->dt(C)));
   }
 
-  virtual real_t dt() const override {
-    return zisa::pow<2>(grid_.N_phys) / u_max_;
+  virtual double dt(double C) const override {
+    return C * zisa::pow<2>(grid_.N_phys) / u_max_;
   }
 
   using super::n_vars;
@@ -348,8 +350,8 @@ private:
 
   void computeDudt(const zisa::array_view<complex_t, 4> &dudt_hat,
                    const zisa::array_const_view<complex_t, 4> &u_hat,
-                   real_t t,
-                   real_t dt) {
+                   double t,
+                   double dt) {
     ProfileHost profile("IncompressibleEuler_MPI_Naive::computeDudt");
     const zisa::int_t i_base = grid_.i_fourier(0, comm_);
     const zisa::int_t j_base = grid_.j_fourier(0, comm_);

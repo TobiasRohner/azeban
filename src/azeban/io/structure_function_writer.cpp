@@ -14,7 +14,7 @@ template <int Dim, typename Function>
 StructureFunctionWriter<Dim, Function>::StructureFunctionWriter(
     const std::string &path,
     const Grid<Dim> &grid,
-    const std::vector<real_t> &snapshot_times,
+    const std::vector<double> &snapshot_times,
     zisa::int_t sample_idx_start,
     const std::string &name,
     const Function &func,
@@ -27,7 +27,7 @@ StructureFunctionWriter<Dim, Function>::StructureFunctionWriter(
 
 template <int Dim, typename Function>
 void StructureFunctionWriter<Dim, Function>::write(
-    const zisa::array_const_view<real_t, Dim + 1> &u, real_t t) {
+    const zisa::array_const_view<real_t, Dim + 1> &u, double t) {
   ProfileHost pofile("StructureFunctionWriter::write");
   ZISA_UNUSED(t);
   const std::vector<real_t> S = structure_function<Dim>(u, max_h_, func_);
@@ -43,7 +43,7 @@ void StructureFunctionWriter<Dim, Function>::write(
 
 template <int Dim, typename Function>
 void StructureFunctionWriter<Dim, Function>::write(
-    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, real_t t) {
+    const zisa::array_const_view<complex_t, Dim + 1> &u_hat, double t) {
   ZISA_UNUSED(u_hat);
   ZISA_UNUSED(t);
 }
@@ -52,7 +52,7 @@ void StructureFunctionWriter<Dim, Function>::write(
 template <int Dim, typename Function>
 void StructureFunctionWriter<Dim, Function>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u,
-    real_t t,
+    double t,
     const Communicator *comm) {
   ZISA_UNUSED(u);
   ZISA_UNUSED(t);
@@ -62,7 +62,7 @@ void StructureFunctionWriter<Dim, Function>::write(
 template <int Dim, typename Function>
 void StructureFunctionWriter<Dim, Function>::write(
     const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-    real_t t,
+    double t,
     const Communicator *comm) {
   ZISA_UNUSED(u_hat);
   ZISA_UNUSED(t);

@@ -34,7 +34,7 @@ static void run_from_config_impl(const nlohmann::json &config,
     sample_idx_start = config["sample_idx_start"];
   }
 
-  real_t time_offset = 0;
+  double time_offset = 0;
   if (config.contains("time_offset")) {
     time_offset = config["time_offset"];
   }
@@ -85,7 +85,7 @@ static void run_from_config_impl(const nlohmann::json &config,
     simulation.set_time(time_offset);
     initializer->initialize(simulation.u());
 
-    real_t t = 0;
+    double t = 0;
     while ((t = writer->next_timestep())
            != std::numeric_limits<real_t>::infinity()) {
       simulation.simulate_until(t);
@@ -144,7 +144,7 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
     sample_idx_start = config["sample_idx_start"];
   }
 
-  real_t time_offset = 0;
+  double time_offset = 0;
   if (config.contains("time_offset")) {
     time_offset = config["time_offset"];
   }
@@ -203,7 +203,7 @@ static void run_from_config_MPI_impl(const nlohmann::json &config,
     auto fft = make_fft_mpi<dim_v>(
         u_hat_out_device, u_out_device, comm, FFT_BACKWARD);
 
-    real_t t = 0;
+    double t = 0;
     while ((t = writer->next_timestep())
            != std::numeric_limits<real_t>::infinity()) {
       simulation.simulate_until(t, comm);

@@ -7,6 +7,7 @@
 #include <azeban/forcing/no_forcing.hpp>
 #include <azeban/forcing/sinusoidal_factory.hpp>
 #include <azeban/forcing/white_noise_factory.hpp>
+#include <azeban/forcing/white_noise_high_freq_factory.hpp>
 #include <string>
 
 namespace azeban {
@@ -86,6 +87,25 @@ make_equation(const nlohmann::json &config,
     else if (device == zisa::device_type::cuda) {
       WhiteNoise forcing = make_white_noise<curandStateXORWOW_t>(
           config["forcing"], grid, seed);
+      return make_equation(
+          grid, has_tracer, visc, forcing, equation_name, device);
+    }
+#endif
+    else {
+      LOG_ERR("Unsupported device");
+    }
+  } else if (forcing_type == "White Noise High Freq") {
+    if (device == zisa::device_type::cpu) {
+      WhiteNoiseHighFreq forcing = make_white_noise_high_freq<std::mt19937>(
+          config["forcing"], grid, visc.eps, seed);
+      return make_equation(
+          grid, has_tracer, visc, forcing, equation_name, device);
+    }
+#if ZISA_HAS_CUDA
+    else if (device == zisa::device_type::cuda) {
+      WhiteNoiseHighFreq forcing
+          = make_white_noise_high_freq<curandStateXORWOW_t>(
+              config["forcing"], grid, visc.eps, seed);
       return make_equation(
           grid, has_tracer, visc, forcing, equation_name, device);
     }

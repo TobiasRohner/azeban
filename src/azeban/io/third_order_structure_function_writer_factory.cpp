@@ -22,8 +22,8 @@ make_third_order_structure_function_writer(const nlohmann::json &config,
   }
 
   const std::string path = config["path"];
-  const std::vector<real_t> snapshots
-      = make_sequence<real_t>(config["snapshots"]);
+  const std::vector<double> snapshots
+      = make_sequence<double>(config["snapshots"]);
   ssize_t max_h = grid.N_phys / 2;
   if (config.contains("maxH")) {
     max_h = config["maxH"];

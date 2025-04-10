@@ -25,8 +25,8 @@ make_structure_function_cube_writer(const nlohmann::json &config,
   }
 
   const std::string path = config["path"];
-  const std::vector<real_t> snapshots
-      = make_sequence<real_t>(config["snapshots"]);
+  const std::vector<double> snapshots
+      = make_sequence<double>(config["snapshots"]);
   const real_t p = config["p"];
   ssize_t max_h = grid.N_phys / 2;
   if (config.contains("maxH")) {

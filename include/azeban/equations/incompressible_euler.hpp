@@ -102,8 +102,9 @@ public:
 
   virtual void dudt(const zisa::array_view<complex_t, dim_v + 1> &dudt_hat,
                     const zisa::array_const_view<complex_t, dim_v + 1> &u_hat,
-                    real_t t,
-                    real_t dt) override {
+                    double t,
+                    double dt,
+                    double C) override {
     LOG_ERR_IF(dudt_hat.shape(0) != u_hat_.shape(0),
                "Wrong number of variables");
     LOG_ERR_IF(u_hat.shape(0) != u_hat_.shape(0), "Wrong number of variables");
@@ -115,10 +116,12 @@ public:
     u_max_ = max_norm(u_) / zisa::pow<dim_v>(grid_.N_phys_pad);
     computeB();
     fft_B_->forward();
-    computeDudt(dudt_hat, u_hat, t, std::min(dt, this->dt()));
+    computeDudt(dudt_hat, u_hat, t, std::min(dt, this->dt(C)));
   }
 
-  virtual real_t dt() const override { return 1. / (grid_.N_phys * u_max_); }
+  virtual double dt(double C) const override {
+    return C / (grid_.N_phys * u_max_);
+  }
 
   virtual int n_vars() const override { return dim_v + (has_tracer_ ? 1 : 0); }
   virtual real_t visc() const override { return visc_.eps; }
@@ -227,8 +230,8 @@ private:
   void
   computeDudt_cpu_2d(const zisa::array_view<complex_t, Dim + 1> &dudt_hat,
                      const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-                     real_t t,
-                     real_t dt) {
+                     double t,
+                     double dt) {
     const unsigned stride_B = B_hat_.shape(1) * B_hat_.shape(2);
 #pragma omp parallel for collapse(2)
     for (int i = 0; i < zisa::integer_cast<int>(u_hat.shape(1)); ++i) {
@@ -280,8 +283,8 @@ private:
   void
   computeDudt_cpu_3d(const zisa::array_view<complex_t, Dim + 1> &dudt_hat,
                      const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-                     real_t t,
-                     real_t dt) {
+                     double t,
+                     double dt) {
     const unsigned stride_B
         = B_hat_.shape(1) * B_hat_.shape(2) * B_hat_.shape(3);
 #pragma omp parallel for collapse(3)
@@ -345,8 +348,8 @@ private:
 
   void computeDudt(const zisa::array_view<complex_t, Dim + 1> &dudt_hat,
                    const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-                   real_t t,
-                   real_t dt) {
+                   double t,
+                   double dt) {
     ProfileHost profile("IncompressibleEuler::computeDudt");
     forcing_.pre(t, dt);
     if (device_ == zisa::device_type::cpu) {

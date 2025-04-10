@@ -45,7 +45,7 @@ template <int dim_v>
 static azeban::real_t measureConvergence(
     const std::shared_ptr<azeban::Initializer<dim_v>> &initializer,
     zisa::int_t N_ref,
-    azeban::real_t t) {
+    double t) {
   const auto solve_euler = [&](zisa::int_t N) {
     azeban::Grid<dim_v> grid(N);
     azeban::SmoothCutoff1D visc(0.05 / N, 1, 1);
@@ -192,7 +192,7 @@ TEST_CASE("2D Euler Naive Derivative") {
   h_u_hat(1, N_fourier, 0) = 0.5 * N_phys * N_phys;
 
   zisa::copy(d_dudt_hat, h_u_hat);
-  euler.dudt(d_dudt_hat, d_dudt_hat, 0, 0);
+  euler.dudt(d_dudt_hat, d_dudt_hat, 0, 0, 1);
   zisa::copy(h_dudt_hat, d_dudt_hat);
 
   for (zisa::int_t dim = 0; dim < 2; ++dim) {

@@ -15,7 +15,7 @@ public:
   ANY_DEVICE
   ThirdOrderStructureFunctionWriter(const std::string &path,
                                     const Grid<Dim> &grid,
-                                    const std::vector<real_t> &snapshot_times,
+                                    const std::vector<double> &snapshot_times,
                                     zisa::int_t sample_idx_start,
                                     ssize_t max_h);
   ANY_DEVICE_INLINE

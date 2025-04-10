@@ -13,10 +13,11 @@ class NetCDFSecondOrderStructureFunctionWriter : public NetCDFWriter<Dim> {
   using super = NetCDFWriter<Dim>;
 
 public:
-  NetCDFSecondOrderStructureFunctionWriter(int ncid,
-                             const Grid<Dim> &grid,
-                             const std::vector<real_t> &snapshot_times,
-                             int sample_idx_start);
+  NetCDFSecondOrderStructureFunctionWriter(
+      int ncid,
+      const Grid<Dim> &grid,
+      const std::vector<double> &snapshot_times,
+      int sample_idx_start);
   virtual ~NetCDFSecondOrderStructureFunctionWriter() override = default;
 
 protected:
@@ -26,15 +27,15 @@ protected:
   using super::snapshot_idx_;
 
   virtual void write(const zisa::array_const_view<real_t, Dim + 1> &u,
-                     real_t t) override;
+                     double t) override;
   virtual void write(const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-                     real_t t) override;
+                     double t) override;
 #if AZEBAN_HAS_MPI
   virtual void write(const zisa::array_const_view<real_t, Dim + 1> &u,
-                     real_t t,
+                     double t,
                      const Communicator *comm) override;
   virtual void write(const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-                     real_t t,
+                     double t,
                      const Communicator *comm) override;
 #endif
 
