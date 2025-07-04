@@ -79,6 +79,13 @@ public:
                   complex_t *f2) {
     const int absk1 = zisa::abs(k1);
     const int absk2 = zisa::abs(k2);
+    ////////////////////////////////
+    if (absk2 % 2) {
+      *f1 = 0;
+      *f2 = 0;
+      return;
+    }
+    ////////////////////////////////
     if ((absk1 < k_min_ && absk2 < k_min_) || absk1 >= k_max_
         || absk2 >= k_max_) {
       *f1 = 0;
@@ -110,7 +117,7 @@ public:
         *f1 = coeff * complex_t(k2 * eta, k2 * nu);
         *f2 = coeff * complex_t(-k1 * eta, -k1 * nu);
       } else {
-        *f1 = coeff * complex_t(k2 * eta, k2 * nu);
+	*f1 = coeff * complex_t(k2 * eta, -k2 * nu);
         *f2 = coeff * complex_t(-k1 * eta, k1 * nu);
       }
     }
@@ -262,6 +269,13 @@ public:
     const real_t norm = zisa::pow<2>(static_cast<real_t>(grid_.N_phys));
     const int absk1 = zisa::abs(k1);
     const int absk2 = zisa::abs(k2);
+    ////////////////////////////////
+    if (absk1 % 2) {
+      *f1 = 0;
+      *f2 = 0;
+      return;
+    }
+    ////////////////////////////////
     if ((absk1 < k_min_ && absk2 < k_min_) || absk1 >= k_max_
         || absk2 >= k_max_) {
       *f1 = 0;
@@ -293,7 +307,7 @@ public:
         *f1 = coeff * complex_t(k2 * eta, k2 * nu);
         *f2 = coeff * complex_t(-k1 * eta, -k1 * nu);
       } else {
-        *f1 = coeff * complex_t(k2 * eta, k2 * nu);
+        *f1 = coeff * complex_t(k2 * eta, -k2 * nu);
         *f2 = coeff * complex_t(-k1 * eta, k1 * nu);
       }
     }
