@@ -9,7 +9,7 @@ namespace azeban {
 template <int Dim>
 ParaviewCatalystWriter<Dim>::ParaviewCatalystWriter(
     const Grid<Dim> &grid,
-    const std::vector<real_t> &snapshot_times,
+    const std::vector<double> &snapshot_times,
     const std::vector<std::vector<std::string>> &scripts,
     zisa::int_t sample_idx_start)
     : super(grid, snapshot_times, sample_idx_start) {

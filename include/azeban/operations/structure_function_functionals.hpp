@@ -49,7 +49,8 @@ public:
     const real_t absdu2 = du * du;
     const real_t rabsn = 1. / zisa::sqrt(di * di);
     const real_t nx = rabsn * static_cast<real_t>(di);
-    return absdu2 * (du * nx);
+    const size_t Nb = 2;
+    return absdu2 * (du * nx) / Nb;
   }
 
   ANY_DEVICE_INLINE real_t operator()(real_t uij,
@@ -65,7 +66,9 @@ public:
         = ::azeban::rhypot(static_cast<real_t>(di), static_cast<real_t>(dj));
     const real_t nx = rabsn * static_cast<real_t>(di);
     const real_t ny = rabsn * static_cast<real_t>(dj);
-    return absdu2 * (du * nx + dv * ny);
+    const size_t r = zisa::max(::azeban::abs(di), ::azeban::abs(dj));
+    const size_t Nb = 8 * r;
+    return absdu2 * (du * nx + dv * ny) / Nb;
   }
 
   ANY_DEVICE_INLINE real_t operator()(real_t uijk,
@@ -87,7 +90,9 @@ public:
     const real_t nx = rabsn * static_cast<real_t>(di);
     const real_t ny = rabsn * static_cast<real_t>(dj);
     const real_t nz = rabsn * static_cast<real_t>(dk);
-    return absdu2 * (du * nx + dv * ny + dw * nz);
+    const size_t r = zisa::max(zisa::max(::azeban::abs(di), ::azeban::abs(dj)), ::azeban::abs(dk));
+    const size_t Nb = r == 0 ? 0 : zisa::pow<3>(2*r+1) - zisa::pow<3>(2*r-1);
+    return absdu2 * (du * nx + dv * ny + dw * nz) / Nb;
   }
 };
 
@@ -104,7 +109,8 @@ public:
     const real_t du = uj - ui;
     const real_t rabsn = 1. / zisa::sqrt(di * di);
     const real_t nx = rabsn * static_cast<real_t>(di);
-    return zisa::pow(du * nx, p_);
+    const size_t Nb = 2;
+    return zisa::pow(du * nx, p_) / Nb;
   }
 
   ANY_DEVICE_INLINE real_t operator()(real_t uij,
@@ -119,7 +125,9 @@ public:
         = ::azeban::rhypot(static_cast<real_t>(di), static_cast<real_t>(dj));
     const real_t nx = rabsn * static_cast<real_t>(di);
     const real_t ny = rabsn * static_cast<real_t>(dj);
-    return zisa::pow(du * nx + dv * ny, p_);
+    const size_t r = zisa::max(::azeban::abs(di), ::azeban::abs(dj));
+    const size_t Nb = 8 * r;
+    return zisa::pow(du * nx + dv * ny, p_) / Nb;
   }
 
   ANY_DEVICE_INLINE real_t operator()(real_t uijk,
@@ -140,7 +148,9 @@ public:
     const real_t nx = rabsn * static_cast<real_t>(di);
     const real_t ny = rabsn * static_cast<real_t>(dj);
     const real_t nz = rabsn * static_cast<real_t>(dk);
-    return zisa::pow(du * nx + dv * ny + dw * nz, p_);
+    const size_t r = zisa::max(zisa::max(::azeban::abs(di), ::azeban::abs(dj)), ::azeban::abs(dk));
+    const size_t Nb = r == 0 ? 0 : zisa::pow<3>(2*r+1) - zisa::pow<3>(2*r-1);
+    return zisa::pow(du * nx + dv * ny + dw * nz, p_) / Nb;
   }
 
 private:
@@ -161,7 +171,8 @@ public:
     const real_t du = uj - ui;
     const real_t rabsn = 1. / zisa::sqrt(di * di);
     const real_t nx = rabsn * static_cast<real_t>(di);
-    return zisa::pow(du * nx, p_);
+    const size_t Nb = 2;
+    return zisa::pow(du * nx, p_) / Nb;
   }
 
   ANY_DEVICE_INLINE real_t operator()(real_t uij,
@@ -176,7 +187,9 @@ public:
         = ::azeban::rhypot(static_cast<real_t>(di), static_cast<real_t>(dj));
     const real_t nx = rabsn * static_cast<real_t>(di);
     const real_t ny = rabsn * static_cast<real_t>(dj);
-    return zisa::pow(static_cast<real_t>(zisa::abs(du * nx + dv * ny)), p_);
+    const size_t r = zisa::max(::azeban::abs(di), ::azeban::abs(dj));
+    const size_t Nb = 8 * r;
+    return zisa::pow(static_cast<real_t>(zisa::abs(du * nx + dv * ny)), p_) / Nb;
   }
 
   ANY_DEVICE_INLINE real_t operator()(real_t uijk,
@@ -197,8 +210,10 @@ public:
     const real_t nx = rabsn * static_cast<real_t>(di);
     const real_t ny = rabsn * static_cast<real_t>(dj);
     const real_t nz = rabsn * static_cast<real_t>(dk);
+    const size_t r = zisa::max(zisa::max(::azeban::abs(di), ::azeban::abs(dj)), ::azeban::abs(dk));
+    const size_t Nb = r == 0 ? 0 : zisa::pow<3>(2*r+1) - zisa::pow<3>(2*r-1);
     return zisa::pow(
-        static_cast<real_t>(zisa::abs(du * nx + dv * ny + dw * nz)), p_);
+        static_cast<real_t>(zisa::abs(du * nx + dv * ny + dw * nz)), p_) / Nb;
   }
 
 private:

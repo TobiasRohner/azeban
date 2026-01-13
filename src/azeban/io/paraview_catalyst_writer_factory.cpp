@@ -22,8 +22,8 @@ make_paraview_catalyst_writer(const nlohmann::json &config,
 
   const std::vector<std::vector<std::string>> scripts
       = config["scripts"].get<std::vector<std::vector<std::string>>>();
-  const std::vector<real_t> snapshots
-      = make_sequence<real_t>(config["snapshots"]);
+  const std::vector<double> snapshots
+      = make_sequence<double>(config["snapshots"]);
 
   return std::make_unique<ParaviewCatalystWriter<Dim>>(
       grid, snapshots, scripts, sample_idx_start);

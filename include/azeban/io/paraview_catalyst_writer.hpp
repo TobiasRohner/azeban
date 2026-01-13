@@ -16,7 +16,7 @@ class ParaviewCatalystWriter : public Writer<Dim> {
 
 public:
   ParaviewCatalystWriter(const Grid<Dim> &grid,
-                         const std::vector<real_t> &snapshot_times_,
+                         const std::vector<double> &snapshot_times_,
                          const std::vector<std::vector<std::string>> &scripts,
                          zisa::int_t sample_idx_start = 0);
   ParaviewCatalystWriter(const ParaviewCatalystWriter &) = delete;
@@ -37,7 +37,7 @@ public:
                      double t,
                      const Communicator *comm) override;
   virtual void write(const zisa::array_const_view<complex_t, Dim + 1> &u_hat,
-                     doublen t,
+                     double t,
                      const Communicator *comm) override;
 #endif
 
