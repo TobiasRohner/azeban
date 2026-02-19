@@ -37,9 +37,13 @@ make_absolute_longitudinal_structure_function_writer(
   if (config.contains("maxH")) {
     max_h = config["maxH"];
   }
+  ssize_t stride = 1;
+  if (config.contains("stride")) {
+    stride = config["stride"];
+  }
 
   return std::make_unique<AbsoluteLongitudinalStructureFunctionWriter<Dim>>(
-      path, grid, snapshots, sample_idx_start, p, max_h);
+      path, grid, snapshots, sample_idx_start, p, max_h, stride);
 }
 
 template std::unique_ptr<Writer<1>>

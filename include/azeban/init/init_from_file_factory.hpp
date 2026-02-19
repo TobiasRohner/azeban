@@ -26,20 +26,18 @@ namespace azeban {
 
 template <int Dim>
 std::shared_ptr<Initializer<Dim>>
-make_init_from_file(const nlohmann::json &config) {
+make_init_from_file(const nlohmann::json &config, size_t sample_idx_start) {
   AZEBAN_ERR_IF(!config.contains("experiment"),
                 "InitFromFile is missing parameter \"experiment\"");
   AZEBAN_ERR_IF(!config.contains("time"),
                 "InitFromFile is missing parameter \"time\"");
+  AZEBAN_ERR_IF(!config.contains("group"),
+                "InitFromFile is missing parameter \"group\"");
   const std::string experiment = config["experiment"];
-  const std::string time = config["time"];
-  if (!config.contains("sample_idx_start")) {
-    fmt::print(stderr, "Init From File needs key sample_idx_start\n");
-    exit(1);
-  }
-  const zisa::int_t sample_idx_start = config["sample_idx_start"];
+  const size_t time = config["time"];
+  const std::string group = config["group"];
   return std::make_shared<InitFromFile<Dim>>(
-      experiment, time, sample_idx_start);
+      experiment, time, group, sample_idx_start);
 }
 
 }

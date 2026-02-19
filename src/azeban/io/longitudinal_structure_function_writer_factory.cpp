@@ -35,9 +35,13 @@ make_longitudinal_structure_function_writer(const nlohmann::json &config,
   if (config.contains("maxH")) {
     max_h = config["maxH"];
   }
+  ssize_t stride = 1;
+  if (config.contains("stride")) {
+    stride = config["stride"];
+  }
 
   return std::make_unique<LongitudinalStructureFunctionWriter<Dim>>(
-      path, grid, snapshots, sample_idx_start, p, max_h);
+      path, grid, snapshots, sample_idx_start, p, max_h, stride);
 }
 
 template std::unique_ptr<Writer<1>> make_longitudinal_structure_function_writer(

@@ -24,6 +24,10 @@ make_netcdf_structure_function_cube_sf_cube_writer(
   if (config.contains("max_h")) {
     max_h = config["max_h"];
   }
+  ssize_t stride = 1;
+  if (config.contains("stride")) {
+    stride = config["stride"];
+  }
   return std::make_unique<
       NetCDFStructureFunctionCubeWriter<Dim, SFCubeFunctional>>(
       ncid,
@@ -32,6 +36,7 @@ make_netcdf_structure_function_cube_sf_cube_writer(
       "structure_function_cube_" + std::to_string(p),
       SFCubeFunctional(p),
       max_h,
+      stride,
       sample_idx_start);
 }
 
@@ -47,6 +52,10 @@ make_netcdf_structure_function_cube_third_order_writer(
   if (config.contains("max_h")) {
     max_h = config["max_h"];
   }
+  ssize_t stride = 1;
+  if (config.contains("stride")) {
+    stride = config["stride"];
+  }
   return std::make_unique<
       NetCDFStructureFunctionCubeWriter<Dim, SFThirdOrderFunctional>>(
       ncid,
@@ -55,6 +64,7 @@ make_netcdf_structure_function_cube_third_order_writer(
       "third_order_structure_function",
       SFThirdOrderFunctional(),
       max_h,
+      stride,
       sample_idx_start);
 }
 
@@ -75,6 +85,10 @@ make_netcdf_structure_function_cube_longitudinal_writer(
   if (config.contains("max_h")) {
     max_h = config["max_h"];
   }
+  ssize_t stride = 1;
+  if (config.contains("stride")) {
+    stride = config["stride"];
+  }
   return std::make_unique<
       NetCDFStructureFunctionCubeWriter<Dim, SFLongitudinalFunctional>>(
       ncid,
@@ -83,6 +97,7 @@ make_netcdf_structure_function_cube_longitudinal_writer(
       "structure_function_longitudinal_" + std::to_string(p),
       SFLongitudinalFunctional(p),
       max_h,
+      stride,
       sample_idx_start);
 }
 
@@ -103,6 +118,10 @@ make_netcdf_structure_function_cube_absolute_longitudinal_writer(
   if (config.contains("max_h")) {
     max_h = config["max_h"];
   }
+  ssize_t stride = 1;
+  if (config.contains("stride")) {
+    stride = config["stride"];
+  }
   return std::make_unique<
       NetCDFStructureFunctionCubeWriter<Dim, SFAbsoluteLongitudinalFunctional>>(
       ncid,
@@ -111,6 +130,7 @@ make_netcdf_structure_function_cube_absolute_longitudinal_writer(
       "structure_function_absolute_longitudinal_" + std::to_string(p),
       SFAbsoluteLongitudinalFunctional(p),
       max_h,
+      stride,
       sample_idx_start);
 }
 

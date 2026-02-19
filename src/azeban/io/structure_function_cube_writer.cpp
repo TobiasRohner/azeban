@@ -9,14 +9,16 @@ ANY_DEVICE StructureFunctionCubeWriter<Dim>::StructureFunctionCubeWriter(
     const std::vector<double> &snapshot_times,
     zisa::int_t sample_idx_start,
     real_t p,
-    ssize_t max_h)
+    ssize_t max_h,
+    ssize_t stride)
     : super(path,
             grid,
             snapshot_times,
             sample_idx_start,
             "SF_Cube_" + std::to_string(p),
             SFCubeFunctional(p),
-            max_h) {}
+            max_h,
+	    stride) {}
 
 template class StructureFunctionCubeWriter<1>;
 template class StructureFunctionCubeWriter<2>;

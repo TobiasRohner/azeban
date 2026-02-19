@@ -18,6 +18,7 @@ public:
                                     const std::string &name,
                                     const SF &func,
                                     zisa::int_t max_h,
+				    ssize_t stride,
                                     int sample_idx_start);
   virtual ~NetCDFStructureFunctionCubeWriter() override = default;
 
@@ -47,6 +48,7 @@ private:
   int varid_S2_;
   SF func_;
   zisa::int_t max_h_;
+  ssize_t stride_;
 };
 
 }

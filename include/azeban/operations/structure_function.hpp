@@ -30,16 +30,17 @@ template <typename Function>
 std::vector<real_t>
 structure_function_cpu(const zisa::array_const_view<real_t, 2> &u,
                        ssize_t max_h,
+		       ssize_t stride,
                        const Function &func) {
   const ssize_t N = u.shape(1);
-  const real_t vol = 1. / N;
+  const real_t vol = 1. / (N / stride);
 
   std::vector<real_t> sf(max_h);
 #pragma omp parallel
   {
     std::vector<real_t> sf_loc(max_h);
 #pragma omp for
-    for (ssize_t i = 0; i < N; ++i) {
+    for (ssize_t i = 0; i < N; i += stride) {
       const real_t ui = u(0, i);
       for (ssize_t di = -max_h + 1; di < max_h; ++di) {
         const ssize_t j = i + di;
@@ -62,17 +63,18 @@ template <typename Function>
 std::vector<real_t>
 structure_function_cpu(const zisa::array_const_view<real_t, 3> &u,
                        ssize_t max_h,
+		       ssize_t stride,
                        const Function &func) {
   const ssize_t N = u.shape(1);
-  const real_t vol = 1. / zisa::pow<2>(N);
+  const real_t vol = 1. / zisa::pow<2>(N / stride);
 
   std::vector<real_t> sf(max_h);
 #pragma omp parallel
   {
     std::vector<real_t> sf_loc(max_h);
 #pragma omp for collapse(2)
-    for (ssize_t i = 0; i < N; ++i) {
-      for (ssize_t j = 0; j < N; ++j) {
+    for (ssize_t i = 0; i < N; i += stride) {
+      for (ssize_t j = 0; j < N; j += stride) {
         const real_t uij = u(0, i, j);
         const real_t vij = u(1, i, j);
         for (ssize_t di = -max_h + 1; di < max_h; ++di) {
@@ -103,18 +105,19 @@ template <typename Function>
 std::vector<real_t>
 structure_function_cpu(const zisa::array_const_view<real_t, 4> &u,
                        ssize_t max_h,
+		       ssize_t stride,
                        const Function &func) {
   const ssize_t N = u.shape(1);
-  const real_t vol = 1. / zisa::pow<3>(N);
+  const real_t vol = 1. / zisa::pow<3>(N / stride);
 
   std::vector<real_t> sf(max_h);
 #pragma omp parallel
   {
     std::vector<real_t> sf_loc(max_h);
 #pragma omp for collapse(3)
-    for (ssize_t i = 0; i < N; ++i) {
-      for (ssize_t j = 0; j < N; ++j) {
-        for (ssize_t k = 0; k < N; ++k) {
+    for (ssize_t i = 0; i < N; i += stride) {
+      for (ssize_t j = 0; j < N; j += stride) {
+        for (ssize_t k = 0; k < N; k += stride) {
           const real_t uijk = u(0, i, j, k);
           const real_t vijk = u(1, i, j, k);
           const real_t wijk = u(2, i, j, k);
@@ -162,13 +165,14 @@ template <ssize_t Dim, typename Function>
 std::vector<real_t>
 structure_function(const zisa::array_const_view<real_t, Dim + 1> &u,
                    ssize_t max_h,
+		   ssize_t stride,
                    const Function &func) {
   if (u.memory_location() == zisa::device_type::cpu) {
-    return structure_function_cpu(u, max_h, func);
+    return structure_function_cpu(u, max_h, stride, func);
   }
 #if ZISA_HAS_CUDA
   else if (u.memory_location() == zisa::device_type::cuda) {
-    return structure_function_cuda(u, max_h, func);
+    return structure_function_cuda(u, max_h, stride, func);
   }
 #endif
   else {

@@ -9,14 +9,16 @@ ThirdOrderStructureFunctionWriter<Dim>::ThirdOrderStructureFunctionWriter(
     const Grid<Dim> &grid,
     const std::vector<double> &snapshot_times,
     zisa::int_t sample_idx_start,
-    ssize_t max_h)
+    ssize_t max_h,
+    ssize_t stride)
     : super(path,
             grid,
             snapshot_times,
             sample_idx_start,
             "S3",
             SFThirdOrderFunctional(),
-            max_h) {}
+            max_h,
+	    stride) {}
 
 template class ThirdOrderStructureFunctionWriter<1>;
 template class ThirdOrderStructureFunctionWriter<2>;

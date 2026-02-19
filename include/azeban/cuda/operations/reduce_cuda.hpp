@@ -6,7 +6,8 @@
 
 namespace azeban {
 
-real_t reduce_sum_cuda(const zisa::array_const_view<real_t, 1> &data);
+float reduce_sum_cuda(const zisa::array_const_view<float, 1> &data);
+double reduce_sum_cuda(const zisa::array_const_view<double, 1> &data);
 
 }
 

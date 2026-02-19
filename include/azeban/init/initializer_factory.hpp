@@ -48,7 +48,7 @@ namespace azeban {
 
 template <int Dim, typename RNG>
 std::shared_ptr<Initializer<Dim>>
-make_initializer_u(const nlohmann::json &config, RNG &rng) {
+make_initializer_u(const nlohmann::json &config, size_t sample_idx_start, RNG &rng) {
   if (!config.contains("name")) {
     fmt::print(stderr, "Config does not contain initializer name\n");
     exit(1);
@@ -78,7 +78,7 @@ make_initializer_u(const nlohmann::json &config, RNG &rng) {
   } else if (name == "Const Phys") {
     return make_const_phys<Dim>(config, rng);
   } else if (name == "Init From File") {
-    return make_init_from_file<Dim>(config);
+    return make_init_from_file<Dim>(config, sample_idx_start);
   }
 #if AZEBAN_HAS_PYTHON
   else if (name == "Python") {
@@ -119,8 +119,9 @@ std::shared_ptr<Initializer<Dim>> make_initializer(const nlohmann::json &config,
     fmt::print(stderr, "Config does not contain initialization information\n");
     exit(1);
   }
+  const size_t sample_idx_start = config["sample_idx_start"];
 
-  auto init_u = make_initializer_u<Dim>(config["init"], rng);
+  auto init_u = make_initializer_u<Dim>(config["init"], sample_idx_start, rng);
   if (config["init"].contains("tracer")
       && std::string(config["init"]["tracer"]["name"]) != "Init From File") {
     auto init_rho = make_initializer_rho<Dim>(config["init"]["tracer"]);

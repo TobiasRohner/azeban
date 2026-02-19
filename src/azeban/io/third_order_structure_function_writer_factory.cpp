@@ -28,9 +28,13 @@ make_third_order_structure_function_writer(const nlohmann::json &config,
   if (config.contains("maxH")) {
     max_h = config["maxH"];
   }
+  ssize_t stride = 1;
+  if (config.contains("stride")) {
+    stride = config["stride"];
+  }
 
   return std::make_unique<ThirdOrderStructureFunctionWriter<Dim>>(
-      path, grid, snapshots, sample_idx_start, max_h);
+      path, grid, snapshots, sample_idx_start, max_h, stride);
 }
 
 template std::unique_ptr<Writer<1>> make_third_order_structure_function_writer(

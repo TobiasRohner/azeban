@@ -26,14 +26,16 @@ namespace azeban {
 template <int Dim>
 void InitFromFile<Dim>::do_initialize(
     const zisa::array_view<real_t, Dim + 1> &u) {
-  int status, ncid;
-  status = nc_open(filename().c_str(), 0, &ncid);
-  AZEBAN_ERR_IF(status != NC_NOERR, "Failed to open initial conditions");
+  int status, ncid, grpid;
+  status = nc_open(experiment_.c_str(), 0, &ncid);
+  AZEBAN_ERR_IF(status != NC_NOERR, "Failed to open initial conditions file");
+  status = nc_inq_ncid(ncid, group_.c_str(), &grpid);
+  AZEBAN_ERR_IF(status != NC_NOERR, "Failed to open initial conditions group");
   if (u.memory_location() == zisa::device_type::cpu) {
-    init(ncid, u);
+    init(grpid, u, sample_, time_);
   } else if (u.memory_location() == zisa::device_type::cuda) {
     auto h_u = zisa::array<real_t, Dim + 1>(u.shape(), zisa::device_type::cpu);
-    init(ncid, h_u);
+    init(grpid, h_u, sample_, time_);
     zisa::copy(u, h_u);
   } else {
     AZEBAN_ERR("Unknown memory location");
@@ -46,15 +48,17 @@ void InitFromFile<Dim>::do_initialize(
 template <int Dim>
 void InitFromFile<Dim>::do_initialize(
     const zisa::array_view<complex_t, Dim + 1> &u_hat) {
-  int status, ncid;
-  status = nc_open(filename().c_str(), 0, &ncid);
-  AZEBAN_ERR_IF(status != NC_NOERR, "Failed to open initial conditions");
+  int status, ncid, grpid;
+  status = nc_open(experiment_.c_str(), 0, &ncid);
+  AZEBAN_ERR_IF(status != NC_NOERR, "Failed to open initial conditions file");
+  status = nc_inq_ncid(ncid, group_.c_str(), &grpid);
+  AZEBAN_ERR_IF(status != NC_NOERR, "Failed to open initial conditions group");
   if (u_hat.memory_location() == zisa::device_type::cpu) {
-    init(ncid, u_hat);
+    init(grpid, u_hat, sample_, time_);
   } else if (u_hat.memory_location() == zisa::device_type::cuda) {
     auto h_u_hat = zisa::array<complex_t, Dim + 1>(u_hat.shape(),
                                                    zisa::device_type::cpu);
-    init(ncid, h_u_hat);
+    init(grpid, h_u_hat, sample_, time_);
     zisa::copy(u_hat, h_u_hat);
   } else {
     AZEBAN_ERR("Unknown memory location");
@@ -62,12 +66,6 @@ void InitFromFile<Dim>::do_initialize(
   ++sample_;
   status = nc_close(ncid);
   AZEBAN_ERR_IF(status != NC_NOERR, "Failed to close file");
-}
-
-template <int Dim>
-std::string InitFromFile<Dim>::filename() const {
-  return experiment_ + "/sample_" + std::to_string(sample_) + "_time_" + time_
-         + ".nc";
 }
 
 template <int Dim>
@@ -118,22 +116,26 @@ template <int Dim>
 void InitFromFile<Dim>::read_component(
     int ncid,
     const std::string &name,
+    size_t sample,
+    size_t time,
     const zisa::array_view<real_t, Dim> &u) const {
   int status, varid;
   status = nc_inq_varid(ncid, name.c_str(), &varid);
   AZEBAN_ERR_IF(status != NC_NOERR, "File does not contain variable");
   const auto dims = get_dims(ncid, varid);
-  AZEBAN_ERR_IF(dims.size() != Dim, "Initial data has wrong dimension");
+  AZEBAN_ERR_IF(dims.size() != Dim+2, "Initial data has wrong dimension");
   for (int i = 0; i < Dim; ++i) {
-    AZEBAN_ERR_IF(dims[i] != u.shape(i), "Given array has wrong shape");
+    AZEBAN_ERR_IF(dims[i+2] != u.shape(i), "Given array has wrong shape");
   }
-  status = nc_get_var(ncid, varid, u.raw());
+  size_t startp[] = {sample, time, 0, 0, 0};
+  size_t countp[] = {1, 1, dims[2], Dim > 1 ? dims[3] : 1, Dim > 2 ? dims[4] : 1};
+  status = nc_get_vara(ncid, varid, startp, countp, u.raw());
   AZEBAN_ERR_IF(status != NC_NOERR, "Could not read variable");
 }
 
 template <int Dim>
 void InitFromFile<Dim>::read_u(
-    int ncid, const zisa::array_view<real_t, Dim + 1> &u) const {
+    int ncid, size_t sample, size_t time, const zisa::array_view<real_t, Dim + 1> &u) const {
   AZEBAN_ERR_IF(u.memory_location() != zisa::device_type::cpu,
                 "Expected CPU array");
   zisa::shape_t<Dim> view_shape;
@@ -143,20 +145,20 @@ void InitFromFile<Dim>::read_u(
   const zisa::int_t view_size = zisa::product(view_shape);
   zisa::array_view<real_t, Dim> view_u(
       view_shape, u.raw(), zisa::device_type::cpu);
-  read_component(ncid, "u", view_u);
+  read_component(ncid, "u", sample, time, view_u);
   zisa::array_view<real_t, Dim> view_v(
       view_shape, u.raw() + view_size, zisa::device_type::cpu);
-  read_component(ncid, "v", view_v);
+  read_component(ncid, "v", sample, time, view_v);
   if (Dim > 2) {
     zisa::array_view<real_t, Dim> view_w(
         view_shape, u.raw() + 2 * view_size, zisa::device_type::cpu);
-    read_component(ncid, "w", view_w);
+    read_component(ncid, "w", sample, time, view_w);
   }
 }
 
 template <int Dim>
 void InitFromFile<Dim>::read_u_hat(
-    int ncid, const zisa::array_view<complex_t, Dim + 1> &u_hat) const {
+    int ncid, size_t sample, size_t time, const zisa::array_view<complex_t, Dim + 1> &u_hat) const {
   const zisa::int_t N_phys = u_hat.shape(1);
   zisa::shape_t<Dim + 1> shape_u;
   shape_u[0] = Dim;
@@ -165,13 +167,13 @@ void InitFromFile<Dim>::read_u_hat(
   }
   zisa::array<real_t, Dim + 1> u(shape_u, zisa::device_type::cpu);
   auto fft = make_fft<Dim>(u_hat, u);
-  read_u(ncid, u);
+  read_u(ncid, sample, time, u);
   fft->forward();
 }
 
 template <int Dim>
 void InitFromFile<Dim>::read_rho(
-    int ncid, const zisa::array_view<real_t, Dim + 1> &rho) const {
+    int ncid, size_t sample, size_t time, const zisa::array_view<real_t, Dim + 1> &rho) const {
   AZEBAN_ERR_IF(rho.memory_location() != zisa::device_type::cpu,
                 "Expected CPU array");
   zisa::shape_t<Dim> view_shape;
@@ -180,12 +182,12 @@ void InitFromFile<Dim>::read_rho(
   }
   zisa::array_view<real_t, Dim> view_rho(
       view_shape, rho.raw(), zisa::device_type::cpu);
-  read_component(ncid, "rho", view_rho);
+  read_component(ncid, "rho", sample, time, view_rho);
 }
 
 template <int Dim>
 void InitFromFile<Dim>::read_rho_hat(
-    int ncid, const zisa::array_view<complex_t, Dim + 1> &rho_hat) const {
+    int ncid, size_t sample, size_t time, const zisa::array_view<complex_t, Dim + 1> &rho_hat) const {
   const zisa::int_t N_phys = rho_hat.shape(1);
   zisa::shape_t<Dim + 1> shape_rho;
   shape_rho[0] = 1;
@@ -194,13 +196,13 @@ void InitFromFile<Dim>::read_rho_hat(
   }
   zisa::array<real_t, Dim + 1> rho(shape_rho, zisa::device_type::cpu);
   auto fft = make_fft<Dim>(rho_hat, rho);
-  read_rho(ncid, rho);
+  read_rho(ncid, sample, time, rho);
   fft->forward();
 }
 
 template <int Dim>
 void InitFromFile<Dim>::read_omega(
-    int ncid, const zisa::array_view<real_t, Dim + 1> &omega) const {
+    int ncid, size_t sample, size_t time, const zisa::array_view<real_t, Dim + 1> &omega) const {
   AZEBAN_ERR_IF(Dim != 2, "Loading from vorticity only supported for 2D");
   const zisa::int_t N_phys = omega.shape(1);
   zisa::shape_t<Dim> shape_omega_view;
@@ -209,12 +211,12 @@ void InitFromFile<Dim>::read_omega(
   }
   zisa::array_view<real_t, Dim> omega_view(
       shape_omega_view, omega.raw(), omega.memory_location());
-  read_component(ncid, "omega", omega_view);
+  read_component(ncid, "omega", sample, time, omega_view);
 }
 
 template <int Dim>
 void InitFromFile<Dim>::read_omega_hat(
-    int ncid, const zisa::array_view<complex_t, Dim + 1> &omega_hat) const {
+    int ncid, size_t sample, size_t time, const zisa::array_view<complex_t, Dim + 1> &omega_hat) const {
   AZEBAN_ERR_IF(Dim != 2, "Loading from vorticity only supported for 2D");
   const zisa::int_t N_phys = omega_hat.shape(1);
   zisa::shape_t<Dim + 1> shape_omega;
@@ -224,13 +226,15 @@ void InitFromFile<Dim>::read_omega_hat(
   }
   zisa::array<real_t, Dim + 1> omega(shape_omega, zisa::device_type::cpu);
   auto fft = make_fft<Dim>(omega_hat, omega);
-  read_omega(ncid, omega);
+  read_omega(ncid, sample, time, omega);
   fft->forward();
 }
 
 template <int Dim>
 void InitFromFile<Dim>::init(int ncid,
-                             const zisa::array_view<real_t, Dim + 1> &u) const {
+                             const zisa::array_view<real_t, Dim + 1> &u,
+			     size_t sample,
+			     size_t time) const {
   const auto varnames = get_varnames(ncid);
   bool contains_u = false;
   bool contains_v = false;
@@ -255,7 +259,7 @@ void InitFromFile<Dim>::init(int ncid,
     }
   }
   if (contains_u && (Dim <= 1 || contains_v) && (Dim <= 2 || contains_w)) {
-    read_u(ncid, u);
+    read_u(ncid, sample, time, u);
   } else if (Dim == 2 && contains_omega) {
     const zisa::int_t N_phys = u.shape(1);
     zisa::shape_t<Dim + 1> shape_omega_hat;
@@ -272,7 +276,7 @@ void InitFromFile<Dim>::init(int ncid,
                                               zisa::device_type::cpu);
     zisa::array<complex_t, Dim + 1> u_hat(shape_u_hat, zisa::device_type::cpu);
     auto fft = make_fft<Dim>(u_hat, u);
-    read_omega_hat(ncid, omega_hat);
+    read_omega_hat(ncid, sample, time, omega_hat);
     zisa::shape_t<2> omega_hat_view_shape{N_phys, N_phys / 2 + 1};
     zisa::array_view<complex_t, 2> omega_hat_view(
         omega_hat_view_shape, omega_hat.raw(), omega_hat.device());
@@ -294,13 +298,15 @@ void InitFromFile<Dim>::init(int ncid,
         shape_rho,
         u.raw() + Dim * zisa::product(shape_rho),
         u.memory_location());
-    read_rho(ncid, rho_view);
+    read_rho(ncid, sample, time, rho_view);
   }
 }
 
 template <int Dim>
 void InitFromFile<Dim>::init(
-    int ncid, const zisa::array_view<complex_t, Dim + 1> &u_hat) const {
+    int ncid, const zisa::array_view<complex_t, Dim + 1> &u_hat,
+    size_t sample,
+    size_t time) const {
   const auto varnames = get_varnames(ncid);
   bool contains_u = false;
   bool contains_v = false;
@@ -325,7 +331,7 @@ void InitFromFile<Dim>::init(
     }
   }
   if (contains_u && (Dim <= 1 || contains_v) && (Dim <= 2 || contains_w)) {
-    read_u_hat(ncid, u_hat);
+    read_u_hat(ncid, sample, time, u_hat);
   } else if (Dim == 2 && contains_omega) {
     const zisa::int_t N_phys = u_hat.shape(1);
     zisa::shape_t<Dim + 1> shape_omega_hat;
@@ -336,7 +342,7 @@ void InitFromFile<Dim>::init(
     shape_omega_hat[Dim] = N_phys / 2 + 1;
     zisa::array<complex_t, Dim + 1> omega_hat(shape_omega_hat,
                                               zisa::device_type::cpu);
-    read_omega_hat(ncid, omega_hat);
+    read_omega_hat(ncid, sample, time, omega_hat);
     zisa::shape_t<2> omega_hat_view_shape{N_phys, N_phys / 2 + 1};
     zisa::array_view<complex_t, 2> omega_hat_view(
         omega_hat_view_shape, omega_hat.raw(), omega_hat.device());
@@ -357,7 +363,7 @@ void InitFromFile<Dim>::init(
         shape_rho_hat,
         u_hat.raw() + Dim * zisa::product(shape_rho_hat),
         u_hat.memory_location());
-    read_rho_hat(ncid, rho_hat_view);
+    read_rho_hat(ncid, sample, time, rho_hat_view);
   }
 }
 

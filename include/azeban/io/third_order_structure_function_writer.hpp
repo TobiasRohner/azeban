@@ -17,7 +17,8 @@ public:
                                     const Grid<Dim> &grid,
                                     const std::vector<double> &snapshot_times,
                                     zisa::int_t sample_idx_start,
-                                    ssize_t max_h);
+                                    ssize_t max_h,
+				    ssize_t stride);
   ANY_DEVICE_INLINE
   ThirdOrderStructureFunctionWriter(const ThirdOrderStructureFunctionWriter &)
       = default;

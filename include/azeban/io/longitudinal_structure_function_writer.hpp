@@ -18,7 +18,8 @@ public:
                                       const std::vector<double> &snapshot_times,
                                       zisa::int_t sample_idx_start,
                                       real_t p,
-                                      ssize_t max_h);
+                                      ssize_t max_h,
+				      ssize_t stride);
   ANY_DEVICE_INLINE
   LongitudinalStructureFunctionWriter(
       const LongitudinalStructureFunctionWriter &)

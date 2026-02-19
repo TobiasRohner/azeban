@@ -13,10 +13,12 @@ NetCDFStructureFunctionCubeWriter<Dim, SF>::NetCDFStructureFunctionCubeWriter(
     const std::string &name,
     const SF &func,
     zisa::int_t max_h,
+    ssize_t stride,
     int sample_idx_start)
     : super(ncid, grid, snapshot_times, sample_idx_start),
       func_(func),
-      max_h_(max_h) {
+      max_h_(max_h),
+      stride_(stride) {
   // Define own group
   CHECK_NETCDF(nc_def_grp(ncid_, name.c_str(), &grpid_));
   // Define dimensions
@@ -56,7 +58,7 @@ NetCDFStructureFunctionCubeWriter<Dim, SF>::NetCDFStructureFunctionCubeWriter(
 template <int Dim, typename SF>
 void NetCDFStructureFunctionCubeWriter<Dim, SF>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u, double) {
-  const std::vector<real_t> sf = structure_function<Dim>(u, max_h_, func_);
+  const std::vector<real_t> sf = structure_function<Dim>(u, max_h_, stride_, func_);
   const size_t start[3] = {sample_idx_, snapshot_idx_, 0};
   const size_t count[3] = {1, 1, max_h_};
   CHECK_NETCDF(nc_put_vara(grpid_, varid_S2_, start, count, sf.data()));

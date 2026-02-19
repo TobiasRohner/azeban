@@ -18,19 +18,21 @@ StructureFunctionWriter<Dim, Function>::StructureFunctionWriter(
     zisa::int_t sample_idx_start,
     const std::string &name,
     const Function &func,
-    ssize_t max_h)
+    ssize_t max_h,
+    ssize_t stride)
     : super(grid, snapshot_times, sample_idx_start),
       path_(path),
       name_(name),
       func_(func),
-      max_h_(max_h) {}
+      max_h_(max_h),
+      stride_(stride) {}
 
 template <int Dim, typename Function>
 void StructureFunctionWriter<Dim, Function>::write(
     const zisa::array_const_view<real_t, Dim + 1> &u, double t) {
   ProfileHost pofile("StructureFunctionWriter::write");
   ZISA_UNUSED(t);
-  const std::vector<real_t> S = structure_function<Dim>(u, max_h_, func_);
+  const std::vector<real_t> S = structure_function<Dim>(u, max_h_, stride_, func_);
   std::ofstream file(path_ + "/" + name_ + "_sample_"
                      + std::to_string(sample_idx_) + "_time_"
                      + std::to_string(snapshot_idx_) + ".txt");

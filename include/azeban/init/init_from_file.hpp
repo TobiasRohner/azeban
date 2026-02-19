@@ -29,9 +29,10 @@ class InitFromFile : public Initializer<Dim> {
 
 public:
   InitFromFile(const std::string &experiment,
-               const std::string &time,
+	       size_t time,
+	       const std::string &group,
                zisa::int_t sample_idx_start = 0)
-      : sample_(sample_idx_start), experiment_(experiment), time_(time) {}
+      : sample_(sample_idx_start), experiment_(experiment), time_(time), group_(group) {}
   InitFromFile(const InitFromFile &) = default;
   InitFromFile(InitFromFile &&) = default;
 
@@ -49,28 +50,44 @@ protected:
 private:
   zisa::int_t sample_;
   std::string experiment_;
-  std::string time_;
+  size_t time_;
+  std::string group_;
 
-  std::string filename() const;
   std::vector<int> get_varids(int ncid) const;
   std::vector<std::string> get_varnames(int ncid) const;
   std::vector<size_t> get_dims(int ncid, int varid) const;
   void read_component(int ncid,
                       const std::string &name,
+		      size_t sample,
+		      size_t time,
                       const zisa::array_view<real_t, Dim> &u) const;
-  void read_u(int ncid, const zisa::array_view<real_t, Dim + 1> &u) const;
+  void read_u(int ncid,
+	      size_t sample,
+	      size_t time,
+	      const zisa::array_view<real_t, Dim + 1> &u) const;
   void read_u_hat(int ncid,
+		  size_t sample,
+		  size_t time,
                   const zisa::array_view<complex_t, Dim + 1> &u_hat) const;
-  void read_rho(int ncid, const zisa::array_view<real_t, Dim + 1> &rho) const;
+  void read_rho(int ncid,
+	        size_t sample,
+		size_t time,
+		const zisa::array_view<real_t, Dim + 1> &rho) const;
   void read_rho_hat(int ncid,
+		    size_t sample,
+		    size_t time,
                     const zisa::array_view<complex_t, Dim + 1> &rho_hat) const;
   void read_omega(int ncid,
+		  size_t sample,
+		  size_t time,
                   const zisa::array_view<real_t, Dim + 1> &omega) const;
   void
   read_omega_hat(int ncid,
+		 size_t sample,
+		 size_t time,
                  const zisa::array_view<complex_t, Dim + 1> &omega_hat) const;
-  void init(int ncid, const zisa::array_view<real_t, Dim + 1> &u) const;
-  void init(int ncid, const zisa::array_view<complex_t, Dim + 1> &u_hat) const;
+  void init(int ncid, const zisa::array_view<real_t, Dim + 1> &u, size_t sample, size_t time) const;
+  void init(int ncid, const zisa::array_view<complex_t, Dim + 1> &u_hat, size_t sample, size_t time) const;
 };
 
 }

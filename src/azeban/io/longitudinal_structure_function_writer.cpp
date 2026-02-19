@@ -10,14 +10,16 @@ LongitudinalStructureFunctionWriter<Dim>::LongitudinalStructureFunctionWriter(
     const std::vector<double> &snapshot_times,
     zisa::int_t sample_idx_start,
     real_t p,
-    ssize_t max_h)
+    ssize_t max_h,
+    ssize_t stride)
     : super(path,
             grid,
             snapshot_times,
             sample_idx_start,
             "S_par",
             SFLongitudinalFunctional(p),
-            max_h) {}
+            max_h,
+	    stride) {}
 
 template class LongitudinalStructureFunctionWriter<1>;
 template class LongitudinalStructureFunctionWriter<2>;

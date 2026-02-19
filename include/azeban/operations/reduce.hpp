@@ -11,11 +11,11 @@
 
 namespace azeban {
 
-template <int Dim>
-real_t reduce_sum(const zisa::array_const_view<real_t, Dim> &data) {
+template <int Dim, typename Scalar>
+Scalar reduce_sum(const zisa::array_const_view<Scalar, Dim> &data) {
   ProfileHost profile("reduce_sum");
   if (data.memory_location() == zisa::device_type::cpu) {
-    real_t val = 0;
+    Scalar val = 0;
     for (zisa::int_t i = 0; i < zisa::product(data.shape()); ++i) {
       val += data[i];
     }
@@ -23,7 +23,7 @@ real_t reduce_sum(const zisa::array_const_view<real_t, Dim> &data) {
   }
 #if ZISA_HAS_CUDA
   else if (data.memory_location() == zisa::device_type::cuda) {
-    zisa::array_const_view<real_t, 1> view(
+    zisa::array_const_view<Scalar, 1> view(
         zisa::shape_t<1>(zisa::product(data.shape())),
         data.raw(),
         data.memory_location());
@@ -37,15 +37,15 @@ real_t reduce_sum(const zisa::array_const_view<real_t, Dim> &data) {
   return 0;
 }
 
-template <int Dim>
-real_t reduce_sum(const zisa::array_view<real_t, Dim> &data) {
-  return reduce_sum(zisa::array_const_view<real_t, Dim>(
+template <int Dim, typename Scalar>
+Scalar reduce_sum(const zisa::array_view<Scalar, Dim> &data) {
+  return reduce_sum(zisa::array_const_view<Scalar, Dim>(
       data.shape(), data.raw(), data.memory_location()));
 }
 
-template <int Dim>
-real_t reduce_sum(const zisa::array<real_t, Dim> &data) {
-  return reduce_sum(zisa::array_const_view<real_t, Dim>(
+template <int Dim, typename Scalar>
+Scalar reduce_sum(const zisa::array<Scalar, Dim> &data) {
+  return reduce_sum(zisa::array_const_view<Scalar, Dim>(
       data.shape(), data.raw(), data.device()));
 }
 

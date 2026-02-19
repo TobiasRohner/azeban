@@ -19,7 +19,8 @@ public:
                           zisa::int_t sample_idx_start,
                           const std::string &name,
                           const Function &func,
-                          ssize_t max_h);
+                          ssize_t max_h,
+			  ssize_t stride);
 
   StructureFunctionWriter(const StructureFunctionWriter &) = default;
   StructureFunctionWriter(StructureFunctionWriter &&) = default;
@@ -55,6 +56,7 @@ private:
   std::string name_;
   Function func_;
   ssize_t max_h_;
+  ssize_t stride_;
 };
 
 }
