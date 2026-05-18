@@ -66,7 +66,7 @@ struct SmoothCutoff1D final : public SpectralViscosityBase<SmoothCutoff1D> {
     const real_t k8 = k4 * k4;
     const real_t k16 = k8 * k8;
     const real_t k18 = k16 * k2;
-    return 1 - zisa::exp(-k18);
+    return real_t{1.} - zisa::exp(-k18);
   }
 
   using super::eval;
@@ -107,14 +107,14 @@ struct Quadratic final {
     const real_t sqrtN = zisa::sqrt(N);
     const real_t absk = zisa::abs(k / (2 * zisa::pi));
     if (absk >= sqrtN) {
-      return 1. - static_cast<real_t>(N) / (absk * absk);
+      return real_t{1.} - static_cast<real_t>(N) / (absk * absk);
     } else {
-      return 0;
+      return real_t{0.};
     }
   }
 
   ANY_DEVICE_INLINE real_t eval(real_t k) const {
-    const real_t knorm = k / (2 * zisa::pi);
+    const real_t knorm = k / (2 * real_t{zisa::pi});
     return -eps * zisa::max(real_t(0), knorm * knorm - N);
   }
 
@@ -123,8 +123,8 @@ struct Quadratic final {
 };
 
 struct NoViscosity final {
-  ANY_DEVICE_INLINE real_t Qk(real_t /* k */) const { return 0.0; }
-  ANY_DEVICE_INLINE real_t eval(real_t /* k */) const { return 0.0; }
+  ANY_DEVICE_INLINE real_t Qk(real_t /* k */) const { return real_t{0.}; }
+  ANY_DEVICE_INLINE real_t eval(real_t /* k */) const { return real_t{0.}; }
 };
 
 }
