@@ -27,8 +27,16 @@ make_white_noise_high_freq(const nlohmann::json &config,
   if (config.contains("b")) {
     b = config["b"];
   }
+  int delta = 1;
+  if (config.contains("delta")) {
+      delta = config["delta"];
+  }
+  bool antisymmetric = false;
+  if (config.contains("antisymmetric")) {
+      antisymmetric = config["antisymmetric"];
+  }
 
-  return WhiteNoiseHighFreq<Dim, RNG>(grid, b, k_min, k_max, eps, seed);
+  return WhiteNoiseHighFreq<Dim, RNG>(grid, b, k_min, k_max, delta, antisymmetric, eps, seed);
 }
 
 }
