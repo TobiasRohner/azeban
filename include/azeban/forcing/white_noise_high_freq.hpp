@@ -29,7 +29,7 @@ class WhiteNoiseHighFreq<1, RNG, zisa::device_type::cpu> {
 
 public:
   explicit WhiteNoiseHighFreq(
-      const Grid<1> &, real_t, int, int, real_t, unsigned long long) {}
+      const Grid<1> &, real_t, int, int, int, bool, real_t, unsigned long long) {}
 
   void pre(real_t, real_t) {}
 
@@ -48,6 +48,8 @@ public:
                               real_t b,
                               int k_min,
                               int k_max,
+			      int delta,
+			      bool antisymmetric,
                               real_t eps,
                               unsigned long long seed)
       : b_(zisa::sqrt(b
@@ -55,6 +57,8 @@ public:
                          - (2 * k_min - 1) * (2 * k_min - 1)))),
         k_min_(k_min),
         k_max_(k_max),
+	delta_(delta),
+	antisymmetric_(antisymmetric),
         eps_(eps),
         state_(seed),
         dist_(0, zisa::sqrt(zisa::pow<2>(static_cast<real_t>(grid.N_phys)))),
@@ -80,10 +84,23 @@ public:
     const int absk1 = zisa::abs(k1);
     const int absk2 = zisa::abs(k2);
     ////////////////////////////////
-    if (absk2 % 2) {
+    if (absk1 % delta_) {
       *f1 = 0;
       *f2 = 0;
       return;
+    }
+    ////////////////////////////////
+    bool flipped = false;
+    if (antisymmetric_) {
+	if (k2 == 0) {
+	    *f1 = 0;
+	    *f2 = 0;
+	    return;
+	}
+	if (k1 < 0) {
+	    k1 = -k1;
+	    flipped = true;
+	}
     }
     ////////////////////////////////
     if ((absk1 < k_min_ && absk2 < k_min_) || absk1 >= k_max_
@@ -93,7 +110,7 @@ public:
     } else {
       const bool inZp = (k1 + (k2 > 0)) > 0;
       const int k1p = inZp ? k1 : -k1;
-      const int k2p = inZp ? k2 : -k2;
+      int k2p = inZp ? k2 : -k2;
       unsigned idx1, idx2;
       if (k1p >= k_min_) {
         idx1 = k2p + k_max_ - 1;
@@ -109,8 +126,10 @@ public:
       }
       const real_t knorm
           = 2 * zisa::pi * zisa::sqrt(static_cast<real_t>(k1 * k1 + k2 * k2));
+      const real_t num_forcing = (2 * k_max_ - 1) * (2 * k_max_ - 1) - (2 * k_min_ - 1) * (2 * k_min_ - 1);
+      const real_t num_forcing_kept = (2 * k_max_ - 1) * (2 * ((k_max_ + delta_ - 1) / delta_) - 1) - (2 * k_min_ - 1) * (2 * ((k_min_ + delta_ - 1) / delta_) - 1);
       const real_t coeff
-          = b_ * zisa::sqrt(eps_ / dt / zisa::sqrt(zisa::pi)) / knorm;
+          = num_forcing / num_forcing_kept * b_ * zisa::sqrt(eps_ / dt) / knorm;
       const real_t eta = pot_(idx1, idx2);
       const real_t nu = pot_(idx1, idx2 + (k_max_ - k_min_));
       if (inZp) {
@@ -120,6 +139,16 @@ public:
 	*f1 = coeff * complex_t(k2 * eta, -k2 * nu);
         *f2 = coeff * complex_t(-k1 * eta, k1 * nu);
       }
+      if (antisymmetric_) {
+	if (k1 == 0) {
+          f1->x = 0;
+          f2->x = 0;
+	}
+	if (flipped) {
+	  f1->x = -f1->x;
+	  f2->x = -f2->x;
+	}
+      }
     }
   }
 
@@ -127,6 +156,8 @@ private:
   real_t b_;
   int k_min_;
   int k_max_;
+  int delta_;
+  bool antisymmetric_;
   real_t eps_;
   state_t state_;
   std::normal_distribution<real_t> dist_;
@@ -139,7 +170,7 @@ class WhiteNoiseHighFreq<3, RNG, zisa::device_type::cpu> {
 
 public:
   explicit WhiteNoiseHighFreq(
-      const Grid<3> &, real_t, int, int, real_t, unsigned long long) {}
+      const Grid<3> &, real_t, int, int, int, bool, real_t, unsigned long long) {}
 
   void pre(real_t, real_t) {}
 
@@ -166,7 +197,7 @@ template <int Dim, typename RNG>
 class WhiteNoiseHighFreq<Dim, RNG, zisa::device_type::cpu> {
 public:
   explicit WhiteNoiseHighFreq(
-      const Grid<Dim> &, real_t, int, int, real_t, unsigned long long) {}
+      const Grid<Dim> &, real_t, int, int, int, bool, real_t, unsigned long long) {}
   __device__ void pre(real_t, real_t) {}
   __device__ void
   operator()(real_t, real_t, complex_t, complex_t, int, complex_t *f1) {}
@@ -202,7 +233,7 @@ class WhiteNoiseHighFreq<1, RNG, zisa::device_type::cuda> {
 
 public:
   explicit WhiteNoiseHighFreq(
-      const Grid<1> &, real_t, int, int, real_t, unsigned long long) {}
+      const Grid<1> &, real_t, int, int, int, bool, real_t, unsigned long long) {}
 
   void destroy() {}
 
@@ -224,6 +255,8 @@ public:
                               real_t b,
                               int k_min,
                               int k_max,
+			      int delta,
+			      bool antisymmetric,
                               real_t eps,
                               unsigned long long seed)
       : grid_(grid),
@@ -232,6 +265,8 @@ public:
                          - (2 * k_min - 1) * (2 * k_min - 1)))),
         k_min_(k_min),
         k_max_(k_max),
+	delta_(delta),
+	antisymmetric_(antisymmetric),
         eps_(eps),
         pot_(zisa::shape_t<2>(0, 0), nullptr, zisa::device_type::cuda) {
     zisa::shape_t<2> shape(2 * (k_max + k_min + 2), 2 * (k_max - k_min));
@@ -270,10 +305,27 @@ public:
     const int absk1 = zisa::abs(k1);
     const int absk2 = zisa::abs(k2);
     ////////////////////////////////
-    if (absk1 % 2) {
+    if (absk1 % delta_) {
       *f1 = 0;
       *f2 = 0;
       return;
+    }
+    ////////////////////////////////
+    int sign_k1 = 1;
+    int sign_k2 = 1;
+    if (antisymmetric_) {
+	if (k1 == 0) {
+	    *f1 = 0;
+	    *f2 = 0;
+	}
+	if (k1 < 0) {
+	    k1 = -k1;
+	    sign_k1 = -1;
+	}
+	if (k2 < 0) {
+	    k2 = -k2;
+	    sign_k2 = -1;
+	}
     }
     ////////////////////////////////
     if ((absk1 < k_min_ && absk2 < k_min_) || absk1 >= k_max_
@@ -299,16 +351,22 @@ public:
       }
       const real_t knorm
           = 2 * zisa::pi * zisa::sqrt(static_cast<real_t>(k1 * k1 + k2 * k2));
+      const real_t num_forcing = (2 * k_max_ - 1) * (2 * k_max_ - 1) - (2 * k_min_ - 1) * (2 * k_min_ - 1);
+      const real_t num_forcing_kept = (2 * k_max_ - 1) * (2 * ((k_max_ + delta_ - 1) / delta_) - 1) - (2 * k_min_ - 1) * (2 * ((k_min_ + delta_ - 1) / delta_) - 1);
       const real_t coeff
-          = norm * b_ * zisa::sqrt(eps_ / dt / zisa::sqrt(zisa::pi)) / knorm;
-      const real_t eta = pot_(idx1, idx2);
+          = num_forcing / num_forcing_kept * norm * b_ * zisa::sqrt(eps_ / dt) / knorm;
+      const real_t eta = sign_k1 * pot_(idx1, idx2);
       const real_t nu = pot_(idx1, idx2 + (k_max_ - k_min_));
       if (inZp) {
-        *f1 = coeff * complex_t(k2 * eta, k2 * nu);
+        *f1 = sign_k1 * coeff * complex_t(k2 * eta, k2 * nu);
         *f2 = coeff * complex_t(-k1 * eta, -k1 * nu);
       } else {
-        *f1 = coeff * complex_t(k2 * eta, -k2 * nu);
+        *f1 = sign_k1 * coeff * complex_t(k2 * eta, -k2 * nu);
         *f2 = coeff * complex_t(-k1 * eta, k1 * nu);
+      }
+      if (antisymmetric_ && k2 == 0) {
+	  *f1 = 0;
+	  f2->y = 0;
       }
     }
   }
@@ -318,6 +376,8 @@ private:
   real_t b_;
   int k_min_;
   int k_max_;
+  int delta_;
+  bool antisymmetric_;
   real_t eps_;
   state_t *state_;
   zisa::array_view<real_t, 2> pot_;
@@ -329,7 +389,7 @@ class WhiteNoiseHighFreq<3, RNG, zisa::device_type::cuda> {
 
 public:
   explicit WhiteNoiseHighFreq(
-      const Grid<3> &, real_t, int, int, real_t, unsigned long long) {}
+      const Grid<3> &, real_t, int, int, int, bool, real_t, unsigned long long) {}
 
   void destroy() {}
 
