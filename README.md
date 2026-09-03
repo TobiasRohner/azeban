@@ -1,97 +1,161 @@
-# azeban: a spectral viscosity method
+# azeban
 
-## Dependencies
-On Linux all dependencies of azeban can be installed as follows
+azeban is a GPU-accelerated pseudospectral solver for the incompressible Euler
+equations with spectral viscosity, written in C++17 with CUDA and MPI support.
+It integrates the equations in Fourier space on the torus, applies a spectral
+viscosity regularization that vanishes under grid refinement, and supports
+stochastic forcing, passively advected tracers, ensemble runs, and a rich set
+of in-situ diagnostics (flow-field snapshots, energy/enstrophy spectra,
+structure functions, and ParaView Catalyst visualization).
 
-    bin/install_dependencies.sh COMPILER third_pary --zisa_has_cuda=1
+## Documentation
 
-which will propose a partial CMake command to configure the build system.
-It is recommended to additionally at least choose a build type, e.g.
-`-DCMAKE_BUILD_TYPE=Debug`. Valid build types include `FastDebug` and
-`Release`.
+- [Running azeban](doc/running.md) — command line usage, MPI parallelization
+  over samples, profiling output, the `postprocess` tool.
+- [The configuration file](doc/configuration.md) — top-level options,
+  snapshot sequences, random variables.
+- [Grid](doc/grid.md) — resolutions and dealiasing padding.
+- [Equation](doc/equation.md) — equations and spectral viscosity.
+- [Forcing](doc/forcing.md) — available forcing terms.
+- [Timestepper](doc/timestepper.md) — time integration schemes and the CFL
+  constant.
+- [Initializer](doc/initializer.md) — initial conditions and tracers.
+- [Writers](doc/writers.md) — all output writers and their options.
+- [Output formats](doc/output-formats.md) — file formats of the outputs.
 
-Dependencies fall into three categories. The first are common dependencies
-which are either hard to compile or otherwise difficult to install. Since these
-dependencies are common, they are usually present on any system suitable for
-HPC. We shall assume they are present on the machine, e.g. though the package
-manager or though the infamous `module` system. We find these dependencies using
-the CMake standard `find_package`.
+## Building
 
-The next type of dependencies are common, yet easy to distribute, dependencies.
-We can use Conan to install these dependencies.
+### Requirements
 
-The third type of dependencies are internal dependencies, in this case on our
-family of libraries called zisa. They can either be cloned, built and installed
-like any other source dependency; or one can use a 'super build' to integrate
-them more tightly with azeban.
+- A C++17 compiler, CMake ≥ 3.24 and OpenMP.
+- [FFTW3](https://www.fftw.org/) (found via the bundled
+  `cmake/FindFFTW3.cmake`; on Debian/Ubuntu: `apt install libfftw3-dev`).
+- For MPI builds (`ENABLE_MPI=ON`): MPI (C and CXX bindings).
+- For CUDA builds (`ENABLE_CUDA=ON`): the CUDA toolkit (cuFFT and cuRAND are
+  used).
 
-The fourth type of dependencies are highly specialized HPC codes. We'll try and
-avoid those.
+Everything else — Boost.Program_options, fmt, nlohmann/json, Catch2, Google
+Test, Google Benchmark, NetCDF-C, and the internal libraries
+[ZisaCore](https://github.com/1uc/ZisaCore) and
+[ZisaMemory](https://github.com/1uc/ZisaMemory) — is downloaded and built
+automatically by CMake's `FetchContent` during configuration. An internet
+connection is therefore required for the first configure step.
 
-### Conan
-Conan is a package manager for C++, not unlike `pip install --user`. Conan
-itself is a Python package and should be installed through `pip`, e.g.
+Optional dependencies:
 
-    pip install --user conan
-    
-One can then use `conan` to install the dependencies listed in `conanfile.txt`
-as follows
+- Python development headers, for the Python initializer
+  (`ENABLE_PYTHON=ON`).
+- [catalyst 2.x](https://gitlab.kitware.com/paraview/catalyst), for in-situ
+  visualization (`ENABLE_INSITU=ON`).
+- HDF5 (`HAVE_HDF5=ON`; rarely needed, NetCDF is the primary IO backend).
 
-    conan install AZEBAN_DIR
-    
-However, a quick inspection of `conanfile.txt` shows no indication of which
-compiler is to be used. Nor any other information relevant to ABI. Conan
-resolves this through so called profiles. As a user of Conan you define the
-compiler, compiler version, version of libc++ and any else that is relevant in a
-profile. You then install the dependencies for that profile. In a different
-context "profile" might be referred to as a toolchain.
+### Configuring and compiling
 
-Probably, the only stumbling block will be that we use the C++11 (or newer) and
-therefore our dependencies must be built again a C++11 version of the C++
-standard library. Therefore, we should use
+```bash
+cmake -S . -B build \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DENABLE_CUDA=ON \
+      -DENABLE_MPI=ON
+cmake --build build -j$(nproc)
+```
 
-    conan install AZEBAN_DIR -s compiler.libcxx=libstdc++11
+Available CMake options:
 
-to download the correct version of the dependencies.
+| Option | Default | Description |
+| --- | --- | --- |
+| `ENABLE_CUDA` | `ON` | Build the CUDA code paths and enable the `device: "cuda"` configuration option. |
+| `ENABLE_MPI` | `ON` | Build with MPI support for distributed simulations and ensemble runs. **MPI requires CUDA**; configuring with `ENABLE_MPI=ON` and `ENABLE_CUDA=OFF` is rejected. |
+| `ENABLE_CUDA_AWARE_MPI` | `ON` | Use CUDA-aware MPI if the installed MPI implementation supports it. |
+| `ENABLE_PYTHON` | `OFF` | Embed a Python interpreter for the `"Python"` initializer. |
+| `ENABLE_INSITU` | `OFF` | Enable the ParaView Catalyst in-situ visualization writer (needs an installed catalyst 2.x library). |
+| `ENABLE_BENCHMARKS` | `ON` | Build the micro-benchmark executables. |
+| `ENABLE_PROFILING` | `ON` | Instrument the code with the internal profiler and write `profiling*.out` files at the end of each run. Turn this off for production runs. |
+| `SINGLE_PRECISION` | `OFF` | Compute in single instead of double precision. |
+| `HAVE_HDF5` | `OFF` | Compile with HDF5 support. |
+| `HAVE_NETCDF` | `ON` | Compile with NetCDF support (required by all standard writers). |
 
-The final thing to know about Conan is that it installs the requested versions
-of the libraries in a local folder. Thereby building a little repository of
-installed libraries. On a cluster it might be important to reconfigure where it
-installs libraries. Additionally, it will create a couple of files in the
-current working directory. These files are needed to instruct CMake where the
-dependencies listed in the `conanfile.txt` can be found. Inside CMake we use the
-traditional `find_package` mechanism.
+Valid build types are `Release`, `Debug`, and `FastDebug` (`-O3 -g`, a good
+middle ground for development). For CUDA builds, `Debug` additionally enables
+device-side debugging (`-g -G`).
 
-### Internal dependencies
-azeban reuses code from zisa. This repository does not directly include these
-dependencies. They are cloned, built and installed through
-`bin/install_dependencies.sh`. In this repository, we treat them like any other
-third-party dependency which needs to installed from source.
+The build produces the following executables in `build/`:
 
-If the need arises to regularly modify parts of zisa, then there are two
-options. The first is to embrace the cycle of working on the library in
-isolation. Then commit the changes, and reinstall the dependency.
+| Target | Description |
+| --- | --- |
+| `azeban` | The simulation driver (see [doc/running.md](doc/running.md)). |
+| `postprocess` | Applies the output writers to existing samples (see [doc/running.md](doc/running.md)). |
+| `unit_tests` | Unit tests (run with `ctest` or directly). |
+| `micro_benchmarks` | Google-benchmark based micro benchmarks. |
+| `system_properties` | Prints properties of the system (MPI, GPUs, ...). Run under `srun`/`mpirun`. |
+| `benchmark_fft` | FFT benchmark: `srun ./build/benchmark_fft N` with `N` the grid size. |
 
-The second option is to use the development repository.
+### Docker
 
-### Development repository
-An alternate option of organizing code is to use a super build. Which has the
-advantage of combining the source of some or all internal dependencies. An
-implementation of this is available at
+A self-contained image (CUDA 12.9, Ubuntu 24.04, OpenMPI 5, UCX, PMIx,
+catalyst) can be built with:
 
-&emsp;https://github.com/1uc/azeban-dev.git
+```bash
+docker build -t azeban .
+```
 
-## Using CMake
-Since important improvements specifically concerning CUDA where made in version
-3.18, we need what is currently an almost cutting edge version of CMake. If it is
-not installed, on Linux, it can be installed using the following script
+The image builds with `-DENABLE_PYTHON=ON -DENABLE_INSITU=ON` and has the
+`azeban` executable as its entrypoint, so a simulation can be run with
 
-    bin/install_cmake.sh
-    
-### Listing Source Files
-We will not glob source files, and instead list them manually. Naturally,
-keeping the corresponding `CMakeLists.txt` up to date manually is unacceptable.
-Hence, there is a Python script to take care of keeping the files updated. After
-adding a new source file, execute
+```bash
+docker run --gpus all -v $PWD:/data azeban /data/config.json
+```
 
-    bin/update_cmake.py
+Build arguments `ENABLE_PROFILING` (default `OFF`) and `SINGLE_PRECISION`
+(default `ON`) are supported.
+
+## Quick start
+
+1. Create a configuration file `config.json`:
+
+```json
+{
+  "device": "cuda",
+  "dimension": 3,
+  "num_samples": 1,
+  "seed": 1,
+  "grid": {
+    "N_phys": 128,
+    "N_phys_pad": ""
+  },
+  "equation": {
+    "name": "Euler",
+    "visc": {
+      "type": "Smooth Cutoff",
+      "eps": 0.05
+    }
+  },
+  "timestepper": {
+    "type": "SSP RK3",
+    "C": 0.5
+  },
+  "init": {
+    "name": "Taylor Green"
+  },
+  "writer": {
+    "name": "NetCDF Snapshot",
+    "path": "output",
+    "snapshots": {"start": 0, "stop": 5, "n": 50}
+  }
+}
+```
+
+2. Run it:
+
+```bash
+./build/azeban config.json
+```
+
+3. Inspect the output in `output/` (see
+   [doc/output-formats.md](doc/output-formats.md)).
+
+All configuration options are documented in
+[doc/configuration.md](doc/configuration.md) and the pages linked there.
+
+## License
+
+GPL-3.0-or-later, see [LICENSE.md](LICENSE.md).
